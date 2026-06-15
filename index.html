@@ -37,7 +37,14 @@
                 <input type="text" id="ing-search" oninput="renderIngredients()" placeholder="🔎 Malzeme ara (örn: Votka, Nane)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 transition-all text-white">
                 <button onclick="clearSelection()" class="shrink-0 bg-slate-900 border border-slate-800 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all">🗑️ Temizle</button>
             </div>
+            
+            <div class="flex gap-2">
+                <input type="text" id="cocktail-search" oninput="filterCocktails()" placeholder="🍸 Kokteyl ismiyle ara (örn: Margarita)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 transition-all text-white">
+                <button onclick="pickRandomCocktail()" class="shrink-0 bg-slate-900 border border-slate-800 text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all">🎲 Rastgele</button>
+            </div>
+
             <div class="flex gap-3 overflow-x-auto text-xs font-bold pt-1 no-scrollbar">
+                <button id="tab-bar" onclick="switchTab('bar')" class="text-slate-400 pb-1 px-1 shrink-0">📊 Barın</button>
                 <button id="tab-alkol" onclick="switchTab('alkol')" class="border-b-2 border-amber-500 text-amber-500 pb-1 px-1 shrink-0">Alkoller</button>
                 <button id="tab-mutfak" onclick="switchTab('mutfak')" class="text-slate-400 pb-1 px-1 shrink-0">Mutfak</button>
                 <button id="tab-custom" onclick="switchTab('custom')" class="text-slate-400 pb-1 px-1 shrink-0">✨ Tarif Ekle</button>
@@ -49,6 +56,27 @@
     </header>
 
     <main class="py-4 space-y-6 pb-24">
+        
+        <section id="bar-dashboard" class="hidden px-4 animate-fade-in">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-lg">
+                <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">📊 Bar Durumun</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-500">Bar Doluluk</p>
+                        <p id="bar-fill-rate" class="text-xl font-black text-white">0%</p>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-500">Yapılabilir</p>
+                        <p id="ready-count" class="text-xl font-black text-emerald-400">0 Tarif</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-500 mb-2">En Çok Kullandıkların / Elindekiler:</p>
+                    <div id="top-ingredients" class="flex flex-wrap gap-2 text-xs text-slate-300"></div>
+                </div>
+            </div>
+        </section>
+
         <section id="ingredients-section" class="space-y-2 relative px-2">
             <div class="relative flex items-center bg-slate-900/40 py-2 rounded-xl border border-slate-900">
                 <button onclick="scrollIngredients(-150)" class="absolute left-2 z-20 bg-slate-800 border border-slate-700 text-amber-500 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90">◀</button>
@@ -63,8 +91,16 @@
                 <div class="space-y-3 text-xs">
                     <input type="text" id="custom-name" placeholder="Kokteyl Adı" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
                     <input type="text" id="custom-ingredients" placeholder="Malzemeler (Virgülle ayırın: Votka, Limon Suyu)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
-                    <textarea id="custom-instructions" rows="3" placeholder="Nasıl Hazırlanır?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 resize-none text-white"></textarea>
-                    <button onclick="saveCustomRecipe()" class="w-full bg-amber-500 text-slate-950 font-bold py-2.5 rounded-xl shadow-lg">Tarifi Kaydet</button>
+                    <textarea id="custom-instructions" rows="2" placeholder="Nasıl Hazırlanır?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 resize-none text-white"></textarea>
+                    
+                    <textarea id="custom-serving" rows="2" placeholder="Servis/İçim tavsiyesi (Örn: Bol buzlu highball bardağında)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 resize-none text-white"></textarea>
+                    
+                    <div class="border border-slate-800 rounded-xl p-3 bg-slate-950">
+                        <label class="text-slate-500 block mb-2 font-bold">📷 Kokteyl Fotoğrafı:</label>
+                        <input type="file" id="custom-image-input" accept="image/*" class="w-full text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-500 hover:file:bg-amber-500/20">
+                    </div>
+                    
+                    <button onclick="saveCustomRecipe()" class="w-full bg-amber-500 text-slate-950 font-bold py-3 rounded-xl shadow-lg mt-2">Tarifi Veritabanına Kaydet</button>
                 </div>
             </div>
         </section>
@@ -72,7 +108,6 @@
         <section id="my-recipes-panel" class="hidden px-4 animate-fade-in space-y-4">
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
                 <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">📜 Kendi Eklediğim Tarifler</h2>
-                <!-- lg:grid-cols-4 ile masaüstünde 4'lü sütun yapıldı -->
                 <div id="my-recipes-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
             </div>
         </section>
@@ -99,13 +134,11 @@
         <div id="recipes-display-sections" class="px-4 space-y-6">
             <section>
                 <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">🟢 Hemen Yapabileceklerin <span id="count-ready" class="text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">0</span></h2>
-                <!-- lg:grid-cols-4 ile masaüstünde 4'lü sütun yapıldı -->
                 <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
             </section>
 
             <section>
-                <h2 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">🔴 Yaklaştığın Tarifler (1-4 Eksik) <span id="count-missing" class="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">0</span></h2>
-                <!-- lg:grid-cols-4 ile masaüstünde 4'lü sütun yapıldı -->
+                <h2 id="title-missing" class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">🔴 Yaklaştığın Tarifler (1-4 Eksik) <span id="count-missing" class="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">0</span></h2>
                 <div id="recipes-missing" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
             </section>
         </div>
