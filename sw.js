@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v7'; // Sürümü v7 yaptık
+const CACHE_NAME = 'bar-cepte-v8'; // Sürümü v8 yaptık, cihaz yeni dosyaları zorla çekecek
 const ASSETS = [
   './',
   './index.html',
