@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bar Cepte Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
 </head>
@@ -19,9 +18,9 @@
             </div>
             
             <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-bold">
-                <button id="btn-all-alcohol" onclick="setAlcoholFilter('all')" class="px-2.5 py-1 rounded bg-amber-500 text-slate-950 transition-all">Hepsi</button>
-                <button id="btn-alcoholic" onclick="setAlcoholFilter('Alcoholic')" class="px-2.5 py-1 rounded text-slate-400 transition-all">Alkollü</button>
-                <button id="btn-non-alcoholic" onclick="setAlcoholFilter('Non_Alcoholic')" class="px-2.5 py-1 rounded text-slate-400 transition-all">Alkolsüz</button>
+                <button id="btn-all-alcohol" onclick="setAlcoholFilter('all')" class="px-2 py-1 rounded bg-amber-500 text-slate-950 transition-all">Hepsi</button>
+                <button id="btn-alcoholic" onclick="setAlcoholFilter('Alcoholic')" class="px-2 py-1 rounded text-slate-400 transition-all">Alkollü</button>
+                <button id="btn-non-alcoholic" onclick="setAlcoholFilter('Non_Alcoholic')" class="px-2 py-1 rounded text-slate-400 transition-all">Alkolsüz</button>
             </div>
         </div>
 
@@ -34,13 +33,17 @@
         </div>
 
         <div class="space-y-2">
-            <input type="text" id="ing-search" oninput="renderIngredients()" placeholder="🔎 Malzeme ara (örn: Votka, Nane)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 transition-all text-white">
+            <div class="flex gap-2">
+                <input type="text" id="ing-search" oninput="renderIngredients()" placeholder="🔎 Malzeme ara (örn: Votka, Nane)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 transition-all text-white">
+                <button onclick="clearSelection()" class="shrink-0 bg-slate-900 border border-slate-800 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all">🗑️ Temizle</button>
+            </div>
             <div class="flex gap-3 overflow-x-auto text-xs font-bold pt-1 no-scrollbar">
                 <button id="tab-alkol" onclick="switchTab('alkol')" class="border-b-2 border-amber-500 text-amber-500 pb-1 px-1 shrink-0">Alkoller</button>
                 <button id="tab-mutfak" onclick="switchTab('mutfak')" class="text-slate-400 pb-1 px-1 shrink-0">Mutfak</button>
                 <button id="tab-custom" onclick="switchTab('custom')" class="text-slate-400 pb-1 px-1 shrink-0">✨ Tarif Ekle</button>
+                <button id="tab-my-recipes" onclick="switchTab('my-recipes')" class="text-slate-400 pb-1 px-1 shrink-0">📜 Tariflerim</button>
                 <button id="tab-shop" onclick="switchTab('shop')" class="text-slate-400 pb-1 px-1 shrink-0">🛒 Alışveriş</button>
-                <button id="tab-sync" onclick="switchTab('sync')" class="text-slate-400 pb-1 px-1 shrink-0">⚙️ Senkronizasyon</button>
+                <button id="tab-sync" onclick="switchTab('sync')" class="text-slate-400 pb-1 px-1 shrink-0">⚙️ Senk.</button>
             </div>
         </div>
     </header>
@@ -66,6 +69,14 @@
             </div>
         </section>
 
+        <section id="my-recipes-panel" class="hidden px-4 animate-fade-in space-y-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">📜 Kendi Eklediğim Tarifler</h2>
+                <!-- lg:grid-cols-4 ile masaüstünde 4'lü sütun yapıldı -->
+                <div id="my-recipes-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            </div>
+        </section>
+
         <section id="shopping-list-panel" class="hidden px-4 animate-fade-in space-y-4">
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
                 <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">🛒 Eksik Malzeme Alışveriş Listesi</h2>
@@ -78,9 +89,9 @@
                 <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">⚙️ Cihazlar Arası Senkronizasyon</h2>
                 <p class="text-slate-400 text-[11px]">Favorilerinizi ve özel tariflerinizi başka bir cihaza aktarmak için veriyi kopyalayın veya yükleyin.</p>
                 <div class="space-y-2 pt-2">
-                    <button onclick="exportUserData()" class="w-full bg-slate-800 border border-slate-700 text-white font-bold py-2 rounded-xl">Yedekleme Kodunu Kopyala (Dışa Aktar)</button>
-                    <textarea id="sync-data-input" rows="3" placeholder="Başka cihazdan aldığınız yedekleme kodunu buraya yapıştırın..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-white resize-none"></textarea>
-                    <button onclick="importUserData()" class="w-full bg-amber-500 text-slate-950 font-bold py-2 rounded-xl">Yedeği Geri Yükle (İçe Aktar)</button>
+                    <button onclick="exportUserData()" class="w-full bg-slate-800 border border-slate-700 text-white font-bold py-2 rounded-xl">Yedekleme Kodunu Kopyala</button>
+                    <textarea id="sync-data-input" rows="3" placeholder="Başka cihazdan aldığınız kodu buraya yapıştırın..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-white resize-none"></textarea>
+                    <button onclick="importUserData()" class="w-full bg-amber-500 text-slate-950 font-bold py-2 rounded-xl">Yedeği Geri Yükle</button>
                 </div>
             </div>
         </section>
@@ -88,12 +99,14 @@
         <div id="recipes-display-sections" class="px-4 space-y-6">
             <section>
                 <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">🟢 Hemen Yapabileceklerin <span id="count-ready" class="text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">0</span></h2>
-                <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                <!-- lg:grid-cols-4 ile masaüstünde 4'lü sütun yapıldı -->
+                <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
             </section>
 
             <section>
                 <h2 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">🔴 Yaklaştığın Tarifler (1-4 Eksik) <span id="count-missing" class="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">0</span></h2>
-                <div id="recipes-missing" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                <!-- lg:grid-cols-4 ile masaüstünde 4'lü sütun yapıldı -->
+                <div id="recipes-missing" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
             </section>
         </div>
     </main>
