@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v5';
+const CACHE_NAME = 'bar-cepte-v7'; // Sürümü v7 yaptık
 const ASSETS = [
   './',
   './index.html',
@@ -20,8 +20,25 @@ self.addEventListener('activate', e => {
       }));
     })
   );
+  return self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+  if (e.request.url.includes('thecocktaildb.com')) {
+    e.respondWith(fetch(e.request).catch(() => new Response(JSON.stringify({drinks: null}))));
+    return;
+  }
+
+  e.respondWith(
+    caches.match(e.request).then(cachedResponse => {
+      const fetchPromise = fetch(e.request).then(networkResponse => {
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(e.request, networkResponse.clone());
+        });
+        return networkResponse;
+      }).catch(() => {});
+
+      return cachedResponse || fetchPromise;
+    })
+  );
 });
