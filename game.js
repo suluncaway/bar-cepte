@@ -51,7 +51,6 @@ function initDB() {
     });
 }
 
-// Geliştirilmiş Çeviri ve Jargon Düzeltici
 async function translateToTurkish(text) {
     if (!text) return "Bilinmiyor.";
     try {
@@ -92,7 +91,6 @@ async function translateToTurkish(text) {
     }
 }
 
-// Otomatik Malzeme Çıkarıcı
 function autoExtractAllIngredients() {
     const existingIds = popularIngredients.map(i => i.id.toLowerCase());
     const newIngredientsMap = new Map();
