@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bar Cepte Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen antialiased select-none">
+
+    <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-md space-y-3">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-lg font-black text-amber-500 tracking-tight">🍹 BAR CEPTE</h1>
+                <p id="status" class="text-[11px] text-slate-400 font-medium">Başlatılıyor...</p>
+            </div>
+            
+            <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-bold">
+                <button id="btn-all-alcohol" onclick="setAlcoholFilter('all')" class="px-2 py-1 rounded bg-amber-500 text-slate-950 transition-all">Hepsi</button>
+                <button id="btn-alcoholic" onclick="setAlcoholFilter('Alcoholic')" class="px-2 py-1 rounded text-slate-400 transition-all">Alkollü</button>
+                <button id="btn-non-alcoholic" onclick="setAlcoholFilter('Non_Alcoholic')" class="px-2 py-1 rounded text-slate-400 transition-all">Alkolsüz</button>
+            </div>
+        </div>
+
+        <div class="flex gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold no-scrollbar">
+            <button onclick="setTasteFilter('all')" class="taste-btn px-2.5 py-1 rounded-full bg-slate-800 text-amber-400 border border-amber-500/20 shrink-0">✨ Tüm Tatlar</button>
+            <button onclick="setTasteFilter('Sert')" class="taste-btn px-2.5 py-1 rounded-full bg-slate-900 text-slate-400 border border-slate-800 shrink-0">🔥 Sert</button>
+            <button onclick="setTasteFilter('Tatlı')" class="taste-btn px-2.5 py-1 rounded-full bg-slate-900 text-slate-400 border border-slate-800 shrink-0">🍭 Tatlı</button>
+            <button onclick="setTasteFilter('Ekşi')" class="taste-btn px-2.5 py-1 rounded-full bg-slate-900 text-slate-400 border border-slate-800 shrink-0">🍋 Ekşi</button>
+            <button onclick="setTasteFilter('Ferah')" class="taste-btn px-2.5 py-1 rounded-full bg-slate-900 text-slate-400 border border-slate-800 shrink-0">🍃 Ferah</button>
+        </div>
+
+        <div class="space-y-2">
+            <input type="text" id="ing-search" oninput="renderIngredients()" placeholder="🔎 Malzeme ara (örn: Votka, Nane)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 transition-all text-white">
+            <div class="flex gap-3 overflow-x-auto text-xs font-bold pt-1 no-scrollbar">
+                <button id="tab-alkol" onclick="switchTab('alkol')" class="border-b-2 border-amber-500 text-amber-500 pb-1 px-1 shrink-0">Alkoller</button>
+                <button id="tab-mutfak" onclick="switchTab('mutfak')" class="text-slate-400 pb-1 px-1 shrink-0">Mutfak</button>
+                <button id="tab-custom" onclick="switchTab('custom')" class="text-slate-400 pb-1 px-1 shrink-0">✨ Tarif Ekle</button>
+                <button id="tab-shop" onclick="switchTab('shop')" class="text-slate-400 pb-1 px-1 shrink-0">🛒 Alışveriş</button>
+                <button id="tab-sync" onclick="switchTab('sync')" class="text-slate-400 pb-1 px-1 shrink-0">⚙️ Senkronizasyon</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="py-4 space-y-6 pb-24">
+        <section id="ingredients-section" class="space-y-2 relative px-2">
+            <div class="relative flex items-center bg-slate-900/40 py-2 rounded-xl border border-slate-900">
+                <button onclick="scrollIngredients(-150)" class="absolute left-2 z-20 bg-slate-800 border border-slate-700 text-amber-500 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90">◀</button>
+                <div id="ingredients-container" class="flex gap-3 overflow-x-auto custom-scroll px-12 py-2 scroll-smooth snap-x w-full min-h-[120px]"></div>
+                <button onclick="scrollIngredients(150)" class="absolute right-2 z-20 bg-slate-800 border border-slate-700 text-amber-500 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90">▶</button>
+            </div>
+        </section>
+
+        <section id="custom-recipe-panel" class="hidden px-4 animate-fade-in">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+                <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">✨ Yeni Özel Tarif Yarat</h2>
+                <div class="space-y-3 text-xs">
+                    <input type="text" id="custom-name" placeholder="Kokteyl Adı" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <input type="text" id="custom-ingredients" placeholder="Malzemeler (Virgülle ayırın: Votka, Limon Suyu)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                    <textarea id="custom-instructions" rows="3" placeholder="Nasıl Hazırlanır?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 resize-none text-white"></textarea>
+                    <button onclick="saveCustomRecipe()" class="w-full bg-amber-500 text-slate-950 font-bold py-2.5 rounded-xl shadow-lg">Tarifi Kaydet</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="shopping-list-panel" class="hidden px-4 animate-fade-in space-y-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">🛒 Eksik Malzeme Alışveriş Listesi</h2>
+                <div id="shopping-list-container" class="space-y-2 text-xs"></div>
+            </div>
+        </section>
+
+        <section id="sync-panel" class="hidden px-4 animate-fade-in space-y-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3 text-xs">
+                <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">⚙️ Cihazlar Arası Senkronizasyon</h2>
+                <p class="text-slate-400 text-[11px]">Favorilerinizi ve özel tariflerinizi başka bir cihaza aktarmak için veriyi kopyalayın veya yükleyin.</p>
+                <div class="space-y-2 pt-2">
+                    <button onclick="exportUserData()" class="w-full bg-slate-800 border border-slate-700 text-white font-bold py-2 rounded-xl">Yedekleme Kodunu Kopyala (Dışa Aktar)</button>
+                    <textarea id="sync-data-input" rows="3" placeholder="Başka cihazdan aldığınız yedekleme kodunu buraya yapıştırın..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-white resize-none"></textarea>
+                    <button onclick="importUserData()" class="w-full bg-amber-500 text-slate-950 font-bold py-2 rounded-xl">Yedeği Geri Yükle (İçe Aktar)</button>
+                </div>
+            </div>
+        </section>
+
+        <div id="recipes-display-sections" class="px-4 space-y-6">
+            <section>
+                <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">🟢 Hemen Yapabileceklerin <span id="count-ready" class="text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">0</span></h2>
+                <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </section>
+
+            <section>
+                <h2 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">🔴 Yaklaştığın Tarifler (1-4 Eksik) <span id="count-missing" class="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">0</span></h2>
+                <div id="recipes-missing" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </section>
+        </div>
+    </main>
+
+    <script src="game.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Registration failed: ', err));
+            });
+        }
+    </script>
+</body>
+</html>
