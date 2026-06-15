@@ -1,13 +1,13 @@
 const baseIngredients = [
     { id: "Vodka", name: "Votka", emoji: "🍸", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Gin", name: "Cin", emoji: "🍾", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Rum", name: "Rom", emoji: "🥃", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Gin", name: "Cin", emoji: "🌲", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Rum", name: "Rom", emoji: "🏴‍☠️", cat: "alkol", taste: "Sert", cal: 64 },
     { id: "Tequila", name: "Tekila", emoji: "🌵", cat: "alkol", taste: "Sert", cal: 64 },
     { id: "Triple Sec", name: "Portakal Likörü", emoji: "🍊", cat: "alkol", taste: "Tatlı", cal: 100 },
     { id: "Whiskey", name: "Viski", emoji: "🥃", cat: "alkol", taste: "Sert", cal: 70 },
     { id: "Bourbon", name: "Burbon Viski", emoji: "🪵", cat: "alkol", taste: "Sert", cal: 70 },
     { id: "Amaretto", name: "Amaretto", emoji: "🌰", cat: "alkol", taste: "Tatlı", cal: 110 },
-    { id: "Campari", name: "Campari", emoji: "🍷", cat: "alkol", taste: "Ekşi", cal: 80 },
+    { id: "Campari", name: "Campari", emoji: "❤️", cat: "alkol", taste: "Ekşi", cal: 80 },
     { id: "Sweet Vermouth", name: "Tatlı Vermut", emoji: "🍷", cat: "alkol", taste: "Tatlı", cal: 45 },
     { id: "Lime Juice", name: "Misket Limonu Suyu", emoji: "🟢", cat: "mutfak", taste: "Ekşi", cal: 8 },
     { id: "Lemon Juice", name: "Limon Suyu", emoji: "🟡", cat: "mutfak", taste: "Ekşi", cal: 7 },
@@ -113,7 +113,29 @@ function autoExtractAllIngredients() {
                     if (isSour) taste = "Ekşi";
 
                     let cal = isAlcohol ? 80 : (isSweet ? 45 : 10);
-                    let emoji = isAlcohol ? "🏷️" : (isSweet ? "🧃" : "🫙"); 
+                    
+                    let emoji = "🫙";
+                    if (isAlcohol) {
+                        if (/(beer|ale|stout)/i.test(lowerIng)) emoji = "🍺";
+                        else if (/(wine|champagne)/i.test(lowerIng)) emoji = "🍾";
+                        else if (/(brandy|cognac|whiskey|bourbon|scotch)/i.test(lowerIng)) emoji = "🥃";
+                        else if (/(liqueur|amaretto|aperol|campari|vermouth)/i.test(lowerIng)) emoji = "🍷";
+                        else emoji = "🍶";
+                    } else {
+                        if (/(lemon|lime)/i.test(lowerIng)) emoji = "🍋";
+                        else if (/(orange|grapefruit)/i.test(lowerIng)) emoji = "🍊";
+                        else if (/(apple)/i.test(lowerIng)) emoji = "🍎";
+                        else if (/(berry|cherry|strawberry|raspberry)/i.test(lowerIng)) emoji = "🍓";
+                        else if (/(peach|apricot)/i.test(lowerIng)) emoji = "🍑";
+                        else if (/(syrup|honey|nectar)/i.test(lowerIng)) emoji = "🍯";
+                        else if (/(sugar)/i.test(lowerIng)) emoji = "🍬";
+                        else if (/(milk|cream)/i.test(lowerIng)) emoji = "🥛";
+                        else if (/(coffee|espresso)/i.test(lowerIng)) emoji = "☕";
+                        else if (/(tea)/i.test(lowerIng)) emoji = "🍵";
+                        else if (/(water|soda)/i.test(lowerIng)) emoji = "💦";
+                        else if (/(mint|leaves)/i.test(lowerIng)) emoji = "🌿";
+                        else if (/(juice)/i.test(lowerIng)) emoji = "🧃";
+                    }
 
                     newIngredientsMap.set(lowerIng, {
                         id: cleanIng,
@@ -139,7 +161,7 @@ function scrollIngredients(amount) {
 
 function switchTab(tab) {
     currentTab = tab;
-    ['tab-alkol', 'tab-mutfak', 'tab-custom', 'tab-shop', 'tab-sync'].forEach(t => {
+    ['tab-alkol', 'tab-mutfak', 'tab-custom', 'tab-my-recipes', 'tab-shop', 'tab-sync'].forEach(t => {
         const el = document.getElementById(t);
         if(el) el.className = "text-slate-400 pb-1 px-1 shrink-0";
     });
@@ -147,17 +169,19 @@ function switchTab(tab) {
     const activeTab = document.getElementById(`tab-${tab}`);
     if(activeTab) activeTab.className = "border-b-2 border-amber-500 text-amber-500 pb-1 px-1 shrink-0";
 
-    const sections = ['ingredients-section', 'custom-recipe-panel', 'shopping-list-panel', 'sync-panel'];
+    const sections = ['ingredients-section', 'custom-recipe-panel', 'my-recipes-panel', 'shopping-list-panel', 'sync-panel', 'recipes-display-sections'];
     sections.forEach(id => {
         const el = document.getElementById(id);
         if(el) el.classList.add('hidden');
     });
 
     if (tab === 'custom') document.getElementById('custom-recipe-panel').classList.remove('hidden');
+    else if (tab === 'my-recipes') { document.getElementById('my-recipes-panel').classList.remove('hidden'); renderMyRecipes(); }
     else if (tab === 'shop') { document.getElementById('shopping-list-panel').classList.remove('hidden'); renderShoppingList(); }
     else if (tab === 'sync') document.getElementById('sync-panel').classList.remove('hidden');
     else {
         document.getElementById('ingredients-section').classList.remove('hidden');
+        document.getElementById('recipes-display-sections').classList.remove('hidden');
         document.getElementById('ing-search').value = ""; 
         renderIngredients();
     }
@@ -208,7 +232,17 @@ function renderIngredients() {
             ? "snap-center shrink-0 w-24 h-28 bg-amber-500 border-2 border-amber-300 rounded-xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-950 font-black shadow-lg"
             : "snap-center shrink-0 w-24 h-28 bg-slate-900 border border-slate-700 rounded-xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-300 font-bold";
         
-        card.innerHTML = `<span class="text-2xl">${ing.emoji}</span><span class="text-[10px] break-words w-full px-1">${ing.name}</span>`;
+        card.innerHTML = `
+            <div class="h-10 flex items-center justify-center mb-1">
+                <img src="https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(ing.id)}-Small.png" 
+                     alt="${ing.name}" 
+                     class="max-h-full max-w-full object-contain drop-shadow-md"
+                     loading="lazy"
+                     onerror="this.outerHTML='<span class=\\'text-2xl\\'>${ing.emoji}</span>'">
+            </div>
+            <span class="text-[10px] break-words w-full px-1">${ing.name}</span>
+        `;
+        
         card.onclick = () => {
             selectedIngredients = isSelected ? selectedIngredients.filter(i => i !== ing.id) : [...selectedIngredients, ing.id];
             localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients));
@@ -217,6 +251,14 @@ function renderIngredients() {
         };
         container.appendChild(card);
     });
+}
+
+function clearSelection() {
+    if(selectedIngredients.length === 0) return;
+    selectedIngredients = [];
+    localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients));
+    renderIngredients();
+    filterCocktails();
 }
 
 function analyzeRecipe(drink) {
@@ -296,6 +338,24 @@ function filterCocktails() {
     renderLists(missingMatches, missingContainer, true);
 }
 
+function renderMyRecipes() {
+    const container = document.getElementById('my-recipes-container');
+    if (!container) return;
+    
+    if (customRecipes.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-4 text-slate-500 text-xs">Henüz kendi tarifini eklemedin.</div>`;
+        return;
+    }
+    
+    customRecipes.forEach(d => {
+        let analysis = analyzeRecipe(d);
+        d.computedCalories = analysis.calories;
+        d.computedTaste = analysis.tasteProfile;
+    });
+
+    renderLists(customRecipes, container, false);
+}
+
 function renderLists(items, container, isMissingList) {
     container.innerHTML = "";
     if (items.length === 0) {
@@ -318,6 +378,9 @@ function renderLists(items, container, isMissingList) {
             if (isMissingList && missingList.some(m => m.toLowerCase() === req.toLowerCase())) {
                 cls = "bg-rose-500/20 text-rose-400 border-rose-500/30";
             }
+            if(currentTab === 'my-recipes') {
+                cls = "bg-slate-950 text-slate-400 border-slate-800";
+            }
             ingHTML += `<span class="inline-block ${cls} text-[10px] px-2 py-0.5 rounded border m-0.5">${req}</span>`;
         });
 
@@ -332,9 +395,16 @@ function renderLists(items, container, isMissingList) {
 
         const card = document.createElement('div');
         card.className = "bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-lg cursor-pointer select-none relative animate-fade-in";
+        
         card.innerHTML = `
-            ${d.strDrinkThumb ? `<img src="${d.strDrinkThumb}" class="w-full h-32 object-cover rounded-lg mb-3">` : `<div class="w-full h-32 bg-slate-950 rounded-lg mb-3 flex items-center justify-center text-3xl">🍹</div>`}
+            ${d.strDrinkThumb ? `<img src="${d.strDrinkThumb}" class="w-full h-36 object-contain bg-slate-950/50 rounded-lg mb-3">` : `<div class="w-full h-36 bg-slate-950 rounded-lg mb-3 flex items-center justify-center text-4xl">🍹</div>`}
             <button onclick="toggleFavorite('${d.idDrink}', event)" class="absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-slate-800 text-sm z-10">${isFav ? '❤️' : '🤍'}</button>
+            
+            ${d.isCustom ? `
+            <button onclick="shareCustomRecipe('${d.idDrink}', event)" class="absolute top-6 left-6 bg-slate-950/80 p-2 rounded-full border border-slate-800 text-sm z-10">📤</button>
+            <button onclick="deleteCustomRecipe('${d.idDrink}', event)" class="absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10">🗑️</button>
+            ` : ''}
+            
             <div class="flex justify-between items-center">
                 <div>
                     <div class="flex gap-1 mb-1">
@@ -373,6 +443,35 @@ function renderLists(items, container, isMissingList) {
         fragment.appendChild(card);
     });
     container.appendChild(fragment);
+}
+
+function shareCustomRecipe(id, event) {
+    event.stopPropagation();
+    const recipe = customRecipes.find(r => r.idDrink === id);
+    if (!recipe) return;
+
+    const ingredientsText = recipe.customIngredients.map(i => `- ${i}`).join('\n');
+    const shareText = `🍹 *${recipe.strDrink}* (Özel Tarif)\n\n🔹 *Malzemeler:*\n${ingredientsText}\n\n🔸 *Hazırlanışı:*\n${recipe.strInstructions}\n\n_Bar Cepte ile hazırlandı!_`;
+
+    if (navigator.share) {
+        navigator.share({
+            title: recipe.strDrink,
+            text: shareText
+        }).catch(err => console.log('Paylaşım iptal:', err));
+    } else {
+        navigator.clipboard.writeText(shareText);
+        alert("Tarif metni panoya kopyalandı!");
+    }
+}
+
+function deleteCustomRecipe(id, event) {
+    event.stopPropagation();
+    if(confirm("Bu özel tarifi silmek istediğine emin misin?")) {
+        customRecipes = customRecipes.filter(r => r.idDrink !== id);
+        localStorage.setItem('customRecipes', JSON.stringify(customRecipes));
+        filterCocktails();
+        if(currentTab === 'my-recipes') renderMyRecipes();
+    }
 }
 
 function toggleFavorite(id, event) {
@@ -431,6 +530,8 @@ function saveCustomRecipe() {
     document.getElementById('custom-ingredients').value = "";
     document.getElementById('custom-instructions').value = "";
     alert("Kaydedildi!");
+    
+    if(currentTab === 'my-recipes') renderMyRecipes();
     filterCocktails();
 }
 
@@ -486,56 +587,79 @@ async function fetchDataWithIndexedDB() {
             renderIngredients(); 
             filterCocktails();
             
-            if(statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} Tarif Hazır (Çevrimdışı)`;
+            if(statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} Tarif Hazır`;
+            updateDataInBackground();
             return;
         }
 
         if(statusEl) statusEl.innerText = "İlk kurulum (Tarifler indiriliyor)...";
+        await fetchAndStoreData();
+
+    } catch {
+        if(statusEl) statusEl.innerText = "Bağlantı Hatası (Çevrimdışı)";
+    }
+}
+
+async function updateDataInBackground() {
+    try {
         const letters = 'abcdefghijklmnopqrstuvwxyz5'.split('');
         let apiDrinks = [];
 
         for (const l of letters) {
             const r = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/search.php?f=${l}`);
-            if (!r.ok) continue;
-            const d = await r.json();
-            if (d.drinks) apiDrinks.push(...d.drinks);
+            if (r.ok) {
+                const d = await r.json();
+                if (d.drinks) apiDrinks.push(...d.drinks);
+            }
+            await new Promise(res => setTimeout(res, 50)); 
         }
 
         const uniqueDrinks = new Map();
         apiDrinks.forEach(drink => uniqueDrinks.set(drink.idDrink, drink));
-        allCocktails = Array.from(uniqueDrinks.values());
+        const newCocktails = Array.from(uniqueDrinks.values());
 
-        const writeTx = db.transaction("cocktails", "readwrite");
-        const writeStore = writeTx.objectStore("cocktails");
-        allCocktails.forEach(drink => writeStore.put(drink));
+        if(newCocktails.length > allCocktails.length) {
+            const writeTx = db.transaction("cocktails", "readwrite");
+            const writeStore = writeTx.objectStore("cocktails");
+            newCocktails.forEach(drink => writeStore.put(drink));
+            
+            allCocktails = newCocktails;
+            autoExtractAllIngredients();
+            renderIngredients();
+            filterCocktails();
+            if(currentTab === 'my-recipes') renderMyRecipes();
+            
+            const statusEl = document.getElementById('status');
+            if(statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} Tarif Güncellendi`;
+        }
+    } catch (error) {}
+}
 
-        autoExtractAllIngredients();
-        renderIngredients();
-        filterCocktails();
+async function fetchAndStoreData() {
+    const letters = 'abcdefghijklmnopqrstuvwxyz5'.split('');
+    let apiDrinks = [];
 
-        if(statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} Tarif Hazır`;
-    } catch {
-        if(statusEl) statusEl.innerText = "Bağlantı Hatası (Çevrimdışı)";
+    for (const l of letters) {
+        try {
+            const r = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/search.php?f=${l}`);
+            if (!r.ok) continue;
+            const d = await r.json();
+            if (d.drinks) apiDrinks.push(...d.drinks);
+        } catch(e) {}
     }
-// game.js dosyasının en sonuna ekle
-function generateQRCode() {
-    const qrContainer = document.getElementById("qrcode");
-    
-    // Veriyi `exportUserData` ile aynı formatta hazırla
-    const data = { favorites: favoriteCocktails, customs: customRecipes, shopping: shoppingList };
-    const encrypted = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-    
-    // Alanı temizle ve gizliliği kaldır
-    qrContainer.innerHTML = "";
-    qrContainer.classList.remove("hidden");
 
-    // QR Kodu oluştur
-    new QRCode(qrContainer, {
-        text: encrypted,
-        width: 200,
-        height: 200,
-        colorDark: "#020617", // Tailwind slate-950 (temana uygun)
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-    });
-}}
+    const uniqueDrinks = new Map();
+    apiDrinks.forEach(drink => uniqueDrinks.set(drink.idDrink, drink));
+    allCocktails = Array.from(uniqueDrinks.values());
+
+    const writeTx = db.transaction("cocktails", "readwrite");
+    const writeStore = writeTx.objectStore("cocktails");
+    allCocktails.forEach(drink => writeStore.put(drink));
+
+    autoExtractAllIngredients();
+    renderIngredients();
+    filterCocktails();
+
+    const statusEl = document.getElementById('status');
+    if(statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} Tarif Hazır`;
+}
