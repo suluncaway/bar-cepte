@@ -517,4 +517,25 @@ async function fetchDataWithIndexedDB() {
     } catch {
         if(statusEl) statusEl.innerText = "Bağlantı Hatası (Çevrimdışı)";
     }
-}
+// game.js dosyasının en sonuna ekle
+function generateQRCode() {
+    const qrContainer = document.getElementById("qrcode");
+    
+    // Veriyi `exportUserData` ile aynı formatta hazırla
+    const data = { favorites: favoriteCocktails, customs: customRecipes, shopping: shoppingList };
+    const encrypted = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    
+    // Alanı temizle ve gizliliği kaldır
+    qrContainer.innerHTML = "";
+    qrContainer.classList.remove("hidden");
+
+    // QR Kodu oluştur
+    new QRCode(qrContainer, {
+        text: encrypted,
+        width: 200,
+        height: 200,
+        colorDark: "#020617", // Tailwind slate-950 (temana uygun)
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}}
