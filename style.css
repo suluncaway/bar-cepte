@@ -1,0 +1,95 @@
+/* Ultra-Modern Minimalist Lüks Bar Teması (VisionOS / Linear Tarzı Akrilik Cam) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+    --bg-main: #07090e;
+    --accent-gold: #f59e0b;
+    --accent-cyan: #06b6d4;
+    --border-glass: rgba(255, 255, 255, 0.08);
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    background-color: var(--bg-main);
+    background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245, 158, 11, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 50%, rgba(6, 182, 212, 0.08), transparent),
+        radial-gradient(ellipse 60% 40% at 0% 100%, rgba(139, 92, 246, 0.06), transparent);
+    background-attachment: fixed;
+    color: #f1f5f9;
+}
+
+/* Akrilik Cam Paneller */
+.acrylic-card {
+    background: rgba(15, 18, 25, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.acrylic-card:hover {
+    background: rgba(20, 24, 35, 0.8);
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 16px 40px -12px rgba(245, 158, 11, 0.12), 0 0 20px rgba(255, 255, 255, 0.02);
+    transform: translateY(-2px);
+}
+
+.acrylic-nav {
+    background: rgba(7, 9, 14, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Lüks Vurgular & Işıklar */
+.glow-gold {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+}
+
+.pill-btn {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pill-btn:active {
+    transform: scale(0.95);
+}
+
+/* Akıcı Kaydırma */
+.custom-scroll {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.custom-scroll::-webkit-scrollbar { display: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Detay Bölümü Pürüzsüz Akordeon */
+.details-section {
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+}
+.details-section.open {
+    max-height: 1400px;
+    opacity: 1;
+}
+
+@keyframes smoothFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-fade-in {
+    animation: smoothFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
