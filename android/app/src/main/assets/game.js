@@ -45,6 +45,17 @@ let db;
 let wakeLock = null;
 let deferredPwaPrompt = null;
 
+// XSS Sanitizasyonu (Güvenlik Önlemi)
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Bardak Tipi Sözlüğü
 const glassTranslations = {
     "highball glass": "🥤 Uzun Bardak (Highball)",
@@ -234,7 +245,7 @@ function getTechniqueBadge(instructions) {
 function getGlassBadge(glassStr) {
     if (!glassStr) return "🍸 Kokteyl Kadehi";
     const lower = glassStr.trim().toLowerCase();
-    return glassTranslations[lower] || `🍸 ${glassStr}`;
+    return glassTranslations[lower] || `🍸 ${escapeHTML(glassStr)}`;
 }
 
 // Türkçe Çeviri (Google Translate API + Cache)
@@ -466,8 +477,8 @@ function renderDashboard() {
     if(topContainer) {
         topContainer.innerHTML = selectedIngredients.map(id => {
             const item = popularIngredients.find(pi => pi.id === id);
-            const label = item ? `${item.emoji} ${item.name}` : id;
-            return `<span class="bg-slate-900/90 text-amber-300 border border-white/10 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5 font-medium">${label}</span>`;
+            const label = item ? `${item.emoji} ${escapeHTML(item.name)}` : escapeHTML(id);
+            return `<span class="bg-slate-900/90 text-amber-300 border border-white/10 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5 font-medium break-words">${label}</span>`;
         }).join('') || `<span class="text-slate-500 text-xs">Henüz barına malzeme eklemedin. 'Alkoller' veya 'Mutfak' sekmesinden malzeme seçebilirsin.</span>`;
     }
 }
@@ -517,18 +528,18 @@ function renderIngredients() {
         const isSelected = selectedIngredients.includes(ing.id);
         const card = document.createElement('div');
         card.className = isSelected 
-            ? "snap-center shrink-0 w-24 h-28 bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-300 rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-950 font-bold shadow-lg transition-transform active:scale-95"
-            : "snap-center shrink-0 w-24 h-28 acrylic-card rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-300 font-semibold hover:border-amber-500/30 transition-transform active:scale-95";
+            ? "snap-center shrink-0 w-24 h-28 bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-300 rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-950 font-bold shadow-lg transition-transform active:scale-95 min-w-0"
+            : "snap-center shrink-0 w-24 h-28 acrylic-card rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-300 font-semibold hover:border-amber-500/30 transition-transform active:scale-95 min-w-0";
         
         card.innerHTML = `
-            <div class="h-10 flex items-center justify-center mb-1">
+            <div class="h-10 flex items-center justify-center mb-1 shrink-0">
                 <img src="https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(ing.id)}-Small.png" 
-                     alt="${ing.name}" 
+                     alt="${escapeHTML(ing.name)}" 
                      class="max-h-full max-w-full object-contain drop-shadow-md"
                      loading="lazy"
                      onerror="this.outerHTML='<span class=\\'text-2xl\\'>${ing.emoji}</span>'">
             </div>
-            <span class="text-[11px] break-words w-full px-1 line-clamp-2 leading-tight">${ing.name}</span>
+            <span class="text-[11px] break-words w-full px-1 line-clamp-2 leading-tight overflow-hidden">${escapeHTML(ing.name)}</span>
         `;
         
         card.onclick = () => {
@@ -607,21 +618,22 @@ function updateSmartAdvice(missingMatches) {
     if (bestIng && maxVotes >= 1) {
         const encodedIng = encodeURIComponent(bestIng);
         const inShop = shoppingList.includes(bestIng);
+        const safeBestIng = escapeHTML(bestIng);
 
         const html = `
-            <div class="acrylic-card border-amber-500/30 p-4 rounded-3xl flex items-center justify-between gap-3 shadow-xl">
-                <div class="flex items-center gap-3.5">
+            <div class="acrylic-card border-amber-500/30 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl min-w-0 overflow-hidden">
+                <div class="flex items-center gap-3.5 min-w-0">
                     <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl shrink-0">
                         💡
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">AKILLI BAR ÖNERİSİ</p>
-                        <p class="text-xs text-slate-200 mt-0.5">
-                            Barına sadece <b class="text-amber-400 font-bold">${bestIng}</b> eklersen hemen <b class="text-emerald-400 font-bold">+${maxVotes} yeni kokteyl</b> yapabileceksin!
+                        <p class="text-xs text-slate-200 mt-0.5 break-words">
+                            Barına sadece <b class="text-amber-400 font-bold">${safeBestIng}</b> eklersen hemen <b class="text-emerald-400 font-bold">+${maxVotes} yeni kokteyl</b> yapabileceksin!
                         </p>
                     </div>
                 </div>
-                <div class="flex gap-2 shrink-0">
+                <div class="flex gap-2 shrink-0 w-full sm:w-auto justify-end pt-1 sm:pt-0">
                     <button onclick="toggleShoppingList(decodeURIComponent('${encodedIng}'), event)" class="pill-btn text-xs bg-white/5 text-slate-300 border border-white/10 px-3 py-1.5 rounded-xl font-medium hover:border-amber-500/40">
                         ${inShop ? '🛒 Listede' : '🛒 Listeye Ekle'}
                     </button>
@@ -636,7 +648,7 @@ function updateSmartAdvice(missingMatches) {
         banner.classList.remove('hidden');
 
         if (adviceBox && adviceText) {
-            adviceText.innerHTML = `Barına sadece <b class="text-amber-400">${bestIng}</b> alırsan, anında <b class="text-emerald-400">+${maxVotes} yeni kokteyl</b> hazırlayabilirsin!`;
+            adviceText.innerHTML = `Barına sadece <b class="text-amber-400">${safeBestIng}</b> alırsan, anında <b class="text-emerald-400">+${maxVotes} yeni kokteyl</b> hazırlayabilirsin!`;
             adviceBox.classList.remove('hidden');
         }
     } else {
@@ -831,12 +843,12 @@ function renderLists(items, container, isMissingList) {
             }
 
             const measureText = pair.measure 
-                ? `<b class="measure-span text-amber-300 ml-1 font-mono text-[10px]" data-raw="${pair.measure}">${pair.measure}</b>` 
+                ? `<b class="measure-span text-amber-300 ml-1 font-mono text-[10px]" data-raw="${escapeHTML(pair.measure)}">${escapeHTML(pair.measure)}</b>` 
                 : '';
 
             ingredientsHTML += `
-                <span class="inline-flex items-center ${cls} text-[11px] px-2.5 py-1 rounded-xl border m-0.5 shadow-sm">
-                    <span>${pair.name}</span>${measureText}
+                <span class="inline-flex items-center ${cls} text-[11px] px-2.5 py-1 rounded-xl border m-0.5 shadow-sm max-w-full overflow-hidden">
+                    <span class="break-words">${escapeHTML(pair.name)}</span>${measureText}
                 </span>
             `;
         });
@@ -844,10 +856,11 @@ function renderLists(items, container, isMissingList) {
         let missingTextHTML = isMissingList ? missingList.map(m => {
             const encodedM = encodeURIComponent(m);
             const inShop = shoppingList.includes(m);
+            const safeM = escapeHTML(m);
             return `
-            <div class="flex items-center justify-between mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20">
-                <p class="text-[11px] text-rose-300 font-medium">⚠️ Eksik: ${m}</p>
-                <button onclick="toggleShoppingList(decodeURIComponent('${encodedM}'), event)" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40">
+            <div class="flex items-center justify-between gap-2 mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20 min-w-0">
+                <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">⚠️ Eksik: ${safeM}</p>
+                <button onclick="toggleShoppingList(decodeURIComponent('${encodedM}'), event)" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40 shrink-0">
                     ${inShop ? '🛒 Çıkar' : '➕ Alışverişe Ekle'}
                 </button>
             </div>
@@ -857,11 +870,14 @@ function renderLists(items, container, isMissingList) {
         const card = document.createElement('div');
         const cardId = `card_${d.idDrink.replace(/[^a-zA-Z0-9_]/g, '_')}`;
         card.id = cardId;
-        card.className = "acrylic-card rounded-3xl p-4 shadow-xl cursor-pointer select-none relative animate-fade-in flex flex-col";
+        card.className = "acrylic-card rounded-3xl p-4 shadow-xl cursor-pointer select-none relative animate-fade-in flex flex-col min-w-0 overflow-hidden";
         
         const drinkIdEncoded = encodeURIComponent(d.idDrink);
         const glassBadge = getGlassBadge(d.strGlass);
         const techniqueBadge = getTechniqueBadge(d.strInstructions);
+        const safeDrinkName = escapeHTML(d.strDrink);
+        const safeServing = escapeHTML(d.strServing);
+        const safeInstructions = d.isCustom ? escapeHTML(d.strInstructions) : (d.strInstructionsTR ? escapeHTML(d.strInstructionsTR) : 'Çevriliyor...');
 
         card.innerHTML = `
             ${d.strDrinkThumb 
@@ -875,25 +891,25 @@ function renderLists(items, container, isMissingList) {
             <button onclick="deleteCustomRecipe(decodeURIComponent('${drinkIdEncoded}'), event)" class="pill-btn absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10 shadow-lg">🗑️</button>
             ` : ''}
             
-            <div class="flex justify-between items-start mt-auto">
-                <div>
+            <div class="flex justify-between items-start mt-auto min-w-0 gap-2">
+                <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap gap-1.5 mb-1.5">
-                        <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${d.computedTaste}</span>
+                        <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${escapeHTML(d.computedTaste)}</span>
                         <span class="text-[10px] font-semibold bg-black/30 text-slate-400 px-2 py-0.5 rounded-lg border border-white/5 font-mono">🔥 ~${d.computedCalories} kcal</span>
                     </div>
-                    <h3 class="font-extrabold text-white text-base leading-snug">${d.strDrink}</h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">${glassBadge}</p>
+                    <h3 class="font-extrabold text-white text-base leading-snug break-words hyphens-auto text-title-responsive">${safeDrinkName}</h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 break-words">${glassBadge}</p>
                 </div>
-                <span class="text-amber-400 text-xs font-bold toggle-icon shrink-0 pl-2 pt-1">Detay ▼</span>
+                <span class="text-amber-400 text-xs font-bold toggle-icon shrink-0 pl-1 pt-1">Detay ▼</span>
             </div>
             
-            ${isMissingList ? `<div class="mt-2.5 pt-2 border-t border-white/5 flex flex-col gap-1">${missingTextHTML}</div>` : ''}
+            ${isMissingList ? `<div class="mt-2.5 pt-2 border-t border-white/5 flex flex-col gap-1 min-w-0">${missingTextHTML}</div>` : ''}
             
-            <div class="details-section mt-2.5 space-y-3">
-                <!-- Porsiyon Kontrolü -->
-                <div class="flex items-center justify-between bg-black/30 p-2 rounded-2xl border border-white/5" onclick="event.stopPropagation()">
-                    <span class="text-[11px] text-slate-400 font-medium">👥 Porsiyon Çarpanı:</span>
-                    <div class="flex gap-1">
+            <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden">
+                <!-- Porsiyon Kontrolü (Taşmayan Esnek Düzen) -->
+                <div class="flex flex-wrap items-center justify-between gap-1.5 bg-black/30 p-2 rounded-2xl border border-white/5" onclick="event.stopPropagation()">
+                    <span class="text-[11px] text-slate-400 font-medium shrink-0">👥 Porsiyon:</span>
+                    <div class="flex flex-wrap gap-1 shrink-0">
                         <button onclick="changePortion('${cardId}', 1, this)" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold">1x</button>
                         <button onclick="changePortion('${cardId}', 2, this)" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">2x</button>
                         <button onclick="changePortion('${cardId}', 4, this)" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">4x</button>
@@ -902,7 +918,7 @@ function renderLists(items, container, isMissingList) {
                 </div>
 
                 <!-- Malzemeler ve Ölçüler -->
-                <div class="space-y-1">
+                <div class="space-y-1 min-w-0">
                     <span class="text-[11px] text-slate-400 font-medium block">Malzemeler & Ölçüler:</span>
                     <div class="flex flex-wrap">${ingredientsHTML}</div>
                 </div>
@@ -913,11 +929,11 @@ function renderLists(items, container, isMissingList) {
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${glassBadge}</span>
                 </div>
 
-                ${d.strServing ? `<div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-[11px] text-amber-300 italic">💡 <b>Servis/Garnitür:</b> ${d.strServing}</div>` : ''}
+                ${d.strServing ? `<div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-[11px] text-amber-300 italic break-words">💡 <b>Servis/Garnitür:</b> ${safeServing}</div>` : ''}
                 
-                <p class="text-xs text-slate-300 instruction-text bg-black/30 p-3 rounded-2xl border border-white/5 leading-relaxed">
+                <p class="text-xs text-slate-300 instruction-text bg-black/30 p-3 rounded-2xl border border-white/5 leading-relaxed break-words">
                     <b class="text-slate-400 text-[11px] block mb-1 uppercase tracking-wider font-semibold">Hazırlanışı:</b>
-                    <span>${d.isCustom ? d.strInstructions : (d.strInstructionsTR || 'Çevriliyor...')}</span>
+                    <span>${safeInstructions}</span>
                 </p>
             </div>
         `;
@@ -935,7 +951,7 @@ function renderLists(items, container, isMissingList) {
                         span.innerText = "Çevriliyor...";
                         d.strInstructionsTR = await translateToTurkish(d.strInstructions);
                     }
-                    span.innerText = d.strInstructionsTR;
+                    span.innerText = escapeHTML(d.strInstructionsTR);
                 }
             } else {
                 details.classList.remove('open');
@@ -1023,16 +1039,17 @@ function renderShoppingList() {
     container.innerHTML = "";
     shoppingList.forEach(item => {
         const row = document.createElement('div');
-        row.className = "flex items-center justify-between bg-black/30 p-3 rounded-2xl border border-white/5 shadow-sm";
+        row.className = "flex items-center justify-between gap-2 bg-black/30 p-3 rounded-2xl border border-white/5 shadow-sm min-w-0";
         const encodedItem = encodeURIComponent(item);
+        const safeItem = escapeHTML(item);
         row.innerHTML = `
-            <div class="flex items-center gap-2">
-                <span class="text-amber-400">🛒</span>
-                <span class="capitalize text-slate-200 font-semibold text-xs">${item}</span>
+            <div class="flex items-center gap-2 min-w-0">
+                <span class="text-amber-400 shrink-0">🛒</span>
+                <span class="capitalize text-slate-200 font-semibold text-xs break-words min-w-0">${safeItem}</span>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 shrink-0">
                 <button onclick="quickAddIngredientToBar(decodeURIComponent('${encodedItem}'), event); toggleShoppingList(decodeURIComponent('${encodedItem}'), event)" class="pill-btn text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold px-2.5 py-1 rounded-xl hover:bg-emerald-500/20">
-                    ✓ Aldım (Bara Ekle)
+                    ✓ Aldım
                 </button>
                 <button onclick="toggleShoppingList(decodeURIComponent('${encodedItem}'), event)" class="pill-btn text-rose-400 text-xs font-semibold px-2 py-1 hover:text-rose-300">
                     Sil

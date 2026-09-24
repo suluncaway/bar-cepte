@@ -8,6 +8,10 @@
     --border-glass: rgba(255, 255, 255, 0.08);
 }
 
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-tap-highlight-color: transparent;
@@ -18,6 +22,9 @@ body {
         radial-gradient(ellipse 60% 40% at 0% 100%, rgba(139, 92, 246, 0.06), transparent);
     background-attachment: fixed;
     color: #f1f5f9;
+    overflow-x: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Akrilik Cam Paneller */
@@ -28,6 +35,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.07);
     box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    min-width: 0; /* Taşan metinlerin flex/grid kutusunu patlatmasını önler */
 }
 
 .acrylic-card:hover {
@@ -38,7 +46,7 @@ body {
 }
 
 .acrylic-nav {
-    background: rgba(7, 9, 14, 0.85);
+    background: rgba(7, 9, 14, 0.88);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
@@ -75,7 +83,7 @@ body {
     opacity: 0;
 }
 .details-section.open {
-    max-height: 1400px;
+    max-height: 1600px;
     opacity: 1;
 }
 
@@ -92,4 +100,16 @@ body {
 
 .animate-fade-in {
     animation: smoothFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Mobil Metin Taşmalarına Karşı Özel İyileştirmeler */
+@media (max-width: 480px) {
+    .text-title-responsive {
+        font-size: 0.95rem;
+        line-height: 1.25;
+    }
+    .portion-btn {
+        padding: 2px 6px;
+        font-size: 9px;
+    }
 }

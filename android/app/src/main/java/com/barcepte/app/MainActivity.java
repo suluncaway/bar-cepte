@@ -43,8 +43,13 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(true);
+        
+        // Güvenlik Sıkılaştırması: Çapraz dosya erişimini engelle
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setAllowFileAccess(true); // Yerel assets yüklemesi için
         settings.setAllowContentAccess(true);
+
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setSupportZoom(false);
@@ -54,24 +59,25 @@ public class MainActivity extends Activity {
         // Donanım hızlandırma
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
-        // Sayfa içi gezinmeyi harici tarayıcıya göndermeme
+        // Güvenli URL Yönlendirmesi: Sadece yerel assets WebView içinde açılır, harici siteler sistem tarayıcısına gider
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url.startsWith("file://") || url.startsWith("https://") || url.startsWith("http://")) {
-                    return false;
+                if (url != null && url.startsWith("file:///android_asset/")) {
+                    return false; // Yerel uygulamada kal
                 }
+                // Harici bağlantıları (http, https, mailto vb.) güvenli varsayılan tarayıcıda aç
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                     startActivity(intent);
                     return true;
                 } catch (Exception e) {
-                    return false;
+                    return true;
                 }
             }
         });
 
-        // Fotoğraf yükleme desteği (Custom kokteyl görselleri için)
+        // Fotoğraf seçimi desteği
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
@@ -89,7 +95,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Yerel dosyaları doğrudan yükle (İnternetsiz de 100% çalışır)
+        // Yerel dosyaları doğrudan yükle
         webView.loadUrl("file:///android_asset/index.html");
     }
 
