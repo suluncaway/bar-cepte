@@ -1,0 +1,51 @@
+{
+  "name": "bar-cepte",
+  "productName": "Bar Cepte",
+  "version": "1.0.0",
+  "description": "Bar Cepte — Akıllı Bar & Kokteyl Asistanı",
+  "main": "main.js",
+  "author": "suluncaway",
+  "license": "MIT",
+  "homepage": "https://github.com/suluncaway/bar-cepte",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suluncaway/bar-cepte.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.barcepte.app",
+    "productName": "Bar Cepte",
+    "files": [
+      "index.html",
+      "style.css",
+      "game.js",
+      "manifest.json",
+      "sw.js",
+      "main.js",
+      "build/icon.png"
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "maintainer": "suluncaway"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
