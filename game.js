@@ -56,6 +56,12 @@ function escapeHTML(str) {
         .replace(/'/g, '&#39;');
 }
 
+// Güvenli Görsel Kaynağı (XSS koruması: yalnızca http(s) ve data:image izinli)
+function safeImageSrc(src) {
+    const s = String(src || '').trim();
+    return /^(https?:\/\/|data:image\/)/i.test(s) ? s : '';
+}
+
 // Bardak Tipi Sözlüğü
 const glassTranslations = {
     "highball glass": "🥤 Uzun Bardak (Highball)",
@@ -302,9 +308,12 @@ async function translateToTurkish(text) {
             "üzerine nazikçe dökün": "üstüne yavaşça dökün (yüzdürün)"
         };
 
-        for (const [badWord, goodWord] of Object.entries(trGlossary)) {
-            translatedText = translatedText.replace(new RegExp(`\\b${badWord}\\b`, "gi"), goodWord);
-        }
+        const trTerms = Object.entries(trGlossary).sort((a, b) => b[0].length - a[0].length);
+        const trRegex = new RegExp(trTerms.map(([k]) => `\\b${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).join('|'), 'gi');
+        translatedText = translatedText.replace(trRegex, m => {
+            const found = trTerms.find(([k]) => k.toLowerCase() === m.toLowerCase());
+            return found ? found[1] : m;
+        });
 
         return translatedText;
     } catch { 
@@ -462,9 +471,10 @@ function toggleOnlyFavoritesFilter() {
 }
 
 function renderDashboard() {
-    const total = popularIngredients.length;
+    const baseTotal = baseIngredients.length;
     const selected = selectedIngredients.length;
-    const rate = total > 0 ? Math.round((selected / total) * 100) : 0;
+    let rate = baseTotal > 0 ? Math.round((Math.min(selected, baseTotal) / baseTotal) * 100) : 0;
+    if (rate > 100) rate = 100;
     
     const fillRateEl = document.getElementById('bar-fill-rate');
     if(fillRateEl) fillRateEl.innerText = `${rate}%`;
@@ -481,6 +491,15 @@ function renderDashboard() {
             return `<span class="bg-slate-900/90 text-amber-300 border border-white/10 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5 font-medium break-words">${label}</span>`;
         }).join('') || `<span class="text-slate-500 text-xs">Henüz barına malzeme eklemedin. 'Alkoller' veya 'Mutfak' sekmesinden malzeme seçebilirsin.</span>`;
     }
+}
+
+function matchesAlcoholFilter(d) {
+    if (alcoholFilter === 'all') return true;
+    const a = String(d.strAlcoholic || '').trim().toLowerCase();
+    if (alcoholFilter === 'Alcoholic') {
+        return a === 'alcoholic' || a === 'optional alcohol';
+    }
+    return a === 'non alcoholic' || a === 'non_alcoholic' || a === 'nonalcoholic';
 }
 
 function setAlcoholFilter(filter) {
@@ -560,12 +579,19 @@ function clearSelection() {
     filterCocktails();
 }
 
+function ingredientNameOnly(str) {
+    const s = String(str || '').trim();
+    const m = s.match(/^[\d\s\/.,-]+(?:ml|oz|cl|dash(?:es)?|tsp|tbsp|gr|shot|parts?)?\s*(.*)$/i);
+    return m ? m[1].trim() : s;
+}
+
 function analyzeRecipe(drink) {
     let totalCal = 0;
     let tastes = { Sert: 0, Tatlı: 0, Ekşi: 0, Ferah: 0 };
     let reqs = drink.isCustom 
         ? (Array.isArray(drink.customIngredients) ? drink.customIngredients : [])
         : Array.from({length:15}, (_,i)=>drink[`strIngredient${i+1}`]).filter(Boolean);
+    reqs = reqs.map(ingredientNameOnly).filter(Boolean);
     
     reqs.forEach(r => {
         const match = popularIngredients.find(pi => pi.id.toLowerCase() === r.toLowerCase() || pi.name.toLowerCase() === r.toLowerCase());
@@ -657,10 +683,17 @@ function updateSmartAdvice(missingMatches) {
     }
 }
 
+function resolveIngredientName(name) {
+    const n = String(name || '').trim().toLowerCase();
+    const found = popularIngredients.find(pi => pi.id.toLowerCase() === n || pi.name.toLowerCase() === n);
+    return found ? found.id : String(name || '').trim();
+}
+
 function quickAddIngredientToBar(ingName, event) {
     if (event) event.stopPropagation();
-    if (!selectedIngredients.includes(ingName)) {
-        selectedIngredients.push(ingName);
+    const id = resolveIngredientName(ingName);
+    if (id && !selectedIngredients.includes(id)) {
+        selectedIngredients.push(id);
         try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
         renderIngredients();
         filterCocktails();
@@ -697,7 +730,7 @@ function filterCocktails() {
 
     let readyMatches = [];
     let missingMatches = [];
-    let pool = [...customRecipes, ...allCocktails].filter(d => alcoholFilter === 'all' || d.strAlcoholic === alcoholFilter);
+    let pool = [...customRecipes, ...allCocktails].filter(d => matchesAlcoholFilter(d));
 
     if (onlyFavoritesFilter) {
         pool = pool.filter(d => favoriteCocktails.includes(d.idDrink));
@@ -804,7 +837,7 @@ function renderLists(items, container, isMissingList) {
     }
 
     const fragment = document.createDocumentFragment();
-    items.slice(0, 40).forEach(item => {
+    items.slice(0, 200).forEach(item => {
         const d = isMissingList ? item.drink : item;
         const missingList = isMissingList ? item.missingList : [];
         const isFav = favoriteCocktails.includes(d.idDrink);
@@ -880,8 +913,8 @@ function renderLists(items, container, isMissingList) {
         const safeInstructions = d.isCustom ? escapeHTML(d.strInstructions) : (d.strInstructionsTR ? escapeHTML(d.strInstructionsTR) : 'Çevriliyor...');
 
         card.innerHTML = `
-            ${d.strDrinkThumb 
-                ? `<img src="${d.strDrinkThumb}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" onerror="this.outerHTML='<div class=\\'w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-4xl\\'>🍹</div>'">` 
+            ${d.strDrinkThumb && safeImageSrc(d.strDrinkThumb) 
+                ? `<img src="${escapeHTML(safeImageSrc(d.strDrinkThumb))}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" onerror="this.outerHTML='<div class=\\'w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-4xl\\'>🍹</div>'">` 
                 : `<div class="w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-4xl">🍹</div>`}
             
             <button onclick="toggleFavorite(decodeURIComponent('${drinkIdEncoded}'), event)" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50">${isFav ? '❤️' : '🤍'}</button>
@@ -963,7 +996,7 @@ function renderLists(items, container, isMissingList) {
     container.appendChild(fragment);
 }
 
-function shareCustomRecipe(id, event) {
+async function shareCustomRecipe(id, event) {
     if(event) event.stopPropagation();
     const recipe = customRecipes.find(r => r.idDrink === id);
     if (!recipe) return;
@@ -977,9 +1010,13 @@ function shareCustomRecipe(id, event) {
             title: recipe.strDrink,
             text: shareText
         }).catch(err => console.log('Paylaşım iptal:', err));
-    } else if (navigator.clipboard) {
-        navigator.clipboard.writeText(shareText);
-        alert("Tarif panoya kopyalandı!");
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+            await navigator.clipboard.writeText(shareText);
+            alert("Tarif panoya kopyalandı!");
+        } catch(err) {
+            alert("Kopyalama başarısız oldu. Tarif içeriği:\n\n" + shareText);
+        }
     } else {
         alert(shareText);
     }
@@ -1165,7 +1202,7 @@ async function saveCustomRecipe() {
 }
 
 async function exportUserData() {
-    const data = { favorites: favoriteCocktails, customs: customRecipes, shopping: shoppingList };
+    const data = { favorites: favoriteCocktails, customs: customRecipes, shopping: shoppingList, selected: selectedIngredients };
     const encrypted = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
     
     try {
@@ -1193,11 +1230,13 @@ function importUserData() {
         if(Array.isArray(decrypted.favorites)) favoriteCocktails = decrypted.favorites;
         if(Array.isArray(decrypted.customs)) customRecipes = decrypted.customs;
         if(Array.isArray(decrypted.shopping)) shoppingList = decrypted.shopping;
+        if(Array.isArray(decrypted.selected)) selectedIngredients = decrypted.selected;
         
         try {
             localStorage.setItem('favoriteCocktails', JSON.stringify(favoriteCocktails));
             localStorage.setItem('customRecipes', JSON.stringify(customRecipes));
             localStorage.setItem('shoppingList', JSON.stringify(shoppingList));
+            localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients));
         } catch(e) {}
         
         if (db) {

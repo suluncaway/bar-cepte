@@ -83,7 +83,7 @@ body {
     opacity: 0;
 }
 .details-section.open {
-    max-height: 1600px;
+    max-height: 4000px;
     opacity: 1;
 }
 
