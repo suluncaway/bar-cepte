@@ -31,17 +31,23 @@
 
 ## ⚡ İndirme
 
-> En güncel yükleyiciler otomatik olarak **GitHub Releases** üzerinde yayınlanır.
-> 👉 **[Son sürümü indir](https://github.com/suluncaway/bar-cepte/releases/latest)**
+Aşağıdaki linkler her zaman **en son sürümü** indirir. Geçmiş sürümler için: [Releases](https://github.com/suluncaway/bar-cepte/releases)
 
-| Platform | Dosya |
-| :---: | :--- |
-| 🪟 **Windows** | `Bar Cepte Setup 1.0.0.exe` (kurulum) · `Bar Cepte 1.0.0.exe` (taşınabilir) |
-| 🐧 **Linux** | `Bar Cepte 1.0.0.AppImage` · `bar-cepte_1.0.0_amd64.deb` |
-| 🤖 **Android** | `BarCepte-Debug-APK` (Actions artifact'i) |
-| 🌐 **Web / PWA** | Doğrudan `index.html` (herhangi bir statik sunucuda çalışır) |
+### 🪟 Windows
+- [⬇ **BarCepte-Setup.exe** — Kurulum](https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Setup.exe)
+- [⬇ **BarCepte-Portable.exe** — Taşınabilir (kurulum gerektirmez)](https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Portable.exe)
 
-**Tüm platformlar için:** [Releases sayfası](https://github.com/suluncaway/bar-cepte/releases)
+### 🐧 Linux
+- [⬇ **BarCepte-Linux.AppImage**](https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Linux.AppImage)
+- [⬇ **BarCepte-Linux.deb** — Debian / Ubuntu](https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Linux.deb)
+
+> 💡 **AppImage notu:** indirdikten sonra `chmod +x BarCepte-Linux.AppImage` çalıştırıp dosyaya çift tıklayarak açabilirsin.
+
+### 🤖 Android
+- [⬇ **APK** — Actions artifact'i](https://github.com/suluncaway/bar-cepte/actions)
+
+### 🌐 Web / PWA
+- `index.html` herhangi bir statik sunucuda doğrudan çalışır.
 
 ---
 

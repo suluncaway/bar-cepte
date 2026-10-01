@@ -1,7 +1,7 @@
 {
   "name": "bar-cepte",
   "productName": "Bar Cepte",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bar Cepte — Akıllı Bar & Kokteyl Asistanı",
   "main": "main.js",
   "author": {
@@ -47,7 +47,17 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "artifactName": "BarCepte-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "BarCepte-Portable.${ext}"
+    },
+    "appImage": {
+      "artifactName": "BarCepte-Linux.${ext}"
+    },
+    "deb": {
+      "artifactName": "BarCepte-Linux.${ext}"
     }
   }
 }
