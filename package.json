@@ -4,7 +4,10 @@
   "version": "1.0.0",
   "description": "Bar Cepte — Akıllı Bar & Kokteyl Asistanı",
   "main": "main.js",
-  "author": "suluncaway",
+  "author": {
+    "name": "suluncaway",
+    "email": "suluncaway@users.noreply.github.com"
+  },
   "license": "MIT",
   "homepage": "https://github.com/suluncaway/bar-cepte",
   "repository": {
@@ -38,8 +41,7 @@
     "linux": {
       "target": ["AppImage", "deb"],
       "icon": "build/icon.png",
-      "category": "Utility",
-      "maintainer": "suluncaway"
+      "category": "Utility"
     },
     "nsis": {
       "oneClick": false,
