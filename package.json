@@ -16,7 +16,8 @@
   },
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --publish never"
+    "dist": "electron-builder --publish never",
+    "sign": "powershell -ExecutionPolicy Bypass -File ./scripts/sign-exe.ps1"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -36,7 +37,9 @@
     ],
     "win": {
       "target": ["nsis", "portable"],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "certificateFile": "certs/BarCepte.pfx",
+      "certificatePassword": "BarCepte2026!"
     },
     "linux": {
       "target": ["AppImage", "deb"],
