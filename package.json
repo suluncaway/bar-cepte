@@ -33,6 +33,7 @@
       "manifest.json",
       "sw.js",
       "main.js",
+      "cocktails.json",
       "build/icon.png"
     ],
     "win": {

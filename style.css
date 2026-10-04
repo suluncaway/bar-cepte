@@ -113,3 +113,21 @@ body {
         font-size: 9px;
     }
 }
+
+/* Performans: Ekran Dışındaki Kartların Render Yükünü Erteleme */
+.cocktail-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto none auto 280px;
+}
+
+/* Zamanlayıcı Titreme/Puls Uyarısı */
+@keyframes timerPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(245, 158, 11, 0)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.7)); }
+}
+
+.timer-finish-anim {
+    animation: timerPulse 0.6s ease-in-out infinite;
+    color: #fbbf24 !important;
+}
+
