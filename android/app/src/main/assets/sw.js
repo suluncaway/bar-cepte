@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v10';
+const CACHE_NAME = 'bar-cepte-v11';
 const ASSETS = [
   './',
   './index.html',
