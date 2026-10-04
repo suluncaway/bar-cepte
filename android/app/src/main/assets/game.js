@@ -1889,6 +1889,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initDB();
     fetchDataWithIndexedDB();
     updateFavoritesFilterUI();
+
+    // Otomatik Sürüm Güncelleme Kontrolü (Açılıştan 2 sn sonra arka planda sessizce başlar)
+    setTimeout(() => {
+        checkForAppUpdates();
+    }, 2000);
 });
 
 async function fetchDataWithIndexedDB() {
@@ -2104,3 +2109,101 @@ async function forceSyncOnlineDatabase() {
     await updateDataInBackground(true);
     alert("Kokteyl veritabanı internet üzerinden başarıyla eşitlendi!");
 }
+
+// ==========================================
+// OTOMATİK SÜRÜM GÜNCELLEME SİSTEMİ (Android APK, Windows .exe, Web)
+// ==========================================
+const CURRENT_APP_VERSION = "1.1.0";
+
+function isNewerVersion(current, latest) {
+    const cleanCurr = String(current).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+    const cleanLat = String(latest).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(cleanCurr.length, cleanLat.length); i++) {
+        const c = cleanCurr[i] || 0;
+        const l = cleanLat[i] || 0;
+        if (l > c) return true;
+        if (l < c) return false;
+    }
+    return false;
+}
+
+async function checkForAppUpdates(manual = false) {
+    try {
+        const now = Date.now();
+        const lastCheck = parseInt(localStorage.getItem('bar_cepte_last_update_check') || '0', 10);
+        // Otomatik denetim günde 1 kez çalışır; manuel buton her zaman çalışır
+        if (!manual && (now - lastCheck < 24 * 60 * 60 * 1000)) {
+            return;
+        }
+
+        const resp = await fetch('https://api.github.com/repos/suluncaway/bar-cepte/releases/latest');
+        if (!resp.ok) {
+            if (manual) alert("Güncelleme sunucusuna erişilemedi.");
+            return;
+        }
+
+        localStorage.setItem('bar_cepte_last_update_check', String(now));
+        const release = await resp.json();
+        const latestTag = release.tag_name || '';
+
+        if (latestTag && isNewerVersion(CURRENT_APP_VERSION, latestTag)) {
+            showUpdateModal(release);
+        } else if (manual) {
+            alert(`Harika! Bar Cepte uygulamanız en güncel sürümde (v${CURRENT_APP_VERSION}).`);
+        }
+    } catch (e) {
+        if (manual) alert("Güncelleme denetimi sırasında bağlantı hatası oluştu.");
+    }
+}
+
+function showUpdateModal(release) {
+    const modal = document.getElementById('update-modal');
+    if (!modal) return;
+
+    const verEl = document.getElementById('update-version-text');
+    const notesEl = document.getElementById('update-notes-text');
+    const btn = document.getElementById('btn-update-download');
+    const btnLabel = document.getElementById('update-btn-label');
+
+    if (verEl) verEl.innerText = `${release.tag_name} Hazır! (Mevcut: v${CURRENT_APP_VERSION})`;
+    if (notesEl) {
+        notesEl.innerText = release.body 
+            ? release.body.replace(/###|\*\*|_/g, '').slice(0, 300) 
+            : "Yeni kokteyller, performans artışı ve hata düzeltmeleri.";
+    }
+
+    const ua = navigator.userAgent.toLowerCase();
+    const isElectron = ua.includes('electron');
+    const isAndroid = ua.includes('android') || (window.AndroidBridge !== undefined);
+
+    let targetUrl = release.html_url || 'https://github.com/suluncaway/bar-cepte/releases/latest';
+
+    if (isElectron) {
+        if (btnLabel) btnLabel.innerText = "Windows Güncellemesini İndir (.exe)";
+        const exeAsset = release.assets && release.assets.find(a => a.name.endsWith('.exe'));
+        if (exeAsset) targetUrl = exeAsset.browser_download_url;
+        else targetUrl = 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Setup.exe';
+    } else if (isAndroid) {
+        if (btnLabel) btnLabel.innerText = "Yeni APK'yı İndir & Güncelle";
+        const apkAsset = release.assets && release.assets.find(a => a.name.endsWith('.apk'));
+        if (apkAsset) targetUrl = apkAsset.browser_download_url;
+        else targetUrl = 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Debug.apk';
+    } else {
+        if (btnLabel) btnLabel.innerText = "Yenilikleri Gör & Sayfayı Yenile";
+        targetUrl = 'javascript:window.location.reload(true)';
+    }
+
+    if (btn) btn.href = targetUrl;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeUpdateModal() {
+    const modal = document.getElementById('update-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
