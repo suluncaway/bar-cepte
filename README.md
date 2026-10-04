@@ -9,6 +9,8 @@
 [![Downloads](https://img.shields.io/github/downloads/suluncaway/bar-cepte/total?label=indirme)](https://github.com/suluncaway/bar-cepte/releases)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android%20%7C%20Web-blueviolet)](#-i̇ndirme)
 
+**[🌍 Siteyi Canlı Ziyaret Et (Web / PWA)](https://suluncaway.github.io/bar-cepte/)**
+
 </div>
 
 ---
@@ -47,7 +49,9 @@ Aşağıdaki linkler her zaman **en son sürümü** indirir. Geçmiş sürümler
 - [⬇ **APK** — Actions artifact'i](https://github.com/suluncaway/bar-cepte/actions)
 
 ### 🌐 Web / PWA
-- `index.html` herhangi bir statik sunucuda doğrudan çalışır.
+- **Canlı Site:** [https://suluncaway.github.io/bar-cepte/](https://suluncaway.github.io/bar-cepte/)
+- Tarayıcıdan açıp kullanabilirsiniz. Telefonunuzda "Ana Ekrana Ekle" diyerek uygulama (PWA) olarak yükleyebilirsiniz.
+- `index.html` herhangi bir statik sunucuda da doğrudan çalışır.
 
 ---
 
