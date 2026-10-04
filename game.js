@@ -215,9 +215,29 @@ function translateIngredientName(ingName) {
     return ingName;
 }
 
+function convertOzToCl(text) {
+    if (!text) return text;
+    return text.replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d+(\.\d+)?)\s*(oz|ounces?)\b/gi, (match, numStr, _, unit) => {
+        let val = 0;
+        if (numStr.includes(' ') && numStr.includes('/')) {
+            const [whole, frac] = numStr.split(' ');
+            const [num, den] = frac.split('/');
+            val = parseFloat(whole) + (parseFloat(num) / parseFloat(den));
+        } else if (numStr.includes('/')) {
+            const [num, den] = numStr.split('/');
+            val = parseFloat(num) / parseFloat(den);
+        } else {
+            val = parseFloat(numStr);
+        }
+        const scaledVal = Math.round(val * 3 * 10) / 10;
+        const finalNum = scaledVal % 1 === 0 ? scaledVal.toFixed(0) : scaledVal.toFixed(1);
+        return `${finalNum} cl`;
+    }).replace(/\b(oz|ounces?)\b/gi, 'cl');
+}
+
 function translateMeasureText(measureStr) {
     if (!measureStr) return '';
-    let res = measureStr;
+    let res = convertOzToCl(measureStr);
     Object.keys(measureTranslations).sort((a, b) => b.length - a.length).forEach(key => {
         const regex = new RegExp(`\\b${key}\\b`, 'gi');
         res = res.replace(regex, measureTranslations[key]);
@@ -402,7 +422,7 @@ function getGlassBadge(glassStr) {
 async function translateToTurkish(text) {
     if (!text) return "Bilinmiyor.";
 
-    let preProcessedText = text;
+    let preProcessedText = convertOzToCl(text);
     const engGlossary = {
         "\\bmuddle\\b": "crush",
         "\\bmuddled\\b": "crushed",
