@@ -81,6 +81,150 @@ const glassTranslations = {
     "beer mug": "🍺 Bira Bardağı"
 };
 
+const measureTranslations = {
+    "dash": "damla",
+    "dashes": "damla",
+    "tsp": "çay kaşığı",
+    "tblsp": "yemek kaşığı",
+    "tbsp": "yemek kaşığı",
+    "part": "ölçü",
+    "parts": "ölçü",
+    "slice": "dilim",
+    "slices": "dilim",
+    "wedge": "dilim",
+    "wedges": "dilim",
+    "splash": "çok az",
+    "cube": "küp",
+    "cubes": "küp",
+    "cup": "bardak",
+    "cups": "bardak",
+    "pinch": "tutam",
+    "leaves": "yaprak",
+    "leaf": "yaprak",
+    "drop": "damla",
+    "drops": "damla",
+    "sprig": "dal",
+    "sprigs": "dal",
+    "twist": "burgu kabuk",
+    "peel": "kabuk",
+    "whole": "bütün",
+    "half": "yarım",
+    "ounce": "oz",
+    "ounces": "oz"
+};
+
+const ingredientTranslations = {
+    "vodka": "Votka",
+    "gin": "Cin",
+    "rum": "Rom",
+    "light rum": "Açık Rom",
+    "dark rum": "Siyah Rom",
+    "white rum": "Beyaz Rom",
+    "tequila": "Tekila",
+    "whiskey": "Viski",
+    "bourbon": "Burbon",
+    "scotch": "İskoç Viskisi",
+    "brandy": "Kanyak",
+    "cognac": "Konyak",
+    "triple sec": "Portakal Likörü",
+    "sweet vermouth": "Tatlı Vermut",
+    "dry vermouth": "Sek Vermut",
+    "campari": "Campari",
+    "amaretto": "Amaretto",
+    "lime juice": "Misket Limonu Suyu",
+    "lemon juice": "Limon Suyu",
+    "orange juice": "Portakal Suyu",
+    "pineapple juice": "Ananas Suyu",
+    "cranberry juice": "Kızılcık Suyu",
+    "grapefruit juice": "Greyfurt Suyu",
+    "apple juice": "Elma Suyu",
+    "tomato juice": "Domates Suyu",
+    "grenadine": "Nar Şurubu",
+    "simple syrup": "Şeker Şurubu",
+    "sugar syrup": "Şeker Şurubu",
+    "sugar": "Şeker",
+    "powdered sugar": "Pudra Şekeri",
+    "salt": "Tuz",
+    "pepper": "Karabiber",
+    "mint": "Nane",
+    "mint leaves": "Nane Yaprağı",
+    "ice": "Buz",
+    "water": "Su",
+    "soda water": "Maden Suyu",
+    "club soda": "Maden Suyu",
+    "tonic water": "Tonik",
+    "ginger ale": "Zencefilli Gazoz",
+    "ginger beer": "Zencefil Birası",
+    "cola": "Kola",
+    "sprite": "Sprite",
+    "7-up": "7-Up",
+    "milk": "Süt",
+    "cream": "Krema",
+    "heavy cream": "Koyu Krema",
+    "egg white": "Yumurta Akı",
+    "egg yolk": "Yumurta Sarısı",
+    "egg": "Yumurta",
+    "coffee": "Kahve",
+    "espresso": "Espresso",
+    "kahlua": "Kahve Likörü",
+    "baileys irish cream": "İrlanda Kreması",
+    "blue curacao": "Mavi Turunç Likörü",
+    "peach schnapps": "Şeftali Likörü",
+    "apple schnapps": "Elma Likörü",
+    "cointreau": "Cointreau",
+    "grand marnier": "Grand Marnier",
+    "galliano": "Galliano",
+    "midori": "Kavun Likörü",
+    "malibu": "Hindistan Cevizi Romu",
+    "champagne": "Şampanya",
+    "prosecco": "Prosecco",
+    "white wine": "Beyaz Şarap",
+    "red wine": "Kırmızı Şarap",
+    "beer": "Bira",
+    "ale": "Ale Bira",
+    "stout": "Stout Bira",
+    "cider": "Elma Şarabı",
+    "bitters": "Bitters",
+    "angostura bitters": "Angostura Bitters",
+    "orange bitters": "Portakal Bitters",
+    "lemon": "Limon",
+    "lime": "Misket Limonu",
+    "orange": "Portakal",
+    "cherry": "Kiraz",
+    "maraschino cherry": "Maraschino Kirazı",
+    "olive": "Zeytin",
+    "celery": "Kereviz",
+    "tabasco sauce": "Acı Sos",
+    "worcestershire sauce": "Worcestershire Sosu",
+    "cinnamon": "Tarçın",
+    "nutmeg": "Muskat",
+    "ginger": "Zencefil",
+    "honey": "Bal",
+    "agave syrup": "Agave Şurubu",
+    "maple syrup": "Akçaağaç Şurubu",
+    "chocolate": "Çikolata",
+    "cocoa powder": "Kakao Tozu"
+};
+
+function translateIngredientName(ingName) {
+    if (!ingName) return '';
+    const lower = ingName.trim().toLowerCase();
+    if (ingredientTranslations[lower]) return ingredientTranslations[lower];
+    const base = baseIngredients.find(b => b.id.toLowerCase() === lower);
+    if (base) return base.name;
+    return ingName;
+}
+
+function translateMeasureText(measureStr) {
+    if (!measureStr) return '';
+    let res = measureStr;
+    Object.keys(measureTranslations).sort((a, b) => b.length - a.length).forEach(key => {
+        const regex = new RegExp(`\\b${key}\\b`, 'gi');
+        res = res.replace(regex, measureTranslations[key]);
+    });
+    return res;
+}
+
 // IndexedDB Başlatma
 function initDB() {
     return new Promise((resolve) => {
@@ -277,7 +421,11 @@ async function translateToTurkish(text) {
         "\\bparts\\b": "measures",
         "\\bpart\\b": "measure",
         "\\bsplash\\b": "small amount",
-        "\\bfloat\\b": "pour gently on top"
+        "\\bfloat\\b": "pour gently on top",
+        "\\btsp\\b": "teaspoon",
+        "\\btbsp\\b": "tablespoon",
+        "\\bclub soda\\b": "soda water",
+        "\\boz\\b": "ounce"
     };
 
     for (const [engWord, simpleEng] of Object.entries(engGlossary)) {
@@ -305,7 +453,16 @@ async function translateToTurkish(text) {
             "ölçüler": "ölçü (part)",
             "küçük miktar": "çok az miktar (splash)",
             "buzun üzerine": "bol buzlu bardağa",
-            "üzerine nazikçe dökün": "üstüne yavaşça dökün (yüzdürün)"
+            "üzerine nazikçe dökün": "üstüne yavaşça dökün (yüzdürün)",
+            "çay kaşığı": "çay kaşığı (tsp)",
+            "yemek kaşığı": "yemek kaşığı (tbsp)",
+            "maden suyu": "maden suyu (soda)",
+            "soda suyu": "maden suyu",
+            "dilim": "dilim",
+            "buz kütlesi": "buz küpü",
+            "buz kütleleri": "buz küpleri",
+            "şeker şurubu": "şeker şurubu (simple syrup)",
+            "ons": "oz"
         };
 
         const trTerms = Object.entries(trGlossary).sort((a, b) => b[0].length - a[0].length);
@@ -875,13 +1032,16 @@ function renderLists(items, container, isMissingList) {
                 cls = "bg-black/30 text-slate-400 border-white/5";
             }
 
-            const measureText = pair.measure 
-                ? `<b class="measure-span text-amber-300 ml-1 font-mono text-[10px]" data-raw="${escapeHTML(pair.measure)}">${escapeHTML(pair.measure)}</b>` 
+            const trMeasure = translateMeasureText(pair.measure);
+            const trName = translateIngredientName(pair.name);
+
+            const measureText = trMeasure 
+                ? `<b class="measure-span text-amber-300 ml-1 font-mono text-[10px]" data-raw="${escapeHTML(trMeasure)}">${escapeHTML(trMeasure)}</b>` 
                 : '';
 
             ingredientsHTML += `
                 <span class="inline-flex items-center ${cls} text-[11px] px-2.5 py-1 rounded-xl border m-0.5 shadow-sm max-w-full overflow-hidden">
-                    <span class="break-words">${escapeHTML(pair.name)}</span>${measureText}
+                    <span class="break-words">${escapeHTML(trName)}</span>${measureText}
                 </span>
             `;
         });
@@ -889,7 +1049,8 @@ function renderLists(items, container, isMissingList) {
         let missingTextHTML = isMissingList ? missingList.map(m => {
             const encodedM = encodeURIComponent(m);
             const inShop = shoppingList.includes(m);
-            const safeM = escapeHTML(m);
+            const trMissingName = translateIngredientName(m);
+            const safeM = escapeHTML(trMissingName);
             return `
             <div class="flex items-center justify-between gap-2 mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20 min-w-0">
                 <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">⚠️ Eksik: ${safeM}</p>
