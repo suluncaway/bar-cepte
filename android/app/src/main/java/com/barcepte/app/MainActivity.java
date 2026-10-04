@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.ValueCallback;
@@ -14,14 +15,22 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import com.startapp.sdk.adsbase.StartAppSDK;
+import com.startapp.sdk.ads.banner.Banner;
 
 public class MainActivity extends Activity {
 
     private WebView webView;
+    private Banner startAppBanner;
     private ValueCallback<Uri[]> filePathCallback;
     private final static int FILE_CHOOSER_RESULT_CODE = 1001;
     private long backPressedTime = 0;
+
+    // Start.io Uygulama Kimliği
+    private static final String STARTIO_APP_ID = "209724229";
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -36,8 +45,43 @@ public class MainActivity extends Activity {
             window.setNavigationBarColor(0xFF07090E);
         }
 
+        // Start.io SDK Başlatma
+        StartAppSDK.init(this, STARTIO_APP_ID, false);
+        // Test aşamasında sahte reklam göstermek ve hesabı korumak için:
+        StartAppSDK.setTestAdsEnabled(true);
+
+        // Ana dikey düzen (Üstte WebView, en altta Start.io Banner)
+        LinearLayout rootLayout = new LinearLayout(this);
+        rootLayout.setOrientation(LinearLayout.VERTICAL);
+        rootLayout.setBackgroundColor(0xFF07090E);
+        rootLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+
+        // WebView kurulumu
         webView = new WebView(this);
-        setContentView(webView);
+        LinearLayout.LayoutParams webViewParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1.0f // Kalan tüm dikey alanı kapla
+        );
+        webView.setLayoutParams(webViewParams);
+        rootLayout.addView(webView);
+
+        // Start.io Banner Reklam Bileşeni
+        startAppBanner = new Banner(this);
+        LinearLayout.LayoutParams adParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        startAppBanner.setLayoutParams(adParams);
+        rootLayout.addView(startAppBanner);
+
+        // Reklamı yükle
+        startAppBanner.loadAd();
+
+        setContentView(rootLayout);
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -131,3 +175,5 @@ public class MainActivity extends Activity {
         }
     }
 }
+
+

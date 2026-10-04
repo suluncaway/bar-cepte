@@ -30,4 +30,8 @@ android {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
+    // Start.io (StartApp) SDK - Google Play şartı olmayan APK reklam ağı
+    implementation 'com.startapp:inapp-sdk:5.+'
 }
+
+
