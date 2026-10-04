@@ -48,6 +48,12 @@
                     <span>📲</span> <span>Yükle</span>
                 </button>
 
+                <!-- Geliştiriciye Destek Ol (Buy Me a Coffee) -->
+                <a href="https://buymeacoffee.com/suluncaway" target="_blank" rel="noopener noreferrer" title="Geliştiriciye Bir Kahve Ismarla" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-semibold text-amber-300 flex items-center gap-1.5 hover:bg-amber-500/20">
+                    <span>☕</span>
+                    <span class="hidden sm:inline">Destek Ol</span>
+                </a>
+
                 <!-- Alkol Filtresi Segmenti -->
                 <div class="flex bg-slate-900/90 p-0.5 rounded-xl border border-white/10 text-[11px] font-semibold">
                     <button id="btn-all-alcohol" onclick="setAlcoholFilter('all')" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all shadow-sm">Hepsi</button>
@@ -251,6 +257,28 @@
                 <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
             </section>
 
+            <!-- Sponsorlu / Önerilen Bar Ekipmanı (Affiliate Kartı) -->
+            <section id="affiliate-banner" class="p-4 rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-slate-900 border border-amber-500/25 shadow-xl relative overflow-hidden">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                            🍸
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] uppercase tracking-wider font-extrabold bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">ÖNERİ</span>
+                                <span class="text-xs font-bold text-white truncate">Paslanmaz Shaker & Bar Seti</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">Evde kokteyl hazırlamak için gereken tüm temel ekipmanlar</p>
+                        </div>
+                    </div>
+                    <a href="https://www.amazon.com.tr/s?k=kokteyl+shaker+seti" target="_blank" rel="noopener noreferrer" class="pill-btn shrink-0 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-1 transition-all">
+                        <span>İncele</span>
+                        <span class="text-[10px]">↗</span>
+                    </a>
+                </div>
+            </section>
+
             <section>
                 <div class="flex items-center justify-between mb-3.5">
                     <h2 id="title-missing" class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
@@ -262,6 +290,16 @@
                 <div id="recipes-missing" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
             </section>
         </div>
+
+        <!-- Alt Bilgi & Destek -->
+        <footer class="mt-12 text-center text-xs text-slate-500 space-y-2 pb-6">
+            <p class="font-medium text-slate-400">Bar Cepte — Akıllı Bar & Kokteyl Asistanı</p>
+            <div class="flex items-center justify-center gap-3 text-[11px]">
+                <a href="https://buymeacoffee.com/suluncaway" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:underline flex items-center gap-1 font-semibold">☕ Kahve Ismarla</a>
+                <span class="text-slate-700">•</span>
+                <a href="https://www.amazon.com.tr/s?k=kokteyl+shaker+seti" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white flex items-center gap-1">🛒 Bar Ekipmanları</a>
+            </div>
+        </footer>
     </main>
 
     <!-- Barmen Zamanlayıcısı (Shaker & Stir Timer) Modal -->
