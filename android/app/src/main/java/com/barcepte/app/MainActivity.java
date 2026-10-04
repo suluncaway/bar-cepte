@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -18,8 +19,11 @@ import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.startapp.sdk.adsbase.StartAppSDK;
 import com.startapp.sdk.ads.banner.Banner;
+import com.startapp.sdk.adsbase.Ad;
+import com.startapp.sdk.adsbase.StartAppAd;
+import com.startapp.sdk.adsbase.StartAppSDK;
+import com.startapp.sdk.adsbase.adlisteners.AdEventListener;
 
 public class MainActivity extends Activity {
 
@@ -49,6 +53,8 @@ public class MainActivity extends Activity {
         StartAppSDK.init(this, STARTIO_APP_ID, false);
         // Test aşamasında sahte reklam göstermek ve hesabı korumak için:
         StartAppSDK.setTestAdsEnabled(true);
+        // Açılışta pat diye splash reklam çıkmasını engelle (kullanıcı dostu):
+        StartAppAd.disableSplash();
 
         // Ana dikey düzen (Üstte WebView, en altta Start.io Banner)
         LinearLayout rootLayout = new LinearLayout(this);
@@ -139,8 +145,48 @@ public class MainActivity extends Activity {
             }
         });
 
+        // Web arayüzü ile iletişim köprüsü (Akıllı reklam sayacı)
+        webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
+
         // Yerel dosyaları doğrudan yükle
         webView.loadUrl("file:///android_asset/index.html");
+    }
+
+    // Web arayüzü ile Android arasındaki akıllı reklam köprüsü
+    public class AndroidBridge {
+        private int recipeCounter = 0;
+        private long lastAdTime = 0;
+        private StartAppAd startAppAd;
+
+        @JavascriptInterface
+        public void onRecipeOpened() {
+            recipeCounter++;
+            long now = System.currentTimeMillis();
+
+            // Kullanıcıyı kesinlikle boğmamak için akıllı eşik:
+            // 1) En az 5 farklı kokteyl açılmış olmalı (recipeCounter >= 5)
+            // 2) Son reklamın üzerinden en az 2.5 dakika (150.000 ms) geçmiş olmalı
+            if (recipeCounter >= 5 && (now - lastAdTime >= 150000)) {
+                runOnUiThread(() -> {
+                    if (startAppAd == null) {
+                        startAppAd = new StartAppAd(MainActivity.this);
+                    }
+                    startAppAd.loadAd(new AdEventListener() {
+                        @Override
+                        public void onReceiveAd(Ad ad) {
+                            startAppAd.showAd();
+                        }
+
+                        @Override
+                        public void onFailedToReceiveAd(Ad ad) {
+                            // Reklam gelmezse sessizce geç
+                        }
+                    });
+                });
+                recipeCounter = 0;
+                lastAdTime = now;
+            }
+        }
     }
 
     @Override

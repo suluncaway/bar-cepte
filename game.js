@@ -1516,6 +1516,11 @@ function createCocktailCardElement(item, isMissingList) {
                 triggerHaptic('light');
                 details.classList.add('open');
                 icon.innerText = "Kapat ▲";
+
+                // Android uygulaması için akıllı reklam tetikleyicisi
+                if (window.AndroidBridge && typeof window.AndroidBridge.onRecipeOpened === 'function') {
+                    try { window.AndroidBridge.onRecipeOpened(); } catch (err) {}
+                }
                 if (!d.isCustom) {
                     if (!d.strInstructionsTR) {
                         span.textContent = "Çevriliyor...";
