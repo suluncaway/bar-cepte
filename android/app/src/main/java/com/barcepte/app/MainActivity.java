@@ -51,8 +51,8 @@ public class MainActivity extends Activity {
 
         // Start.io SDK Başlatma
         StartAppSDK.init(this, STARTIO_APP_ID, false);
-        // Test aşamasında sahte reklam göstermek ve hesabı korumak için:
-        StartAppSDK.setTestAdsEnabled(true);
+        // Gerçek para kazanma modu aktif (Test modu kapatıldı)
+        StartAppSDK.setTestAdsEnabled(false);
         // Açılışta pat diye splash reklam çıkmasını engelle (kullanıcı dostu):
         StartAppAd.disableSplash();
 
