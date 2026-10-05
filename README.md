@@ -46,7 +46,7 @@ Aşağıdaki linkler her zaman **en son sürümü** indirir. Geçmiş sürümler
 > 💡 **AppImage notu:** indirdikten sonra `chmod +x BarCepte-Linux.AppImage` çalıştırıp dosyaya çift tıklayarak açabilirsin.
 
 ### 🤖 Android
-- [⬇ **APK** — Actions artifact'i](https://github.com/suluncaway/bar-cepte/actions)
+- [⬇ **BarCepte.apk** — Doğrudan APK İndir (En Son Sürüm)](https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte.apk)
 
 ### 🌐 Web / PWA
 - **Canlı Site:** [https://suluncaway.github.io/bar-cepte/](https://suluncaway.github.io/bar-cepte/)
