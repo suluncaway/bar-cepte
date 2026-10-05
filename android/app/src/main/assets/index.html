@@ -32,50 +32,52 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 shrink-0">
                 <!-- Barmen Zamanlayıcısı (Sayaç) -->
-                <button id="btn-open-timer" onclick="openTimerModal(15, 'Buzla kuvvetlice çalkala (Shaker)')" title="Barmen Sayacı (Shaker / Karıştırma)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10">
+                <button id="btn-open-timer" onclick="openTimerModal(15, 'Buzla kuvvetlice çalkala (Shaker)')" title="Barmen Sayacı (Shaker / Karıştırma)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
                     <span>⏱️</span>
                     <span class="hidden sm:inline">Sayaç</span>
                 </button>
 
                 <!-- Barmen Modu (Ekran Uyanık Kalma) -->
-                <button id="btn-wake-lock" onclick="toggleWakeLock()" title="Kokteyl yaparken ekranın kapanmasını önler" class="pill-btn px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10">
+                <button id="btn-wake-lock" onclick="toggleWakeLock()" title="Kokteyl yaparken ekranın kapanmasını önler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
                     <span id="wake-icon">💡</span>
-                    <span id="wake-status">Ekran Koru</span>
+                    <span id="wake-status" class="hidden sm:inline">Ekran Koru</span>
                 </button>
 
                 <!-- PWA Yükleme Butonu -->
-                <button id="btn-pwa-install" onclick="installPWA()" class="hidden pill-btn px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[11px] font-bold text-amber-400 flex items-center gap-1.5 hover:bg-amber-500/20">
-                    <span>📲</span> <span>Yükle</span>
+                <button id="btn-pwa-install" onclick="installPWA()" class="hidden pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[11px] font-bold text-amber-400 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
+                    <span>📲</span> <span class="hidden sm:inline">Yükle</span>
                 </button>
 
                 <!-- Geliştiriciye Destek Ol (Buy Me a Coffee) -->
-                <a href="https://buymeacoffee.com/suluncaway" target="_blank" rel="noopener noreferrer" title="Geliştiriciye Bir Kahve Ismarla" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-semibold text-amber-300 flex items-center gap-1.5 hover:bg-amber-500/20">
+                <a href="https://buymeacoffee.com/suluncaway" target="_blank" rel="noopener noreferrer" title="Geliştiriciye Bir Kahve Ismarla" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-semibold text-amber-300 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
                     <span>☕</span>
                     <span class="hidden sm:inline">Destek Ol</span>
                 </a>
-
-                <!-- Alkol Filtresi Segmenti -->
-                <div class="flex bg-slate-900/90 p-0.5 rounded-xl border border-white/10 text-[11px] font-semibold">
-                    <button id="btn-all-alcohol" onclick="setAlcoholFilter('all')" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all shadow-sm">Hepsi</button>
-                    <button id="btn-alcoholic" onclick="setAlcoholFilter('Alcoholic')" class="px-2.5 py-1 rounded-lg text-slate-400 transition-all hover:text-white">Alkollü</button>
-                    <button id="btn-non-alcoholic" onclick="setAlcoholFilter('Non_Alcoholic')" class="px-2.5 py-1 rounded-lg text-slate-400 transition-all hover:text-white">Alkolsüz</button>
-                </div>
             </div>
         </div>
 
-        <!-- Tat ve Favori Filtreleri -->
+        <!-- Tat, Alkol ve Favori Filtreleri -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-medium no-scrollbar">
-            <button id="btn-fav-filter" onclick="toggleOnlyFavoritesFilter()" class="pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-rose-400 border border-white/10 shrink-0 flex items-center gap-1.5 hover:border-rose-500/40">
+            <!-- Alkol Filtresi Segmenti -->
+            <div class="flex bg-slate-900/90 p-0.5 rounded-xl border border-white/10 shrink-0 text-[11px] font-semibold">
+                <button id="btn-all-alcohol" onclick="setAlcoholFilter('all')" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap transition-all shadow-sm">Hepsi</button>
+                <button id="btn-alcoholic" onclick="setAlcoholFilter('Alcoholic')" class="px-2.5 py-1 rounded-lg text-slate-400 whitespace-nowrap transition-all hover:text-white">Alkollü</button>
+                <button id="btn-non-alcoholic" onclick="setAlcoholFilter('Non_Alcoholic')" class="px-2.5 py-1 rounded-lg text-slate-400 whitespace-nowrap transition-all hover:text-white">Alkolsüz</button>
+            </div>
+
+            <div class="w-px h-4 bg-white/10 shrink-0"></div>
+
+            <button id="btn-fav-filter" onclick="toggleOnlyFavoritesFilter()" class="pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-rose-400 border border-white/10 shrink-0 flex items-center gap-1.5 hover:border-rose-500/40 whitespace-nowrap">
                 <span>❤️</span> <span id="fav-filter-text">Favorilerim (0)</span>
             </button>
             <div class="w-px h-4 bg-white/10 shrink-0"></div>
-            <button data-taste="all" onclick="setTasteFilter('all', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm">Tüm Tatlar</button>
-            <button data-taste="Sert" onclick="setTasteFilter('Sert', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white hover:border-white/20">🔥 Sert</button>
-            <button data-taste="Tatlı" onclick="setTasteFilter('Tatlı', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white hover:border-white/20">🍭 Tatlı</button>
-            <button data-taste="Ekşi" onclick="setTasteFilter('Ekşi', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white hover:border-white/20">🍋 Ekşi</button>
-            <button data-taste="Ferah" onclick="setTasteFilter('Ferah', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white hover:border-white/20">🍃 Ferah</button>
+            <button data-taste="all" onclick="setTasteFilter('all', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 whitespace-nowrap shadow-sm">Tüm Tatlar</button>
+            <button data-taste="Sert" onclick="setTasteFilter('Sert', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🔥 Sert</button>
+            <button data-taste="Tatlı" onclick="setTasteFilter('Tatlı', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍭 Tatlı</button>
+            <button data-taste="Ekşi" onclick="setTasteFilter('Ekşi', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍋 Ekşi</button>
+            <button data-taste="Ferah" onclick="setTasteFilter('Ferah', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍃 Ferah</button>
         </div>
 
         <!-- Arama ve Eylemler -->

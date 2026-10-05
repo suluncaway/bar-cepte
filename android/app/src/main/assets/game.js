@@ -940,11 +940,11 @@ function setAlcoholFilter(filter) {
     alcoholFilter = filter;
     ['btn-all-alcohol', 'btn-alcoholic', 'btn-non-alcoholic'].forEach(id => {
         const el = document.getElementById(id);
-        if(el) el.className = "px-2.5 py-1 rounded-lg text-slate-400 transition-all hover:text-white";
+        if(el) el.className = "px-2.5 py-1 rounded-lg text-slate-400 whitespace-nowrap transition-all hover:text-white";
     });
     const activeId = filter === 'all' ? 'btn-all-alcohol' : filter === 'Alcoholic' ? 'btn-alcoholic' : 'btn-non-alcoholic';
     const activeEl = document.getElementById(activeId);
-    if(activeEl) activeEl.className = "px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all shadow-sm";
+    if(activeEl) activeEl.className = "px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap transition-all shadow-sm";
     filterCocktails();
 }
 
