@@ -8,7 +8,7 @@
     "name": "suluncaway",
     "email": "suluncaway@users.noreply.github.com"
   },
-  "license": "MIT",
+  "license": "UNLICENSED",
   "engines": {
     "node": ">=22.12.0"
   },

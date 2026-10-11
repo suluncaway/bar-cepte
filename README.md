@@ -4,7 +4,7 @@
 
 **Akıllı Bar & Kokteyl Asistanı** — Elindeki malzemeleri seç, hangi kokteylleri yapabileceğini anında gör.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/suluncaway/bar-cepte?label=son%20s%C3%BCr%C3%BCm)](https://github.com/suluncaway/bar-cepte/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/suluncaway/bar-cepte/total?label=indirme)](https://github.com/suluncaway/bar-cepte/releases)
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android%20%7C%20Web-blueviolet)](#-i̇ndirme)
@@ -112,5 +112,5 @@ bar-cepte/
 
 ## 📄 Lisans
 
-[MIT](LICENSE) © 2026 [suluncaway](https://github.com/suluncaway)
+[All Rights Reserved (Tüm Hakları Saklıdır)](LICENSE) © 2026 [suluncaway](https://github.com/suluncaway)
 
