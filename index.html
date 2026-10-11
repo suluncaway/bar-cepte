@@ -584,21 +584,40 @@
                     </div>
                 </div>
 
-                <!-- Paket Seçimi (Shopier) -->
-                <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500/15 via-slate-900 to-black border border-amber-500/40 space-y-2">
-                    <div class="flex flex-wrap items-center justify-between gap-1.5">
-                        <span class="text-[11px] sm:text-xs font-bold text-amber-400 uppercase tracking-wide">Ömür Boyu Erişim (Lifetime Pass)</span>
-                        <span class="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/30 shrink-0">TEK SEFERLİK</span>
+                <!-- Abonelik Planı Seçimi -->
+                <div class="space-y-2.5">
+                    <div class="flex p-1 rounded-2xl bg-black/60 border border-white/10 gap-1 text-[11px] font-bold">
+                        <button type="button" data-plan="monthly" class="reserve-plan-tab flex-1 py-1.5 px-2 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer">
+                            Aylık
+                        </button>
+                        <button type="button" data-plan="annual" class="reserve-plan-tab flex-1 py-1.5 px-2 rounded-xl bg-amber-500 text-slate-950 shadow-sm transition-all font-black cursor-pointer">
+                            ⭐ Yıllık
+                        </button>
+                        <button type="button" data-plan="lifetime" class="reserve-plan-tab flex-1 py-1.5 px-2 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer">
+                            Ömür Boyu
+                        </button>
                     </div>
-                    <div class="flex items-baseline justify-between pt-1">
-                        <div class="text-2xl font-black text-white">249 ₺ <span class="text-xs font-normal text-slate-400 line-through ml-1">499 ₺</span></div>
-                        <span class="text-[11px] text-amber-300/80">Sonsuza kadar senin</span>
+
+                    <!-- Seçili Paket Kartı (Dinamik) -->
+                    <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500/15 via-slate-900 to-black border border-amber-500/40 space-y-2">
+                        <div class="flex flex-wrap items-center justify-between gap-1.5">
+                            <span id="reserve-plan-title" class="text-[11px] sm:text-xs font-bold text-amber-400 uppercase tracking-wide">Yıllık Reserve (En Popüler)</span>
+                            <span id="reserve-plan-badge" class="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/30 shrink-0">%36 TASARRUF</span>
+                        </div>
+                        <div class="flex items-baseline justify-between pt-1">
+                            <div class="text-2xl font-black text-white">
+                                <span id="reserve-plan-price">299 ₺</span>
+                                <span id="reserve-plan-period" class="text-xs font-normal text-slate-400 ml-1">/ yıl</span>
+                            </div>
+                            <span id="reserve-plan-subtitle" class="text-[11px] text-amber-300/80">24.90 ₺/ay — %36 Tasarruf</span>
+                        </div>
+                        <p id="reserve-plan-desc" class="text-[11px] text-slate-300">12 ay boyunca kesintisiz reklamsız VIP deneyim ve tüm güncellemeler.</p>
+                        <a id="btn-shopier-checkout" href="https://www.shopier.com" target="_blank" rel="noopener noreferrer" class="pill-btn w-full mt-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black py-2.5 sm:py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 text-xs transition-all">
+                            <span>💳</span>
+                            <span id="reserve-checkout-label">Shopier ile Güvenli Satın Al (299 ₺)</span>
+                            <span class="text-[10px]">↗</span>
+                        </a>
                     </div>
-                    <a id="btn-shopier-checkout" href="https://www.shopier.com" target="_blank" rel="noopener noreferrer" class="pill-btn w-full mt-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black py-2.5 sm:py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 text-xs transition-all">
-                        <span>💳</span>
-                        <span>Shopier ile Güvenli Satın Al</span>
-                        <span class="text-[10px]">↗</span>
-                    </a>
                 </div>
 
                 <!-- Aktivasyon Kodu Girişi -->
@@ -621,7 +640,11 @@
                 </div>
                 <div>
                     <h4 class="text-lg font-black text-amber-400">Reserve Üyeliğiniz Aktif!</h4>
-                    <p class="text-xs text-slate-300 mt-1">Tüm ayrıcalıklar, gizli kokteyller ve reklamsız deneyim bu cihazda devrede.</p>
+                    <div class="flex items-center justify-center gap-2 mt-2 flex-wrap">
+                        <span id="reserve-active-plan-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500 text-slate-950">Yıllık Plan</span>
+                        <span id="reserve-active-duration" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-amber-300 border border-white/10">⏳ 365 Gün Kaldı</span>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-2">Tüm ayrıcalıklar, gizli kokteyller ve reklamsız deneyim bu cihazda devrede.</p>
                 </div>
                 <div class="p-3 bg-white/5 rounded-2xl border border-white/10 text-xs text-slate-400">
                     Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde! 🍸

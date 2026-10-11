@@ -131,5 +131,50 @@ test('alcohol subcategory filter chips and grouping are present in index.html an
     assert.match(js, /function getAlcoholGroup/);
     assert.match(js, /function setAlcoholSubCategory/);
 });
+test('Reserve subscription plans and dynamic elements are present in index.html and reserve.js', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    const reserve = require('../reserve.js');
+
+    assert.match(html, /data-plan="monthly"/);
+    assert.match(html, /data-plan="annual"/);
+    assert.match(html, /data-plan="lifetime"/);
+    assert.match(html, /id="reserve-plan-title"/);
+    assert.match(html, /id="reserve-plan-price"/);
+    assert.match(html, /id="reserve-active-plan-badge"/);
+    assert.match(html, /id="reserve-active-duration"/);
+
+    assert.ok(reserve.PLANS_CONFIG.monthly);
+    assert.ok(reserve.PLANS_CONFIG.annual);
+    assert.ok(reserve.PLANS_CONFIG.lifetime);
+    assert.equal(reserve.getPlanDisplayName('monthly'), 'Aylık Abonelik (Monthly Pass)');
+    assert.equal(reserve.getPlanDisplayName('annual'), 'Yıllık Abonelik (Annual Pass)');
+    assert.equal(reserve.getPlanDisplayName('lifetime'), 'Ömür Boyu VIP (Lifetime Pass)');
+});
+test('Reserve key generation and validation works for monthly, annual, and lifetime plans', () => {
+    const reserve = require('../reserve.js');
+    const { execSync } = require('node:child_process');
+
+    const output = execSync('node scripts/generate-keys.js --plan=all --count=1', { encoding: 'utf8' });
+    assert.match(output, /monthly:/);
+    assert.match(output, /annual:/);
+    assert.match(output, /lifetime:/);
+
+    const mthMatch = output.match(/monthly:\s+(RESERVE-MTH1-[A-Z0-9]+-[A-Z0-9]+)/);
+    const annMatch = output.match(/annual:\s+(RESERVE-ANN1-[A-Z0-9]+-[A-Z0-9]+)/);
+    const lifeMatch = output.match(/lifetime:\s+(RESERVE-LIFE-[A-Z0-9]+-[A-Z0-9]+)/);
+
+    assert.ok(mthMatch);
+    assert.ok(annMatch);
+    assert.ok(lifeMatch);
+
+    assert.ok(reserve.validateLicenseKey(mthMatch[1]));
+    assert.ok(reserve.validateLicenseKey(annMatch[1]));
+    assert.ok(reserve.validateLicenseKey(lifeMatch[1]));
+
+    assert.equal(reserve.getPlanFromKey(mthMatch[1]), 'monthly');
+    assert.equal(reserve.getPlanFromKey(annMatch[1]), 'annual');
+    assert.equal(reserve.getPlanFromKey(lifeMatch[1]), 'lifetime');
+});
+
 
 
