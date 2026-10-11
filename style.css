@@ -49,6 +49,8 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--accent-gold
 .topbar button { border-radius: 6px; min-height: 37px; background: transparent; border-color: var(--border-glass); font-weight: 500; font-size: var(--text-xs); padding: 8px 12px; box-shadow: none; }
 .topbar button:hover { background: var(--surface-raised); }
 .topbar [data-support-button] { color: var(--accent-gold); border-color: #5c553d; }
+.topbar #btn-open-reserve { color: #fcd34d; border-color: rgba(245, 158, 11, 0.45); background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(217, 119, 6, 0.1)); }
+.topbar #btn-open-reserve:hover { border-color: #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.25); }
 .main-navigation { max-width: 1200px; margin: auto; padding: 0 28px; display: flex; gap: 28px; overflow-x: auto; scrollbar-width: none; }
 .main-navigation::-webkit-scrollbar { display:none; }
 .main-navigation > button { position: relative; flex-shrink: 0; min-height: 46px; padding: 8px 0 14px; border: 0; border-radius: 0; color: var(--muted); background: transparent; font-size: 13px; font-weight: 500; }
@@ -148,6 +150,7 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--accent-gold
 dialog { margin:auto; }
 dialog::backdrop { background:rgba(0,0,0,.7); }
 #shaker-timer-modal > div,#update-modal > div { background:#172922; border-radius:12px; border-color:#526346; }
+#reserve-modal .acrylic-card { background:#14231e; border-color:rgba(213,180,123,.35); box-sizing:border-box; }
 .pill-btn { transition:background .2s,color .2s,transform .2s; }
 .pill-btn:active { transform:scale(.98); }
 .animate-fade-in { animation:fadeIn .24s ease both; }
@@ -172,14 +175,17 @@ dialog::backdrop { background:rgba(0,0,0,.7); }
 }
 @media (max-width:640px) {
     html { scroll-padding-top:123px; }
-    .topbar { height:73px; padding:0 18px; }
-    .brand-mark { width:32px; height:39px; }
+    .topbar { height:73px; padding:0 14px; gap:8px; }
+    .brand-mark { width:32px; height:39px; flex-shrink:0; }
     .brand-mark svg { width:28px; height:28px; }
-    .topbar > .gap-3 { gap:9px; }
-    .topbar h1 { font-size:27px; }
-    #status { font-size:12px; margin-top:4px; }
-    .topbar button { width:33px; min-height:33px; padding:6px; border-radius:5px; justify-content:center; }
-    .topbar > .shrink-0 { gap:5px; }
+    .topbar > .gap-3 { gap:8px; min-width:0; }
+    .topbar h1 { font-size:clamp(19px, 5.2vw, 25px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; }
+    #reserve-brand-badge { font-size:7px!important; padding:1px 4px!important; letter-spacing:0.5px!important; flex-shrink:0; }
+    #status { font-size:11px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .topbar button { width:33px; min-height:33px; padding:6px; border-radius:5px; justify-content:center; flex-shrink:0; }
+    .topbar > .shrink-0 { gap:4px; flex-shrink:0; }
+    #reserve-modal { padding:12px; }
+    #reserve-modal .acrylic-card { padding:18px 16px; border-radius:18px; max-height:88dvh; }
     .main-navigation { padding:0 18px; gap:24px; }
     .main-navigation > button { font-size:12px; min-height:43px; }
     .app-main { padding:0 18px; }
@@ -223,6 +229,11 @@ dialog::backdrop { background:rgba(0,0,0,.7); }
     .app-footer > p { font-size:12px; }
     .app-footer > div { flex-direction:column; gap:8px; }
     #bar-dashboard > .acrylic-card,#custom-recipe-panel > .acrylic-card,#my-recipes-panel > .acrylic-card,#shopping-list-panel > .acrylic-card,#sync-panel > .acrylic-card { padding:20px 16px; }
+}
+@media (max-width:360px) {
+    .topbar { padding:0 10px; gap:6px; }
+    .topbar > .shrink-0 { gap:3px; }
+    .topbar button { width:30px; min-height:30px; padding:4px; font-size:11px; }
 }
 @media (prefers-reduced-motion:reduce) {
     *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }

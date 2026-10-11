@@ -100,3 +100,27 @@ test('editorial layout keeps all original UI bindings and local-only hero assets
     assert.match(html, /id="editorial-picks-grid"/);
     assert.ok(fs.existsSync('editorial-cocktails.webp'));
 });
+test('Bar Cepte Reserve membership module validates keys and updates state', () => {
+    const reserve = require('../reserve.js');
+    assert.ok(reserve.validateLicenseKey('RESERVE-SULUNCA-2026'));
+    assert.ok(reserve.validateLicenseKey('BARCEPTE-RESERVE-VIP'));
+    assert.equal(reserve.validateLicenseKey('INVALID-KEY'), false);
+    assert.equal(reserve.validateLicenseKey('RESERVE-1111-2222-3333'), false);
+    assert.ok(fs.existsSync('reserve.js'));
+    assert.ok(fs.existsSync('scripts/generate-keys.js'));
+});
+test('Reserve UI elements and modal are present in index.html', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    assert.match(html, /id="btn-open-reserve"/);
+    assert.match(html, /id="reserve-modal"/);
+    assert.match(html, /src="reserve\.js"/);
+});
+test('Reserve UI elements and modal are responsive on mobile without overflow', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    const css = fs.readFileSync('style.css', 'utf8');
+    assert.match(html, /id="reserve-btn-label"[^>]*class="[^"]*hidden sm:inline/);
+    assert.match(html, /id="reserve-key-input"[^>]*min-w-0/);
+    assert.match(css, /#reserve-modal/);
+    assert.match(css, /#btn-open-reserve/);
+});
+

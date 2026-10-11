@@ -62,11 +62,15 @@
     function applyReserveUI() {
         const active = isReserveActive();
         
-        // Reklam alanlarını gizle / göster
+        // Reklam alanlarını ve sponsor kartlarını gizle / göster
         const adSlots = document.querySelectorAll('.ad-slot-container');
         adSlots.forEach(slot => {
             slot.style.display = active ? 'none' : '';
         });
+        const affiliateBanner = document.getElementById('affiliate-banner');
+        if (affiliateBanner) {
+            affiliateBanner.style.display = active ? 'none' : '';
+        }
 
         // Üst başlıktaki logo yanına RESERVE rozeti ekle
         const brandHeading = document.querySelector('.topbar h1');
@@ -124,6 +128,18 @@
         const msgEl = document.getElementById('reserve-key-msg');
         const deactivateBtn = document.getElementById('btn-deactivate-reserve');
 
+        if (keyInput) {
+            keyInput.addEventListener('input', () => {
+                keyInput.value = keyInput.value.toUpperCase();
+            });
+            keyInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activateBtn) activateBtn.click();
+                }
+            });
+        }
+
         if (openBtn && modal) {
             openBtn.addEventListener('click', () => {
                 applyReserveUI();
@@ -138,6 +154,18 @@
                 modal.classList.remove('flex');
                 if (msgEl) msgEl.textContent = '';
                 if (keyInput) keyInput.value = '';
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeBtn.click();
+                }
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeBtn.click();
+                }
             });
         }
 
