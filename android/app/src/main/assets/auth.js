@@ -492,6 +492,10 @@
                 });
 
                 container.innerHTML = '';
+                container.style.colorScheme = 'light';
+                if (container.parentElement) {
+                    container.parentElement.style.colorScheme = 'light';
+                }
                 root.google.accounts.id.renderButton(container, {
                     theme: 'filled_black',
                     size: 'large',
