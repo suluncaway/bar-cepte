@@ -53,3 +53,23 @@ test('UI contains no executable inline handlers, scripts or CDN runtime', () => 
     assert.match(html, /script-src-attr 'none'/);
     assert.match(html, /object-src 'none'/);
 });
+test('support buttons open the owner-confirmed profile with opener isolation', () => {
+    const vm = require('node:vm');
+    const handlers = [];
+    const opened = [];
+    const button = { addEventListener: (type, handler) => handlers.push(handler) };
+    const sandbox = {
+        URL,
+        document: {
+            querySelectorAll: () => [button, button],
+            getElementById: () => ({addEventListener: () => {}})
+        },
+        window: {open: (...args) => opened.push(args)}
+    };
+    vm.runInNewContext(fs.readFileSync('support.js', 'utf8'), sandbox);
+    handlers.forEach(handler => handler());
+    assert.equal(opened.length, 2);
+    for (const args of opened) {
+        assert.deepEqual(args, ['https://buymeacoffee.com/suluncau', '_blank', 'noopener,noreferrer']);
+    }
+});

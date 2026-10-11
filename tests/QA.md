@@ -22,3 +22,11 @@ Desktop installers and Android runtime require separate native build/device vali
 - Eight Node security regression tests passed.
 - New Service Worker controlled a reload and 441 recipes remained available with the browser offline. An injected inline script probe was blocked by CSP.
 - Dependency audit: no critical/high findings; 8 moderate findings remain in optional desktop build dependencies. Production-only and optional-excluded audits return zero.
+
+## Support profile follow-up, 2026-10-11
+
+- Owner supplied `https://buymeacoffee.com/suluncau`; the public profile opens and describes Bar Cepte.
+- Both header and footer buttons opened that exact profile in Chromium; the new page had `window.opener === null`.
+- Nine Node security regression tests passed, including the shared support handler.
+- Service Worker cache version advanced to `bar-cepte-v14-support`.
+- No payment was submitted or tested.

@@ -32,7 +32,7 @@ Bu çalışma kapsamlı sızma testi veya “tüm açıklar kapandı” garantis
 
 ## Destek bağlantısı
 
-Eski `buymeacoffee.com/suluncaway` profili kontrol sırasında bulunamadı. Doğru, herkese açık ve sahibince onaylanan destek adresi `support.js` içindeki `SUPPORT_URL` değerine eklenmelidir. Boşken düğmeler ödeme sayfasına yönlenmez, açıklama gösterir.
+Eski `buymeacoffee.com/suluncaway` profili kontrol sırasında bulunamadı. Kullanıcının verdiği https://buymeacoffee.com/suluncau adresi 11 Ekim 2026 tarihinde açılarak doğrulandı ve `support.js` içindeki `SUPPORT_URL` değerine eklendi. Üst ve alt destek düğmeleri bu adresi `noopener,noreferrer` ile açar. Ödeme yapılmadı; ödeme işleminin tamamlanması test edilmedi.
 
 ## Tekrarlanabilir kontroller
 

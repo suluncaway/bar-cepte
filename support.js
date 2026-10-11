@@ -1,6 +1,6 @@
 // Set only to a verified public support page owned by the project maintainer.
 // Never put account credentials, payment secrets or private banking data here.
-const SUPPORT_URL = '';
+const SUPPORT_URL = 'https://buymeacoffee.com/suluncau';
 document.querySelectorAll('[data-support-button]').forEach(button => {
     button.addEventListener('click', () => {
         if (!SUPPORT_URL) {
