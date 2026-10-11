@@ -2,6 +2,8 @@
 // Never put account credentials, payment secrets or private banking data here.
 const SUPPORT_URL = 'https://buymeacoffee.com/suluncau';
 document.querySelectorAll('[data-support-button]').forEach(button => {
+    // Static links work without JavaScript; do not open a second tab for them.
+    if (button.tagName === 'A') return;
     button.addEventListener('click', () => {
         if (!SUPPORT_URL) {
             document.getElementById('support-dialog').showModal();

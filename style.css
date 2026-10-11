@@ -1,5 +1,5 @@
 /* Ultra-Modern Minimalist Lüks Bar Teması (VisionOS / Linear Tarzı Akrilik Cam) */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Bree+Serif&display=swap');
 
 :root {
     --bg-main: #07090e;
@@ -11,6 +11,27 @@
 dialog::backdrop {
     background: rgba(0, 0, 0, 0.7);
 }
+
+/* Static support link: supplied colors/type, without a third-party script. */
+.coffee-support-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 10px 20px;
+    border: 2px solid #000000;
+    border-radius: 12px;
+    background: #FFDD00;
+    color: #000000;
+    font: 20px/1.2 'Bree Serif', Georgia, serif;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 150ms ease, transform 150ms ease;
+}
+.coffee-support-link:hover { background: #ffe642; transform: translateY(-1px); }
+.coffee-support-link:focus-visible { outline: 3px solid #ffffff; outline-offset: 4px; }
+.coffee-support-cup { width: 26px; height: 32px; flex: none; }
 
 *, *::before, *::after {
     box-sizing: border-box;

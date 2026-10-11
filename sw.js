@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v14-support';
+const CACHE_NAME = 'bar-cepte-v15-coffee-button';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./', './index.html', './style.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',

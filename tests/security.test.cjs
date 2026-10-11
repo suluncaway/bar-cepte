@@ -73,3 +73,15 @@ test('support buttons open the owner-confirmed profile with opener isolation', (
         assert.deepEqual(args, ['https://buymeacoffee.com/suluncau', '_blank', 'noopener,noreferrer']);
     }
 });
+test('static coffee link works without third-party scripts or duplicate popup handlers', () => {
+    const vm = require('node:vm');
+    const html = fs.readFileSync('index.html', 'utf8');
+    assert.match(html, /class="coffee-support-link" href="https:\/\/buymeacoffee.com\/suluncau" target="_blank" rel="noopener noreferrer"/);
+    assert.doesNotMatch(html, /<script[^>]+buymeacoffee/);
+    vm.runInNewContext(fs.readFileSync('support.js', 'utf8'), {
+        document: {
+            querySelectorAll: () => [{tagName: 'A', addEventListener: () => assert.fail('Duplicate popup handler')}],
+            getElementById: () => ({addEventListener: () => {}})
+        }
+    });
+});
