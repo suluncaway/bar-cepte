@@ -906,11 +906,11 @@ function setAlcoholSubCategory(subCat, btnEl) {
     triggerHaptic('light');
     currentAlcoholSubCat = subCat;
     document.querySelectorAll('#alcohol-subcategories .alcohol-subcat-btn').forEach(b => {
-        b.className = "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white";
+        b.className = "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap";
     });
     const target = btnEl || document.querySelector(`#alcohol-subcategories .alcohol-subcat-btn[data-value="${subCat}"]`);
     if (target) {
-        target.className = "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm";
+        target.className = "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm whitespace-nowrap";
     }
     renderIngredients();
 }
@@ -1204,37 +1204,37 @@ function renderIngredients() {
         card.setAttribute('aria-pressed', String(isSelected));
         card.tabIndex = 0;
         card.className = isSelected 
-            ? "snap-center shrink-0 w-24 h-28 bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-300 rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-950 font-bold shadow-lg transition-transform active:scale-95 min-w-0"
-            : "snap-center shrink-0 w-24 h-28 acrylic-card rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-300 font-semibold hover:border-amber-500/30 transition-transform active:scale-95 min-w-0";
+            ? "snap-center shrink-0 w-[100px] sm:w-[108px] min-h-[124px] sm:min-h-[128px] bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-300 rounded-2xl flex flex-col items-center justify-start p-2 text-center gap-1 cursor-pointer text-slate-950 font-bold shadow-lg transition-transform active:scale-95 min-w-0"
+            : "snap-center shrink-0 w-[100px] sm:w-[108px] min-h-[124px] sm:min-h-[128px] acrylic-card rounded-2xl flex flex-col items-center justify-start p-2 text-center gap-1 cursor-pointer text-slate-300 font-semibold hover:border-amber-500/30 transition-transform active:scale-95 min-w-0";
         
         const groupTag = (ing.cat === 'alkol')
-            ? `<span class="text-[9px] ${isSelected ? 'text-slate-900/90 font-bold' : 'text-amber-400/80 font-medium'} tracking-tight truncate max-w-full px-0.5 line-clamp-1">${escapeHTML(getAlcoholGroupLabel(getAlcoholGroup(ing)))}</span>`
+            ? `<span class="ingredient-group-tag text-[9px] ${isSelected ? 'text-slate-950 font-black bg-black/15' : 'text-amber-400 font-bold bg-amber-500/15 border border-amber-500/25'}">${escapeHTML(getAlcoholGroupLabel(getAlcoholGroup(ing)))}</span>`
             : '';
 
         card.innerHTML = `
-            <div class="h-9 flex items-center justify-center mb-0.5 shrink-0">
+            <div class="h-8 sm:h-9 flex items-center justify-center mb-0.5 shrink-0">
                 <img src="https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(ing.id)}-Small.png" 
                      alt="${escapeHTML(ing.name)}" 
                      class="max-h-full max-w-full object-contain drop-shadow-md"
                      loading="lazy" data-image-fallback>
             </div>
-            <span class="text-[11px] break-words w-full px-1 line-clamp-1 leading-tight overflow-hidden">${escapeHTML(ing.name)}</span>
+            <span class="ingredient-name text-[11px] leading-tight font-semibold text-center w-full px-0.5 break-words line-clamp-2">${escapeHTML(ing.name)}</span>
             ${groupTag}
         `;
         
-        card.onclick = () => {
+        card.addEventListener('click', () => {
             triggerHaptic('light');
             selectedIngredients = isSelected ? selectedIngredients.filter(i => i !== ing.id) : [...selectedIngredients, ing.id];
             try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
             renderIngredients();
             filterCocktails();
-        };
-        card.onkeydown = event => {
+        });
+        card.addEventListener('keydown', event => {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 card.click();
             }
-        };
+        });
         container.appendChild(card);
     });
 }
