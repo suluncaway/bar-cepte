@@ -12,7 +12,7 @@ const ROOT = __dirname;
 const PUBLIC_FILES = new Set([
   '/index.html', '/style.css', '/tailwind.css', '/game.js', '/security.js',
   '/ui-bindings.js', '/dynamic-ui.js', '/support.js', '/manifest.json', '/sw.js',
-  '/cocktails.json', '/icon.png', '/build/icon.png'
+  '/cocktails.json', '/icon.png', '/build/icon.png', '/editorial-ui.js', '/editorial-cocktails.webp'
 ]);
 
 const MIME = {
@@ -21,6 +21,7 @@ const MIME = {
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
+  '.webp': 'image/webp',
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',

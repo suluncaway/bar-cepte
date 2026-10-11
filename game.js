@@ -796,12 +796,21 @@ function switchTab(tab) {
     currentTab = tab;
     ['tab-bar', 'tab-alkol', 'tab-mutfak', 'tab-favorites', 'tab-custom', 'tab-my-recipes', 'tab-shop', 'tab-sync'].forEach(t => {
         const el = document.getElementById(t);
-        if(el) el.className = "text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white";
+        if(el) {
+            el.className = "text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white";
+            el.removeAttribute('aria-current');
+        }
     });
     
     const activeTab = document.getElementById(`tab-${tab}`);
     if(activeTab) {
         activeTab.className = "bg-amber-500/15 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded-xl shrink-0 transition-all font-bold";
+        activeTab.setAttribute('aria-current', 'page');
+    }
+    document.getElementById('editorial-hero')?.classList.toggle('hidden', !['alkol', 'mutfak'].includes(tab));
+    document.getElementById('discovery-controls')?.classList.toggle('hidden', !['alkol', 'mutfak', 'favorites'].includes(tab));
+    if (!['alkol', 'mutfak', 'favorites'].includes(tab)) {
+        document.getElementById('smart-recommendation-banner')?.classList.add('hidden');
     }
 
     const sections = ['bar-dashboard', 'ingredients-section', 'custom-recipe-panel', 'my-recipes-panel', 'shopping-list-panel', 'sync-panel', 'recipes-display-sections'];
@@ -846,6 +855,7 @@ function switchTab(tab) {
         renderIngredients();
         filterCocktails();
     }
+    window.scrollTo({top: 0, behavior: 'instant'});
 }
 
 function setKitchenSubCategory(subCat, btnEl) {
@@ -968,6 +978,10 @@ function renderIngredients() {
     const container = document.getElementById('ingredients-container');
     if (!container) return;
     container.innerHTML = '';
+    const summary = document.getElementById('selection-summary');
+    if (summary) summary.textContent = selectedIngredients.length
+        ? `${selectedIngredients.length} malzeme barına eklendi`
+        : 'Malzemelerini seçerek başla';
     
     const searchVal = document.getElementById('ing-search')?.value.toLowerCase().trim() || "";
     
@@ -984,6 +998,10 @@ function renderIngredients() {
     filtered.forEach(ing => {
         const isSelected = selectedIngredients.includes(ing.id);
         const card = document.createElement('div');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', ing.name);
+        card.setAttribute('aria-pressed', String(isSelected));
+        card.tabIndex = 0;
         card.className = isSelected 
             ? "snap-center shrink-0 w-24 h-28 bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-300 rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-950 font-bold shadow-lg transition-transform active:scale-95 min-w-0"
             : "snap-center shrink-0 w-24 h-28 acrylic-card rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-300 font-semibold hover:border-amber-500/30 transition-transform active:scale-95 min-w-0";
@@ -1004,6 +1022,12 @@ function renderIngredients() {
             try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
             renderIngredients();
             filterCocktails();
+        };
+        card.onkeydown = event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                card.click();
+            }
         };
         container.appendChild(card);
     });
@@ -1240,12 +1264,26 @@ function filterCocktails() {
     if (!readyContainer || !missingContainer) return;
 
     updateFavoritesFilterUI();
+    const isDiscovery = selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter;
+    document.getElementById('editorial-picks')?.classList.toggle('hidden', !isDiscovery);
+    document.getElementById('ready-section')?.classList.toggle('hidden', isDiscovery);
+    document.getElementById('missing-section')?.classList.toggle('hidden', isDiscovery);
 
     if (cocktailSearch && document.getElementById('recipes-display-sections')?.classList.contains('hidden')) {
         switchTab('alkol');
     }
 
     if (selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter) {
+        const preferred = ['11003', '11007', '17212'];
+        const discoveryPool = allCocktails.filter(matchesAlcoholFilter);
+        discoveryPool.forEach(enrichDrink);
+        const picks = discoveryPool.filter(d => tasteFilter === 'all' || d.computedTaste === tasteFilter)
+            .sort((a, b) => {
+                const rank = id => preferred.includes(id) ? preferred.indexOf(id) : 99;
+                return rank(a.idDrink) - rank(b.idDrink);
+            }).slice(0, 3);
+        const picksGrid = document.getElementById('editorial-picks-grid');
+        if (picksGrid) renderLists(picks, picksGrid, false);
         readyContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">Yukarıdan malzeme seçerek veya kokteyl adı aratarak kokteylleri keşfedebilirsin.</div>`;
         missingContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">Henüz seçili malzeme yok.</div>`;
         const countReadyEl = document.getElementById('count-ready');

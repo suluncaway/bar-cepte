@@ -82,3 +82,13 @@ test('original user-supplied coffee widget is preserved with a narrow CSP except
     assert.doesNotMatch(html, /coffee-support-link|coffee-support-cup/);
     assert.match(html, /script-src-attr 'none'/);
 });
+test('editorial layout keeps all original UI bindings and local-only hero assets', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    for (let i = 0; i < 46; i++) {
+        assert.equal(html.split(`data-ui="ui-${i}"`).length - 1, 1, `ui-${i} must exist once`);
+    }
+    assert.match(html, /src="editorial-cocktails.webp"/);
+    assert.match(html, /src="editorial-ui.js"/);
+    assert.match(html, /id="editorial-picks-grid"/);
+    assert.ok(fs.existsSync('editorial-cocktails.webp'));
+});

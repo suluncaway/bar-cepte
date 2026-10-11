@@ -42,6 +42,8 @@
       "ui-bindings.js",
       "dynamic-ui.js",
       "support.js",
+      "editorial-ui.js",
+      "editorial-cocktails.webp",
       "manifest.json",
       "sw.js",
       "main.js",
