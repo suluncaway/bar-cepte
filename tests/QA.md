@@ -33,3 +33,11 @@ Desktop installers and Android runtime require separate native build/device vali
 - Supplied button styling was implemented as a static link with yellow background, black text/outline, white cup and Bree Serif. No third-party executable widget script was added.
 - Desktop and 375px mobile footer screenshots inspected; no horizontal overflow. Footer click opened one profile tab with a null opener.
 - Ten Node regression tests passed after the static-link change.
+
+## Exact embed correction, 2026-10-11
+
+- At the user's explicit request, replaced the static lookalike with their exact original script tag and every supplied attribute unchanged.
+- CSP permits only the specific Buy Me a Coffee script URL in addition to same-origin scripts; no inline-script or eval exception was added.
+- Local Chromium: the vendor generated one `.bmc-btn`, Bree Serif loaded, desktop/mobile screenshots inspected, no page errors or CSP violations, no horizontal overflow at 375px.
+- Clicking the vendor button opened `https://buymeacoffee.com/suluncau`; opener isolation was verified. No payment was submitted.
+- Ten tests passed, including exact-snippet equality. Cache version is now `bar-cepte-v16-original-widget`.

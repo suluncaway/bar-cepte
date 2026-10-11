@@ -3,7 +3,7 @@
 ## Web düzeltmeleri
 
 - HTML içi JavaScript olay işleyicileri kaldırıldı. Dinamik tarif ve alışveriş butonları parametreleri kod yerine veri olarak işliyor.
-- CSP: yalnızca aynı kaynaktan script; inline script, olay öznitelikleri, eval, eklenti nesneleri ve form gönderimleri engelleniyor. Stil öznitelikleri mevcut arayüz için açık.
+- CSP: aynı kaynaktan script ve kullanıcının açıkça istediği `https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js` dosyasına izin veriliyor. Diğer dış scriptler, inline script, olay öznitelikleri, eval, eklenti nesneleri ve form gönderimleri engelleniyor. Stil öznitelikleri mevcut arayüz ve widget için açık.
 - Tailwind tarayıcı CDN scripti kaldırıldı; önceden derlenmiş yerel CSS kullanılıyor.
 - Yedekler ve yerel tarifler tür, liste uzunluğu, alan boyutu ve kimlik açısından doğrulanıyor. İçe aktarma tüm alanlar doğrulanmadan uygulama durumunu değiştirmiyor; kullanıcı onayı istiyor.
 - Bozuk/erişilemeyen localStorage başlangıcı durdurmuyor. Görsel kaynakları güvenilir görsel alanı ve raster data URL ile sınırlı.
@@ -33,6 +33,8 @@ Bu çalışma kapsamlı sızma testi veya “tüm açıklar kapandı” garantis
 ## Destek bağlantısı
 
 Eski `buymeacoffee.com/suluncaway` profili kontrol sırasında bulunamadı. Kullanıcının verdiği https://buymeacoffee.com/suluncau adresi 11 Ekim 2026 tarihinde açılarak doğrulandı ve `support.js` içindeki `SUPPORT_URL` değerine eklendi. Üst ve alt destek düğmeleri bu adresi `noopener,noreferrer` ile açar. Ödeme yapılmadı; ödeme işleminin tamamlanması test edilmedi.
+
+Kullanıcının son talebi doğrultusunda alt düğme, gönderdiği özgün Buy Me a Coffee script etiketiyle birebir uygulanmıştır. Önceki yerel benzer görünümlü düğme kaldırıldı. CSP yalnızca belirtilen CDN dosyasına izin verir; üçüncü taraf script yüklemek bu sağlayıcının koduna güvenmeyi gerektirir. Widget'ın oluşturduğu yeni sekme bağlantısına ayrıca `noopener noreferrer` eklenir. Üst destek düğmesi mevcut doğrudan profil bağlantısını korur.
 
 ## Tekrarlanabilir kontroller
 

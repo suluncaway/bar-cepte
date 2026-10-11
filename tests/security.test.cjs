@@ -61,7 +61,7 @@ test('support buttons open the owner-confirmed profile with opener isolation', (
     const sandbox = {
         URL,
         document: {
-            querySelectorAll: () => [button, button],
+            querySelectorAll: selector => selector === '[data-support-button]' ? [button, button] : [],
             getElementById: () => ({addEventListener: () => {}})
         },
         window: {open: (...args) => opened.push(args)}
@@ -73,15 +73,12 @@ test('support buttons open the owner-confirmed profile with opener isolation', (
         assert.deepEqual(args, ['https://buymeacoffee.com/suluncau', '_blank', 'noopener,noreferrer']);
     }
 });
-test('static coffee link works without third-party scripts or duplicate popup handlers', () => {
-    const vm = require('node:vm');
+test('original user-supplied coffee widget is preserved with a narrow CSP exception', () => {
     const html = fs.readFileSync('index.html', 'utf8');
-    assert.match(html, /class="coffee-support-link" href="https:\/\/buymeacoffee.com\/suluncau" target="_blank" rel="noopener noreferrer"/);
-    assert.doesNotMatch(html, /<script[^>]+buymeacoffee/);
-    vm.runInNewContext(fs.readFileSync('support.js', 'utf8'), {
-        document: {
-            querySelectorAll: () => [{tagName: 'A', addEventListener: () => assert.fail('Duplicate popup handler')}],
-            getElementById: () => ({addEventListener: () => {}})
-        }
-    });
+    const snippet = '<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="suluncau" data-color="#FFDD00" data-emoji=""  data-font="Bree" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>';
+    assert.ok(html.includes(snippet));
+    assert.equal(html.split(snippet).length - 1, 1);
+    assert.match(html, /script-src 'self' https:\/\/cdnjs\.buymeacoffee\.com\/1\.0\.0\/button\.prod\.min\.js;/);
+    assert.doesNotMatch(html, /coffee-support-link|coffee-support-cup/);
+    assert.match(html, /script-src-attr 'none'/);
 });
