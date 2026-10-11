@@ -170,7 +170,7 @@ async function sendEmail(toEmail, customerName, licenseKey, planName) {
         return false;
     }
 
-    const fromAddress = process.env.RESEND_FROM_EMAIL || 'Bar Cepte <onboarding@resend.dev>';
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'Bar Cepte <lisans@barcepte.com.tr>';
     const payload = JSON.stringify({
         from: fromAddress,
         to: [toEmail],
@@ -249,9 +249,33 @@ const server = http.createServer((req, res) => {
             status: 'ok',
             service: 'Bar Cepte Shopier Otomatik Lisans Servisi',
             apiConnected: !!SHOPIER_API_TOKEN,
+            sender: 'lisans@barcepte.com.tr',
             autoPolling: 'Her 30 saniyede bir aktif',
             timestamp: new Date().toISOString()
         }));
+        return;
+    }
+
+    // Geçmiş Siparişlere Tekrar E-posta Gönderme Endpoint'i
+    if (req.method === 'GET' && req.url.startsWith('/resend')) {
+        (async () => {
+            const sold = getSoldLicenses();
+            let sentCount = 0;
+            for (const s of sold) {
+                if (s.email && s.licenseKey) {
+                    const ok = await sendEmail(s.email, s.name, s.licenseKey, s.planTitle || s.planType);
+                    if (ok) sentCount++;
+                }
+            }
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(`
+                <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
+                    <h2 style="color:#d5b47b;">✉️ Gönderim Tamamlandı!</h2>
+                    <p>${sentCount} adet müşteriye lisans@barcepte.com.tr üzerinden e-posta gönderildi.</p>
+                    <a href="/licenses" style="color:#d5b47b;">Panele Dön ➔</a>
+                </body>
+            `);
+        })();
         return;
     }
 
@@ -275,12 +299,15 @@ const server = http.createServer((req, res) => {
                     th { background: #0d1715; color: #d5b47b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
                     code { background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 6px; color: #f59e0b; font-weight: bold; }
                     .badge { padding: 3px 8px; border-radius: 99px; font-size: 10px; font-weight: bold; background: rgba(213,180,123,0.2); color: #d5b47b; }
+                    .btn-action { display:inline-block; background: #d5b47b; color: #101b19; padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 12px; text-decoration: none; margin-bottom: 12px; }
+                    .btn-action:hover { background: #e2c899; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <h1>🍸 Bar Cepte — Satılan VIP Lisansları (${sold.length} Adet)</h1>
                     <p style="color: #94a3b8; font-size: 13px;">Shopier API'den otomatik çekilen ve üretilen tek kullanımlık kodlar:</p>
+                    <a href="/resend" class="btn-action">✉️ Tüm Müşterilere Tekrar E-posta Gönder</a>
                     <table>
                         <thead>
                             <tr>
