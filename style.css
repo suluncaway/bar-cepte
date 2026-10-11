@@ -98,12 +98,12 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--accent-gold
 #discovery-controls button[class*="bg-amber-500"]:not(#btn-fav-filter) { background:#d5b47b; color:#17231e; border-color:#d5b47b; box-shadow:none; }
 #discovery-controls > .overflow-x-auto > div:first-child > button { border-radius:4px; min-height:28px; }
 #ingredients-section { padding:0; margin-top:18px; margin-bottom:42px; }
-.ingredient-shelf { position:relative; display:flex; align-items:center; padding:8px 0; border:1px solid var(--border-glass); border-radius:9px; background:#13211d; }
-#ingredients-container { gap:10px; padding:9px 45px; min-height:146px; }
-#ingredients-container > div { background:#1a2a24; border:1px solid #304439; border-radius:12px; width:108px; min-height:128px; height:auto; box-shadow:none; color:#c7d0c9; font-weight:500; transition:background .2s,border-color .2s,transform .2s; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:8px 6px; box-sizing:border-box; }
+.ingredient-shelf { position:relative; display:flex; align-items:center; padding:10px 0; border:1px solid var(--border-glass); border-radius:12px; background:#13211d; }
+#ingredients-container { gap:10px; padding:10px 45px; min-height:168px; }
+#ingredients-container > div { background:#1a2a24; border:1px solid #304439; border-radius:14px; width:114px; min-height:152px; height:auto; box-shadow:none; color:#c7d0c9; font-weight:500; transition:background .2s,border-color .2s,transform .2s; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:10px 8px; box-sizing:border-box; }
 #ingredients-container > div:hover { background:#25372c; border-color:#857750; transform:translateY(-2px); }
 #ingredients-container > div[aria-pressed="true"] { background:#d5b47b; color:#16231d; border-color:#ead0a2; }
-#ingredients-container .ingredient-name { font-size:11px; line-height:1.2; font-weight:600; text-align:center; width:100%; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; word-break:break-word; hyphens:auto; margin-top:2px; }
+#ingredients-container .ingredient-name { font-size:11.5px; line-height:1.2; font-weight:600; text-align:center; width:100%; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; word-break:break-word; hyphens:auto; margin-top:3px; }
 #ingredients-container .ingredient-group-tag { font-size:9px; line-height:1; letter-spacing:-0.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; margin-top:auto; padding:2px 5px; border-radius:5px; }
 .ingredient-shelf > button { background:#20342b; border:1px solid #435442; color:var(--accent-gold); width:28px; height:38px; border-radius:4px; box-shadow:none; font-size:12px; }
 .custom-scroll,.no-scrollbar { scrollbar-width:none; }
@@ -216,9 +216,9 @@ dialog::backdrop { background:rgba(0,0,0,.7); }
     #discovery-controls [data-ui="ui-13"],#discovery-controls [data-ui="ui-15"] { font-size:12px; padding:8px 10px; }
     .filter-caption { font-size:12px; margin-top:17px; }
     #ingredients-section { margin-top:15px; margin-bottom:29px; }
-    #ingredients-container { padding:8px 36px; gap:8px; min-height:144px; }
-    #ingredients-container > div { width:102px; min-height:124px; height:auto; padding:7px 5px; border-radius:10px; }
-    #ingredients-container .ingredient-name { font-size:10.5px; line-height:1.18; }
+    #ingredients-container { padding:8px 36px; gap:8px; min-height:164px; }
+    #ingredients-container > div { width:108px; min-height:148px; height:auto; padding:9px 6px; border-radius:12px; }
+    #ingredients-container .ingredient-name { font-size:11px; line-height:1.2; }
     #ingredients-container .ingredient-group-tag { font-size:8.5px; padding:1.5px 4px; }
     .ingredient-shelf > button { width:23px; left:6px; }
     .ingredient-shelf > button:last-child { left:auto; right:6px; }

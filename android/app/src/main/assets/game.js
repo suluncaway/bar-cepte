@@ -1204,15 +1204,15 @@ function renderIngredients() {
         card.setAttribute('aria-pressed', String(isSelected));
         card.tabIndex = 0;
         card.className = isSelected 
-            ? "snap-center shrink-0 w-[100px] sm:w-[108px] min-h-[124px] sm:min-h-[128px] bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-300 rounded-2xl flex flex-col items-center justify-start p-2 text-center gap-1 cursor-pointer text-slate-950 font-bold shadow-lg transition-transform active:scale-95 min-w-0"
-            : "snap-center shrink-0 w-[100px] sm:w-[108px] min-h-[124px] sm:min-h-[128px] acrylic-card rounded-2xl flex flex-col items-center justify-start p-2 text-center gap-1 cursor-pointer text-slate-300 font-semibold hover:border-amber-500/30 transition-transform active:scale-95 min-w-0";
+            ? "snap-center shrink-0 w-[108px] sm:w-[114px] min-h-[148px] sm:min-h-[152px] bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-300 rounded-2xl flex flex-col items-center justify-start p-2.5 text-center gap-1.5 cursor-pointer text-slate-950 font-bold shadow-lg transition-transform active:scale-95 min-w-0"
+            : "snap-center shrink-0 w-[108px] sm:w-[114px] min-h-[148px] sm:min-h-[152px] acrylic-card rounded-2xl flex flex-col items-center justify-start p-2.5 text-center gap-1.5 cursor-pointer text-slate-300 font-semibold hover:border-amber-500/30 transition-transform active:scale-95 min-w-0";
         
         const groupTag = (ing.cat === 'alkol')
             ? `<span class="ingredient-group-tag text-[9px] ${isSelected ? 'text-slate-950 font-black bg-black/15' : 'text-amber-400 font-bold bg-amber-500/15 border border-amber-500/25'}">${escapeHTML(getAlcoholGroupLabel(getAlcoholGroup(ing)))}</span>`
             : '';
 
         card.innerHTML = `
-            <div class="h-8 sm:h-9 flex items-center justify-center mb-0.5 shrink-0">
+            <div class="h-14 sm:h-16 w-full flex items-center justify-center mb-1 shrink-0">
                 <img src="https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(ing.id)}-Small.png" 
                      alt="${escapeHTML(ing.name)}" 
                      class="max-h-full max-w-full object-contain drop-shadow-md"
