@@ -23,7 +23,7 @@
             subtitle: '30 Gün Kesintisiz',
             desc: 'Esnek aylık yenilenen barmenlik keyfi. İstediğin zaman uzat.',
             checkoutLabel: 'Shopier ile Aylık Abone Ol',
-            shopierUrl: 'https://www.shopier.com'
+            shopierUrl: 'https://www.shopier.com/Anawin/51736039'
         },
         annual: {
             title: 'Yıllık Abonelik (Annual Pass)',
@@ -33,7 +33,7 @@
             subtitle: '365 Gün VIP Erişim',
             desc: 'Aylık sadece 24,90 ₺! 1 tam yıl boyunca kesintisiz reklamsız deneyim ve altın rozet.',
             checkoutLabel: 'Shopier ile Yıllık Abone Ol',
-            shopierUrl: 'https://www.shopier.com'
+            shopierUrl: 'https://www.shopier.com/Anawin/51735632'
         },
         lifetime: {
             title: 'Ömür Boyu VIP (Lifetime Pass)',
@@ -43,7 +43,7 @@
             subtitle: 'Sonsuza Kadar Senin',
             desc: 'Bir kere öde, sonsuza kadar reklamsız kullan. Bir daha asla ödeme yapma.',
             checkoutLabel: 'Shopier ile Ömür Boyu Satın Al',
-            shopierUrl: 'https://www.shopier.com'
+            shopierUrl: 'https://www.shopier.com/Anawin'
         }
     };
 

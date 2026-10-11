@@ -8,9 +8,14 @@
 //   node scripts/generate-keys.js lifetime 5
 //   node scripts/generate-keys.js 10 (varsayılan: lifetime)
 
+const fs = require('fs');
+const path = require('path');
+
 const args = process.argv.slice(2);
 let plan = 'lifetime';
 let count = 5;
+let shouldExport = false;
+let isSilent = false;
 
 // Parse CLI flags and positional arguments
 for (let i = 0; i < args.length; i++) {
@@ -23,6 +28,11 @@ for (let i = 0; i < args.length; i++) {
         count = parseInt(arg.split('=')[1], 10) || 5;
     } else if (arg === '-c' && args[i + 1]) {
         count = parseInt(args[++i], 10) || 5;
+    } else if (arg === '--export' || arg === '-e' || arg === '--save') {
+        shouldExport = true;
+    } else if (arg === '--silent' || arg === '-s') {
+        isSilent = true;
+        shouldExport = true;
     } else if (['monthly', 'annual', 'lifetime', 'all', 'm', 'y', 'l', 'a'].includes(arg)) {
         plan = (arg === 'm' || arg === 'monthly') ? 'monthly' :
                (arg === 'y' || arg === 'annual') ? 'annual' :
@@ -61,24 +71,42 @@ const planLabels = {
     lifetime: 'Ömür Boyu VIP (Lifetime)'
 };
 
+const exportedKeys = { monthly: [], annual: [], lifetime: [] };
+
 if (plan === 'all') {
-    console.log(`\n🍸 Bar Cepte Reserve — Her Plan İçin ${count} Adet Anahtar Üretildi:\n`);
-    console.log('='.repeat(56));
+    if (!isSilent) console.log(`\n🍸 Bar Cepte Reserve — Her Plan İçin ${count} Adet Anahtar Üretildi:\n\n` + '='.repeat(56));
     ['monthly', 'annual', 'lifetime'].forEach(p => {
-        console.log(`\n▶ ${planLabels[p]} (${p}):`);
+        if (!isSilent) console.log(`\n▶ ${planLabels[p]} (${p}):`);
         for (let i = 1; i <= count; i++) {
-            console.log(`  ${p}: ${generateKey(p)}`);
+            const k = generateKey(p);
+            exportedKeys[p].push(k);
+            if (!isSilent) console.log(`  ${p}: ${k}`);
         }
     });
-    console.log('\n' + '='.repeat(56));
+    if (!isSilent) console.log('\n' + '='.repeat(56));
 } else {
-    console.log(`\n🍸 Bar Cepte Reserve — ${count} Adet [${planLabels[plan]}] Anahtarı Üretildi:\n`);
-    console.log('='.repeat(48));
+    if (!isSilent) console.log(`\n🍸 Bar Cepte Reserve — ${count} Adet [${planLabels[plan]}] Anahtarı Üretildi:\n\n` + '='.repeat(48));
     for (let i = 1; i <= count; i++) {
-        console.log(`${i.toString().padStart(2, ' ')}. ${generateKey(plan)}`);
+        const k = generateKey(plan);
+        exportedKeys[plan].push(k);
+        if (!isSilent) console.log(`${i.toString().padStart(2, ' ')}. ${k}`);
     }
-    console.log('='.repeat(48));
+    if (!isSilent) console.log('='.repeat(48));
 }
+
+if (shouldExport) {
+    const outDir = path.resolve(__dirname, '..', 'keys');
+    if (!fs.existsSync(outDir)) {
+        fs.mkdirSync(outDir, { recursive: true });
+    }
+    const plansToExport = plan === 'all' ? ['monthly', 'annual', 'lifetime'] : [plan];
+    plansToExport.forEach(p => {
+        const filePath = path.join(outDir, `${p}_keys.txt`);
+        fs.writeFileSync(filePath, exportedKeys[p].join('\n') + '\n', 'utf8');
+        console.log(`📁 Dosyaya kaydedildi: keys/${p}_keys.txt (${exportedKeys[p].length} adet)`);
+    });
+}
+
 console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
 
 module.exports = { generateKey, checksum };

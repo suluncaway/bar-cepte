@@ -146,6 +146,8 @@ test('Reserve subscription plans and dynamic elements are present in index.html 
     assert.ok(reserve.PLANS_CONFIG.monthly);
     assert.ok(reserve.PLANS_CONFIG.annual);
     assert.ok(reserve.PLANS_CONFIG.lifetime);
+    assert.equal(reserve.PLANS_CONFIG.monthly.shopierUrl, 'https://www.shopier.com/Anawin/51736039');
+    assert.equal(reserve.PLANS_CONFIG.annual.shopierUrl, 'https://www.shopier.com/Anawin/51735632');
     assert.equal(reserve.getPlanDisplayName('monthly'), 'Aylık Abonelik (Monthly Pass)');
     assert.equal(reserve.getPlanDisplayName('annual'), 'Yıllık Abonelik (Annual Pass)');
     assert.equal(reserve.getPlanDisplayName('lifetime'), 'Ömür Boyu VIP (Lifetime Pass)');
@@ -154,7 +156,7 @@ test('Reserve key generation and validation works for monthly, annual, and lifet
     const reserve = require('../reserve.js');
     const { execSync } = require('node:child_process');
 
-    const output = execSync('node scripts/generate-keys.js --plan=all --count=1', { encoding: 'utf8' });
+    const output = execSync(`"${process.execPath}" scripts/generate-keys.js --plan=all --count=1`, { encoding: 'utf8' });
     assert.match(output, /monthly:/);
     assert.match(output, /annual:/);
     assert.match(output, /lifetime:/);
