@@ -73,40 +73,42 @@ const planLabels = {
 
 const exportedKeys = { monthly: [], annual: [], lifetime: [] };
 
-if (plan === 'all') {
-    if (!isSilent) console.log(`\n🍸 Bar Cepte Reserve — Her Plan İçin ${count} Adet Anahtar Üretildi:\n\n` + '='.repeat(56));
-    ['monthly', 'annual', 'lifetime'].forEach(p => {
-        if (!isSilent) console.log(`\n▶ ${planLabels[p]} (${p}):`);
+if (require.main === module) {
+    if (plan === 'all') {
+        if (!isSilent) console.log(`\n🍸 Bar Cepte Reserve — Her Plan İçin ${count} Adet Anahtar Üretildi:\n\n` + '='.repeat(56));
+        ['monthly', 'annual', 'lifetime'].forEach(p => {
+            if (!isSilent) console.log(`\n▶ ${planLabels[p]} (${p}):`);
+            for (let i = 1; i <= count; i++) {
+                const k = generateKey(p);
+                exportedKeys[p].push(k);
+                if (!isSilent) console.log(`  ${p}: ${k}`);
+            }
+        });
+        if (!isSilent) console.log('\n' + '='.repeat(56));
+    } else {
+        if (!isSilent) console.log(`\n🍸 Bar Cepte Reserve — ${count} Adet [${planLabels[plan]}] Anahtarı Üretildi:\n\n` + '='.repeat(48));
         for (let i = 1; i <= count; i++) {
-            const k = generateKey(p);
-            exportedKeys[p].push(k);
-            if (!isSilent) console.log(`  ${p}: ${k}`);
+            const k = generateKey(plan);
+            exportedKeys[plan].push(k);
+            if (!isSilent) console.log(`${i.toString().padStart(2, ' ')}. ${k}`);
         }
-    });
-    if (!isSilent) console.log('\n' + '='.repeat(56));
-} else {
-    if (!isSilent) console.log(`\n🍸 Bar Cepte Reserve — ${count} Adet [${planLabels[plan]}] Anahtarı Üretildi:\n\n` + '='.repeat(48));
-    for (let i = 1; i <= count; i++) {
-        const k = generateKey(plan);
-        exportedKeys[plan].push(k);
-        if (!isSilent) console.log(`${i.toString().padStart(2, ' ')}. ${k}`);
+        if (!isSilent) console.log('='.repeat(48));
     }
-    if (!isSilent) console.log('='.repeat(48));
-}
 
-if (shouldExport) {
-    const outDir = path.resolve(__dirname, '..', 'keys');
-    if (!fs.existsSync(outDir)) {
-        fs.mkdirSync(outDir, { recursive: true });
+    if (shouldExport) {
+        const outDir = path.resolve(__dirname, '..', 'keys');
+        if (!fs.existsSync(outDir)) {
+            fs.mkdirSync(outDir, { recursive: true });
+        }
+        const plansToExport = plan === 'all' ? ['monthly', 'annual', 'lifetime'] : [plan];
+        plansToExport.forEach(p => {
+            const filePath = path.join(outDir, `${p}_keys.txt`);
+            fs.writeFileSync(filePath, exportedKeys[p].join('\n') + '\n', 'utf8');
+            console.log(`📁 Dosyaya kaydedildi: keys/${p}_keys.txt (${exportedKeys[p].length} adet)`);
+        });
     }
-    const plansToExport = plan === 'all' ? ['monthly', 'annual', 'lifetime'] : [plan];
-    plansToExport.forEach(p => {
-        const filePath = path.join(outDir, `${p}_keys.txt`);
-        fs.writeFileSync(filePath, exportedKeys[p].join('\n') + '\n', 'utf8');
-        console.log(`📁 Dosyaya kaydedildi: keys/${p}_keys.txt (${exportedKeys[p].length} adet)`);
-    });
-}
 
-console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
+    console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
+}
 
 module.exports = { generateKey, checksum };

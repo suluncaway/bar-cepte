@@ -1,15 +1,16 @@
 /**
  * scripts/shopier-webhook.js
  * 
- * Shopier Otomatik Lisans Teslimatı Webhook Servisi
+ * Shopier Otomatik Lisans Teslimatı & API Servisi
  * Sıfır harici bağımlılık (Pure Node.js) ile çalışır.
  * 
- * Akış:
- * 1. Müşteri Shopier'dan satın alır (Aylık 51736039 veya Yıllık 51735632).
- * 2. Shopier bu webhook adresine POST bildirimi gönderir.
- * 3. Sistem anında geçerli, tek kullanımlık RESERVE-XXXX-XXXX-XXXX anahtarı üretir.
- * 4. Müşterinin ekranına ve e-posta adresine anında teslim edilir.
- * 5. Üretilen anahtar keys/sold_licenses.json dosyasına kaydedilir.
+ * Özellikler:
+ * 1. Otomatik API Polling: Her 30 saniyede bir api.shopier.com/v1/orders adresini kontrol eder.
+ * 2. Gelen siparişteki ürün ID'sine göre:
+ *    - Aylık (51736039) -> RESERVE-MTH1-XXXX-YYYY üretir (30 Günlük)
+ *    - Yıllık (51735632) -> RESERVE-ANN1-XXXX-YYYY üretir (365 Günlük)
+ * 3. Webhook / Callback desteği: POST /webhook/shopier ile de anında tetiklenebilir.
+ * 4. Yönetim Paneli: GET /licenses adresinden üretilen tüm kodlar izlenebilir.
  */
 
 const http = require('http');
@@ -19,25 +20,34 @@ const path = require('path');
 const { generateKey } = require('./generate-keys');
 
 const PORT = process.env.PORT || 3000;
-// E-posta gönderimi için Resend API anahtarı (İsteğe bağlı: https://resend.com adresinden ücretsiz alınabilir)
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+
+// Shopier Kişisel Erişim Anahtarı (Personal Access Token - PAT)
+const SHOPIER_API_TOKEN = process.env.SHOPIER_API_TOKEN ||
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI4Y2M3YTM5OTdhNjU2MjI2NTA0Mzk2ZmQ2MjFjYTgwMyIsImp0aSI6ImEwOGViOTNjMWM0NzBkMmMzZDEwY2EyY2JkODE0MzEzYmRhODZjOWNkMGM2ZTU0YWM3YzVjMjdjMTcyN2E2YmE3NDI0NDg1ZjRiMjVlNzYxZDkxMTEzNWQ3M2FiYTk3NmJlNmRmZTExNDEyMTRhOTYxZjJiYTVmMzVmYTA5ZGI2ODczZDBmMTgwZDg0OWIwMDI5ODY3N2ZlODdmMWJjOGUiLCJpYXQiOjE3OTE3NTI1MDUsIm5iZiI6MTc5MTc1MjUwNSwiZXhwIjoxOTQ5NTM3MjY1LCJzdWIiOjE2NDg0Miwic2NvcGVzIjpbIm9yZGVyczpyZWFkIiwib3JkZXJzOndyaXRlIiwicHJvZHVjdHM6cmVhZCIsInByb2R1Y3RzOndyaXRlIiwic2hpcHBpbmdzOnJlYWQiLCJzaGlwcGluZ3M6d3JpdGUiLCJkaXNjb3VudHM6cmVhZCIsImRpc2NvdW50czp3cml0ZSIsInBheW91dHM6cmVhZCIsInJlZnVuZHM6cmVhZCIsInJlZnVuZHM6d3JpdGUiLCJzaG9wOnJlYWQiLCJzaG9wOndyaXRlIl19.U8SkJYgOFjjFRC2bDkcb0FNqCDL9LlqH80IXtea9dfl9CR_WatC3fVDyK8X0-SPpkMW1yVtckr3akMjDy55SCMe3vKEb3BVQxqEmf3RD4Yskos_ToS1fxeO_ABcJlbyDtrrV85AL0howwdDrsvwT2hXplkOPXi1yo2ZDJ0v7nRhJiR7znVR4fWmIcyaEt_rjLm7_uZ5UE0QX40HqGcrpzHrMONy_DCrrFCIt6xiqjd5NNFTVIWzTBdd8XBAW651-Wr8A2M0ElVb9j1-WaHSR_KC3_avfsHpFS3iMzpvbwex6p05V7W7kOoAFRt4VLM7Ot0HUZ8kgI8-ZDvsGieyaOg';
 
 // Shopier Ürün ID - Plan Eşleştirmesi
 const PRODUCT_PLANS = {
-    '51736039': 'monthly', // Aylık Plan
-    '51735632': 'annual'   // Yıllık Plan
+    '51736039': 'monthly', // Aylık Plan (30 Gün)
+    '51735632': 'annual'   // Yıllık Plan (365 Gün)
 };
 
 const LOG_FILE = path.resolve(__dirname, '..', 'keys', 'sold_licenses.json');
+
+function getSoldLicenses() {
+    try {
+        if (!fs.existsSync(LOG_FILE)) return [];
+        return JSON.parse(fs.readFileSync(LOG_FILE, 'utf8') || '[]');
+    } catch {
+        return [];
+    }
+}
 
 function saveSoldLicense(record) {
     try {
         const dir = path.dirname(LOG_FILE);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        let list = [];
-        if (fs.existsSync(LOG_FILE)) {
-            list = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8') || '[]');
-        }
+        const list = getSoldLicenses();
         list.push(record);
         fs.writeFileSync(LOG_FILE, JSON.stringify(list, null, 2), 'utf8');
     } catch (err) {
@@ -45,9 +55,111 @@ function saveSoldLicense(record) {
     }
 }
 
+// Plan Türünü Tespiti (ID veya Başlıktan)
+function detectPlan(orderItem) {
+    const productId = String(orderItem.product_id || orderItem.id || '');
+    if (PRODUCT_PLANS[productId]) return PRODUCT_PLANS[productId];
+
+    const title = (orderItem.title || orderItem.name || '').toLowerCase();
+    if (title.includes('aylık') || title.includes('monthly')) return 'monthly';
+    if (title.includes('yıllık') || title.includes('annual')) return 'annual';
+    if (title.includes('ömür') || title.includes('lifetime')) return 'lifetime';
+    return 'annual'; // Varsayılan yıllık
+}
+
+// Shopier API Siparişlerini Çekme
+function fetchShopierOrders() {
+    return new Promise((resolve) => {
+        if (!SHOPIER_API_TOKEN) return resolve([]);
+
+        const req = https.request({
+            hostname: 'api.shopier.com',
+            port: 443,
+            path: '/v1/orders',
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${SHOPIER_API_TOKEN}`,
+                'Accept': 'application/json'
+            }
+        }, (res) => {
+            let data = '';
+            res.on('data', chunk => { data += chunk; });
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        resolve(Array.isArray(parsed) ? parsed : (parsed.data || []));
+                    } catch {
+                        resolve([]);
+                    }
+                } else {
+                    resolve([]);
+                }
+            });
+        });
+        req.on('error', () => resolve([]));
+        req.end();
+    });
+}
+
+// Siparişleri Otomatik İşle
+async function processNewOrders() {
+    try {
+        const orders = await fetchShopierOrders();
+        if (!orders || !orders.length) return;
+
+        const sold = getSoldLicenses();
+        const processedOrderIds = new Set(sold.map(s => String(s.orderId)));
+
+        for (const order of orders) {
+            const orderId = String(order.id || order.order_id || '');
+            if (!orderId || processedOrderIds.has(orderId)) continue;
+
+            // Siparişteki ürünleri incele
+            const items = order.items || order.products || [order];
+            for (const item of items) {
+                const planType = detectPlan(item);
+                const licenseKey = generateKey(planType);
+                const planTitle = planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
+                                 planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP';
+
+                const customerEmail = order.buyer_email || order.email || '';
+                const customerName = order.buyer_name || order.customer_name || 'Barmen Dostumuz';
+
+                const record = {
+                    orderId,
+                    email: customerEmail,
+                    name: customerName,
+                    planType,
+                    planTitle,
+                    licenseKey,
+                    createdAt: new Date().toISOString()
+                };
+
+                saveSoldLicense(record);
+                processedOrderIds.add(orderId);
+
+                console.log(`\n🎉 [YENİ SİPARİŞ] #${orderId} | ${customerName} (${customerEmail})`);
+                console.log(`🔑 [ÜRETİLEN KOD] [${planTitle}]: ${licenseKey}\n`);
+
+                if (customerEmail) {
+                    await sendEmail(customerEmail, customerName, licenseKey, planTitle);
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Otomatik sipariş kontrol hatası:', err);
+    }
+}
+
+// Her 30 saniyede bir Shopier'ı otomatik kontrol et
+setInterval(processNewOrders, 30000);
+// Başlangıçta hemen bir kez kontrol et
+setTimeout(processNewOrders, 2000);
+
 async function sendEmail(toEmail, customerName, licenseKey, planName) {
     if (!RESEND_API_KEY) {
-        console.log(`[E-posta Bildirimi] Resend API Key tanımlı değil. Kod: ${licenseKey} -> Alıcı: ${toEmail}`);
+        console.log(`[E-posta] Resend API Key tanımlanmadığı için konsola yazıldı. Kod: ${licenseKey} -> Alıcı: ${toEmail}`);
         return false;
     }
 
@@ -99,7 +211,6 @@ async function sendEmail(toEmail, customerName, licenseKey, planName) {
 }
 
 const server = http.createServer((req, res) => {
-    // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -110,82 +221,125 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Sağlık kontrolü
+    // Sağlık Kontrolü
     if (req.method === 'GET' && (req.url === '/' || req.url === '/health')) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ status: 'ok', service: 'Bar Cepte Shopier Webhook', timestamp: new Date().toISOString() }));
+        res.end(JSON.stringify({
+            status: 'ok',
+            service: 'Bar Cepte Shopier Otomatik Lisans Servisi',
+            apiConnected: !!SHOPIER_API_TOKEN,
+            autoPolling: 'Her 30 saniyede bir aktif',
+            timestamp: new Date().toISOString()
+        }));
         return;
     }
 
-    // Shopier Callback / Webhook Endpoint
+    // Üretilen Lisansları İzleme Tablosu (Dashboard)
+    if (req.method === 'GET' && (req.url === '/licenses' || req.url === '/dashboard')) {
+        const sold = getSoldLicenses();
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(`
+            <!DOCTYPE html>
+            <html lang="tr">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Bar Cepte — Lisans Yönetim Paneli</title>
+                <style>
+                    body { background: #101b19; color: #fff; font-family: -apple-system, sans-serif; padding: 24px; margin: 0; }
+                    .container { max-width: 900px; margin: 0 auto; }
+                    h1 { color: #d5b47b; font-size: 24px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 16px; background: #172922; border-radius: 12px; overflow: hidden; }
+                    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
+                    th { background: #0d1715; color: #d5b47b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+                    code { background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 6px; color: #f59e0b; font-weight: bold; }
+                    .badge { padding: 3px 8px; border-radius: 99px; font-size: 10px; font-weight: bold; background: rgba(213,180,123,0.2); color: #d5b47b; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>🍸 Bar Cepte — Satılan VIP Lisansları (${sold.length} Adet)</h1>
+                    <p style="color: #94a3b8; font-size: 13px;">Shopier API'den otomatik çekilen ve üretilen tek kullanımlık kodlar:</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sipariş ID</th>
+                                <th>Alıcı</th>
+                                <th>Plan</th>
+                                <th>Aktivasyon Kodu</th>
+                                <th>Tarih</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sold.length === 0 ? '<tr><td colspan="5" style="text-align:center; color:#64748b; padding:32px;">Henüz yeni sipariş yok. Shopier her 30 saniyede bir otomatik taranıyor.</td></tr>' : ''}
+                            ${sold.slice().reverse().map(s => `
+                                <tr>
+                                    <td>#${s.orderId}</td>
+                                    <td><strong>${s.name}</strong><br><small style="color:#64748b;">${s.email}</small></td>
+                                    <td><span class="badge">${s.planTitle || s.planType}</span></td>
+                                    <td><code>${s.licenseKey}</code></td>
+                                    <td style="color:#64748b; font-size:11px;">${new Date(s.createdAt).toLocaleString('tr-TR')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </body>
+            </html>
+        `);
+        return;
+    }
+
+    // Shopier Webhook / Callback Uç Noktası
     if (req.method === 'POST' && (req.url === '/webhook/shopier' || req.url === '/callback')) {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', async () => {
             try {
-                // Shopier verileri URL-encoded form veya JSON olarak gönderebilir
                 let params = {};
                 if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
                     params = JSON.parse(body || '{}');
                 } else {
                     const parsed = new URLSearchParams(body);
-                    for (const [key, value] of parsed.entries()) {
-                        params[key] = value;
-                    }
+                    for (const [key, value] of parsed.entries()) params[key] = value;
                 }
 
-                console.log('📦 Shopier Sipariş Bildirimi Geldi:', params);
-
-                // Shopier parametrelerinden ürün ve alıcı tespiti
                 const productId = params.product_id || params.productId || '';
                 const orderId = params.platform_order_id || params.order_id || params.orderId || `ORD-${Date.now()}`;
                 const email = params.buyer_email || params.email || '';
                 const name = params.buyer_name || params.name || 'Barmen Dostumuz';
 
-                // Plan belirleme
-                let planType = PRODUCT_PLANS[productId] || 'annual';
-                // Eğer ürün ID uyuşmazsa ürün adından kontrol et
-                const productName = (params.product_name || params.title || '').toLowerCase();
-                if (productName.includes('aylık') || productName.includes('monthly')) planType = 'monthly';
-                if (productName.includes('yıllık') || productName.includes('annual')) planType = 'annual';
-
-                // 1. Yeni ve geçerli tek kullanımlık lisans üret
+                let planType = detectPlan({ product_id: productId, title: params.product_name || params.title });
                 const licenseKey = generateKey(planType);
-                const planTitle = planType === 'monthly' ? 'Aylık VIP' : 'Yıllık VIP (Reserve)';
+                const planTitle = planType === 'monthly' ? 'Aylık VIP (30 Gün)' : 'Yıllık VIP (365 Gün)';
 
-                // 2. Diske kaydet
                 const record = {
                     orderId,
                     email,
                     name,
                     planType,
+                    planTitle,
                     licenseKey,
                     createdAt: new Date().toISOString()
                 };
                 saveSoldLicense(record);
 
-                console.log(`✅ Lisans Başarıyla Üretildi: [${licenseKey}] -> ${email} (${planTitle})`);
+                console.log(`✅ [Webhook] Sipariş #${orderId}: [${licenseKey}] -> ${email}`);
 
-                // 3. E-posta ile alıcıya gönder
-                if (email) {
-                    await sendEmail(email, name, licenseKey, planTitle);
-                }
+                if (email) await sendEmail(email, name, licenseKey, planTitle);
 
-                // 4. Müşteriye şık bir onay ve lisans teslimat sayfası göster
                 res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
                 res.end(`
                     <!DOCTYPE html>
                     <html lang="tr">
                     <head>
                         <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
                         <title>Tebrikler! Bar Cepte Lisansınız Hazır</title>
                         <style>
-                            body { background:#101b19; color:#fff; font-family:-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; box-sizing:border-box; }
-                            .card { background:#172922; border:1px solid rgba(213,180,123,0.3); border-radius:24px; padding:32px 24px; max-width:440px; width:100%; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
-                            .key-box { background:#0a1311; border:1px dashed #d5b47b; border-radius:12px; padding:16px; font-family:monospace; font-size:18px; font-weight:bold; color:#d5b47b; letter-spacing:1.5px; margin:20px 0; word-break:break-all; user-select:all; }
-                            .btn { display:inline-block; background:#d5b47b; color:#101b19; padding:12px 24px; border-radius:12px; text-decoration:none; font-weight:bold; font-size:13px; margin-top:12px; transition:all 0.2s; }
-                            .btn:hover { background:#e2c899; }
+                            body { background:#101b19; color:#fff; font-family:-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; }
+                            .card { background:#172922; border:1px solid rgba(213,180,123,0.3); border-radius:24px; padding:32px 24px; max-width:440px; width:100%; text-align:center; }
+                            .key-box { background:#0a1311; border:1px dashed #d5b47b; border-radius:12px; padding:16px; font-family:monospace; font-size:18px; font-weight:bold; color:#d5b47b; margin:20px 0; }
+                            .btn { display:inline-block; background:#d5b47b; color:#101b19; padding:12px 24px; border-radius:12px; text-decoration:none; font-weight:bold; font-size:13px; margin-top:12px; }
                         </style>
                     </head>
                     <body>
@@ -201,19 +355,20 @@ const server = http.createServer((req, res) => {
                     </html>
                 `);
             } catch (err) {
-                console.error('Webhook işleme hatası:', err);
-                res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-                res.end('Hata oluştu');
+                console.error('Webhook hatası:', err);
+                res.writeHead(500);
+                res.end('Hata');
             }
         });
         return;
     }
 
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.writeHead(404);
     res.end('Bulunamadı');
 });
 
 server.listen(PORT, () => {
-    console.log(`🍸 Bar Cepte Shopier Webhook Servisi çalışıyor: http://localhost:${PORT}`);
-    console.log(`👉 Webhook URL'niz: http://sunucunuz/webhook/shopier`);
+    console.log(`🍸 Bar Cepte Shopier API & Webhook Servisi Çalışıyor (Port: ${PORT})`);
+    console.log(`🔄 Shopier API Polling: Aktif (Her 30 saniyede bir yeni siparişler taranıyor)`);
+    console.log(`📊 Yönetim Paneli: http://localhost:${PORT}/licenses`);
 });
