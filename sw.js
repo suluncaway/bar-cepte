@@ -1,104 +1,54 @@
-const CACHE_NAME = 'bar-cepte-v12';
-const IMAGE_CACHE = 'bar-cepte-images-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  './style.css',
-  './game.js',
-  './manifest.json',
-  './cocktails.json'
-];
+const CACHE_NAME = 'bar-cepte-v13-security';
+const IMAGE_CACHE = 'bar-cepte-images-v2';
+const ASSETS = ['./', './index.html', './style.css', './tailwind.css', './game.js',
+    './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
+    './manifest.json', './cocktails.json', './icon.png'];
+const SCOPE = new URL('./', self.location.href);
+const allowedAssets = new Set(ASSETS.map(path => new URL(path, SCOPE).pathname));
 
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
+self.addEventListener('install', event => {
+    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(keys.map(key => {
-        if (key !== CACHE_NAME && key !== IMAGE_CACHE) {
-          return caches.delete(key);
+self.addEventListener('activate', event => {
+    event.waitUntil((async () => {
+        for (const key of await caches.keys()) {
+            if (key.startsWith('bar-cepte-') && key !== CACHE_NAME && key !== IMAGE_CACHE) await caches.delete(key);
         }
-      }));
-    })
-  );
-  return self.clients.claim();
+        await self.clients.claim();
+    })());
 });
-
-self.addEventListener('fetch', e => {
-  // Sadece GET ve http/https isteklerini yakala
-  if (e.request.method !== 'GET' || !e.request.url.startsWith('http')) {
-    return;
-  }
-
-  const url = e.request.url;
-
-  // 1. Görseller (CocktailDB kokteyl/malzeme resimleri) — Cache-First stratejisi
-  if (url.includes('thecocktaildb.com/images/') || e.request.destination === 'image') {
-    e.respondWith(
-      caches.open(IMAGE_CACHE).then(async cache => {
-        const cached = await cache.match(e.request);
-        if (cached) return cached;
-        try {
-          const res = await fetch(e.request);
-          if (res && (res.status === 200 || res.type === 'opaque')) {
-            cache.put(e.request, res.clone());
-          }
-          return res;
-        } catch {
-          return cached || new Response('', { status: 404 });
-        }
-      })
-    );
-    return;
-  }
-
-  // 2. CocktailDB JSON API istekleri
-  if (url.includes('thecocktaildb.com')) {
-    e.respondWith(
-      fetch(e.request).catch(() => new Response(JSON.stringify({ drinks: null }), {
-        headers: { 'Content-Type': 'application/json' }
-      }))
-    );
-    return;
-  }
-
-  // 3. Google Fonts (Yazı tipleri önbelleği)
-  if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
-    e.respondWith(
-      caches.match(e.request).then(cached => {
-        const fetchPromise = fetch(e.request).then(networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then(cache => cache.put(e.request, networkResponse.clone()));
-          }
-          return networkResponse;
-        }).catch(() => cached);
-        return cached || fetchPromise;
-      })
-    );
-    return;
-  }
-
-  // 4. Diğer Statik Dosyalar — Stale-while-revalidate stratejisi
-  e.respondWith(
-    caches.match(e.request).then(cachedResponse => {
-      const fetchPromise = fetch(e.request).then(networkResponse => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(e.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        return cachedResponse || new Response('Offline', { status: 503, statusText: 'Offline' });
-      });
-
-      return cachedResponse || fetchPromise;
-    })
-  );
+self.addEventListener('fetch', event => {
+    if (event.request.method !== 'GET') return;
+    const url = new URL(event.request.url);
+    if (url.origin === SCOPE.origin && allowedAssets.has(url.pathname)) {
+        // App code is network-first so security fixes do not remain stuck in an old cache.
+        event.respondWith((async () => {
+            const cache = await caches.open(CACHE_NAME);
+            try {
+                const response = await fetch(event.request);
+                if (response.ok && !response.redirected) await cache.put(event.request, response.clone());
+                return response;
+            } catch {
+                return await cache.match(event.request, { ignoreSearch: true }) ||
+                    new Response('Çevrimdışı: Bu dosya henüz önbellekte değil.', { status: 503 });
+            }
+        })());
+    } else if (url.protocol === 'https:' && url.hostname === 'www.thecocktaildb.com' &&
+        url.pathname.startsWith('/images/')) {
+        event.respondWith((async () => {
+            const cache = await caches.open(IMAGE_CACHE);
+            const saved = await cache.match(event.request);
+            if (saved) return saved;
+            try {
+                const response = await fetch(event.request);
+                if (response.ok || response.type === 'opaque') {
+                    await cache.put(event.request, response.clone());
+                    const keys = await cache.keys();
+                    for (const key of keys.slice(0, Math.max(0, keys.length - 150))) await cache.delete(key);
+                }
+                return response;
+            } catch { return new Response('', { status: 404 }); }
+        })());
+    }
+    // Payment pages, API responses and unrelated same-origin files are never cached.
 });

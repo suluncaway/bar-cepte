@@ -32,10 +32,10 @@ const baseIngredients = [
 ];
 
 let popularIngredients = [...baseIngredients];
-let selectedIngredients = JSON.parse(localStorage.getItem('selectedIngredients')) || [];
-let favoriteCocktails = JSON.parse(localStorage.getItem('favoriteCocktails')) || [];
-let customRecipes = JSON.parse(localStorage.getItem('customRecipes')) || [];
-let shoppingList = JSON.parse(localStorage.getItem('shoppingList')) || [];
+let selectedIngredients = BarSecurity.readStored('selectedIngredients', BarSecurity.stringList);
+let favoriteCocktails = BarSecurity.readStored('favoriteCocktails', BarSecurity.stringList);
+let customRecipes = BarSecurity.readStored('customRecipes', BarSecurity.recipes);
+let shoppingList = BarSecurity.readStored('shoppingList', BarSecurity.stringList);
 let allCocktails = [];
 let currentTab = "alkol";
 let currentKitchenSubCat = "all";
@@ -265,13 +265,13 @@ function escapeHTML(str) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // Güvenli Görsel Kaynağı (XSS koruması: yalnızca http(s) ve data:image izinli)
 function safeImageSrc(src) {
-    const s = String(src || '').trim();
-    return /^(https?:\/\/|data:image\/)/i.test(s) ? s : '';
+    return BarSecurity.safeImage(src);
 }
 
 // Bardak Tipi Sözlüğü
@@ -460,7 +460,9 @@ function translateMeasureText(measureStr) {
 // IndexedDB Başlatma
 function initDB() {
     return new Promise((resolve) => {
-        const request = indexedDB.open("BarCepteDB", 2);
+        let request;
+        try { request = indexedDB.open("BarCepteDB", 2); }
+        catch { resolve(); return; }
         request.onupgradeneeded = e => {
             db = e.target.result;
             if (!db.objectStoreNames.contains("cocktails")) {
@@ -472,6 +474,7 @@ function initDB() {
         };
         request.onsuccess = e => { db = e.target.result; resolve(); };
         request.onerror = () => { resolve(); };
+        request.onblocked = () => { resolve(); };
     });
 }
 
@@ -990,8 +993,7 @@ function renderIngredients() {
                 <img src="https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(ing.id)}-Small.png" 
                      alt="${escapeHTML(ing.name)}" 
                      class="max-h-full max-w-full object-contain drop-shadow-md"
-                     loading="lazy"
-                     onerror="this.outerHTML='<span class=\\'text-2xl\\'>${ing.emoji}</span>'">
+                     loading="lazy" data-image-fallback>
             </div>
             <span class="text-[11px] break-words w-full px-1 line-clamp-2 leading-tight overflow-hidden">${escapeHTML(ing.name)}</span>
         `;
@@ -1130,14 +1132,11 @@ function calculateRecipeABV(drink) {
 
 // Kokteyl Verilerini Bir Defa Önbelleğe Alarak Arama Hızını Uçurur
 function enrichDrink(d) {
-    if (!d.computedCalories || !d.computedTaste) {
-        const analysis = analyzeRecipe(d);
-        d.computedCalories = analysis.calories;
-        d.computedTaste = analysis.tasteProfile;
-    }
-    if (!d.computedABV) {
-        d.computedABV = calculateRecipeABV(d);
-    }
+    // Never trust precomputed HTML class names or numeric fields from imported/cache data.
+    const analysis = analyzeRecipe(d);
+    d.computedCalories = analysis.calories;
+    d.computedTaste = analysis.tasteProfile;
+    d.computedABV = calculateRecipeABV(d);
 }
 
 // Akıllı Tavsiye Motoru: "Bunu Alırsan +X Tarif Açılır"
@@ -1155,7 +1154,7 @@ function updateSmartAdvice(missingMatches) {
     }
 
     const oneMissingDrinks = missingMatches.filter(m => m.missingList.length === 1);
-    const votes = {};
+    const votes = Object.create(null);
 
     oneMissingDrinks.forEach(m => {
         const ing = m.missingList[0];
@@ -1191,10 +1190,10 @@ function updateSmartAdvice(missingMatches) {
                     </div>
                 </div>
                 <div class="flex gap-2 shrink-0 w-full sm:w-auto justify-end pt-1 sm:pt-0">
-                    <button onclick="toggleShoppingList(decodeURIComponent('${encodedIng}'), event)" class="pill-btn text-xs bg-white/5 text-slate-300 border border-white/10 px-3 py-1.5 rounded-xl font-medium hover:border-amber-500/40">
+                    <button data-action="shopping" data-value="${escapeHTML(encodedIng)}" class="pill-btn text-xs bg-white/5 text-slate-300 border border-white/10 px-3 py-1.5 rounded-xl font-medium hover:border-amber-500/40">
                         ${inShop ? '🛒 Listede' : '🛒 Listeye Ekle'}
                     </button>
-                    <button onclick="quickAddIngredientToBar(decodeURIComponent('${encodedIng}'), event)" class="pill-btn text-xs bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl hover:bg-amber-400">
+                    <button data-action="ingredient" data-value="${escapeHTML(encodedIng)}" class="pill-btn text-xs bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl hover:bg-amber-400">
                         + Bara Ekle
                     </button>
                 </div>
@@ -1414,7 +1413,7 @@ function createCocktailCardElement(item, isMissingList) {
             return `
             <div class="flex items-center justify-between gap-2 mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20 min-w-0">
                 <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">⚠️ Eksik: ${safeM}</p>
-                <button onclick="toggleShoppingList(decodeURIComponent('${encodedM}'), event)" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40 shrink-0">
+                <button data-action="shopping" data-value="${escapeHTML(encodedM)}" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40 shrink-0">
                     ${inShop ? '🛒 Çıkar' : '➕ Alışverişe Ekle'}
                 </button>
             </div>
@@ -1448,14 +1447,14 @@ function createCocktailCardElement(item, isMissingList) {
 
         card.innerHTML = `
             ${d.strDrinkThumb && safeImageSrc(d.strDrinkThumb) 
-                ? `<img src="${escapeHTML(safeImageSrc(d.strDrinkThumb))}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" onerror="this.outerHTML='<div class=\\'w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-4xl\\'>🍹</div>'">` 
+                ? `<img src="${escapeHTML(safeImageSrc(d.strDrinkThumb))}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" data-image-fallback>`
                 : `<div class="w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-4xl">🍹</div>`}
             
-            <button onclick="toggleFavorite(decodeURIComponent('${drinkIdEncoded}'), event)" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50">${isFav ? '❤️' : '🤍'}</button>
+            <button data-action="favorite" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50">${isFav ? '❤️' : '🤍'}</button>
             
             ${d.isCustom ? `
-            <button onclick="shareCustomRecipe(decodeURIComponent('${drinkIdEncoded}'), event)" class="pill-btn absolute top-6 left-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-amber-500">📤</button>
-            <button onclick="deleteCustomRecipe(decodeURIComponent('${drinkIdEncoded}'), event)" class="pill-btn absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10 shadow-lg">🗑️</button>
+            <button data-action="share" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-amber-500">📤</button>
+            <button data-action="delete" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10 shadow-lg">🗑️</button>
             ` : ''}
             
             <div class="flex justify-between items-start mt-auto min-w-0 gap-2">
@@ -1475,13 +1474,13 @@ function createCocktailCardElement(item, isMissingList) {
             
             <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden">
                 <!-- Porsiyon Kontrolü (Taşmayan Esnek Düzen) -->
-                <div class="flex flex-wrap items-center justify-between gap-1.5 bg-black/30 p-2 rounded-2xl border border-white/5" onclick="event.stopPropagation()">
+                <div class="flex flex-wrap items-center justify-between gap-1.5 bg-black/30 p-2 rounded-2xl border border-white/5" data-stop-card>
                     <span class="text-[11px] text-slate-400 font-medium shrink-0">👥 Porsiyon:</span>
                     <div class="flex flex-wrap gap-1 shrink-0">
-                        <button onclick="changePortion('${cardId}', 1, this)" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold">1x</button>
-                        <button onclick="changePortion('${cardId}', 2, this)" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">2x</button>
-                        <button onclick="changePortion('${cardId}', 4, this)" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">4x</button>
-                        <button onclick="changePortion('${cardId}', 8, this)" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">8x Parti</button>
+                        <button data-action="portion" data-card="${cardId}" data-value="1" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold">1x</button>
+                        <button data-action="portion" data-card="${cardId}" data-value="2" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">2x</button>
+                        <button data-action="portion" data-card="${cardId}" data-value="4" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">4x</button>
+                        <button data-action="portion" data-card="${cardId}" data-value="8" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">8x Parti</button>
                     </div>
                 </div>
 
@@ -1494,7 +1493,7 @@ function createCocktailCardElement(item, isMissingList) {
                 <!-- Bardak & Teknik & Sayaç -->
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${techniqueBadge}</span>
-                    <button onclick="openTimerForDrink(decodeURIComponent('${drinkIdEncoded}'), event)" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm">⏱️ Sayaç</button>
+                    <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm">⏱️ Sayaç</button>
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${glassBadge}</span>
                 </div>
 
@@ -1691,10 +1690,10 @@ function renderShoppingList() {
                 <span class="capitalize text-slate-200 font-semibold text-xs break-words min-w-0">${safeItem}</span>
             </div>
             <div class="flex gap-2 shrink-0">
-                <button onclick="quickAddIngredientToBar(decodeURIComponent('${encodedItem}'), event); toggleShoppingList(decodeURIComponent('${encodedItem}'), event)" class="pill-btn text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold px-2.5 py-1 rounded-xl hover:bg-emerald-500/20">
+                <button data-action="purchased" data-value="${escapeHTML(encodedItem)}" class="pill-btn text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold px-2.5 py-1 rounded-xl hover:bg-emerald-500/20">
                     ✓ Aldım
                 </button>
-                <button onclick="toggleShoppingList(decodeURIComponent('${encodedItem}'), event)" class="pill-btn text-rose-400 text-xs font-semibold px-2 py-1 hover:text-rose-300">
+                <button data-action="shopping" data-value="${escapeHTML(encodedItem)}" class="pill-btn text-rose-400 text-xs font-semibold px-2 py-1 hover:text-rose-300">
                     Sil
                 </button>
             </div>
@@ -1755,9 +1754,17 @@ async function saveCustomRecipe() {
     if(!name || !instructions || ingredients.length === 0) {
         return alert("Lütfen tarif adı, en az bir malzeme ve hazırlanışını doldurun!");
     }
+    if (name.length > 200 || instructions.length > 10000 || serving.length > 1000 ||
+        ingredients.length > 50 || ingredients.some(i => i.length > 200) || customRecipes.length >= 300) {
+        return alert("Tarif sınırı aşıldı. En fazla 300 tarif, 50 malzeme ve 200 karakterlik ad kullanın.");
+    }
 
     let base64Image = "";
     if (imageInput && imageInput.files && imageInput.files[0]) {
+        const file = imageInput.files[0];
+        if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
+            return alert("En fazla 5 MB boyutunda JPG, PNG, WebP veya GIF seçin.");
+        }
         base64Image = await compressImage(imageInput.files[0], 480, 480, 0.75);
     }
 
@@ -1828,28 +1835,43 @@ async function exportUserData() {
     }
 }
 
-function importUserData() {
+async function importUserData() {
     const input = document.getElementById('sync-data-input')?.value.trim();
     if(!input) return alert("Lütfen geçerli bir yedekleme kodu yapıştırın.");
     try {
-        const decrypted = JSON.parse(decodeURIComponent(escape(atob(input))));
-        if(Array.isArray(decrypted.favorites)) favoriteCocktails = decrypted.favorites;
-        if(Array.isArray(decrypted.customs)) customRecipes = decrypted.customs;
-        if(Array.isArray(decrypted.shopping)) shoppingList = decrypted.shopping;
-        if(Array.isArray(decrypted.selected)) selectedIngredients = decrypted.selected;
-        
+        if (input.length > BarSecurity.MAX_BACKUP_LENGTH) throw new Error('Yedek çok büyük');
+        const decrypted = BarSecurity.backup(JSON.parse(decodeURIComponent(escape(atob(input)))));
+        if (!confirm("Bu yedek mevcut favori, tarif, alışveriş ve malzeme listelerinizin yerini alacak. Devam edilsin mi?")) return;
+        const values = {
+            favoriteCocktails: decrypted.favorites, customRecipes: decrypted.customs,
+            shoppingList: decrypted.shopping, selectedIngredients: decrypted.selected
+        };
+        const previous = Object.fromEntries(Object.keys(values).map(key => [key, localStorage.getItem(key)]));
         try {
-            localStorage.setItem('favoriteCocktails', JSON.stringify(favoriteCocktails));
-            localStorage.setItem('customRecipes', JSON.stringify(customRecipes));
-            localStorage.setItem('shoppingList', JSON.stringify(shoppingList));
-            localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients));
-        } catch(e) {}
-        
-        if (db) {
-            const tx = db.transaction("custom_recipes", "readwrite");
-            const store = tx.objectStore("custom_recipes");
-            customRecipes.forEach(recipe => store.put(recipe));
+            for (const [key, value] of Object.entries(values)) localStorage.setItem(key, JSON.stringify(value));
+            if (db) {
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction("custom_recipes", "readwrite");
+                    tx.oncomplete = resolve;
+                    tx.onerror = tx.onabort = () => reject(new Error('Veritabanına yazılamadı'));
+                    const store = tx.objectStore("custom_recipes");
+                    store.clear();
+                    decrypted.customs.forEach(recipe => store.put(recipe));
+                });
+            }
+        } catch (error) {
+            for (const [key, value] of Object.entries(previous)) {
+                try {
+                    if (value === null) localStorage.removeItem(key);
+                    else localStorage.setItem(key, value);
+                } catch {}
+            }
+            return alert("Yedek kaydedilemedi. Depolama iznini ve boş alanı kontrol edin.");
         }
+        favoriteCocktails = decrypted.favorites;
+        customRecipes = decrypted.customs;
+        shoppingList = decrypted.shopping;
+        selectedIngredients = decrypted.selected;
         
         alert("Senkronizasyon başarılı!");
         location.reload();
@@ -1910,7 +1932,9 @@ async function fetchDataWithIndexedDB() {
                 await new Promise((resolve) => {
                     customReq.onsuccess = () => {
                         if (customReq.result && customReq.result.length > 0) {
-                            customRecipes = customReq.result;
+                            customRecipes = customReq.result.flatMap(item => {
+                                try { return [BarSecurity.recipe(item)]; } catch { return []; }
+                            }).slice(0, 300);
                             try { localStorage.setItem('customRecipes', JSON.stringify(customRecipes)); } catch(e) {}
                         }
                         resolve();
@@ -2190,10 +2214,16 @@ function showUpdateModal(release) {
         else targetUrl = 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Debug.apk';
     } else {
         if (btnLabel) btnLabel.innerText = "Yenilikleri Gör & Sayfayı Yenile";
-        targetUrl = 'javascript:window.location.reload(true)';
+        targetUrl = window.location.href;
     }
 
-    if (btn) btn.href = targetUrl;
+    if (btn) {
+        btn.href = (isElectron || isAndroid) ? BarSecurity.releaseURL(targetUrl) : window.location.href;
+        btn.onclick = (isElectron || isAndroid) ? null : event => {
+            event.preventDefault();
+            window.location.reload();
+        };
+    }
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -2206,4 +2236,3 @@ function closeUpdateModal() {
         modal.classList.remove('flex');
     }
 }
-

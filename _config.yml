@@ -1,0 +1,15 @@
+# Publish only the web app, never desktop tooling, certificates or test fixtures.
+exclude:
+  - android
+  - certs
+  - scripts
+  - tests
+  - node_modules
+  - build
+  - dist
+  - package.json
+  - package-lock.json
+  - main.js
+  - SECURITY.md
+  - tailwind.config.cjs
+  - tailwind.input.css

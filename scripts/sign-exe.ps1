@@ -1,33 +1,23 @@
 param(
-    [Parameter(Mandatory=$false)]
-    [string]$FilePath = ""
+    [Parameter(Mandatory=$true)]
+    [string]$FilePath
 )
 
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$certPath = Join-Path $scriptDir "..\certs\BarCepte.pfx"
-
-if (-not $FilePath) {
-    # Default to dist setup exe or Desktop setup exe if exists
-    if (Test-Path (Join-Path $scriptDir "..\dist\BarCepte-Setup.exe")) {
-        $FilePath = (Join-Path $scriptDir "..\dist\BarCepte-Setup.exe")
-    } elseif (Test-Path "$HOME\Desktop\BarCepte-Setup.exe") {
-        $FilePath = "$HOME\Desktop\BarCepte-Setup.exe"
-    } else {
-        Write-Host "Kullanim: .\sign-exe.ps1 <dosya_yolu.exe>" -ForegroundColor Yellow
-        exit 1
-    }
+# Only use a NEW, private certificate. The formerly committed key is compromised.
+# Configure CSC_LINK / CSC_KEY_PASSWORD in the process environment or CI secret store.
+if (-not $env:CSC_LINK -or -not $env:CSC_KEY_PASSWORD) {
+    throw "Yeni ozel sertifika icin CSC_LINK ve CSC_KEY_PASSWORD gerekli."
 }
-
-if (-not (Test-Path $certPath)) {
-    Write-Host "Hata: Sertifika bulunamadi ($certPath)!" -ForegroundColor Red
-    exit 1
+if (-not (Test-Path $env:CSC_LINK) -or -not (Test-Path $FilePath)) {
+    throw "Sertifika veya imzalanacak dosya bulunamadi."
 }
-
-$certPassword = ConvertTo-SecureString "BarCepte2026!" -AsPlainText -Force
-$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certPath, $certPassword)
-
-Write-Host "Dosya imzalaniyor: $FilePath" -ForegroundColor Cyan
-$result = Set-AuthenticodeSignature -FilePath $FilePath -Certificate $cert -TimestampServer "http://timestamp.digicert.com"
-
-Write-Host "Imzalama tamamlandi." -ForegroundColor Green
-Get-AuthenticodeSignature $FilePath | Format-List Subject, Status, StatusMessage, Path
+$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
+    $env:CSC_LINK, $env:CSC_KEY_PASSWORD
+)
+try {
+    $result = Set-AuthenticodeSignature -FilePath $FilePath -Certificate $cert -TimestampServer "http://timestamp.digicert.com"
+    if ($result.Status -ne "Valid") { throw "Imza dogrulanamadi: $($result.Status)" }
+    Write-Host "Imza dogrulandi."
+} finally {
+    $cert.Dispose()
+}

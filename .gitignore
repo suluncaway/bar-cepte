@@ -6,3 +6,12 @@ Thumbs.db
 build.log
 local.properties
 *.apk
+*.pfx
+*.p12
+*.key
+*.pem
+*.jks
+*.keystore
+.env
+.env.*
+!/.env.example

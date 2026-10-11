@@ -2,12 +2,14 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.thecocktaildb.com; connect-src 'self' https://www.thecocktaildb.com https://translate.googleapis.com https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'self'; manifest-src 'self'">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bar Cepte — Akıllı Bar & Kokteyl Asistanı</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://www.thecocktaildb.com">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
@@ -34,27 +36,27 @@
             
             <div class="flex items-center gap-1.5 shrink-0">
                 <!-- Barmen Zamanlayıcısı (Sayaç) -->
-                <button id="btn-open-timer" onclick="openTimerModal(15, 'Buzla kuvvetlice çalkala (Shaker)')" title="Barmen Sayacı (Shaker / Karıştırma)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
+                <button id="btn-open-timer" data-ui="ui-0" title="Barmen Sayacı (Shaker / Karıştırma)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
                     <span>⏱️</span>
                     <span class="hidden sm:inline">Sayaç</span>
                 </button>
 
                 <!-- Barmen Modu (Ekran Uyanık Kalma) -->
-                <button id="btn-wake-lock" onclick="toggleWakeLock()" title="Kokteyl yaparken ekranın kapanmasını önler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
+                <button id="btn-wake-lock" data-ui="ui-1" title="Kokteyl yaparken ekranın kapanmasını önler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
                     <span id="wake-icon">💡</span>
                     <span id="wake-status" class="hidden sm:inline">Ekran Koru</span>
                 </button>
 
                 <!-- PWA Yükleme Butonu -->
-                <button id="btn-pwa-install" onclick="installPWA()" class="hidden pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[11px] font-bold text-amber-400 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
+                <button id="btn-pwa-install" data-ui="ui-2" class="hidden pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[11px] font-bold text-amber-400 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
                     <span>📲</span> <span class="hidden sm:inline">Yükle</span>
                 </button>
 
                 <!-- Geliştiriciye Destek Ol (Buy Me a Coffee) -->
-                <a href="https://buymeacoffee.com/suluncaway" target="_blank" rel="noopener noreferrer" title="Geliştiriciye Bir Kahve Ismarla" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-semibold text-amber-300 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
+                <button type="button" data-support-button title="Geliştiriciye Bir Kahve Ismarla" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-semibold text-amber-300 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
                     <span>☕</span>
                     <span class="hidden sm:inline">Destek Ol</span>
-                </a>
+                </button>
             </div>
         </div>
 
@@ -62,22 +64,22 @@
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-medium no-scrollbar">
             <!-- Alkol Filtresi Segmenti -->
             <div class="flex bg-slate-900/90 p-0.5 rounded-xl border border-white/10 shrink-0 text-[11px] font-semibold">
-                <button id="btn-all-alcohol" onclick="setAlcoholFilter('all')" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap transition-all shadow-sm">Hepsi</button>
-                <button id="btn-alcoholic" onclick="setAlcoholFilter('Alcoholic')" class="px-2.5 py-1 rounded-lg text-slate-400 whitespace-nowrap transition-all hover:text-white">Alkollü</button>
-                <button id="btn-non-alcoholic" onclick="setAlcoholFilter('Non_Alcoholic')" class="px-2.5 py-1 rounded-lg text-slate-400 whitespace-nowrap transition-all hover:text-white">Alkolsüz</button>
+                <button id="btn-all-alcohol" data-ui="ui-3" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap transition-all shadow-sm">Hepsi</button>
+                <button id="btn-alcoholic" data-ui="ui-4" class="px-2.5 py-1 rounded-lg text-slate-400 whitespace-nowrap transition-all hover:text-white">Alkollü</button>
+                <button id="btn-non-alcoholic" data-ui="ui-5" class="px-2.5 py-1 rounded-lg text-slate-400 whitespace-nowrap transition-all hover:text-white">Alkolsüz</button>
             </div>
 
             <div class="w-px h-4 bg-white/10 shrink-0"></div>
 
-            <button id="btn-fav-filter" onclick="toggleOnlyFavoritesFilter()" class="pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-rose-400 border border-white/10 shrink-0 flex items-center gap-1.5 hover:border-rose-500/40 whitespace-nowrap">
+            <button id="btn-fav-filter" data-ui="ui-6" class="pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-rose-400 border border-white/10 shrink-0 flex items-center gap-1.5 hover:border-rose-500/40 whitespace-nowrap">
                 <span>❤️</span> <span id="fav-filter-text">Favorilerim (0)</span>
             </button>
             <div class="w-px h-4 bg-white/10 shrink-0"></div>
-            <button data-taste="all" onclick="setTasteFilter('all', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 whitespace-nowrap shadow-sm">Tüm Tatlar</button>
-            <button data-taste="Sert" onclick="setTasteFilter('Sert', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🔥 Sert</button>
-            <button data-taste="Tatlı" onclick="setTasteFilter('Tatlı', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍭 Tatlı</button>
-            <button data-taste="Ekşi" onclick="setTasteFilter('Ekşi', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍋 Ekşi</button>
-            <button data-taste="Ferah" onclick="setTasteFilter('Ferah', this)" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍃 Ferah</button>
+            <button data-taste="all" data-ui="ui-7" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 whitespace-nowrap shadow-sm">Tüm Tatlar</button>
+            <button data-taste="Sert" data-ui="ui-8" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🔥 Sert</button>
+            <button data-taste="Tatlı" data-ui="ui-9" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍭 Tatlı</button>
+            <button data-taste="Ekşi" data-ui="ui-10" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍋 Ekşi</button>
+            <button data-taste="Ferah" data-ui="ui-11" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍃 Ferah</button>
         </div>
 
         <!-- Arama ve Eylemler -->
@@ -85,29 +87,29 @@
             <div class="flex gap-2">
                 <div class="relative w-full">
                     <span class="absolute left-3.5 top-2.5 text-xs text-slate-400">🔍</span>
-                    <input type="text" id="ing-search" oninput="debouncedRenderIngredients()" placeholder="Malzeme ara (örn: Votka, Nane, Tonik)..." class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
+                    <input type="text" id="ing-search" data-ui="ui-12" placeholder="Malzeme ara (örn: Votka, Nane, Tonik)..." class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
                 </div>
-                <button onclick="clearSelection()" class="shrink-0 pill-btn bg-slate-900/80 border border-white/10 text-rose-400 px-3.5 py-2 rounded-2xl text-xs font-semibold hover:border-rose-500/40">🗑️ Temizle</button>
+                <button data-ui="ui-13" class="shrink-0 pill-btn bg-slate-900/80 border border-white/10 text-rose-400 px-3.5 py-2 rounded-2xl text-xs font-semibold hover:border-rose-500/40">🗑️ Temizle</button>
             </div>
             
             <div class="flex gap-2">
                 <div class="relative w-full">
                     <span class="absolute left-3.5 top-2.5 text-xs text-slate-400">🍸</span>
-                    <input type="text" id="cocktail-search" oninput="debouncedFilterCocktails()" placeholder="Kokteyl ismiyle ara (örn: Margarita, Mojito, Negroni)..." class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
+                    <input type="text" id="cocktail-search" data-ui="ui-14" placeholder="Kokteyl ismiyle ara (örn: Margarita, Mojito, Negroni)..." class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
                 </div>
-                <button onclick="pickRandomCocktail()" class="shrink-0 pill-btn bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 px-3.5 py-2 rounded-2xl text-xs font-bold hover:border-amber-400">🎲 Rastgele</button>
+                <button data-ui="ui-15" class="shrink-0 pill-btn bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 px-3.5 py-2 rounded-2xl text-xs font-bold hover:border-amber-400">🎲 Rastgele</button>
             </div>
 
             <!-- Ana Sekmeler (Zarif Segmentasyon) -->
             <div class="flex gap-2 overflow-x-auto text-xs font-semibold pt-1 no-scrollbar border-t border-white/5">
-                <button id="tab-bar" onclick="switchTab('bar')" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">📊 Barım</button>
-                <button id="tab-alkol" onclick="switchTab('alkol')" class="bg-amber-500/15 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded-xl shrink-0 transition-all font-bold">🍸 Alkoller</button>
-                <button id="tab-mutfak" onclick="switchTab('mutfak')" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">🍋 Mutfak</button>
-                <button id="tab-favorites" onclick="switchTab('favorites')" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-rose-400">❤️ Favorilerim</button>
-                <button id="tab-custom" onclick="switchTab('custom')" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">✨ Tarif Ekle</button>
-                <button id="tab-my-recipes" onclick="switchTab('my-recipes')" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">📜 Tariflerim</button>
-                <button id="tab-shop" onclick="switchTab('shop')" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">🛒 Alışveriş</button>
-                <button id="tab-sync" onclick="switchTab('sync')" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">⚙️ Yedekle</button>
+                <button id="tab-bar" data-ui="ui-16" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">📊 Barım</button>
+                <button id="tab-alkol" data-ui="ui-17" class="bg-amber-500/15 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded-xl shrink-0 transition-all font-bold">🍸 Alkoller</button>
+                <button id="tab-mutfak" data-ui="ui-18" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">🍋 Mutfak</button>
+                <button id="tab-favorites" data-ui="ui-19" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-rose-400">❤️ Favorilerim</button>
+                <button id="tab-custom" data-ui="ui-20" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">✨ Tarif Ekle</button>
+                <button id="tab-my-recipes" data-ui="ui-21" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">📜 Tariflerim</button>
+                <button id="tab-shop" data-ui="ui-22" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">🛒 Alışveriş</button>
+                <button id="tab-sync" data-ui="ui-23" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">⚙️ Yedekle</button>
             </div>
         </div>
     </header>
@@ -156,18 +158,18 @@
         <section id="ingredients-section" class="space-y-2 relative px-2">
             <!-- Mutfak Alt Kategori Çipleri (Mutfak sekmesinde otomatik açılır) -->
             <div id="kitchen-subcategories" class="hidden flex items-center gap-1.5 overflow-x-auto pb-1 px-2 text-[11px] font-medium no-scrollbar">
-                <button data-subcat="all" onclick="setKitchenSubCategory('all', this)" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm">Tümü</button>
-                <button data-subcat="meyve" onclick="setKitchenSubCategory('meyve', this)" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍊 Meyve & Narenciye</button>
-                <button data-subcat="gazli" onclick="setKitchenSubCategory('gazli', this)" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🫧 Gazlı & Meşrubat</button>
-                <button data-subcat="tatli" onclick="setKitchenSubCategory('tatli', this)" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍯 Şurup & Tatlı</button>
-                <button data-subcat="baharat" onclick="setKitchenSubCategory('baharat', this)" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🌿 Ot & Baharat</button>
-                <button data-subcat="sut-kahve" onclick="setKitchenSubCategory('sut-kahve', this)" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">☕ Süt & Kahve</button>
+                <button data-subcat="all" data-ui="ui-24" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm">Tümü</button>
+                <button data-subcat="meyve" data-ui="ui-25" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍊 Meyve & Narenciye</button>
+                <button data-subcat="gazli" data-ui="ui-26" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🫧 Gazlı & Meşrubat</button>
+                <button data-subcat="tatli" data-ui="ui-27" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍯 Şurup & Tatlı</button>
+                <button data-subcat="baharat" data-ui="ui-28" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🌿 Ot & Baharat</button>
+                <button data-subcat="sut-kahve" data-ui="ui-29" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">☕ Süt & Kahve</button>
             </div>
 
             <div class="relative flex items-center bg-white/[0.02] py-2.5 rounded-3xl border border-white/5">
-                <button onclick="scrollIngredients(-160)" class="absolute left-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all">◀</button>
+                <button data-ui="ui-30" class="absolute left-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all">◀</button>
                 <div id="ingredients-container" class="flex gap-3 overflow-x-auto custom-scroll px-12 py-2 scroll-smooth snap-x w-full min-h-[125px]"></div>
-                <button onclick="scrollIngredients(160)" class="absolute right-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all">▶</button>
+                <button data-ui="ui-31" class="absolute right-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all">▶</button>
             </div>
         </section>
 
@@ -204,7 +206,7 @@
                         <input type="file" id="custom-image-input" accept="image/*" class="w-full text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20">
                     </div>
                     
-                    <button onclick="saveCustomRecipe()" class="w-full bg-amber-500 text-slate-950 font-bold py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-amber-400">Tarifi Kaydet</button>
+                    <button data-ui="ui-32" class="w-full bg-amber-500 text-slate-950 font-bold py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-amber-400">Tarifi Kaydet</button>
                 </div>
             </div>
         </section>
@@ -222,7 +224,7 @@
             <div class="acrylic-card p-5 rounded-3xl space-y-4">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
                     <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">🛒 Eksik Malzeme Alışveriş Listesi</h2>
-                    <button onclick="clearShoppingList()" class="text-xs text-rose-400 font-semibold hover:underline">Hepsini Sil</button>
+                    <button data-ui="ui-33" class="text-xs text-rose-400 font-semibold hover:underline">Hepsini Sil</button>
                 </div>
                 <div id="shopping-list-container" class="space-y-2 text-xs"></div>
             </div>
@@ -234,17 +236,17 @@
                 <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">⚙️ Veri Yedekleme & Aktarım</h2>
                 <p class="text-slate-400 text-xs">Favori kokteyllerinizi ve kendi tariflerinizi başka bir cihaza taşımak için kodu kopyalayın veya yapıştırın.</p>
                 <div class="space-y-2.5 pt-2">
-                    <button onclick="exportUserData()" class="w-full bg-slate-900 border border-white/10 text-white font-semibold py-2.5 rounded-xl hover:border-amber-500 transition-all">Yedekleme Kodunu Kopyala</button>
+                    <button data-ui="ui-34" class="w-full bg-slate-900 border border-white/10 text-white font-semibold py-2.5 rounded-xl hover:border-amber-500 transition-all">Yedekleme Kodunu Kopyala</button>
                     <textarea id="sync-data-input" rows="3" placeholder="Başka cihazdan aldığınız yedekleme kodunu buraya yapıştırın..." class="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white resize-none outline-none focus:border-amber-500"></textarea>
-                    <button onclick="importUserData()" class="w-full bg-amber-500 text-slate-950 font-bold py-2.5 rounded-xl hover:bg-amber-400 transition-all">Yedeği Geri Yükle</button>
+                    <button data-ui="ui-35" class="w-full bg-amber-500 text-slate-950 font-bold py-2.5 rounded-xl hover:bg-amber-400 transition-all">Yedeği Geri Yükle</button>
                 </div>
                 
                 <div class="border-t border-white/10 pt-3 mt-3 space-y-2">
                     <p class="text-slate-400 text-xs mb-1">Çevrimiçi veritabanından yeni kokteylleri kontrol et:</p>
-                    <button onclick="forceSyncOnlineDatabase()" id="btn-force-sync" class="w-full bg-slate-900 border border-amber-500/30 text-amber-300 font-semibold py-2.5 rounded-xl hover:bg-amber-500/10 transition-all flex items-center justify-center gap-2">
+                    <button data-ui="ui-36" id="btn-force-sync" class="w-full bg-slate-900 border border-amber-500/30 text-amber-300 font-semibold py-2.5 rounded-xl hover:bg-amber-500/10 transition-all flex items-center justify-center gap-2">
                         <span>🔄</span> Kokteyl Veritabanını Güncelle
                     </button>
-                    <button onclick="checkForAppUpdates(true)" class="w-full bg-slate-900 border border-white/10 text-slate-300 font-semibold py-2.5 rounded-xl hover:border-amber-500/40 hover:text-white transition-all flex items-center justify-center gap-2">
+                    <button data-ui="ui-37" class="w-full bg-slate-900 border border-white/10 text-slate-300 font-semibold py-2.5 rounded-xl hover:border-amber-500/40 hover:text-white transition-all flex items-center justify-center gap-2">
                         <span>🚀</span> Yeni Sürüm Kontrolü Yap (v1.1.0)
                     </button>
                 </div>
@@ -273,7 +275,7 @@
                         </div>
                         <div class="min-w-0">
                             <div class="flex items-center gap-1.5">
-                                <span class="text-[9px] uppercase tracking-wider font-extrabold bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">ÖNERİ</span>
+                                <span class="shrink-0 whitespace-nowrap text-[9px] uppercase tracking-wider font-extrabold bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">ÖNERİ</span>
                                 <span class="text-xs font-bold text-white truncate">Paslanmaz Shaker & Bar Seti</span>
                             </div>
                             <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">Evde kokteyl hazırlamak için gereken tüm temel ekipmanlar</p>
@@ -302,7 +304,7 @@
         <footer class="mt-12 text-center text-xs text-slate-500 space-y-2 pb-6">
             <p class="font-medium text-slate-400">Bar Cepte — Akıllı Bar & Kokteyl Asistanı</p>
             <div class="flex items-center justify-center gap-3 text-[11px]">
-                <a href="https://buymeacoffee.com/suluncaway" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:underline flex items-center gap-1 font-semibold">☕ Kahve Ismarla</a>
+                <button type="button" data-support-button class="text-amber-400 hover:underline flex items-center gap-1 font-semibold">☕ Kahve Ismarla</button>
                 <span class="text-slate-700">•</span>
                 <a href="https://www.amazon.com.tr/s?k=kokteyl+shaker+seti" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white flex items-center gap-1">🛒 Bar Ekipmanları</a>
             </div>
@@ -312,7 +314,7 @@
     <!-- Barmen Zamanlayıcısı (Shaker & Stir Timer) Modal -->
     <div id="shaker-timer-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 animate-fade-in">
         <div class="acrylic-card w-full max-w-xs p-6 rounded-3xl space-y-4 text-center relative border border-amber-500/30 shadow-2xl">
-            <button onclick="closeTimerModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center">✕</button>
+            <button data-ui="ui-38" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center">✕</button>
             
             <div class="flex items-center justify-center gap-2 pt-1">
                 <span class="text-2xl">⏱️</span>
@@ -327,17 +329,17 @@
 
             <!-- Hızlı Süre Seçenekleri -->
             <div class="grid grid-cols-3 gap-1.5 text-xs font-semibold">
-                <button onclick="setTimerDuration(15, 'Buzla kuvvetlice çalkala (Shaker)')" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px]">15s Shaker</button>
-                <button onclick="setTimerDuration(30, 'Buzla nazikçe karıştır (Stir)')" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-black/40 text-slate-300 border border-white/10 text-[11px]">30s Karıştır</button>
-                <button onclick="setTimerDuration(45, 'İyice soğut ve harmanla')" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-black/40 text-slate-300 border border-white/10 text-[11px]">45s Soğut</button>
+                <button data-ui="ui-39" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px]">15s Shaker</button>
+                <button data-ui="ui-40" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-black/40 text-slate-300 border border-white/10 text-[11px]">30s Karıştır</button>
+                <button data-ui="ui-41" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-black/40 text-slate-300 border border-white/10 text-[11px]">45s Soğut</button>
             </div>
 
             <!-- Kontrol Butonları -->
             <div class="flex gap-2 pt-2">
-                <button id="btn-timer-toggle" onclick="toggleTimer()" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs hover:from-amber-400 hover:to-amber-500">
+                <button id="btn-timer-toggle" data-ui="ui-42" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs hover:from-amber-400 hover:to-amber-500">
                     ▶ Başlat
                 </button>
-                <button onclick="resetTimer()" class="px-3.5 py-3 bg-white/5 border border-white/10 text-slate-300 font-semibold rounded-2xl hover:bg-white/10 transition-all text-xs">
+                <button data-ui="ui-43" class="px-3.5 py-3 bg-white/5 border border-white/10 text-slate-300 font-semibold rounded-2xl hover:bg-white/10 transition-all text-xs">
                     🔄 Sıfırla
                 </button>
             </div>
@@ -347,7 +349,7 @@
     <!-- Uygulama Güncelleme Modalı (Android, Windows ve Web) -->
     <div id="update-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4 animate-fade-in">
         <div class="acrylic-card w-full max-w-sm p-6 rounded-3xl space-y-4 text-center relative border border-amber-500/40 shadow-2xl">
-            <button onclick="closeUpdateModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center">✕</button>
+            <button data-ui="ui-44" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center">✕</button>
             
             <div class="w-14 h-14 mx-auto rounded-3xl bg-gradient-to-tr from-amber-500/30 to-amber-400/10 border border-amber-500/40 flex items-center justify-center text-3xl shadow-lg">
                 🚀
@@ -368,33 +370,22 @@
                     <span>⬇️</span>
                     <span id="update-btn-label">Şimdi Güncelle</span>
                 </a>
-                <button onclick="closeUpdateModal()" class="w-full py-2 text-slate-400 hover:text-white text-xs font-semibold">
+                <button data-ui="ui-45" class="w-full py-2 text-slate-400 hover:text-white text-xs font-semibold">
                     Daha Sonra Hatırlat
                 </button>
             </div>
         </div>
     </div>
 
+    <dialog id="support-dialog" aria-labelledby="support-title" class="m-auto bg-slate-900 text-slate-200 rounded-2xl p-6 border border-amber-500/30 max-w-sm w-[90%] shadow-xl">
+        <h2 id="support-title" class="font-bold text-amber-300 text-lg mb-3">Bar Cepte’ye destek</h2>
+        <p class="text-sm leading-relaxed">Destek sayfamız henüz hazır değil. Bağlantı doğrulandığında buradan güvenle ulaşabileceksiniz. İlginiz için teşekkür ederiz.</p>
+        <button id="support-close" type="button" class="mt-5 w-full rounded-xl bg-amber-500 text-slate-950 font-bold px-4 py-2">Tamam</button>
+    </dialog>
+    <script src="security.js"></script>
     <script src="game.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(reg => {
-                    // PWA arka plan güncellemesi yakalandığında
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        if (newWorker) {
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // PWA yeni sürüm yüklendi, kullanıcıya bildirim ver
-                                    console.log('Yeni PWA sürümü hazır.');
-                                }
-                            });
-                        }
-                    });
-                }).catch(err => console.log('SW Registration failed: ', err));
-            });
-        }
-    </script>
+    <script src="dynamic-ui.js"></script>
+    <script src="ui-bindings.js"></script>
+    <script src="support.js"></script>
 </body>
 </html>

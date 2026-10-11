@@ -9,6 +9,11 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
+const PUBLIC_FILES = new Set([
+  '/index.html', '/style.css', '/tailwind.css', '/game.js', '/security.js',
+  '/ui-bindings.js', '/dynamic-ui.js', '/support.js', '/manifest.json', '/sw.js',
+  '/cocktails.json', '/icon.png', '/build/icon.png'
+]);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -37,10 +42,15 @@ function createLocalServer() {
     }
 
     if (pathname === '/' || pathname === '') pathname = '/index.html';
+    if (!['GET', 'HEAD'].includes(req.method) || !PUBLIC_FILES.has(pathname)) {
+      res.writeHead(404);
+      res.end('Not found');
+      return;
+    }
 
     // Dizin dışına çıkma (path traversal) koruması
     const filePath = path.normalize(path.join(ROOT, pathname));
-    if (!filePath.startsWith(ROOT)) {
+    if (!filePath.startsWith(ROOT + path.sep)) {
       res.writeHead(403);
       res.end('Forbidden');
       return;
@@ -53,8 +63,13 @@ function createLocalServer() {
         return;
       }
       const ext = path.extname(filePath).toLowerCase();
-      res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
-      res.end(data);
+      res.writeHead(200, {
+        'Content-Type': MIME[ext] || 'application/octet-stream',
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Cache-Control': 'no-cache'
+      });
+      res.end(req.method === 'HEAD' ? undefined : data);
     });
   });
 }
@@ -88,7 +103,7 @@ function createWindow() {
   });
 
   mainWindow.webContents.on('will-navigate', (e, url) => {
-    if (!url.startsWith(`http://127.0.0.1:${port}`)) {
+    if (new URL(url).origin !== `http://127.0.0.1:${port}`) {
       e.preventDefault();
       if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     }

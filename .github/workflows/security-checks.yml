@@ -1,0 +1,32 @@
+name: Web Security Checks
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm audit --omit=optional --audit-level=moderate
+      - run: npm run build:css
+      - name: Check JavaScript syntax
+        run: |
+          for file in game.js security.js ui-bindings.js dynamic-ui.js support.js sw.js main.js; do
+            node --check "$file"
+          done
+      - name: Reject tracked signing secrets
+        run: |
+          if git ls-files | grep -E '\.(pfx|p12|key|pem|jks|keystore)$'; then
+            echo "Private signing material must not be committed."
+            exit 1
+          fi
