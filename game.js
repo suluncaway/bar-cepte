@@ -929,12 +929,23 @@ function renderDashboard() {
     const countReady = document.getElementById('count-ready') ? document.getElementById('count-ready').innerText : "0";
     if(readyCountEl) readyCountEl.innerText = `${countReady} Tarif`;
 
+    const dashClearBtn = document.getElementById('btn-dashboard-clear-bar');
+    if (dashClearBtn) {
+        dashClearBtn.classList.toggle('hidden', selectedIngredients.length === 0);
+    }
+
     const topContainer = document.getElementById('top-ingredients');
     if(topContainer) {
         topContainer.innerHTML = selectedIngredients.map(id => {
             const item = popularIngredients.find(pi => pi.id === id);
             const label = item ? `${item.emoji} ${escapeHTML(item.name)}` : escapeHTML(id);
-            return `<span class="bg-slate-900/90 text-amber-300 border border-white/10 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5 font-medium break-words">${label}</span>`;
+            const encodedId = encodeURIComponent(id);
+            return `
+                <span class="bg-slate-900/90 text-amber-300 border border-white/10 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
+                    <span>${label}</span>
+                    <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="Barından Çıkar">✕</button>
+                </span>
+            `;
         }).join('') || `<span class="text-slate-500 text-xs">Henüz barına malzeme eklemedin. 'Alkoller' veya 'Mutfak' sekmesinden malzeme seçebilirsin.</span>`;
     }
 }
@@ -1019,6 +1030,45 @@ function renderIngredients() {
     if (summary) summary.textContent = selectedIngredients.length
         ? `${selectedIngredients.length} malzeme barına eklendi`
         : 'Malzemelerini seçerek başla';
+
+    // Üst başlık temizleme butonu
+    const headerClearBtn = document.getElementById('btn-clear-selection-header');
+    if (headerClearBtn) {
+        headerClearBtn.classList.toggle('hidden', selectedIngredients.length === 0);
+    }
+
+    // Arama yanındaki temizle butonu (Dinamik adet göstergesi)
+    const searchClearBtn = document.querySelector('[data-ui="ui-13"]');
+    if (searchClearBtn) {
+        searchClearBtn.textContent = selectedIngredients.length ? `🗑️ Temizle (${selectedIngredients.length})` : '🗑️ Temizle';
+    }
+
+    // Seçili Malzemeler Paneli (Tray)
+    const tray = document.getElementById('selected-ingredients-tray');
+    const badgeCount = document.getElementById('selected-badge-count');
+    const chipsContainer = document.getElementById('selected-chips-container');
+    if (tray && badgeCount && chipsContainer) {
+        if (selectedIngredients.length > 0) {
+            tray.classList.remove('hidden');
+            badgeCount.textContent = selectedIngredients.length;
+            chipsContainer.innerHTML = selectedIngredients.map(id => {
+                const item = popularIngredients.find(pi => pi.id === id);
+                const emoji = item ? item.emoji : '🥃';
+                const name = item ? item.name : id;
+                const encodedId = encodeURIComponent(id);
+                return `
+                    <span class="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-200 border border-amber-500/35 px-2.5 py-1 rounded-xl text-xs font-semibold shadow-sm transition-all hover:border-amber-400">
+                        <span>${emoji}</span>
+                        <span>${escapeHTML(name)}</span>
+                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/80 hover:text-rose-400 font-bold ml-1 text-xs w-4 h-4 flex items-center justify-center rounded-full hover:bg-white/10" title="Barından Çıkar">✕</button>
+                    </span>
+                `;
+            }).join('');
+        } else {
+            tray.classList.add('hidden');
+            chipsContainer.innerHTML = '';
+        }
+    }
     
     const searchVal = document.getElementById('ing-search')?.value.toLowerCase().trim() || "";
     
@@ -1074,12 +1124,35 @@ const debouncedRenderIngredients = debounce(renderIngredients, 150);
 const debouncedFilterCocktails = debounce(filterCocktails, 180);
 
 function clearSelection() {
-    if(selectedIngredients.length === 0) return;
+    if(selectedIngredients.length === 0) {
+        showToast('Barında zaten seçili malzeme yok.', 'info');
+        return;
+    }
     triggerHaptic('medium');
+    const count = selectedIngredients.length;
     selectedIngredients = [];
     try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
+    const searchInput = document.getElementById('ing-search');
+    if (searchInput) searchInput.value = '';
     renderIngredients();
     filterCocktails();
+    renderDashboard();
+    showToast(`${count} malzeme barından temizlendi.`, 'info');
+}
+
+function removeIngredientFromBar(ingId, event) {
+    if (event) event.stopPropagation();
+    const targetId = decodeURIComponent(String(ingId || '').trim());
+    if (!targetId) return;
+    triggerHaptic('light');
+    selectedIngredients = selectedIngredients.filter(i => i.toLowerCase() !== targetId.toLowerCase());
+    try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
+    const item = popularIngredients.find(pi => pi.id.toLowerCase() === targetId.toLowerCase());
+    const name = item ? item.name : targetId;
+    renderIngredients();
+    filterCocktails();
+    renderDashboard();
+    showToast(`"${name}" barından çıkarıldı.`, 'info');
 }
 
 function ingredientNameOnly(str) {

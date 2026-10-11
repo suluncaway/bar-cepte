@@ -48,6 +48,9 @@
       "sw.js",
       "main.js",
       "cocktails.json",
+      "ads.js",
+      "ads.txt",
+      "privacy.html",
       "build/icon.png"
     ],
     "win": {

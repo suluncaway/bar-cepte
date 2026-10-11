@@ -40,6 +40,12 @@ document.addEventListener('click', event => {
             case 'export-story':
                 downloadCocktailStoryCard(value);
                 break;
+            case 'clear-all-ingredients':
+                clearSelection();
+                break;
+            case 'remove-ingredient':
+                removeIngredientFromBar(value, event);
+                break;
         }
     } else if (event.target.closest('[data-stop-card]')) {
         event.stopPropagation();

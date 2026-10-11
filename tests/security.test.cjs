@@ -78,9 +78,17 @@ test('original user-supplied coffee widget is preserved with a narrow CSP except
     const snippet = '<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="suluncau" data-color="#FFDD00" data-emoji=""  data-font="Bree" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>';
     assert.ok(html.includes(snippet));
     assert.equal(html.split(snippet).length - 1, 1);
-    assert.match(html, /script-src 'self' https:\/\/cdnjs\.buymeacoffee\.com\/1\.0\.0\/button\.prod\.min\.js;/);
+    assert.match(html, /script-src 'self' https:\/\/cdnjs\.buymeacoffee\.com\/1\.0\.0\/button\.prod\.min\.js/);
     assert.doesNotMatch(html, /coffee-support-link|coffee-support-cup/);
     assert.match(html, /script-src-attr 'none'/);
+});
+test('Google AdSense integration and CSP exceptions are configured correctly', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    assert.match(html, /https:\/\/pagead2\.googlesyndication\.com/);
+    assert.match(html, /frame-src [^;]*https:\/\/googleads\.g\.doubleclick\.net/);
+    assert.match(html, /frame-src [^;]*https:\/\/pagead2\.googlesyndication\.com/);
+    assert.ok(fs.existsSync('ads.txt'));
+    assert.ok(fs.existsSync('ads.js'));
 });
 test('editorial layout keeps all original UI bindings and local-only hero assets', () => {
     const html = fs.readFileSync('index.html', 'utf8');

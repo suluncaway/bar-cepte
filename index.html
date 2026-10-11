@@ -2,19 +2,22 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.thecocktaildb.com; connect-src 'self' https://www.thecocktaildb.com https://translate.googleapis.com https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'self'; manifest-src 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.thecocktaildb.com https://pagead2.googlesyndication.com https://*.doubleclick.net https://*.googlesyndication.com; connect-src 'self' https://www.thecocktaildb.com https://translate.googleapis.com https://api.github.com https://pagead2.googlesyndication.com; frame-src 'self' https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://tpc.googlesyndication.com; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'self'; manifest-src 'self'">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bar Cepte — Akıllı Bar & Kokteyl Asistanı</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://www.thecocktaildb.com">
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#101b19">
+    <!-- Google AdSense (ca-pub-XXXXXXXXXXXXXXXX yerine kendi yayıncı kimliğinizi giriniz) -->
+    <script type="text/javascript" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 </head>
 <body class="bg-[#07090e] text-slate-100 min-h-screen antialiased select-none pb-28">
 
@@ -92,7 +95,15 @@
             </figure>
         </section>
         <section id="discovery-controls" class="discovery-controls" aria-labelledby="discovery-heading">
-            <div class="section-intro"><div><span class="eyebrow">KEŞİF TEZGÂHI</span><h2 id="discovery-heading">Senin barında ne var?</h2></div><span id="selection-summary" class="selection-summary">Malzemelerini seçerek başla</span></div>
+            <div class="section-intro">
+                <div><span class="eyebrow">KEŞİF TEZGÂHI</span><h2 id="discovery-heading">Senin barında ne var?</h2></div>
+                <div class="flex items-center gap-2">
+                    <span id="selection-summary" class="selection-summary">Malzemelerini seçerek başla</span>
+                    <button id="btn-clear-selection-header" data-action="clear-all-ingredients" class="hidden pill-btn text-[11px] font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl transition-all active:scale-95" title="Seçili malzemeleri temizle">
+                        🗑️ Temizle
+                    </button>
+                </div>
+            </div>
                     <!-- Arama ve Eylemler -->
         <div class="space-y-2">
             <div class="flex gap-2">
@@ -182,7 +193,12 @@
                 </div>
 
                 <div>
-                    <p class="text-xs text-slate-400 font-semibold mb-2.5">Barındaki Malzemeler:</p>
+                    <div class="flex items-center justify-between mb-2.5">
+                        <p class="text-xs text-slate-400 font-semibold">Barındaki Malzemeler:</p>
+                        <button id="btn-dashboard-clear-bar" data-action="clear-all-ingredients" class="hidden pill-btn text-[11px] font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1 rounded-xl transition-all" title="Tüm malzemeleri barından çıkar">
+                            🗑️ Barı Boşalt
+                        </button>
+                    </div>
                     <div id="top-ingredients" class="flex flex-wrap gap-2 text-xs"></div>
                 </div>
             </div>
@@ -190,6 +206,19 @@
 
         <!-- 2. Malzeme Seçim Alanı -->
         <section id="ingredients-section" class="space-y-2 relative px-2">
+            <!-- Seçili Malzemeler Paneli (Malzeme seçildiğinde görünür) -->
+            <div id="selected-ingredients-tray" class="hidden mx-1 mb-2.5 p-3 bg-black/40 border border-amber-500/25 rounded-2xl flex flex-col gap-2 animate-fade-in shadow-lg">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-amber-400 font-bold flex items-center gap-1.5">
+                        <span>🍸</span> Barındaki Malzemeler (<span id="selected-badge-count">0</span>)
+                    </span>
+                    <button data-action="clear-all-ingredients" class="pill-btn text-[11px] font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1 rounded-xl transition-all">
+                        <span>🗑️</span> Tümünü Temizle
+                    </button>
+                </div>
+                <div id="selected-chips-container" class="flex flex-wrap gap-1.5 text-xs"></div>
+            </div>
+
             <!-- Mutfak Alt Kategori Çipleri (Mutfak sekmesinde otomatik açılır) -->
             <div id="kitchen-subcategories" class="hidden flex items-center gap-1.5 overflow-x-auto pb-1 px-2 text-[11px] font-medium no-scrollbar">
                 <button data-subcat="all" data-ui="ui-24" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm">Tümü</button>
@@ -326,6 +355,20 @@
                 </div>
             </section>
 
+            <!-- Google AdSense Duyarlı Reklam Alanı -->
+            <div class="ad-slot-container my-4 p-3 rounded-2xl bg-slate-900/60 border border-white/5 text-center">
+                <div class="flex items-center justify-center gap-1.5 mb-1.5 text-[9px] uppercase tracking-wider text-slate-500 font-semibold">
+                    <span class="px-1 py-0.2 rounded bg-slate-800 text-[8px] text-slate-400 border border-white/10 font-bold">18+</span>
+                    <span>Sponsorlu Bağlantı (Yetişkinler İçin)</span>
+                </div>
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+                     data-ad-slot="1234567890"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+            </div>
+
             <section id="missing-section">
                 <div class="flex items-center justify-between mb-3.5">
                     <h2 id="title-missing" class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
@@ -339,11 +382,23 @@
         </div>
 
         <!-- Alt Bilgi & Destek -->
-        <footer class="app-footer">
+        <footer class="app-footer text-center space-y-3">
             <p class="font-medium text-slate-400">Bar Cepte — Akıllı Bar & Kokteyl Asistanı</p>
             <div class="flex flex-wrap items-center justify-center gap-3 text-[11px]">
                 <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="suluncau" data-color="#FFDD00" data-emoji=""  data-font="Bree" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
                 <a href="https://www.amazon.com.tr/s?k=kokteyl+shaker+seti" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white flex items-center gap-1">🛒 Bar Ekipmanları</a>
+                <a href="privacy.html" class="text-slate-400 hover:text-amber-400 flex items-center gap-1">🛡️ Gizlilik & 18+ Yasal Uyarı</a>
+            </div>
+
+            <!-- 18+ & Sorumlu Tüketim Yasal Uyarısı -->
+            <div class="mt-4 p-3 rounded-2xl bg-amber-500/5 border border-amber-500/20 max-w-xl mx-auto text-center space-y-1">
+                <div class="flex items-center justify-center gap-1.5 text-amber-400 font-bold text-xs tracking-wider">
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-[10px] font-black border border-amber-500/40">18+</span>
+                    <span>YASAL BİLGİLENDİRME & SORUMLU TÜKETİM</span>
+                </div>
+                <p class="text-[11px] leading-relaxed text-slate-400">
+                    Bar Cepte içerisindeki tüm kokteyl tarifleri, rehberler ve yayınlanan reklamlar yalnızca <strong>18 yaş ve üzeri</strong> yetişkinler içindir. 18 yaşından küçüklerin alkol tüketimi ve satın alması yasalara aykırıdır. Sağlığınız için lütfen ölçülü ve sorumlu tüketiniz.
+                </p>
             </div>
         </footer>
     </main>
@@ -475,5 +530,6 @@
     <script src="editorial-ui.js"></script>
     <script src="ui-bindings.js"></script>
     <script src="support.js"></script>
+    <script src="ads.js"></script>
 </body>
 </html>
