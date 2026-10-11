@@ -19,6 +19,8 @@
   },
   "scripts": {
     "start": "electron .",
+    "webhook": "node scripts/shopier-webhook.js",
+    "start:webhook": "node scripts/shopier-webhook.js",
     "dist": "electron-builder --publish never",
     "sign": "powershell -ExecutionPolicy Bypass -File ./scripts/sign-exe.ps1",
     "build:css": "tailwindcss -i tailwind.input.css -o tailwind.css --minify",
