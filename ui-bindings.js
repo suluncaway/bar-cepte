@@ -45,15 +45,17 @@ document.querySelector('[data-ui="ui-42"]').addEventListener('click', function(e
 document.querySelector('[data-ui="ui-43"]').addEventListener('click', function(event) { resetTimer(); });
 document.querySelector('[data-ui="ui-44"]').addEventListener('click', function(event) { closeUpdateModal(); });
 document.querySelector('[data-ui="ui-45"]').addEventListener('click', function(event) { closeUpdateModal(); });
-if ('serviceWorker' in navigator) {
+let serviceWorkerAPI = null;
+try { serviceWorkerAPI = navigator.serviceWorker; } catch { /* Restricted preview: offline mode unavailable. */ }
+if (serviceWorkerAPI) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(reg => {
+                serviceWorkerAPI.register('./sw.js').then(reg => {
                     // PWA arka plan güncellemesi yakalandığında
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
                         if (newWorker) {
                             newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                if (newWorker.state === 'installed' && serviceWorkerAPI.controller) {
                                     // PWA yeni sürüm yüklendi, kullanıcıya bildirim ver
                                     console.log('Yeni PWA sürümü hazır.');
                                 }
