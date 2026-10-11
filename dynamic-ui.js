@@ -16,6 +16,30 @@ document.addEventListener('click', event => {
                 quickAddIngredientToBar(value, event);
                 toggleShoppingList(value, event);
                 break;
+            case 'substitute':
+                applySubstituteToBar(button.dataset.ing, button.dataset.sub, event);
+                break;
+            case 'open-mix-mode':
+                openMixMode(value);
+                break;
+            case 'close-mix-mode':
+                closeMixMode();
+                break;
+            case 'mix-next-step':
+                nextMixStep();
+                break;
+            case 'mix-prev-step':
+                prevMixStep();
+                break;
+            case 'mix-timer-toggle':
+                toggleMixTimer();
+                break;
+            case 'vibe':
+                setVibeFilter(button.dataset.vibe, button);
+                break;
+            case 'export-story':
+                downloadCocktailStoryCard(value);
+                break;
         }
     } else if (event.target.closest('[data-stop-card]')) {
         event.stopPropagation();

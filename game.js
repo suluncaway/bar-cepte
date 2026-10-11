@@ -974,6 +974,43 @@ function setTasteFilter(taste, el) {
     filterCocktails();
 }
 
+let currentVibeFilter = 'all';
+
+function setVibeFilter(vibe, btn) {
+    triggerHaptic('light');
+    currentVibeFilter = vibe || 'all';
+    document.querySelectorAll('.vibe-btn').forEach(b => {
+        b.className = "vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40";
+    });
+    const target = btn || document.querySelector(`.vibe-btn[data-vibe="${vibe}"]`);
+    if (target) {
+        target.className = "vibe-btn pill-btn px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 font-bold";
+    }
+    filterCocktails();
+}
+
+function matchesVibeFilter(d) {
+    if (currentVibeFilter === 'all') return true;
+    const str = `${d.strDrink || ''} ${d.strCategory || ''} ${d.strInstructions || ''} ${d.strGlass || ''}`.toLowerCase();
+    const abv = d.computedABV ? d.computedABV.abv : 0;
+    const taste = d.computedTaste || '';
+
+    switch (currentVibeFilter) {
+        case 'summer':
+            return (taste === 'Ferah' || taste === 'Tatlı') || /(mojito|margarita|daiquiri|colada|spritz|fizz|tonic|lemonade|soda|punch|tropical|gin|rum|tequila)/i.test(str);
+        case 'romantic':
+            return /(martini|coupe|champagne|wine|prosecco|cosmopolitan|manhattan|negroni|french 75)/i.test(str) || /(cocktail glass|martini glass|champagne)/i.test(d.strGlass || '');
+        case 'chill':
+            return abv <= 15 || d.strAlcoholic === 'Non alcoholic' || /(beer|cider|spritz|highball|collins|lemonade|soda)/i.test(str);
+        case 'winter':
+            return /(whiskey|bourbon|scotch|brandy|cognac|coffee|tea|hot|toddy|cacao|cinnamon|cream|kahlua)/i.test(str) || taste === 'Sert';
+        case 'party':
+            return d.strCategory === 'Shot' || /(shot|shooter|bomb|punch|party)/i.test(str) || abv >= 25;
+        default:
+            return true;
+    }
+}
+
 function renderIngredients() {
     const container = document.getElementById('ingredients-container');
     if (!container) return;
@@ -1154,6 +1191,63 @@ function calculateRecipeABV(drink) {
     }
 }
 
+// Ev Kokteyl Maliyeti Hesaplama Motoru
+function calculateRecipeCost(d) {
+    let reqs = [];
+    if (d.isCustom && Array.isArray(d.customIngredients)) {
+        reqs = d.customIngredients.map(i => ({ name: i, measure: '' }));
+    } else {
+        for (let i = 1; i <= 15; i++) {
+            const ing = d[`strIngredient${i}`];
+            const m = d[`strMeasure${i}`] ? d[`strMeasure${i}`].trim() : '';
+            if (ing && ing.trim()) reqs.push({ name: ing.trim(), measure: m });
+        }
+    }
+
+    if (reqs.length === 0) return { cost: 35, barEst: 350, savingsPercent: 90 };
+
+    let totalCost = 0;
+    reqs.forEach(({ name, measure }) => {
+        let cl = 4.0;
+        if (measure) {
+            const converted = convertOzToCl(measure);
+            const numMatch = converted.match(/(\d+(\.\d+)?)\s*cl/i);
+            if (numMatch) cl = parseFloat(numMatch[1]);
+            else if (/dash|damla/i.test(measure)) cl = 0.2;
+            else if (/tsp|çay kaşığı/i.test(measure)) cl = 0.5;
+            else if (/tbsp|yemek kaşığı/i.test(measure)) cl = 1.5;
+            else if (/cup|bardak/i.test(measure)) cl = 20.0;
+        }
+
+        const lower = name.toLowerCase();
+        let unitCostPerCl = 2.0;
+
+        if (/(vodka|gin|rum|tequila|whiskey|bourbon|scotch|brandy|cognac|raki|rakı|absinthe)/i.test(lower)) {
+            unitCostPerCl = 12.0;
+        } else if (/(triple sec|cointreau|kahlua|amaretto|campari|aperol|baileys|curacao|schnapps|liqueur|likör)/i.test(lower)) {
+            unitCostPerCl = 9.5;
+        } else if (/(vermouth|vermut|wine|şarap|champagne|şampanya|prosecco)/i.test(lower)) {
+            unitCostPerCl = 5.0;
+        } else if (/(juice|meyve|limon|lemon|lime)/i.test(lower)) {
+            unitCostPerCl = 1.8;
+        } else if (/(soda|tonic|water|su|gazoz|cola)/i.test(lower)) {
+            unitCostPerCl = 1.0;
+        }
+
+        totalCost += (cl * unitCostPerCl);
+    });
+
+    const roundedCost = Math.max(15, Math.round(totalCost));
+    const estimatedBarPrice = Math.max(250, Math.round(roundedCost * 7.5));
+    const savings = Math.round(((estimatedBarPrice - roundedCost) / estimatedBarPrice) * 100);
+
+    return {
+        cost: roundedCost,
+        barEst: estimatedBarPrice,
+        savingsPercent: savings
+    };
+}
+
 // Kokteyl Verilerini Bir Defa Önbelleğe Alarak Arama Hızını Uçurur
 function enrichDrink(d) {
     // Never trust precomputed HTML class names or numeric fields from imported/cache data.
@@ -1161,6 +1255,7 @@ function enrichDrink(d) {
     d.computedCalories = analysis.calories;
     d.computedTaste = analysis.tasteProfile;
     d.computedABV = calculateRecipeABV(d);
+    d.computedCost = calculateRecipeCost(d);
 }
 
 // Akıllı Tavsiye Motoru: "Bunu Alırsan +X Tarif Açılır"
@@ -1237,6 +1332,453 @@ function updateSmartAdvice(missingMatches) {
     }
 }
 
+// Akıllı Malzeme Muadilleri Veritabanı
+const INGREDIENT_SUBSTITUTES = {
+    'triple sec': { sub: 'Cointreau veya Portakal Likörü', note: 'Aynı narenciye tat dengesini verir.' },
+    'cointreau': { sub: 'Triple Sec veya Grand Marnier', note: 'Portakal likörü alternatifidir.' },
+    'grand marnier': { sub: 'Triple Sec veya Konyak + Portakal Kabuğu', note: 'Konyak bazlı portakal likörüdür.' },
+    'sugar syrup': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', note: 'Aynı tatlılık dengesini sağlar.' },
+    'simple syrup': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', note: 'Aynı tatlılık dengesini sağlar.' },
+    'şeker şurubu': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', note: 'Aynı tatlılık dengesini sağlar.' },
+    'sugar': { sub: 'Bal, Akçaağaç Şurubu veya Pudra Şekeri', note: 'Tatlılık dengesi sağlar.' },
+    'şeker': { sub: 'Bal veya Akçaağaç Şurubu', note: 'Tatlılık dengesi sağlar.' },
+    'lime juice': { sub: 'Taze Limon Suyu', note: 'Benzer asiditeyi ve ferahlığı verir.' },
+    'misket limonu suyu': { sub: 'Taze Limon Suyu', note: 'Benzer asiditeyi ve ferahlığı verir.' },
+    'lemon juice': { sub: 'Misket Limonu (Lime) Suyu', note: 'Asidite dengesi için 1:1 kullanılabilir.' },
+    'limon suyu': { sub: 'Misket Limonu (Lime) Suyu', note: 'Asidite dengesi için 1:1 kullanılabilir.' },
+    'bourbon': { sub: 'Rye (Çavdar) Viski veya İrlanda Viskisi', note: 'Tatlı meşe profiline benzerdir.' },
+    'rye whiskey': { sub: 'Bourbon Viski', note: 'Biraz daha tatlı bir profil elde edilir.' },
+    'viski': { sub: 'Bourbon veya Scotch', note: 'Temel tahıl alkolü alternatifi.' },
+    'club soda': { sub: 'Sade Maden Suyu', note: 'Kabarcık ve ferahlık için mükemmel alternatiftir.' },
+    'soda': { sub: 'Maden Suyu', note: 'Ferahlatıcı asit sağlar.' },
+    'tonic water': { sub: 'Soda + Limon Dilimi veya Bitter Lemon', note: 'Kinin ferahlığı için alternatif.' },
+    'tonik': { sub: 'Maden Suyu + Limon Dilimi', note: 'Ferahlatıcı alternatif.' },
+    'angostura bitters': { sub: 'Peychaud\'s veya Portakal Bitters', note: 'Birkaç damla aromatik derinlik katar.' },
+    'kahlua': { sub: 'Tia Maria veya Şekerli Espresso', note: 'Kahve likörü alternatifidir.' },
+    'campari': { sub: 'Aperol veya Select Aperitivo', note: 'Aperol daha tatlı ve hafif alkollüdür.' },
+    'aperol': { sub: 'Campari (daha az miktarda)', note: 'Campari daha acımsı ve güçlüdür.' },
+    'sweet vermouth': { sub: 'Kırmızı Şarap + az Bal/Konyak', note: 'Tatlı kırmızı vermut muadilidir.' },
+    'tatlı vermut': { sub: 'Kırmızı Şarap + az Bal/Konyak', note: 'Tatlı kırmızı vermut muadilidir.' },
+    'dry vermouth': { sub: 'Sek Beyaz Şarap veya Lillet Blanc', note: 'Sek beyaz vermut yerine kullanılabilir.' },
+    'sek vermut': { sub: 'Sek Beyaz Şarap', note: 'Sek beyaz vermut yerine kullanılabilir.' },
+    'dark rum': { sub: 'Altın Rom veya Baharatlı (Spiced) Rom', note: 'Koyu rom derinliğini yakalar.' },
+    'koyu rom': { sub: 'Altın Rom veya Baharatlı Rom', note: 'Koyu rom derinliğini yakalar.' },
+    'white rum': { sub: 'Votka + 1 çay kaşığı şeker şurubu', note: 'Nötr rom alternatifi.' },
+    'beyaz rom': { sub: 'Votka + az Şeker Şurubu', note: 'Nötr rom alternatifi.' },
+    'grenadine': { sub: 'Nar Ekşisi (tatlı) veya Ahududu Şurubu', note: 'Renk ve tatlı-mayhoşluk katar.' },
+    'nar şurubu': { sub: 'Tatlı Nar Ekşisi veya Vişne Şurubu', note: 'Renk ve tatlı-mayhoşluk katar.' },
+    'maraschino liqueur': { sub: 'Kiraz Likörü veya Amaretto', note: 'Meyvemsi badem aroması verir.' },
+    'amaretto': { sub: 'Badem Özütü + Konyak/Viski', note: 'Tatlı badem aroması sağlar.' },
+    'tequila': { sub: 'Mezcal veya Beyaz Rom', note: 'Agave aroması verir.' },
+    'tekila': { sub: 'Mezcal veya Beyaz Rom', note: 'Agave aroması verir.' },
+    'cognac': { sub: 'Brandy veya İspanyol Brendisi', note: 'Damıtılmış şarap bazlı içki muadili.' },
+    'brandy': { sub: 'Konyak veya Armagnac', note: 'Benzer meyvemsi meşe lezzeti verir.' },
+    'cream': { sub: 'Süt + az Tereyağı veya Hindistan Cevizi Kreması', note: 'Kıvam ve yumuşaklık katar.' },
+    'krema': { sub: 'Süt + az Tereyağı veya Hindistan Cevizi Kreması', note: 'Kıvam ve yumuşaklık katar.' },
+    'coconut cream': { sub: 'Krema + Hindistan Cevizi Sütü', note: 'Tropikal kıvam sağlar.' },
+    'ginger beer': { sub: 'Zencefilli Gazoz veya Zencefil Suyu + Soda', note: 'Baharatlı zencefil lezzeti verir.' },
+    'zencefilli gazoz': { sub: 'Zencefil Rendesi + Soda + Bal', note: 'Baharatlı ferahlık sağlar.' }
+};
+
+function getIngredientSubstitute(name) {
+    if (!name) return null;
+    const lower = String(name).toLowerCase().trim();
+    for (const [key, val] of Object.entries(INGREDIENT_SUBSTITUTES)) {
+        if (lower.includes(key) || key.includes(lower)) {
+            return val;
+        }
+    }
+    return null;
+}
+
+function showToast(message, type = 'info') {
+    let container = document.getElementById('bar-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'bar-toast-container';
+        container.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none px-4 w-full max-w-sm';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    const borderColor = type === 'success' ? 'border-emerald-500/40 text-emerald-300' : 'border-amber-500/40 text-amber-300';
+    toast.className = `acrylic-card px-4 py-2.5 rounded-2xl border ${borderColor} text-xs font-semibold shadow-2xl flex items-center gap-2 animate-fade-in transition-all pointer-events-auto`;
+    toast.innerHTML = `<span>🍸</span><span>${escapeHTML(message)}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 2800);
+}
+
+function applySubstituteToBar(ingEncoded, subEncoded, event) {
+    if (event) event.stopPropagation();
+    const ingName = decodeURIComponent(ingEncoded || '');
+    const subName = decodeURIComponent(subEncoded || '');
+    quickAddIngredientToBar(ingName);
+    showToast(`"${subName}" muadiliyle barına eklendi!`, 'success');
+}
+
+// --- ADIM ADIM BARMEN MODU SİSTEMİ ---
+let currentMixDrink = null;
+let currentMixStep = 0;
+let mixSteps = [];
+let mixTimerInterval = null;
+let mixTimerRemaining = 15;
+
+function openMixMode(drinkId) {
+    const targetId = String(drinkId || '').trim();
+    const d = allCocktails.find(c => c.idDrink === targetId) || customRecipes.find(c => c.idDrink === targetId);
+    if (!d) return;
+    currentMixDrink = d;
+    currentMixStep = 0;
+
+    let ingList = [];
+    if (d.isCustom && Array.isArray(d.customIngredients)) {
+        ingList = d.customIngredients;
+    } else {
+        for (let i = 1; i <= 15; i++) {
+            const ing = d[`strIngredient${i}`];
+            const m = d[`strMeasure${i}`] ? d[`strMeasure${i}`].trim() : '';
+            if (ing && ing.trim()) {
+                const trName = translateIngredientName(ing.trim());
+                const trMeasure = translateMeasureText(m);
+                ingList.push(trMeasure ? `${trMeasure} ${trName}` : trName);
+            }
+        }
+    }
+
+    const isShaken = /shak|çalkala/i.test(d.strInstructions || '') || /shak|çalkala/i.test(d.strInstructionsTR || '');
+    const glass = d.strGlass || 'Kokteyl bardağı';
+
+    mixSteps = [
+        {
+            heading: '1. Hazırlık & Kadeh',
+            body: `<p>• <b>Kadeh:</b> ${escapeHTML(glass)} hazırla ve içerisine birkaç küp buz ekleyerek soğut.</p><p class="mt-2">• <b>Ekipman:</b> ${isShaken ? 'Shaker (çalkalayıcı) ve süzgeç' : 'Karıştırma bardağı ve bar kaşığı'} hazırla.</p>`,
+            hasTimer: false
+        },
+        {
+            heading: '2. Malzemeleri Ekle',
+            body: `<p class="font-semibold text-amber-300 mb-2">Ölçülü Malzeme Listesi:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span>🥃</span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
+            hasTimer: false
+        },
+        {
+            heading: isShaken ? '3. Çalkalama (Shaker)' : '3. Karıştırma (Stir)',
+            body: isShaken
+                ? `<p>Shaker'ın içine bol buz doldur, kapağını sıkıca kapat ve buzlar kırağı tutana kadar kuvvetlice salla.</p>`
+                : `<p>Buz dolu karıştırma bardağında bar kaşığı ile kokteyli nazikçe ve ritmik şekilde döndürerek soğut.</p>`,
+            hasTimer: true,
+            timerSeconds: isShaken ? 15 : 30,
+            timerLabel: isShaken ? 'Buzla kuvvetlice çalkala' : 'Bar kaşığıyla nazikçe karıştır'
+        },
+        {
+            heading: '4. Süzme & Servis',
+            body: `<p>• Soğuyan kokteyli süzerek ${escapeHTML(glass)} içine aktar.</p><p class="mt-2">• ${d.strServing ? `<b>Garnitür:</b> ${escapeHTML(d.strServing)}` : 'Garnitürünü ekle ve taze servis et.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm">🎉 Kokteylin hazır, afiyet olsun!</div>`,
+            hasTimer: false
+        }
+    ];
+
+    const titleEl = document.getElementById('mix-modal-title');
+    const subtitleEl = document.getElementById('mix-modal-subtitle');
+    if (titleEl) titleEl.textContent = d.strDrink;
+    if (subtitleEl) subtitleEl.textContent = `${glass} • ${d.computedTaste || 'Klasik'}`;
+    renderMixStep();
+
+    const modal = document.getElementById('mix-mode-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function renderMixStep() {
+    const step = mixSteps[currentMixStep];
+    if (!step) return;
+
+    const counter = document.getElementById('mix-step-counter');
+    const heading = document.getElementById('mix-step-heading');
+    const body = document.getElementById('mix-step-body');
+    const dotsContainer = document.getElementById('mix-step-dots');
+
+    if (counter) counter.textContent = `Adım ${currentMixStep + 1} / ${mixSteps.length}`;
+    if (heading) heading.textContent = step.heading;
+    if (body) body.innerHTML = step.body;
+
+    if (dotsContainer) {
+        dotsContainer.innerHTML = mixSteps.map((_, i) => `<span class="w-2 h-2 rounded-full ${i === currentMixStep ? 'bg-amber-400' : 'bg-white/20'}"></span>`).join('');
+    }
+
+    const timerBox = document.getElementById('mix-timer-box');
+    if (timerBox) {
+        if (step.hasTimer) {
+            timerBox.classList.remove('hidden');
+            timerBox.classList.add('flex');
+            mixTimerRemaining = step.timerSeconds;
+            const display = document.getElementById('mix-timer-display');
+            const label = document.getElementById('mix-timer-label');
+            const runBtn = document.getElementById('btn-mix-timer-run');
+            if (display) display.textContent = `00:${String(mixTimerRemaining).padStart(2, '0')}`;
+            if (label) label.textContent = step.timerLabel;
+            if (runBtn) runBtn.textContent = 'Başlat';
+            clearInterval(mixTimerInterval);
+            mixTimerInterval = null;
+        } else {
+            timerBox.classList.add('hidden');
+            timerBox.classList.remove('flex');
+            clearInterval(mixTimerInterval);
+            mixTimerInterval = null;
+        }
+    }
+
+    const prevBtn = document.getElementById('btn-mix-prev');
+    const nextBtn = document.getElementById('btn-mix-next');
+    if (prevBtn) prevBtn.disabled = currentMixStep === 0;
+    if (nextBtn) {
+        if (currentMixStep === mixSteps.length - 1) {
+            nextBtn.innerHTML = '<span>Tamamla & Kapat ✓</span>';
+        } else {
+            nextBtn.innerHTML = '<span>Sonraki Adım →</span>';
+        }
+    }
+}
+
+function nextMixStep() {
+    if (currentMixStep < mixSteps.length - 1) {
+        currentMixStep++;
+        renderMixStep();
+        triggerHaptic('light');
+    } else {
+        closeMixMode();
+        showToast('Tebrikler! Kokteylini başarıyla hazırladın 🍸', 'success');
+    }
+}
+
+function prevMixStep() {
+    if (currentMixStep > 0) {
+        currentMixStep--;
+        renderMixStep();
+        triggerHaptic('light');
+    }
+}
+
+function closeMixMode() {
+    clearInterval(mixTimerInterval);
+    mixTimerInterval = null;
+    const modal = document.getElementById('mix-mode-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function toggleMixTimer() {
+    const runBtn = document.getElementById('btn-mix-timer-run');
+    if (mixTimerInterval) {
+        clearInterval(mixTimerInterval);
+        mixTimerInterval = null;
+        if (runBtn) runBtn.textContent = 'Devam Et';
+    } else {
+        if (runBtn) runBtn.textContent = 'Durdur';
+        mixTimerInterval = setInterval(() => {
+            mixTimerRemaining--;
+            const display = document.getElementById('mix-timer-display');
+            if (mixTimerRemaining <= 0) {
+                clearInterval(mixTimerInterval);
+                mixTimerInterval = null;
+                if (display) display.textContent = '00:00';
+                if (runBtn) runBtn.textContent = 'Bitti!';
+                triggerHaptic('success');
+                showToast('⏱️ Süre doldu! Harika bir çalkalama.', 'success');
+            } else {
+                if (display) display.textContent = `00:${String(mixTimerRemaining).padStart(2, '0')}`;
+            }
+        }, 1000);
+    }
+}
+
+// --- INSTAGRAM STORY KART OLUŞTURMA & İNDİRME MOTORU (HTML5 CANVAS) ---
+function downloadCocktailStoryCard(drinkId) {
+    const targetId = String(drinkId || '').trim();
+    const d = allCocktails.find(c => c.idDrink === targetId) || customRecipes.find(c => c.idDrink === targetId);
+    if (!d) return;
+
+    triggerHaptic('medium');
+    showToast('📸 Hikaye kartı hazırlanıyor...', 'info');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (typeof ctx.roundRect !== 'function') {
+        ctx.roundRect = function(x, y, w, h, r) {
+            ctx.rect(x, y, w, h);
+        };
+    }
+
+    // Arka Plan Gradyanı
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+    bgGrad.addColorStop(0, '#0a1210');
+    bgGrad.addColorStop(0.5, '#121f1b');
+    bgGrad.addColorStop(1, '#1b2f29');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // Üst Merkez Altın Işıma
+    const radialGrad = ctx.createRadialGradient(540, 420, 50, 540, 420, 500);
+    radialGrad.addColorStop(0, 'rgba(213, 180, 123, 0.12)');
+    radialGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = radialGrad;
+    ctx.fillRect(0, 0, 1080, 950);
+
+    // Dış Dekoratif Çerçeve
+    ctx.strokeStyle = 'rgba(213, 180, 123, 0.35)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(50, 50, 980, 1820);
+
+    // İç İnce Çerçeve
+    ctx.strokeStyle = 'rgba(213, 180, 123, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(65, 65, 950, 1790);
+
+    // Başlık
+    ctx.fillStyle = '#d5b47b';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🍸   B A R   C E P T E', 540, 140);
+
+    ctx.fillStyle = '#8a9b93';
+    ctx.font = '500 18px sans-serif';
+    ctx.fillText('THE HOME BAR COLLECTION • SEÇKİ #01', 540, 180);
+
+    // Çizgi
+    ctx.strokeStyle = 'rgba(213, 180, 123, 0.4)';
+    ctx.beginPath();
+    ctx.moveTo(340, 220);
+    ctx.lineTo(740, 220);
+    ctx.stroke();
+
+    // Kokteyl Adı
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 70px serif';
+    const drinkName = d.strDrink || 'Kokteyl';
+    ctx.fillText(drinkName, 540, 320);
+
+    // Rozetler
+    const glass = d.strGlass || 'Kokteyl Bardağı';
+    const taste = d.computedTaste || 'Klasik';
+    const abv = d.computedABV ? d.computedABV.label : 'Özel';
+    const cost = d.computedCost ? `~${d.computedCost.cost} ₺` : '~45 ₺';
+
+    ctx.font = '600 24px sans-serif';
+    ctx.fillStyle = '#d5b47b';
+    ctx.fillText(`${glass}  •  ${taste}  •  ${abv}`, 540, 380);
+
+    // Kutu 1: Malzemeler
+    ctx.fillStyle = 'rgba(10, 18, 16, 0.7)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(110, 440, 860, 680, 24);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#d5b47b';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('MALZEMELER & ÖLÇÜLER', 150, 500);
+
+    let rawIngs = [];
+    if (d.isCustom && Array.isArray(d.customIngredients)) {
+        rawIngs = d.customIngredients;
+    } else {
+        for (let i = 1; i <= 15; i++) {
+            const ing = d[`strIngredient${i}`];
+            const m = d[`strMeasure${i}`] ? d[`strMeasure${i}`].trim() : '';
+            if (ing && ing.trim()) {
+                const trName = translateIngredientName(ing.trim());
+                const trMeasure = translateMeasureText(m);
+                rawIngs.push(trMeasure ? `${trMeasure} ${trName}` : trName);
+            }
+        }
+    }
+
+    let yPos = 560;
+    rawIngs.slice(0, 8).forEach((item) => {
+        ctx.fillStyle = '#d5b47b';
+        ctx.beginPath();
+        ctx.arc(160, yPos - 8, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#eeeae0';
+        ctx.font = '500 28px sans-serif';
+        ctx.fillText(item, 185, yPos);
+        yPos += 58;
+    });
+
+    // Kutu 2: Hazırlanışı
+    ctx.fillStyle = 'rgba(10, 18, 16, 0.7)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(110, 1160, 860, 480, 24);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#d5b47b';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText('HAZIRLANIŞI', 150, 1220);
+
+    const instr = d.strInstructionsTR || d.strInstructions || 'Buzla karıştırın ve servis edin.';
+    ctx.fillStyle = '#c5d2cb';
+    ctx.font = '400 24px sans-serif';
+    const words = instr.split(' ');
+    let line = '';
+    let instrY = 1275;
+    for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > 760 && n > 0) {
+            ctx.fillText(line, 150, instrY);
+            line = words[n] + ' ';
+            instrY += 38;
+            if (instrY > 1580) break;
+        } else {
+            line = testLine;
+        }
+    }
+    if (line && instrY <= 1580) {
+        ctx.fillText(line, 150, instrY);
+    }
+
+    // Kutu 3: Maliyet
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+    ctx.beginPath();
+    ctx.roundRect(110, 1680, 860, 90, 20);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#34d399';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText(`💰 Ev Yapımı Maliyet: ${cost}   |   Bar Tasarrufu: ~%85+`, 540, 1735);
+
+    // Alt Filigran
+    ctx.fillStyle = '#6a7d74';
+    ctx.font = '500 18px sans-serif';
+    ctx.fillText('Bar Cepte — Akıllı Ev Barı & Kokteyl Asistanı', 540, 1820);
+
+    // İndirme Tetikle
+    const link = document.createElement('a');
+    link.download = `BarCepte-${drinkName.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    showToast(`📸 ${drinkName} Story kartı hazırlandı!`, 'success');
+}
+
 function resolveIngredientName(name) {
     const n = String(name || '').trim().toLowerCase();
     const found = popularIngredients.find(pi => pi.id.toLowerCase() === n || pi.name.toLowerCase() === n);
@@ -1264,7 +1806,7 @@ function filterCocktails() {
     if (!readyContainer || !missingContainer) return;
 
     updateFavoritesFilterUI();
-    const isDiscovery = selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter;
+    const isDiscovery = selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter && currentVibeFilter === 'all';
     document.getElementById('editorial-picks')?.classList.toggle('hidden', !isDiscovery);
     document.getElementById('ready-section')?.classList.toggle('hidden', isDiscovery);
     document.getElementById('missing-section')?.classList.toggle('hidden', isDiscovery);
@@ -1273,9 +1815,9 @@ function filterCocktails() {
         switchTab('alkol');
     }
 
-    if (selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter) {
+    if (selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter && currentVibeFilter === 'all') {
         const preferred = ['11003', '11007', '17212'];
-        const discoveryPool = allCocktails.filter(matchesAlcoholFilter);
+        const discoveryPool = allCocktails.filter(d => matchesAlcoholFilter(d) && matchesVibeFilter(d));
         discoveryPool.forEach(enrichDrink);
         const picks = discoveryPool.filter(d => tasteFilter === 'all' || d.computedTaste === tasteFilter)
             .sort((a, b) => {
@@ -1299,7 +1841,7 @@ function filterCocktails() {
 
     let readyMatches = [];
     let missingMatches = [];
-    let pool = [...customRecipes, ...allCocktails].filter(d => matchesAlcoholFilter(d));
+    let pool = [...customRecipes, ...allCocktails].filter(d => matchesAlcoholFilter(d) && matchesVibeFilter(d));
 
     if (onlyFavoritesFilter) {
         pool = pool.filter(d => favoriteCocktails.includes(d.idDrink));
@@ -1327,7 +1869,7 @@ function filterCocktails() {
         enrichDrink(d);
 
         if (tasteFilter === 'all' || d.computedTaste === tasteFilter) {
-            if (cocktailSearch || onlyFavoritesFilter) {
+            if (cocktailSearch || onlyFavoritesFilter || currentVibeFilter !== 'all') {
                 if (missing.length === 0) {
                     readyMatches.push(d);
                 } else {
@@ -1365,6 +1907,16 @@ function filterCocktails() {
             titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Arama Sonuçları (Eksik Malzemeli) <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
         } else if (onlyFavoritesFilter) {
             titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Favorilerim (Eksik Malzemeli) <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
+        } else if (currentVibeFilter !== 'all') {
+            const vibeNames = {
+                summer: '☀️ Yaz & Havuz',
+                romantic: '🕯️ Romantik Akşam',
+                chill: '🍿 Dizi & Film',
+                winter: '❄️ Kış & Şömine',
+                party: '🎉 Parti & Shot'
+            };
+            const label = vibeNames[currentVibeFilter] || 'Ortam';
+            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> ${label} Seçkisi <span id="count-missing" class="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20 font-bold">${missingMatches.length}</span>`;
         } else {
             titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Yaklaştığın Tarifler (1-4 Eksik) <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
         }
@@ -1448,12 +2000,23 @@ function createCocktailCardElement(item, isMissingList) {
             const inShop = shoppingList.includes(m);
             const trMissingName = translateIngredientName(m);
             const safeM = escapeHTML(trMissingName);
-            return `
-            <div class="flex items-center justify-between gap-2 mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20 min-w-0">
-                <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">⚠️ Eksik: ${safeM}</p>
-                <button data-action="shopping" data-value="${escapeHTML(encodedM)}" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40 shrink-0">
-                    ${inShop ? '🛒 Çıkar' : '➕ Alışverişe Ekle'}
+            const sub = getIngredientSubstitute(m);
+            const subHTML = sub ? `
+            <div class="flex items-center justify-between gap-1 text-[10px] bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-xl text-amber-300 mt-1 min-w-0" data-stop-card>
+                <span class="truncate">💡 <b>Muadil:</b> ${escapeHTML(sub.sub)}</span>
+                <button data-action="substitute" data-ing="${escapeHTML(encodedM)}" data-sub="${escapeHTML(encodeURIComponent(sub.sub))}" class="pill-btn font-bold text-amber-400 hover:text-white shrink-0 ml-1.5 underline">
+                    Bara Ekle
                 </button>
+            </div>` : '';
+            return `
+            <div class="flex flex-col gap-1 mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20 min-w-0">
+                <div class="flex items-center justify-between gap-2 min-w-0">
+                    <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">⚠️ Eksik: ${safeM}</p>
+                    <button data-action="shopping" data-value="${escapeHTML(encodedM)}" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40 shrink-0">
+                        ${inShop ? '🛒 Çıkar' : '➕ Alışverişe Ekle'}
+                    </button>
+                </div>
+                ${subHTML}
             </div>
             `;
         }).join('') : '';
@@ -1501,6 +2064,7 @@ function createCocktailCardElement(item, isMissingList) {
                         <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${escapeHTML(d.computedTaste)}</span>
                         <span class="text-[10px] font-semibold bg-black/30 text-slate-400 px-2 py-0.5 rounded-lg border border-white/5 font-mono">🔥 ~${d.computedCalories} kcal</span>
                         ${abvBadge}
+                        <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono recipe-cost-badge">💵 ~${d.computedCost ? d.computedCost.cost : 35} ₺</span>
                     </div>
                     <h3 class="font-extrabold text-white text-base leading-snug break-words hyphens-auto text-title-responsive">${safeDrinkName}</h3>
                     <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 break-words">${glassBadge}</p>
@@ -1511,6 +2075,12 @@ function createCocktailCardElement(item, isMissingList) {
             ${isMissingList ? `<div class="mt-2.5 pt-2 border-t border-white/5 flex flex-col gap-1 min-w-0">${missingTextHTML}</div>` : ''}
             
             <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden">
+                <!-- Ev Maliyeti ve Bar Tasarrufu -->
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-2xl text-[11px] text-emerald-300">
+                    <span class="flex items-center gap-1 font-medium">💰 <b>Ev Maliyeti:</b> ~${d.computedCost ? d.computedCost.cost : 35} ₺</span>
+                    <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">Bar Tasarrufu: ~%${d.computedCost ? d.computedCost.savingsPercent : 90}</span>
+                </div>
+
                 <!-- Porsiyon Kontrolü (Taşmayan Esnek Düzen) -->
                 <div class="flex flex-wrap items-center justify-between gap-1.5 bg-black/30 p-2 rounded-2xl border border-white/5" data-stop-card>
                     <span class="text-[11px] text-slate-400 font-medium shrink-0">👥 Porsiyon:</span>
@@ -1532,6 +2102,7 @@ function createCocktailCardElement(item, isMissingList) {
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${techniqueBadge}</span>
                     <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm">⏱️ Sayaç</button>
+                    <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm" data-stop-card>📸 Story İndir</button>
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${glassBadge}</span>
                 </div>
 
@@ -1541,6 +2112,10 @@ function createCocktailCardElement(item, isMissingList) {
                     <b class="text-slate-400 text-[11px] block mb-1 uppercase tracking-wider font-semibold">Hazırlanışı:</b>
                     <span>${safeInstructions}</span>
                 </p>
+
+                <button data-action="open-mix-mode" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs transition-all mt-2" data-stop-card>
+                    <span>🚀</span><span>Adım Adım Hazırlamaya Başla</span>
+                </button>
             </div>
         `;
 

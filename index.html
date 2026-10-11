@@ -106,7 +106,7 @@
             <div class="flex gap-2">
                 <div class="relative w-full">
                     <span class="absolute left-3.5 top-2.5 text-xs text-slate-400">🍸</span>
-                    <input type="text" id="cocktail-search" aria-label="Kokteyl ara" data-ui="ui-14" placeholder="Aklında bir kokteyl var mı?" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
+                    <input type="text" id="cocktail-search" aria-label="Kokteyl ara" data-ui="ui-14" placeholder="Kokteyl veya malzeme yaz: 'rom nane', 'Margarita'…" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
                 </div>
                 <button data-ui="ui-15" class="shrink-0 pill-btn bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 px-3.5 py-2 rounded-2xl text-xs font-bold hover:border-amber-400">🎲 Rastgele</button>
             </div>
@@ -133,6 +133,17 @@
             <button data-taste="Tatlı" data-ui="ui-9" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍭 Tatlı</button>
             <button data-taste="Ekşi" data-ui="ui-10" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍋 Ekşi</button>
             <button data-taste="Ferah" data-ui="ui-11" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍃 Ferah</button>
+        </div>
+
+        <!-- Ortam & Ruh Hali Filtresi (Vibe Matcher) -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pt-1 pb-1 text-[11px] font-medium no-scrollbar">
+            <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider shrink-0 mr-1">🎭 Ortam:</span>
+            <button data-action="vibe" data-vibe="all" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 font-bold">Tümü</button>
+            <button data-action="vibe" data-vibe="summer" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">☀️ Yaz & Havuz</button>
+            <button data-action="vibe" data-vibe="romantic" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">🕯️ Romantik Akşam</button>
+            <button data-action="vibe" data-vibe="chill" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">🍿 Dizi & Film</button>
+            <button data-action="vibe" data-vibe="winter" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">❄️ Kış & Şömine</button>
+            <button data-action="vibe" data-vibe="party" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">🎉 Parti & Shot</button>
         </div>
 
 
@@ -398,6 +409,56 @@
                 </a>
                 <button data-ui="ui-45" class="w-full py-2 text-slate-400 hover:text-white text-xs font-semibold">
                     Daha Sonra Hatırlat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adım Adım Barmen Modu Modalı -->
+    <div id="mix-mode-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4 animate-fade-in">
+        <div class="acrylic-card w-full max-w-lg p-6 sm:p-8 rounded-3xl space-y-5 relative border border-amber-500/40 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-3 border-b border-white/10 pb-4">
+                <div>
+                    <span class="text-[10px] font-bold tracking-widest text-amber-400 uppercase">🍸 Barmen Modu</span>
+                    <h3 id="mix-modal-title" class="text-xl font-black text-white mt-0.5">Kokteyl Adı</h3>
+                    <p id="mix-modal-subtitle" class="text-xs text-slate-400 mt-0.5">Kadeh & Servis</p>
+                </div>
+                <button data-action="close-mix-mode" class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-8 h-8 flex items-center justify-center shrink-0">✕</button>
+            </div>
+
+            <!-- Adım Göstergesi -->
+            <div class="flex items-center justify-between text-xs text-slate-400 font-semibold px-1">
+                <span id="mix-step-counter">Adım 1 / 4</span>
+                <div class="flex gap-1.5" id="mix-step-dots"></div>
+            </div>
+
+            <!-- Adım İçeriği -->
+            <div id="mix-step-content" class="bg-black/40 border border-white/5 p-5 rounded-2xl space-y-3 min-h-[160px] flex flex-col justify-center">
+                <h4 id="mix-step-heading" class="text-base font-bold text-amber-300">Hazırlık</h4>
+                <div id="mix-step-body" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2"></div>
+            </div>
+
+            <!-- Modala Özel Sayaç Kutusu (Gerektiğinde Görünür) -->
+            <div id="mix-timer-box" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">⏱️</span>
+                    <div>
+                        <div id="mix-timer-display" class="font-mono font-black text-lg text-amber-400">00:15</div>
+                        <p id="mix-timer-label" class="text-[10px] text-slate-300">Shaker ile kuvvetlice çalkala</p>
+                    </div>
+                </div>
+                <button id="btn-mix-timer-run" data-action="mix-timer-toggle" class="pill-btn px-4 py-2 bg-amber-500 text-slate-950 font-black rounded-xl text-xs hover:bg-amber-400">
+                    Başlat
+                </button>
+            </div>
+
+            <!-- Alt Navigasyon Butonları -->
+            <div class="flex gap-2 pt-2 border-t border-white/10">
+                <button data-action="mix-prev-step" class="px-4 py-3 bg-white/5 border border-white/10 text-slate-300 font-bold rounded-2xl hover:bg-white/10 transition-all text-xs disabled:opacity-40" id="btn-mix-prev">
+                    ← Önceki
+                </button>
+                <button data-action="mix-next-step" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs hover:from-amber-400 hover:to-amber-500 flex items-center justify-center gap-2" id="btn-mix-next">
+                    <span>Sonraki Adım →</span>
                 </button>
             </div>
         </div>
