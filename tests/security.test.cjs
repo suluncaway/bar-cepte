@@ -178,5 +178,97 @@ test('Reserve key generation and validation works for monthly, annual, and lifet
     assert.equal(reserve.getPlanFromKey(lifeMatch[1]), 'lifetime');
 });
 
+test('BarAuth module validates user data and sanitizes against XSS', () => {
+    // Setup dummy localStorage for Node test runner
+    const storageMap = new Map();
+    global.localStorage = {
+        getItem: k => storageMap.get(k) || null,
+        setItem: (k, v) => storageMap.set(k, String(v)),
+        removeItem: k => storageMap.delete(k),
+        clear: () => storageMap.clear()
+    };
 
+    const auth = require('../auth.js');
+    assert.ok(auth);
+    assert.equal(auth.isLoggedIn(), false);
 
+    // XSS injection in user profile fields must be sanitized
+    const saved = auth.saveUser({
+        uid: 'user_test_1',
+        name: '<b>Hacker</b><script>alert(1)</script>',
+        email: 'attacker@evil.com',
+        picture: 'javascript:alert(1)',
+        provider: 'google'
+    });
+
+    assert.equal(saved.name, 'bHacker/bscriptalert(1)/script');
+    assert.doesNotMatch(saved.name, /<script>/);
+    assert.equal(saved.picture, ''); // Malicious protocol rejected
+    assert.equal(auth.isLoggedIn(), true);
+    assert.equal(auth.getCurrentUser().uid, 'user_test_1');
+
+    auth.logout();
+    assert.equal(auth.isLoggedIn(), false);
+});
+
+test('License keys are strictly single-use and bound to one account', () => {
+    const storageMap = new Map();
+    global.localStorage = {
+        getItem: k => storageMap.get(k) || null,
+        setItem: (k, v) => storageMap.set(k, String(v)),
+        removeItem: k => storageMap.delete(k),
+        clear: () => storageMap.clear()
+    };
+
+    const auth = require('../auth.js');
+    const reserve = require('../reserve.js');
+
+    const key = 'RESERVE-ANN1-TEST-5632';
+    // Validate format with real checksum
+    const testPart1 = 'ANN1';
+    const testPart2 = 'TEST';
+    const validKey = `RESERVE-${testPart1}-${testPart2}-${reserve.checksum(testPart1 + testPart2)}`;
+    assert.ok(reserve.validateLicenseKey(validKey));
+
+    // User A signs in and claims the key
+    auth.saveUser({ uid: 'user_alice', name: 'Alice', email: 'alice@gmail.com' });
+    const checkAlice = auth.canUseLicenseKey(validKey);
+    assert.equal(checkAlice.allowed, true);
+
+    auth.claimLicenseKey(validKey, 'annual', Date.now() + 365 * 24 * 60 * 60 * 1000);
+    assert.equal(auth.getCurrentUser().isReserve, true);
+    assert.equal(auth.getCurrentUser().reserveKey, validKey);
+
+    // Alice on another device can still use her own key
+    const checkAliceAgain = auth.canUseLicenseKey(validKey);
+    assert.equal(checkAliceAgain.allowed, true);
+    assert.equal(checkAliceAgain.alreadyClaimed, true);
+
+    // User B tries to use the same key -> MUST BE REJECTED!
+    auth.saveUser({ uid: 'user_bob', name: 'Bob', email: 'bob@gmail.com' });
+    const checkBob = auth.canUseLicenseKey(validKey);
+    assert.equal(checkBob.allowed, false);
+    assert.match(checkBob.reason, /tek kullanımlıktır/);
+
+    // reserve.activateReserve also rejects User B
+    const reserveResult = reserve.activateReserve(validKey);
+    assert.equal(reserveResult, false);
+});
+
+test('Google Sign-In UI elements, modals, and CSP directives are present in index.html', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+
+    // CSP allows Google Identity Services and Firebase safely
+    assert.match(html, /https:\/\/accounts\.google\.com\/gsi\/client/);
+    assert.match(html, /https:\/\/lh3\.googleusercontent\.com/);
+    assert.match(html, /frame-src [^;]*https:\/\/accounts\.google\.com\//);
+    assert.match(html, /connect-src [^;]*https:\/\/identitytoolkit\.googleapis\.com/);
+
+    // UI elements present
+    assert.match(html, /id="btn-auth-user"/);
+    assert.match(html, /id="auth-modal"/);
+    assert.match(html, /id="google-signin-btn-container"/);
+    assert.match(html, /src="firebase-config\.js"/);
+    assert.match(html, /src="auth\.js"/);
+    assert.match(html, /src="https:\/\/accounts\.google\.com\/gsi\/client"/);
+});

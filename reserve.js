@@ -135,6 +135,20 @@
         if (!validateLicenseKey(key)) return false;
         try {
             const cleanKey = key.trim().toUpperCase();
+
+            // Tek kullanımlık lisans koruması (BarAuth kontrolü)
+            if (root.BarAuth && typeof root.BarAuth.canUseLicenseKey === 'function') {
+                const check = root.BarAuth.canUseLicenseKey(cleanKey);
+                if (!check.allowed) {
+                    const msgEl = typeof document !== 'undefined' ? document.getElementById('reserve-key-msg') : null;
+                    if (msgEl) {
+                        msgEl.textContent = check.reason;
+                        msgEl.className = 'text-xs text-rose-400 font-semibold';
+                    }
+                    return false;
+                }
+            }
+
             const plan = getPlanFromKey(cleanKey);
             const duration = getDurationForPlan(plan);
             const expiresAt = duration > 0 ? (Date.now() + duration) : 0;
@@ -142,6 +156,29 @@
             root.localStorage.setItem(STORAGE_KEY, 'true');
             root.localStorage.setItem(KEY_STORAGE, cleanKey);
             root.localStorage.setItem(PLAN_STORAGE, plan);
+            root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
+
+            // Lisansı kullanıcı hesabına bağla ve tek kullanımlık olarak kaydet
+            if (root.BarAuth && typeof root.BarAuth.claimLicenseKey === 'function') {
+                root.BarAuth.claimLicenseKey(cleanKey, plan, expiresAt);
+            }
+
+            applyReserveUI();
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    function activateFromCloud(reserveData) {
+        if (!reserveData || !reserveData.active) return false;
+        try {
+            const expiresAt = Number(reserveData.expiresAt) || 0;
+            if (expiresAt > 0 && Date.now() > expiresAt) return false;
+
+            root.localStorage.setItem(STORAGE_KEY, 'true');
+            if (reserveData.key) root.localStorage.setItem(KEY_STORAGE, reserveData.key);
+            if (reserveData.plan) root.localStorage.setItem(PLAN_STORAGE, reserveData.plan);
             root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
             applyReserveUI();
             return true;
@@ -375,6 +412,7 @@
     const api = {
         isReserveActive,
         activateReserve,
+        activateFromCloud,
         deactivateReserve,
         validateLicenseKey,
         checksum,
