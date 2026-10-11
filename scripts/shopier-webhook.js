@@ -166,12 +166,13 @@ setTimeout(processNewOrders, 2000);
 
 async function sendEmail(toEmail, customerName, licenseKey, planName) {
     if (!RESEND_API_KEY) {
-        console.log(`[E-posta] Resend API Key tanımlanmadığı için konsola yazıldı. Kod: ${licenseKey} -> Alıcı: ${toEmail}`);
+        console.log(`⚠️ [E-posta Gönderilemedi] Render'da RESEND_API_KEY tanımlanmamış! Kod konsola kaydedildi: ${licenseKey} -> Alıcı: ${toEmail}`);
         return false;
     }
 
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'Bar Cepte <onboarding@resend.dev>';
     const payload = JSON.stringify({
-        from: 'Bar Cepte <lisans@barcepte.com.tr>',
+        from: fromAddress,
         to: [toEmail],
         subject: '🍸 Bar Cepte VIP Aktivasyon Kodunuz Hazır!',
         html: `
@@ -209,9 +210,22 @@ async function sendEmail(toEmail, customerName, licenseKey, planName) {
                 'Content-Length': Buffer.byteLength(payload)
             }
         }, (res) => {
-            resolve(res.statusCode >= 200 && res.statusCode < 300);
+            let resBody = '';
+            res.on('data', c => resBody += c);
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    console.log(`✉️ [E-posta Başarılı] ${toEmail} adresine aktivasyon kodu gönderildi!`);
+                    resolve(true);
+                } else {
+                    console.error(`❌ [E-posta Hatası] Resend API Yanıtı (${res.statusCode}):`, resBody);
+                    resolve(false);
+                }
+            });
         });
-        req.on('error', () => resolve(false));
+        req.on('error', (err) => {
+            console.error('❌ [E-posta İstek Hatası]:', err);
+            resolve(false);
+        });
         req.write(payload);
         req.end();
     });
