@@ -53,6 +53,7 @@
       "privacy.html",
       "robots.txt",
       "sitemap.xml",
+      "reserve.js",
       "build/icon.png"
     ],
     "win": {

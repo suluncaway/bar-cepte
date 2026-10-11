@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bar-cepte-v18-ads';
+const CACHE_NAME = 'bar-cepte-v19-reserve';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./', './index.html', './privacy.html', './style.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
-    './ads.js', './manifest.json', './cocktails.json', './icon.png', './editorial-ui.js', './editorial-cocktails.webp'];
+    './ads.js', './reserve.js', './manifest.json', './cocktails.json', './icon.png', './editorial-ui.js', './editorial-cocktails.webp'];
 const SCOPE = new URL('./', self.location.href);
 const allowedAssets = new Set(ASSETS.map(path => new URL(path, SCOPE).pathname));
 
