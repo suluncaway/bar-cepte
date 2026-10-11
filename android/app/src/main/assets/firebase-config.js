@@ -3,7 +3,7 @@
  */
 
 const BAR_FIREBASE_CONFIG = {
-    googleClientId: "",
+    googleClientId: "869237464662-mhq835cgaqusep0m9oeqb46amjioc9j8.apps.googleusercontent.com",
     apiKey: "",
     authDomain: "bar-cepte.firebaseapp.com",
     projectId: "bar-cepte",

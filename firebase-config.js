@@ -12,8 +12,7 @@
 
 const BAR_FIREBASE_CONFIG = {
     // Google Cloud OAuth 2.0 Web Client ID
-    // Örnek: "123456789012-abcdefghijklmnopqrstuvwx.apps.googleusercontent.com"
-    googleClientId: "",
+    googleClientId: "869237464662-mhq835cgaqusep0m9oeqb46amjioc9j8.apps.googleusercontent.com",
 
     // Firebase Web Yapılandırması (İsteğe bağlı Firestore REST desteği)
     apiKey: "",
