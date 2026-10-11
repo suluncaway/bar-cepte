@@ -57,7 +57,7 @@ function saveSoldLicense(record) {
 
 // Plan Türünü Tespiti (ID veya Başlıktan)
 function detectPlan(orderItem) {
-    const productId = String(orderItem.product_id || orderItem.id || '');
+    const productId = String(orderItem.productId || orderItem.product_id || orderItem.id || '');
     if (PRODUCT_PLANS[productId]) return PRODUCT_PLANS[productId];
 
     const title = (orderItem.title || orderItem.name || '').toLowerCase();
@@ -115,20 +115,27 @@ async function processNewOrders() {
             const orderId = String(order.id || order.order_id || '');
             if (!orderId || processedOrderIds.has(orderId)) continue;
 
+            // Sadece ödenmiş (paid) siparişleri işle
+            if (order.paymentStatus && order.paymentStatus !== 'paid') continue;
+
             // Siparişteki ürünleri incele
-            const items = order.items || order.products || [order];
+            const items = order.lineItems || order.items || order.products || [order];
             for (const item of items) {
                 const planType = detectPlan(item);
                 const licenseKey = generateKey(planType);
                 const planTitle = planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
                                  planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP';
 
-                const customerEmail = order.buyer_email || order.email || '';
-                const customerName = order.buyer_name || order.customer_name || 'Barmen Dostumuz';
+                const customerEmail = (order.shippingInfo && order.shippingInfo.email) || order.buyer_email || order.email || '';
+                const customerName = (order.shippingInfo && order.shippingInfo.firstName)
+                    ? `${order.shippingInfo.firstName} ${order.shippingInfo.lastName || ''}`.trim()
+                    : (order.buyer_name || order.customer_name || 'Barmen Dostumuz');
+                const customerPhone = (order.shippingInfo && order.shippingInfo.phone) || '';
 
                 const record = {
                     orderId,
                     email: customerEmail,
+                    phone: customerPhone,
                     name: customerName,
                     planType,
                     planTitle,
@@ -139,7 +146,7 @@ async function processNewOrders() {
                 saveSoldLicense(record);
                 processedOrderIds.add(orderId);
 
-                console.log(`\n🎉 [YENİ SİPARİŞ] #${orderId} | ${customerName} (${customerEmail})`);
+                console.log(`\n🎉 [YENİ SİPARİŞ] #${orderId} | ${customerName} (${customerEmail}) [${customerPhone}]`);
                 console.log(`🔑 [ÜRETİLEN KOD] [${planTitle}]: ${licenseKey}\n`);
 
                 if (customerEmail) {
