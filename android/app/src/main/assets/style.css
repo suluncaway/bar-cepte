@@ -151,7 +151,10 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--accent-gold
 dialog { margin:auto; }
 dialog::backdrop { background:rgba(0,0,0,.7); }
 #shaker-timer-modal > div,#update-modal > div { background:#172922; border-radius:12px; border-color:#526346; }
-#reserve-modal .acrylic-card { background:#14231e; border-color:rgba(213,180,123,.35); box-sizing:border-box; }
+#reserve-modal .acrylic-card, #auth-modal .acrylic-card { background:#14231e; border-color:rgba(213,180,123,.35); box-sizing:border-box; }
+#google-signin-btn-container { display:flex; justify-content:center; align-items:center; width:100%; min-height:44px; margin:6px auto; overflow:hidden; }
+#google-signin-btn-container > div { border-radius:9999px!important; overflow:hidden!important; display:inline-flex!important; max-width:100%!important; }
+#google-signin-btn-container iframe { border-radius:9999px!important; overflow:hidden!important; display:block!important; max-width:100%!important; }
 .pill-btn { transition:background .2s,color .2s,transform .2s; }
 .pill-btn:active { transform:scale(.98); }
 .animate-fade-in { animation:fadeIn .24s ease both; }
@@ -185,8 +188,8 @@ dialog::backdrop { background:rgba(0,0,0,.7); }
     #status { font-size:11px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .topbar button { width:33px; min-height:33px; padding:6px; border-radius:5px; justify-content:center; flex-shrink:0; }
     .topbar > .shrink-0 { gap:4px; flex-shrink:0; }
-    #reserve-modal { padding:12px; }
-    #reserve-modal .acrylic-card { padding:18px 16px; border-radius:18px; max-height:88dvh; }
+    #reserve-modal, #auth-modal { padding:12px; }
+    #reserve-modal .acrylic-card, #auth-modal .acrylic-card { padding:18px 16px; border-radius:18px; max-height:88dvh; }
     .main-navigation { padding:0 18px; gap:24px; }
     .main-navigation > button { font-size:12px; min-height:43px; }
     .app-main { padding:0 18px; }

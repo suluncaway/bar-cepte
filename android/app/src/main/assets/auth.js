@@ -497,8 +497,7 @@
                     size: 'large',
                     text: 'signin_with',
                     shape: 'pill',
-                    logo_alignment: 'left',
-                    width: '100%'
+                    logo_alignment: 'left'
                 });
                 return;
             } catch (err) {

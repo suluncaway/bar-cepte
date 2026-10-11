@@ -664,12 +664,12 @@
 
     <!-- Barmen Kulübü & Google Üyelik Modalı -->
     <div id="auth-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-3 sm:p-4 animate-fade-in">
-        <div class="acrylic-card w-full max-w-md p-4 sm:p-7 rounded-2xl sm:rounded-3xl space-y-4 sm:space-y-5 relative border border-amber-500/30 shadow-2xl max-h-[90dvh] overflow-y-auto overflow-x-hidden text-left">
+        <div class="acrylic-card w-full max-w-sm sm:max-w-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3.5 relative border border-amber-500/30 shadow-2xl max-h-[90dvh] overflow-y-auto overflow-x-hidden mx-auto text-left">
             <button id="btn-close-auth" type="button" class="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center">✕</button>
 
             <!-- Giriş Yapılmamış Görünüm -->
-            <div id="auth-view-logged-out" class="space-y-4 text-center">
-                <div class="w-14 h-14 mx-auto rounded-3xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-3xl shadow-lg">
+            <div id="auth-view-logged-out" class="space-y-3.5 text-center">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-2xl shadow-lg">
                     🍸
                 </div>
                 <div class="space-y-1">
@@ -678,18 +678,24 @@
                 </div>
 
                 <!-- Üyelik Ayrıcalıkları -->
-                <div class="bg-black/40 border border-white/5 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl text-left space-y-2 text-[11px] sm:text-xs text-slate-300">
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-base text-amber-400 shrink-0">☁️</span>
-                        <span><strong>Bulut Senkronizasyonu:</strong> Favori kokteyllerin, bar dolabın ve tariflerin asla silinmez.</span>
+                <div class="bg-black/40 border border-white/5 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl text-left space-y-2.5 text-[11px] sm:text-xs text-slate-300 w-full min-w-0">
+                    <div class="flex items-start gap-2.5 min-w-0">
+                        <span class="text-sm text-amber-400 shrink-0 mt-0.5 select-none">☁️</span>
+                        <div class="min-w-0 flex-1 leading-snug break-words">
+                            <strong class="text-white">Bulut Senkronizasyonu:</strong> Favori kokteyllerin, bar dolabın ve tariflerin asla silinmez.
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-base text-amber-400 shrink-0">📱</span>
-                        <span><strong>Çoklu Cihaz:</strong> Telefondan veya bilgisayardan açtığında tüm seçimlerin anında karşında.</span>
+                    <div class="flex items-start gap-2.5 min-w-0">
+                        <span class="text-sm text-amber-400 shrink-0 mt-0.5 select-none">📱</span>
+                        <div class="min-w-0 flex-1 leading-snug break-words">
+                            <strong class="text-white">Çoklu Cihaz:</strong> Telefondan veya bilgisayardan açtığında tüm seçimlerin anında karşında.
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-base text-amber-400 shrink-0">👑</span>
-                        <span><strong>Tek Kullanımlık Lisans Koruma:</strong> Satın aldığın Shopier kodun hesabına mühürlenir.</span>
+                    <div class="flex items-start gap-2.5 min-w-0">
+                        <span class="text-sm text-amber-400 shrink-0 mt-0.5 select-none">👑</span>
+                        <div class="min-w-0 flex-1 leading-snug break-words">
+                            <strong class="text-white">Tek Kullanımlık Lisans Koruma:</strong> Satın aldığın Shopier kodun hesabına mühürlenir.
+                        </div>
                     </div>
                 </div>
 
