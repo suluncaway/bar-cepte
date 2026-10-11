@@ -235,6 +235,16 @@
                 <div id="selected-chips-container" class="flex flex-wrap gap-1.5 text-xs"></div>
             </div>
 
+            <!-- Alkol Alt Kategori Çipleri (Alkol / Kokteyl sekmesinde otomatik açılır) -->
+            <div id="alcohol-subcategories" class="flex items-center gap-1.5 overflow-x-auto pb-1 px-2 text-[11px] font-medium no-scrollbar">
+                <button data-action="alcohol-subcat" data-value="all" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm">Tümü</button>
+                <button data-action="alcohol-subcat" data-value="votka-cin" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍸 Votka & Cin</button>
+                <button data-action="alcohol-subcat" data-value="viski-konyak" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🥃 Viski & Konyak</button>
+                <button data-action="alcohol-subcat" data-value="tekila-rom" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🌵 Tekila & Rom</button>
+                <button data-action="alcohol-subcat" data-value="likor-aperitif" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍊 Likör & Aperitif</button>
+                <button data-action="alcohol-subcat" data-value="sarap-bira" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍷 Şarap, Vermut & Bira</button>
+            </div>
+
             <!-- Mutfak Alt Kategori Çipleri (Mutfak sekmesinde otomatik açılır) -->
             <div id="kitchen-subcategories" class="hidden flex items-center gap-1.5 overflow-x-auto pb-1 px-2 text-[11px] font-medium no-scrollbar">
                 <button data-subcat="all" data-ui="ui-24" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm">Tümü</button>

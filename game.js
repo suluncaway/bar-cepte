@@ -39,6 +39,7 @@ let shoppingList = BarSecurity.readStored('shoppingList', BarSecurity.stringList
 let allCocktails = [];
 let currentTab = "alkol";
 let currentKitchenSubCat = "all";
+let currentAlcoholSubCat = "all";
 let alcoholFilter = "all";
 let tasteFilter = "all";
 let onlyFavoritesFilter = false;
@@ -828,6 +829,15 @@ function switchTab(tab) {
         }
     }
 
+    const alcSubcatsEl = document.getElementById('alcohol-subcategories');
+    if (alcSubcatsEl) {
+        if (tab === 'alkol') {
+            alcSubcatsEl.classList.remove('hidden');
+        } else {
+            alcSubcatsEl.classList.add('hidden');
+        }
+    }
+
     if (tab === 'bar') { 
         document.getElementById('bar-dashboard').classList.remove('hidden'); 
         renderDashboard(); 
@@ -892,6 +902,58 @@ function matchesKitchenSubCategory(ing) {
     return true;
 }
 
+function setAlcoholSubCategory(subCat, btnEl) {
+    triggerHaptic('light');
+    currentAlcoholSubCat = subCat;
+    document.querySelectorAll('#alcohol-subcategories .alcohol-subcat-btn').forEach(b => {
+        b.className = "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white";
+    });
+    const target = btnEl || document.querySelector(`#alcohol-subcategories .alcohol-subcat-btn[data-value="${subCat}"]`);
+    if (target) {
+        target.className = "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm";
+    }
+    renderIngredients();
+}
+
+function getAlcoholGroup(ing) {
+    const lower = ((ing.id || '') + ' ' + (ing.name || '')).toLowerCase();
+    if (/(vodka|votka|gin|cin)/i.test(lower)) {
+        return 'votka-cin';
+    }
+    if (/(whiskey|whisky|bourbon|scotch|rye|viski|brandy|cognac|konyak|brendi|pisco)/i.test(lower)) {
+        return 'viski-konyak';
+    }
+    if (/(tequila|tekila|mezcal|rum|rom|cachaca|cachaça)/i.test(lower)) {
+        return 'tekila-rom';
+    }
+    if (/(liqueur|likör|triple sec|cointreau|curacao|curaçao|amaretto|campari|aperol|kahlua|baileys|sambuca|schnapps|ouzo|absinthe|chartreuse|drambuie|frangelico|galliano|midori|malibu|passoa)/i.test(lower)) {
+        return 'likor-aperitif';
+    }
+    if (/(wine|şarap|vermouth|vermut|champagne|prosecco|şampanya|beer|bira|ale|stout|cider)/i.test(lower)) {
+        return 'sarap-bira';
+    }
+    return 'diger-alkol';
+}
+
+function getAlcoholGroupLabel(groupId) {
+    switch (groupId) {
+        case 'votka-cin': return 'Votka & Cin';
+        case 'viski-konyak': return 'Viski & Konyak';
+        case 'tekila-rom': return 'Tekila & Rom';
+        case 'likor-aperitif': return 'Likör & Aperitif';
+        case 'sarap-bira': return 'Şarap & Vermut';
+        default: return 'Özel Alkol';
+    }
+}
+
+function matchesAlcoholSubCategory(ing) {
+    if (currentTab !== 'alkol' || currentAlcoholSubCat === 'all') return true;
+    const group = getAlcoholGroup(ing);
+    if (currentAlcoholSubCat === group) return true;
+    if (currentAlcoholSubCat === 'sarap-bira' && group === 'diger-alkol') return true;
+    return false;
+}
+
 function updateFavoritesFilterUI() {
     const favBtn = document.getElementById('btn-fav-filter');
     const favText = document.getElementById('fav-filter-text');
@@ -936,17 +998,57 @@ function renderDashboard() {
 
     const topContainer = document.getElementById('top-ingredients');
     if(topContainer) {
-        topContainer.innerHTML = selectedIngredients.map(id => {
-            const item = popularIngredients.find(pi => pi.id === id);
-            const label = item ? `${item.emoji} ${escapeHTML(item.name)}` : escapeHTML(id);
-            const encodedId = encodeURIComponent(id);
-            return `
-                <span class="bg-slate-900/90 text-amber-300 border border-white/10 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
-                    <span>${label}</span>
-                    <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="Barından Çıkar">✕</button>
-                </span>
-            `;
-        }).join('') || `<span class="text-slate-500 text-xs">Henüz barına malzeme eklemedin. 'Alkoller' veya 'Mutfak' sekmesinden malzeme seçebilirsin.</span>`;
+        if (selectedIngredients.length === 0) {
+            topContainer.innerHTML = `<span class="text-slate-500 text-xs">Henüz barına malzeme eklemedin. 'Kokteyl keşfet' veya 'Mutfak' sekmesinden malzeme seçebilirsin.</span>`;
+        } else {
+            const selectedItems = selectedIngredients.map(id => popularIngredients.find(pi => pi.id === id) || { id, name: id, emoji: '🥃', cat: 'alkol' });
+            const selectedAlcohols = selectedItems.filter(i => i.cat === 'alkol');
+            const selectedKitchen = selectedItems.filter(i => i.cat !== 'alkol');
+
+            let html = '';
+            if (selectedAlcohols.length > 0) {
+                html += `
+                    <div class="w-full mb-3">
+                        <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                            <span>🍸</span> Alkoller & Likörler (${selectedAlcohols.length})
+                        </div>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            ${selectedAlcohols.map(item => {
+                                const encodedId = encodeURIComponent(item.id);
+                                const grpLabel = getAlcoholGroupLabel(getAlcoholGroup(item));
+                                return `
+                                    <span class="bg-slate-900/90 text-amber-300 border border-amber-500/20 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
+                                        <span>${item.emoji || '🥃'} ${escapeHTML(item.name)} <span class="text-[10px] text-amber-400/70 font-semibold">(${escapeHTML(grpLabel)})</span></span>
+                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="Barından Çıkar">✕</button>
+                                    </span>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            if (selectedKitchen.length > 0) {
+                html += `
+                    <div class="w-full">
+                        <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                            <span>🍊</span> Mutfak & Mikserler (${selectedKitchen.length})
+                        </div>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            ${selectedKitchen.map(item => {
+                                const encodedId = encodeURIComponent(item.id);
+                                return `
+                                    <span class="bg-slate-900/90 text-emerald-300 border border-emerald-500/20 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
+                                        <span>${item.emoji || '🍊'} ${escapeHTML(item.name)}</span>
+                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-emerald-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="Barından Çıkar">✕</button>
+                                    </span>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            topContainer.innerHTML = html;
+        }
     }
 }
 
@@ -1073,12 +1175,24 @@ function renderIngredients() {
     const searchVal = document.getElementById('ing-search')?.value.toLowerCase().trim() || "";
     
     const filtered = popularIngredients
-        .filter(i => i.cat === currentTab && matchesKitchenSubCategory(i) && (i.name.toLowerCase().includes(searchVal) || i.id.toLowerCase().includes(searchVal)))
+        .filter(i => {
+            if (i.cat !== currentTab) return false;
+            if (currentTab === 'alkol' && !matchesAlcoholSubCategory(i)) return false;
+            if (currentTab === 'mutfak' && !matchesKitchenSubCategory(i)) return false;
+            if (searchVal && !(i.name.toLowerCase().includes(searchVal) || i.id.toLowerCase().includes(searchVal))) return false;
+            return true;
+        })
         .sort((a, b) => {
             let aIsBase = baseIngredients.some(base => base.id === a.id);
             let bIsBase = baseIngredients.some(base => base.id === b.id);
             if (aIsBase && !bIsBase) return -1;
             if (!aIsBase && bIsBase) return 1;
+            if (currentTab === 'alkol' && currentAlcoholSubCat === 'all') {
+                const groupOrder = ['votka-cin', 'viski-konyak', 'tekila-rom', 'likor-aperitif', 'sarap-bira', 'diger-alkol'];
+                const aOrder = groupOrder.indexOf(getAlcoholGroup(a));
+                const bOrder = groupOrder.indexOf(getAlcoholGroup(b));
+                if (aOrder !== bOrder) return aOrder - bOrder;
+            }
             return a.name.localeCompare(b.name, 'tr');
         });
     
@@ -1093,14 +1207,19 @@ function renderIngredients() {
             ? "snap-center shrink-0 w-24 h-28 bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-300 rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-950 font-bold shadow-lg transition-transform active:scale-95 min-w-0"
             : "snap-center shrink-0 w-24 h-28 acrylic-card rounded-2xl flex flex-col items-center justify-center p-2 text-center gap-1 cursor-pointer text-slate-300 font-semibold hover:border-amber-500/30 transition-transform active:scale-95 min-w-0";
         
+        const groupTag = (ing.cat === 'alkol')
+            ? `<span class="text-[9px] ${isSelected ? 'text-slate-900/90 font-bold' : 'text-amber-400/80 font-medium'} tracking-tight truncate max-w-full px-0.5 line-clamp-1">${escapeHTML(getAlcoholGroupLabel(getAlcoholGroup(ing)))}</span>`
+            : '';
+
         card.innerHTML = `
-            <div class="h-10 flex items-center justify-center mb-1 shrink-0">
+            <div class="h-9 flex items-center justify-center mb-0.5 shrink-0">
                 <img src="https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(ing.id)}-Small.png" 
                      alt="${escapeHTML(ing.name)}" 
                      class="max-h-full max-w-full object-contain drop-shadow-md"
                      loading="lazy" data-image-fallback>
             </div>
-            <span class="text-[11px] break-words w-full px-1 line-clamp-2 leading-tight overflow-hidden">${escapeHTML(ing.name)}</span>
+            <span class="text-[11px] break-words w-full px-1 line-clamp-1 leading-tight overflow-hidden">${escapeHTML(ing.name)}</span>
+            ${groupTag}
         `;
         
         card.onclick = () => {

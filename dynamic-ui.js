@@ -6,6 +6,7 @@ document.addEventListener('click', event => {
         const value = decodeURIComponent(button.dataset.value || '');
         switch (button.dataset.action) {
             case 'shopping': toggleShoppingList(value, event); break;
+            case 'alcohol-subcat': setAlcoholSubCategory(value, button); break;
             case 'ingredient': quickAddIngredientToBar(value, event); break;
             case 'favorite': toggleFavorite(value, event); break;
             case 'share': shareCustomRecipe(value, event); break;

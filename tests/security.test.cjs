@@ -123,4 +123,13 @@ test('Reserve UI elements and modal are responsive on mobile without overflow', 
     assert.match(css, /#reserve-modal/);
     assert.match(css, /#btn-open-reserve/);
 });
+test('alcohol subcategory filter chips and grouping are present in index.html and game.js', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    const js = fs.readFileSync('game.js', 'utf8');
+    assert.match(html, /id="alcohol-subcategories"/);
+    assert.match(html, /data-action="alcohol-subcat"/);
+    assert.match(js, /function getAlcoholGroup/);
+    assert.match(js, /function setAlcoholSubCategory/);
+});
+
 
