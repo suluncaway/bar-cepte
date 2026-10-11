@@ -131,12 +131,26 @@
         return getSubscriptionInfo().active;
     }
 
+    function getLocalDeviceId() {
+        try {
+            let id = root.localStorage.getItem('barcepte_device_id');
+            if (!id) {
+                id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+                root.localStorage.setItem('barcepte_device_id', id);
+            }
+            return id;
+        } catch {
+            return 'dev_unknown';
+        }
+    }
+
     function activateReserve(key) {
         if (!validateLicenseKey(key)) return false;
         try {
             const cleanKey = key.trim().toUpperCase();
 
             // Tek kullanımlık lisans koruması (BarAuth kontrolü)
+            let existingExpiresAt = 0;
             if (root.BarAuth && typeof root.BarAuth.canUseLicenseKey === 'function') {
                 const check = root.BarAuth.canUseLicenseKey(cleanKey);
                 if (!check.allowed) {
@@ -147,11 +161,18 @@
                     }
                     return false;
                 }
+                if (check.alreadyClaimed) {
+                    const registry = root.BarAuth.getClaimedLicenses ? root.BarAuth.getClaimedLicenses() : {};
+                    if (registry[cleanKey] && registry[cleanKey].expiresAt) {
+                        existingExpiresAt = registry[cleanKey].expiresAt;
+                    }
+                }
             }
 
             const plan = getPlanFromKey(cleanKey);
             const duration = getDurationForPlan(plan);
-            const expiresAt = duration > 0 ? (Date.now() + duration) : 0;
+            // Daha önce bu hesaba mühürlenmişse orijinal süresini koru, sıfırdan süre ekleme!
+            const expiresAt = existingExpiresAt > 0 ? existingExpiresAt : (duration > 0 ? (Date.now() + duration) : 0);
 
             root.localStorage.setItem(STORAGE_KEY, 'true');
             root.localStorage.setItem(KEY_STORAGE, cleanKey);
@@ -167,6 +188,84 @@
             return true;
         } catch {
             return false;
+        }
+    }
+
+    async function verifyAndActivateLicense(key) {
+        if (!key || typeof key !== 'string') {
+            return { success: false, reason: 'Lütfen bir aktivasyon kodu giriniz.' };
+        }
+        const cleanKey = key.trim().toUpperCase();
+
+        // 1. Format ve sağlama toplamı kontrolü
+        if (!validateLicenseKey(cleanKey)) {
+            return { success: false, reason: '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
+        }
+
+        // 2. Master Key kontrolü (Geliştirici anahtarları)
+        if (MASTER_KEYS.has(cleanKey)) {
+            activateReserve(cleanKey);
+            return { success: true, plan: 'lifetime', isMaster: true };
+        }
+
+        // 3. Yerel BarAuth kontrolü
+        if (root.BarAuth && typeof root.BarAuth.canUseLicenseKey === 'function') {
+            const localCheck = root.BarAuth.canUseLicenseKey(cleanKey);
+            if (!localCheck.allowed) {
+                return { success: false, reason: localCheck.reason };
+            }
+        }
+
+        // 4. Merkezi Sunucu (Render Webhook) Doğrulaması
+        const user = root.BarAuth && typeof root.BarAuth.getCurrentUser === 'function' ? root.BarAuth.getCurrentUser() : null;
+        const deviceId = (root.BarAuth && typeof root.BarAuth.getDeviceId === 'function') ? root.BarAuth.getDeviceId() : getLocalDeviceId();
+        const payload = {
+            key: cleanKey,
+            uid: user ? user.uid : null,
+            email: user ? user.email : '',
+            deviceId: deviceId
+        };
+
+        try {
+            const resp = await fetch('https://bar-cepte-webhook.onrender.com/api/claim-license', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                // Sunucu reddetti (başkası tarafından kullanılmış veya süresi dolmuş)
+                if (root.BarAuth && typeof root.BarAuth.markLicenseClaimedLocally === 'function') {
+                    root.BarAuth.markLicenseClaimedLocally(cleanKey, data.claimedBy || 'external_user');
+                }
+                return {
+                    success: false,
+                    reason: data.reason || '❌ Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.'
+                };
+            }
+
+            // Sunucu onayladı! Lisansı bu cihaza kaydet
+            const plan = data.plan || getPlanFromKey(cleanKey);
+            const expiresAt = Number(data.expiresAt) || 0;
+
+            root.localStorage.setItem(STORAGE_KEY, 'true');
+            root.localStorage.setItem(KEY_STORAGE, cleanKey);
+            root.localStorage.setItem(PLAN_STORAGE, plan);
+            root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
+
+            if (root.BarAuth && typeof root.BarAuth.claimLicenseKey === 'function') {
+                root.BarAuth.claimLicenseKey(cleanKey, plan, expiresAt);
+            }
+
+            applyReserveUI();
+            return { success: true, plan, expiresAt, message: data.message };
+        } catch (err) {
+            console.warn('Merkezi lisans sunucusuna ulaşılamadı, yerel doğrulama uygulanıyor:', err);
+            const localSuccess = activateReserve(cleanKey);
+            if (localSuccess) {
+                return { success: true, plan: getPlanFromKey(cleanKey), offline: true };
+            }
+            return { success: false, reason: 'Aktivasyon gerçekleştirilemedi.' };
         }
     }
 
@@ -363,7 +462,7 @@
         }
 
         if (activateBtn && keyInput) {
-            activateBtn.addEventListener('click', () => {
+            activateBtn.addEventListener('click', async () => {
                 const code = keyInput.value;
                 if (!code.trim()) {
                     if (msgEl) {
@@ -372,22 +471,36 @@
                     }
                     return;
                 }
-                const success = activateReserve(code);
-                if (success) {
-                    const subInfo = getSubscriptionInfo();
-                    const planName = getPlanDisplayName(subInfo.plan);
-                    if (msgEl) {
-                        msgEl.textContent = `🎉 Tebrikler! ${planName} başarıyla aktif edildi.`;
-                        msgEl.className = 'text-xs text-emerald-400 font-bold';
+
+                const origText = activateBtn.textContent;
+                activateBtn.disabled = true;
+                activateBtn.textContent = 'Kontrol ediliyor...';
+                if (msgEl) {
+                    msgEl.textContent = 'Lisans doğrulanıyor...';
+                    msgEl.className = 'text-xs text-amber-400 font-medium animate-pulse';
+                }
+
+                try {
+                    const result = await verifyAndActivateLicense(code);
+                    if (result.success) {
+                        const subInfo = getSubscriptionInfo();
+                        const planName = getPlanDisplayName(subInfo.plan);
+                        if (msgEl) {
+                            msgEl.textContent = `🎉 Tebrikler! ${planName} başarıyla aktif edildi.`;
+                            msgEl.className = 'text-xs text-emerald-400 font-bold';
+                        }
+                        setTimeout(() => {
+                            applyReserveUI();
+                        }, 500);
+                    } else {
+                        if (msgEl) {
+                            msgEl.textContent = result.reason || '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.';
+                            msgEl.className = 'text-xs text-rose-400 font-semibold';
+                        }
                     }
-                    setTimeout(() => {
-                        applyReserveUI();
-                    }, 500);
-                } else {
-                    if (msgEl) {
-                        msgEl.textContent = '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.';
-                        msgEl.className = 'text-xs text-rose-400 font-semibold';
-                    }
+                } finally {
+                    activateBtn.disabled = false;
+                    activateBtn.textContent = origText;
                 }
             });
         }
@@ -412,6 +525,7 @@
     const api = {
         isReserveActive,
         activateReserve,
+        verifyAndActivateLicense,
         activateFromCloud,
         deactivateReserve,
         validateLicenseKey,

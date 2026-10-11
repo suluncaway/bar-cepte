@@ -17,10 +17,13 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const { generateKey } = require('./generate-keys');
+const { generateKey, checksum } = require('./generate-keys');
 
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+
+// Master geliştirici anahtarları
+const MASTER_KEYS = new Set(['RESERVE-SULUNCA-2026', 'BARCEPTE-RESERVE-VIP']);
 
 // Shopier Kişisel Erişim Anahtarı (Personal Access Token - PAT)
 const SHOPIER_API_TOKEN = process.env.SHOPIER_API_TOKEN ||
@@ -33,6 +36,7 @@ const PRODUCT_PLANS = {
 };
 
 const LOG_FILE = path.resolve(__dirname, '..', 'keys', 'sold_licenses.json');
+const CLAIMED_FILE = path.resolve(__dirname, '..', 'keys', 'claimed_licenses.json');
 
 function getSoldLicenses() {
     try {
@@ -53,6 +57,73 @@ function saveSoldLicense(record) {
     } catch (err) {
         console.error('Lisans kayıt hatası:', err);
     }
+}
+
+// Daha önceden kullanılmış / teslim edilmiş bilinen kodların merkezi veritabanı
+const PRE_CLAIMED_KEYS = {
+    'RESERVE-MTH1-FXSU-42E5': {
+        key: 'RESERVE-MTH1-FXSU-42E5',
+        plan: 'monthly',
+        claimedAt: 1791754613000,
+        expiresAt: 1794346613000,
+        uid: 'claimed_shopier_order_991899363',
+        email: 'sulunca@gmail.com',
+        deviceId: 'dev_shopier_order_991899363'
+    },
+    'RESERVE-MTH1-432C-C25B': {
+        key: 'RESERVE-MTH1-432C-C25B',
+        plan: 'monthly',
+        claimedAt: 1791700000000,
+        expiresAt: 1794292000000,
+        uid: 'claimed_sample_doc_mth',
+        email: 'sample@barcepte.com.tr',
+        deviceId: 'dev_sample_doc_mth'
+    },
+    'RESERVE-ANN1-6VLZ-0025': {
+        key: 'RESERVE-ANN1-6VLZ-0025',
+        plan: 'annual',
+        claimedAt: 1791700000000,
+        expiresAt: 1823236000000,
+        uid: 'claimed_sample_doc_ann',
+        email: 'sample@barcepte.com.tr',
+        deviceId: 'dev_sample_doc_ann'
+    }
+};
+
+function getClaimedLicenses() {
+    try {
+        let fileData = {};
+        if (fs.existsSync(CLAIMED_FILE)) {
+            fileData = JSON.parse(fs.readFileSync(CLAIMED_FILE, 'utf8') || '{}');
+        }
+        return { ...PRE_CLAIMED_KEYS, ...fileData };
+    } catch {
+        return { ...PRE_CLAIMED_KEYS };
+    }
+}
+
+function saveClaimedLicense(key, claimData) {
+    try {
+        const dir = path.dirname(CLAIMED_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const all = getClaimedLicenses();
+        all[key] = claimData;
+        fs.writeFileSync(CLAIMED_FILE, JSON.stringify(all, null, 2), 'utf8');
+        return true;
+    } catch (err) {
+        console.error('Kullanılan lisans kayıt hatası:', err);
+        return false;
+    }
+}
+
+function verifyKeyChecksum(rawKey) {
+    if (!rawKey || typeof rawKey !== 'string') return false;
+    const cleanKey = rawKey.trim().toUpperCase();
+    if (MASTER_KEYS.has(cleanKey)) return true;
+    const parts = cleanKey.split('-');
+    if (parts.length !== 4 || parts[0] !== 'RESERVE') return false;
+    if (parts[1].length !== 4 || parts[2].length !== 4 || parts[3].length !== 4) return false;
+    return checksum(parts[1] + parts[2]) === parts[3];
 }
 
 // Plan Türünü Tespiti (ID veya Başlıktan)
@@ -279,9 +350,177 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // Merkezi Lisans Kullanma / Mühürleme Endpoint'i (Single-Use Anti-Reuse Enforcement)
+    if (req.method === 'POST' && req.url === '/api/claim-license') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                const params = JSON.parse(body || '{}');
+                const rawKey = params.key || '';
+                const uid = params.uid || null;
+                const email = params.email || '';
+                const deviceId = params.deviceId || null;
+
+                if (!rawKey || typeof rawKey !== 'string') {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ success: false, reason: 'Lütfen bir aktivasyon kodu giriniz.' }));
+                    return;
+                }
+
+                const cleanKey = rawKey.trim().toUpperCase();
+
+                // 1. Master Key Kontrolü
+                if (MASTER_KEYS.has(cleanKey)) {
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({
+                        success: true,
+                        plan: 'lifetime',
+                        expiresAt: 0,
+                        isMaster: true,
+                        message: '👑 Master geliştirici anahtarı onaylandı.'
+                    }));
+                    return;
+                }
+
+                // 2. Format ve Checksum Kontrolü
+                if (!verifyKeyChecksum(cleanKey)) {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        reason: '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.'
+                    }));
+                    return;
+                }
+
+                const claimed = getClaimedLicenses();
+                const existing = claimed[cleanKey];
+
+                if (existing) {
+                    const isOwner = (uid && existing.uid === uid) || (deviceId && existing.deviceId === deviceId);
+                    if (!isOwner) {
+                        res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({
+                            success: false,
+                            reason: '❌ Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.'
+                        }));
+                        return;
+                    }
+
+                    // Aynı kullanıcı/cihaz: Süre kontrolü
+                    if (existing.expiresAt > 0 && Date.now() > existing.expiresAt) {
+                        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({
+                            success: false,
+                            reason: '❌ Bu lisans anahtarının kullanım süresi dolmuştur! Lütfen yeni bir lisans temin ediniz.'
+                        }));
+                        return;
+                    }
+
+                    // Aynı kullanıcı, aktif:
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({
+                        success: true,
+                        plan: existing.plan,
+                        expiresAt: existing.expiresAt,
+                        restored: true,
+                        message: 'Aboneliğiniz bu cihazda doğrulandı.'
+                    }));
+                    return;
+                }
+
+                // 3. Yeni Lisans Kullanımı
+                let plan = 'lifetime';
+                if (cleanKey.includes('-MTH1-')) plan = 'monthly';
+                else if (cleanKey.includes('-ANN1-') || cleanKey.includes('-YIL1-')) plan = 'annual';
+
+                let duration = 0;
+                if (plan === 'monthly') duration = 30 * 24 * 60 * 60 * 1000;
+                else if (plan === 'annual') duration = 365 * 24 * 60 * 60 * 1000;
+                const expiresAt = duration > 0 ? (Date.now() + duration) : 0;
+
+                const claimRecord = {
+                    key: cleanKey,
+                    plan,
+                    duration,
+                    claimedAt: Date.now(),
+                    expiresAt,
+                    uid: uid || null,
+                    email: email || '',
+                    deviceId: deviceId || null
+                };
+
+                saveClaimedLicense(cleanKey, claimRecord);
+                console.log(`🔒 [LİSANS MERKEZİNDE MÜHÜRLENDİ] ${cleanKey} [${plan}] -> ${email || uid || deviceId || 'Misafir'}`);
+
+                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({
+                    success: true,
+                    plan,
+                    expiresAt,
+                    message: '🎉 Lisans anahtarınız başarıyla aktif edildi ve tek kullanımlık olarak mühürlendi!'
+                }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ success: false, reason: 'Sunucu hatası oluştu.' }));
+            }
+        });
+        return;
+    }
+
+    // Merkezi Lisans Sorgulama Endpoint'i
+    if (req.method === 'POST' && req.url === '/api/check-license') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                const params = JSON.parse(body || '{}');
+                const rawKey = params.key || '';
+                const uid = params.uid || null;
+                const deviceId = params.deviceId || null;
+                const cleanKey = rawKey.trim().toUpperCase();
+
+                const valid = verifyKeyChecksum(cleanKey);
+                if (!valid) {
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ valid: false, reason: 'Geçersiz kod' }));
+                    return;
+                }
+
+                const claimed = getClaimedLicenses();
+                const existing = claimed[cleanKey];
+                if (!existing) {
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ valid: true, claimed: false }));
+                    return;
+                }
+
+                const isOwner = (uid && existing.uid === uid) || (deviceId && existing.deviceId === deviceId);
+                const expired = existing.expiresAt > 0 && Date.now() > existing.expiresAt;
+
+                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({
+                    valid: true,
+                    claimed: true,
+                    isOwner,
+                    expired,
+                    plan: existing.plan,
+                    expiresAt: existing.expiresAt
+                }));
+            } catch {
+                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ valid: false, error: 'Hata' }));
+            }
+        });
+        return;
+    }
+
     // Üretilen Lisansları İzleme Tablosu (Dashboard)
     if (req.method === 'GET' && (req.url === '/licenses' || req.url === '/dashboard')) {
         const sold = getSoldLicenses();
+        const claimed = getClaimedLicenses();
+        const claimedCount = Object.keys(claimed).length;
+
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(`
             <!DOCTYPE html>
@@ -292,21 +531,43 @@ const server = http.createServer((req, res) => {
                 <title>Bar Cepte — Lisans Yönetim Paneli</title>
                 <style>
                     body { background: #101b19; color: #fff; font-family: -apple-system, sans-serif; padding: 24px; margin: 0; }
-                    .container { max-width: 900px; margin: 0 auto; }
-                    h1 { color: #d5b47b; font-size: 24px; }
+                    .container { max-width: 960px; margin: 0 auto; }
+                    h1 { color: #d5b47b; font-size: 24px; margin-bottom: 6px; }
+                    .stats { display: flex; gap: 16px; margin: 16px 0; }
+                    .stat-box { background: #172922; border: 1px solid rgba(213,180,123,0.3); border-radius: 12px; padding: 12px 18px; flex: 1; }
+                    .stat-val { font-size: 22px; font-weight: bold; color: #d5b47b; }
+                    .stat-lbl { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
                     table { width: 100%; border-collapse: collapse; margin-top: 16px; background: #172922; border-radius: 12px; overflow: hidden; }
                     th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
                     th { background: #0d1715; color: #d5b47b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-                    code { background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 6px; color: #f59e0b; font-weight: bold; }
+                    code { background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 6px; color: #f59e0b; font-weight: bold; font-family: monospace; }
                     .badge { padding: 3px 8px; border-radius: 99px; font-size: 10px; font-weight: bold; background: rgba(213,180,123,0.2); color: #d5b47b; }
+                    .badge-claimed { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); padding: 3px 8px; border-radius: 99px; font-size: 10px; font-weight: bold; }
+                    .badge-available { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.4); padding: 3px 8px; border-radius: 99px; font-size: 10px; font-weight: bold; }
                     .btn-action { display:inline-block; background: #d5b47b; color: #101b19; padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 12px; text-decoration: none; margin-bottom: 12px; }
                     .btn-action:hover { background: #e2c899; }
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <h1>🍸 Bar Cepte — Satılan VIP Lisansları (${sold.length} Adet)</h1>
-                    <p style="color: #94a3b8; font-size: 13px;">Shopier API'den otomatik çekilen ve üretilen tek kullanımlık kodlar:</p>
+                    <h1>🍸 Bar Cepte — Lisans Yönetim Paneli</h1>
+                    <p style="color: #94a3b8; font-size: 13px; margin-top:0;">Shopier API'den otomatik çekilen ve tek kullanımlık olarak mühürlenen kodlar:</p>
+                    
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="stat-val">${sold.length}</div>
+                            <div class="stat-lbl">Satılan Kodlar</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-val" style="color: #f87171;">${claimedCount}</div>
+                            <div class="stat-lbl">Kullanılmış / Mühürlü</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-val" style="color: #4ade80;">${Math.max(0, sold.length - claimedCount)}</div>
+                            <div class="stat-lbl">Kullanıma Hazır</div>
+                        </div>
+                    </div>
+
                     <a href="/resend" class="btn-action">✉️ Tüm Müşterilere Tekrar E-posta Gönder</a>
                     <table>
                         <thead>
@@ -315,20 +576,30 @@ const server = http.createServer((req, res) => {
                                 <th>Alıcı</th>
                                 <th>Plan</th>
                                 <th>Aktivasyon Kodu</th>
+                                <th>Durum (Tek Kullanım)</th>
                                 <th>Tarih</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${sold.length === 0 ? '<tr><td colspan="5" style="text-align:center; color:#64748b; padding:32px;">Henüz yeni sipariş yok. Shopier her 30 saniyede bir otomatik taranıyor.</td></tr>' : ''}
-                            ${sold.slice().reverse().map(s => `
+                            ${sold.length === 0 ? '<tr><td colspan="6" style="text-align:center; color:#64748b; padding:32px;">Henüz yeni sipariş yok. Shopier her 30 saniyede bir otomatik taranıyor.</td></tr>' : ''}
+                            ${sold.slice().reverse().map(s => {
+                                const isClaimed = !!claimed[s.licenseKey];
+                                const claimInfo = claimed[s.licenseKey];
+                                return `
                                 <tr>
                                     <td>#${s.orderId}</td>
                                     <td><strong>${s.name}</strong><br><small style="color:#64748b;">${s.email}</small></td>
                                     <td><span class="badge">${s.planTitle || s.planType}</span></td>
                                     <td><code>${s.licenseKey}</code></td>
+                                    <td>
+                                        ${isClaimed 
+                                            ? `<span class="badge-claimed">🔒 KULLANILDI (${new Date(claimInfo.claimedAt).toLocaleDateString('tr-TR')})</span>` 
+                                            : `<span class="badge-available">✨ KULLANILMADI (BEKLİYOR)</span>`}
+                                    </td>
                                     <td style="color:#64748b; font-size:11px;">${new Date(s.createdAt).toLocaleString('tr-TR')}</td>
                                 </tr>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>

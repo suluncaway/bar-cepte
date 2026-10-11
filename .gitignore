@@ -15,5 +15,6 @@ local.properties
 .env
 .env.*
 !/.env.example
-keys/
-*.keys.txt
+keys/*
+!keys/.gitkeep
+

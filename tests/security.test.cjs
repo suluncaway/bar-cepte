@@ -258,11 +258,12 @@ test('License keys are strictly single-use and bound to one account', () => {
 test('Google Sign-In UI elements, modals, and CSP directives are present in index.html', () => {
     const html = fs.readFileSync('index.html', 'utf8');
 
-    // CSP allows Google Identity Services and Firebase safely
+    // CSP allows Google Identity Services, Firebase, and webhook API safely
     assert.match(html, /https:\/\/accounts\.google\.com\/gsi\/client/);
     assert.match(html, /https:\/\/lh3\.googleusercontent\.com/);
     assert.match(html, /frame-src [^;]*https:\/\/accounts\.google\.com\//);
     assert.match(html, /connect-src [^;]*https:\/\/identitytoolkit\.googleapis\.com/);
+    assert.match(html, /connect-src [^;]*https:\/\/bar-cepte-webhook\.onrender\.com/);
 
     // UI elements present
     assert.match(html, /id="btn-auth-user"/);
@@ -271,4 +272,35 @@ test('Google Sign-In UI elements, modals, and CSP directives are present in inde
     assert.match(html, /src="firebase-config\.js"/);
     assert.match(html, /src="auth\.js"/);
     assert.match(html, /src="https:\/\/accounts\.google\.com\/gsi\/client"/);
+});
+
+test('Expired license keys cannot be reactivated to gain free extra days', () => {
+    const storageMap = new Map();
+    global.window = global;
+    global.localStorage = {
+        getItem: (k) => storageMap.get(k) || null,
+        setItem: (k, v) => storageMap.set(k, String(v)),
+        removeItem: (k) => storageMap.delete(k),
+        clear: () => storageMap.clear()
+    };
+
+    const auth = require('../auth.js');
+    const reserve = require('../reserve.js');
+
+    const expiredKey = `RESERVE-MTH1-EXPR-${reserve.checksum('MTH1EXPR')}`;
+    assert.ok(reserve.validateLicenseKey(expiredKey));
+
+    auth.saveUser({ uid: 'user_david', name: 'David', email: 'david@gmail.com' });
+
+    // Claim key with an expiration date in the past
+    const pastTime = Date.now() - 10000;
+    auth.claimLicenseKey(expiredKey, 'monthly', pastTime);
+
+    // David attempts to reactivate using the same expired key
+    const checkExpired = auth.canUseLicenseKey(expiredKey);
+    assert.equal(checkExpired.allowed, false);
+    assert.match(checkExpired.reason, /kullanım süresi dolmuştur/);
+
+    const activateResult = reserve.activateReserve(expiredKey);
+    assert.equal(activateResult, false);
 });

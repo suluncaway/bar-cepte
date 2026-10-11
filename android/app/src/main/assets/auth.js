@@ -119,6 +119,21 @@
         return Boolean(getCurrentUser());
     }
 
+    const DEVICE_ID_KEY = 'barcepte_device_id';
+
+    function getDeviceId() {
+        try {
+            let id = root.localStorage.getItem(DEVICE_ID_KEY);
+            if (!id) {
+                id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+                root.localStorage.setItem(DEVICE_ID_KEY, id);
+            }
+            return id;
+        } catch {
+            return 'dev_unknown';
+        }
+    }
+
     // --- Tek Kullanımlık Lisans Anahtarı Denetleyicisi ---
     function getClaimedLicenses() {
         try {
@@ -142,6 +157,11 @@
         }
         const cleanKey = rawKey.trim().toUpperCase();
 
+        // Master geliştirici anahtarları her zaman serbesttir
+        if (cleanKey === 'RESERVE-SULUNCA-2026' || cleanKey === 'BARCEPTE-RESERVE-VIP') {
+            return { allowed: true, reason: 'Master geliştirici anahtarı.' };
+        }
+
         // 1. Matematiksel Doğruluk Kontrolü
         if (root.BarReserve && typeof root.BarReserve.validateLicenseKey === 'function') {
             if (!root.BarReserve.validateLicenseKey(cleanKey)) {
@@ -149,15 +169,34 @@
             }
         }
 
-        // 2. Tek Kullanımlık Hesap Bağlantısı Kontrolü
+        // 2. Tek Kullanımlık Hesap / Cihaz Bağlantısı Kontrolü
         const registry = getClaimedLicenses();
         const existingClaim = registry[cleanKey];
 
         const user = getCurrentUser();
-        const currentUid = user ? user.uid : null;
+        const deviceId = getDeviceId();
+        const currentUid = user ? user.uid : deviceId;
 
         if (existingClaim) {
-            if (currentUid && existingClaim.uid === currentUid) {
+            // Süre dolumu kontrolü: Süresi dolmuş anahtar tekrar KULLANILAMAZ!
+            if (existingClaim.expiresAt > 0 && Date.now() > existingClaim.expiresAt) {
+                return {
+                    allowed: false,
+                    reason: '❌ Bu lisans anahtarının kullanım süresi dolmuştur! Lisanslar tek kullanımlıktır.'
+                };
+            }
+
+            // Sahip doğrulaması:
+            // 1. Eğer lisans bir hesaba (UID) bağlıysa, farklı bir hesap kesinlikle KULLANAMAZ.
+            // 2. Sadece aynı UID veya misafir durumunda aynı cihaz kabul edilir.
+            let isOwner = false;
+            if (user && user.uid && existingClaim.uid) {
+                isOwner = (existingClaim.uid === user.uid);
+            } else if (!user && existingClaim.deviceId && !existingClaim.uid) {
+                isOwner = (existingClaim.deviceId === deviceId);
+            }
+
+            if (isOwner) {
                 return {
                     allowed: true,
                     reason: 'Bu anahtar zaten mevcut hesabınıza tanımlı.',
@@ -177,11 +216,13 @@
     function claimLicenseKey(rawKey, plan, expiresAt) {
         const cleanKey = rawKey.trim().toUpperCase();
         const user = getCurrentUser();
-        const currentUid = user ? user.uid : ('guest_' + Date.now());
+        const deviceId = getDeviceId();
+        const currentUid = user ? user.uid : null;
 
         const registry = getClaimedLicenses();
         registry[cleanKey] = {
             uid: currentUid,
+            deviceId: deviceId,
             email: user ? user.email : '',
             claimedAt: Date.now(),
             plan: plan || 'annual',
@@ -196,6 +237,20 @@
             user.reserveExpiresAt = Number(expiresAt) || 0;
             saveUser(user);
             syncToCloud();
+        }
+    }
+
+    function markLicenseClaimedLocally(rawKey, uid) {
+        if (!rawKey) return;
+        const cleanKey = rawKey.trim().toUpperCase();
+        const registry = getClaimedLicenses();
+        if (!registry[cleanKey]) {
+            registry[cleanKey] = {
+                uid: uid || 'external_user',
+                claimedAt: Date.now(),
+                externallyClaimed: true
+            };
+            saveClaimedLicenses(registry);
         }
     }
 
@@ -588,7 +643,7 @@
 
         const bindLicenseBtn = document.getElementById('btn-bind-account-license');
         if (bindLicenseBtn) {
-            bindLicenseBtn.addEventListener('click', () => {
+            bindLicenseBtn.addEventListener('click', async () => {
                 const input = document.getElementById('auth-license-input');
                 const rawKey = input ? input.value.trim() : '';
                 if (!rawKey) {
@@ -596,22 +651,43 @@
                     return;
                 }
 
-                const check = canUseLicenseKey(rawKey);
-                if (!check.allowed) {
-                    alert(check.reason);
-                    return;
-                }
+                const origText = bindLicenseBtn.textContent;
+                bindLicenseBtn.disabled = true;
+                bindLicenseBtn.textContent = 'Kontrol ediliyor...';
 
-                if (root.BarReserve && typeof root.BarReserve.activateReserve === 'function') {
-                    const activated = root.BarReserve.activateReserve(rawKey);
-                    if (activated) {
-                        alert('🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
-                        if (input) input.value = '';
-                        renderAuthModalState();
-                        updateAuthUI();
+                try {
+                    if (root.BarReserve && typeof root.BarReserve.verifyAndActivateLicense === 'function') {
+                        const result = await root.BarReserve.verifyAndActivateLicense(rawKey);
+                        if (result.success) {
+                            alert('🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
+                            if (input) input.value = '';
+                            renderAuthModalState();
+                            updateAuthUI();
+                        } else {
+                            alert(result.reason || 'Aktivasyon gerçekleştirilemedi.');
+                        }
                     } else {
-                        alert('Aktivasyon gerçekleştirilemedi.');
+                        const check = canUseLicenseKey(rawKey);
+                        if (!check.allowed) {
+                            alert(check.reason);
+                            return;
+                        }
+
+                        if (root.BarReserve && typeof root.BarReserve.activateReserve === 'function') {
+                            const activated = root.BarReserve.activateReserve(rawKey);
+                            if (activated) {
+                                alert('🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
+                                if (input) input.value = '';
+                                renderAuthModalState();
+                                updateAuthUI();
+                            } else {
+                                alert('Aktivasyon gerçekleştirilemedi.');
+                            }
+                        }
                     }
+                } finally {
+                    bindLicenseBtn.disabled = false;
+                    bindLicenseBtn.textContent = origText;
                 }
             });
         }
@@ -635,8 +711,10 @@
         isLoggedIn,
         saveUser,
         logout,
+        getDeviceId,
         canUseLicenseKey,
         claimLicenseKey,
+        markLicenseClaimedLocally,
         syncToCloud,
         syncFromCloud,
         handleGoogleCredentialResponse,
