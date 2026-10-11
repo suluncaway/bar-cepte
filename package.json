@@ -51,6 +51,8 @@
       "ads.js",
       "ads.txt",
       "privacy.html",
+      "robots.txt",
+      "sitemap.xml",
       "build/icon.png"
     ],
     "win": {
