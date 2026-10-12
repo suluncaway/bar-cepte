@@ -29,10 +29,21 @@ const MASTER_KEYS = new Set(['RESERVE-SULUNCA-2026', 'BARCEPTE-RESERVE-VIP']);
 const SHOPIER_API_TOKEN = process.env.SHOPIER_API_TOKEN ||
     'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI4Y2M3YTM5OTdhNjU2MjI2NTA0Mzk2ZmQ2MjFjYTgwMyIsImp0aSI6ImEwOGViOTNjMWM0NzBkMmMzZDEwY2EyY2JkODE0MzEzYmRhODZjOWNkMGM2ZTU0YWM3YzVjMjdjMTcyN2E2YmE3NDI0NDg1ZjRiMjVlNzYxZDkxMTEzNWQ3M2FiYTk3NmJlNmRmZTExNDEyMTRhOTYxZjJiYTVmMzVmYTA5ZGI2ODczZDBmMTgwZDg0OWIwMDI5ODY3N2ZlODdmMWJjOGUiLCJpYXQiOjE3OTE3NTI1MDUsIm5iZiI6MTc5MTc1MjUwNSwiZXhwIjoxOTQ5NTM3MjY1LCJzdWIiOjE2NDg0Miwic2NvcGVzIjpbIm9yZGVyczpyZWFkIiwib3JkZXJzOndyaXRlIiwicHJvZHVjdHM6cmVhZCIsInByb2R1Y3RzOndyaXRlIiwic2hpcHBpbmdzOnJlYWQiLCJzaGlwcGluZ3M6d3JpdGUiLCJkaXNjb3VudHM6cmVhZCIsImRpc2NvdW50czp3cml0ZSIsInBheW91dHM6cmVhZCIsInJlZnVuZHM6cmVhZCIsInJlZnVuZHM6d3JpdGUiLCJzaG9wOnJlYWQiLCJzaG9wOndyaXRlIl19.U8SkJYgOFjjFRC2bDkcb0FNqCDL9LlqH80IXtea9dfl9CR_WatC3fVDyK8X0-SPpkMW1yVtckr3akMjDy55SCMe3vKEb3BVQxqEmf3RD4Yskos_ToS1fxeO_ABcJlbyDtrrV85AL0howwdDrsvwT2hXplkOPXi1yo2ZDJ0v7nRhJiR7znVR4fWmIcyaEt_rjLm7_uZ5UE0QX40HqGcrpzHrMONy_DCrrFCIt6xiqjd5NNFTVIWzTBdd8XBAW651-Wr8A2M0ElVb9j1-WaHSR_KC3_avfsHpFS3iMzpvbwex6p05V7W7kOoAFRt4VLM7Ot0HUZ8kgI8-ZDvsGieyaOg';
 
-// Shopier Ürün ID - Plan Eşleştirmesi
+// Shopier Ürün ID - Plan ve Para Birimi Eşleştirmesi (TRY, USD, EUR)
 const PRODUCT_PLANS = {
-    '51736039': 'monthly', // Aylık Plan (30 Gün)
-    '51735632': 'annual'   // Yıllık Plan (365 Gün)
+    // Standart TRY Ürünleri
+    '51736039': { plan: 'monthly', currency: 'TRY' }, // Aylık Plan (30 Gün)
+    '51735632': { plan: 'annual', currency: 'TRY' },   // Yıllık Plan (365 Gün)
+
+    // USD Ürünleri (Ortam Değişkenleri üzerinden dinamik atanabilir)
+    ...(process.env.SHOPIER_USD_MONTHLY_ID ? { [process.env.SHOPIER_USD_MONTHLY_ID]: { plan: 'monthly', currency: 'USD' } } : {}),
+    ...(process.env.SHOPIER_USD_ANNUAL_ID ? { [process.env.SHOPIER_USD_ANNUAL_ID]: { plan: 'annual', currency: 'USD' } } : {}),
+    ...(process.env.SHOPIER_USD_LIFETIME_ID ? { [process.env.SHOPIER_USD_LIFETIME_ID]: { plan: 'lifetime', currency: 'USD' } } : {}),
+
+    // EUR Ürünleri (Ortam Değişkenleri üzerinden dinamik atanabilir)
+    ...(process.env.SHOPIER_EUR_MONTHLY_ID ? { [process.env.SHOPIER_EUR_MONTHLY_ID]: { plan: 'monthly', currency: 'EUR' } } : {}),
+    ...(process.env.SHOPIER_EUR_ANNUAL_ID ? { [process.env.SHOPIER_EUR_ANNUAL_ID]: { plan: 'annual', currency: 'EUR' } } : {}),
+    ...(process.env.SHOPIER_EUR_LIFETIME_ID ? { [process.env.SHOPIER_EUR_LIFETIME_ID]: { plan: 'lifetime', currency: 'EUR' } } : {})
 };
 
 const LOG_FILE = path.resolve(__dirname, '..', 'keys', 'sold_licenses.json');
@@ -126,16 +137,32 @@ function verifyKeyChecksum(rawKey) {
     return checksum(parts[1] + parts[2]) === parts[3];
 }
 
-// Plan Türünü Tespiti (ID veya Başlıktan)
-function detectPlan(orderItem) {
+// Plan Türü ve Para Birimi Tespiti (ID veya Başlıktan)
+function detectPlanAndCurrency(orderItem, order = {}) {
     const productId = String(orderItem.productId || orderItem.product_id || orderItem.id || '');
-    if (PRODUCT_PLANS[productId]) return PRODUCT_PLANS[productId];
+    if (PRODUCT_PLANS[productId]) {
+        const conf = PRODUCT_PLANS[productId];
+        return typeof conf === 'object' ? conf : { plan: conf, currency: 'TRY' };
+    }
 
     const title = (orderItem.title || orderItem.name || '').toLowerCase();
-    if (title.includes('aylık') || title.includes('monthly')) return 'monthly';
-    if (title.includes('yıllık') || title.includes('annual')) return 'annual';
-    if (title.includes('ömür') || title.includes('lifetime')) return 'lifetime';
-    return 'annual'; // Varsayılan yıllık
+    let plan = 'annual';
+    if (title.includes('aylık') || title.includes('monthly') || title.includes('month') || title.includes('30 day')) plan = 'monthly';
+    else if (title.includes('yıllık') || title.includes('annual') || title.includes('yearly') || title.includes('365 day')) plan = 'annual';
+    else if (title.includes('ömür') || title.includes('lifetime') || title.includes('forever')) plan = 'lifetime';
+
+    let currency = (order.currency || order.payment_currency || orderItem.currency || '').toUpperCase();
+    if (!currency || currency === 'TRY' || currency === 'TL') {
+        if (title.includes('$') || title.includes('usd') || title.includes('dollar')) currency = 'USD';
+        else if (title.includes('€') || title.includes('eur') || title.includes('euro')) currency = 'EUR';
+        else currency = 'TRY';
+    }
+
+    return { plan, currency };
+}
+
+function detectPlan(orderItem) {
+    return detectPlanAndCurrency(orderItem).plan;
 }
 
 // Shopier API Siparişlerini Çekme
@@ -192,15 +219,19 @@ async function processNewOrders() {
             // Siparişteki ürünleri incele
             const items = order.lineItems || order.items || order.products || [order];
             for (const item of items) {
-                const planType = detectPlan(item);
+                const { plan: planType, currency } = detectPlanAndCurrency(item, order);
                 const licenseKey = generateKey(planType);
-                const planTitle = planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
-                                 planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP';
+                const isIntl = currency === 'USD' || currency === 'EUR';
+                const planTitle = isIntl
+                    ? (planType === 'monthly' ? `Monthly VIP (30 Days - ${currency})` :
+                       planType === 'annual' ? `Annual VIP (365 Days - ${currency})` : `Lifetime VIP (${currency})`)
+                    : (planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
+                       planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP');
 
                 const customerEmail = (order.shippingInfo && order.shippingInfo.email) || order.buyer_email || order.email || '';
                 const customerName = (order.shippingInfo && order.shippingInfo.firstName)
                     ? `${order.shippingInfo.firstName} ${order.shippingInfo.lastName || ''}`.trim()
-                    : (order.buyer_name || order.customer_name || 'Barmen Dostumuz');
+                    : (order.buyer_name || order.customer_name || (isIntl ? 'Valued Customer' : 'Barmen Dostumuz'));
                 const customerPhone = (order.shippingInfo && order.shippingInfo.phone) || '';
 
                 const record = {
@@ -210,6 +241,7 @@ async function processNewOrders() {
                     name: customerName,
                     planType,
                     planTitle,
+                    currency,
                     licenseKey,
                     createdAt: new Date().toISOString()
                 };
@@ -217,11 +249,11 @@ async function processNewOrders() {
                 saveSoldLicense(record);
                 processedOrderIds.add(orderId);
 
-                console.log(`\n🎉 [YENİ SİPARİŞ] #${orderId} | ${customerName} (${customerEmail}) [${customerPhone}]`);
+                console.log(`\n🎉 [YENİ SİPARİŞ - ${currency}] #${orderId} | ${customerName} (${customerEmail}) [${customerPhone}]`);
                 console.log(`🔑 [ÜRETİLEN KOD] [${planTitle}]: ${licenseKey}\n`);
 
                 if (customerEmail) {
-                    await sendEmail(customerEmail, customerName, licenseKey, planTitle);
+                    await sendEmail(customerEmail, customerName, licenseKey, planTitle, currency);
                 }
             }
         }
@@ -230,23 +262,48 @@ async function processNewOrders() {
     }
 }
 
-// Her 30 saniyede bir Shopier'ı otomatik kontrol et
-setInterval(processNewOrders, 30000);
-// Başlangıçta hemen bir kez kontrol et
-setTimeout(processNewOrders, 2000);
+// Her 30 saniyede bir Shopier'ı otomatik kontrol et (doğrudan çalıştırıldığında)
+if (require.main === module) {
+    setInterval(processNewOrders, 30000);
+    setTimeout(processNewOrders, 2000);
+}
 
-async function sendEmail(toEmail, customerName, licenseKey, planName) {
+async function sendEmail(toEmail, customerName, licenseKey, planName, currency = 'TRY') {
     if (!RESEND_API_KEY) {
         console.log(`⚠️ [E-posta Gönderilemedi] Render'da RESEND_API_KEY tanımlanmamış! Kod konsola kaydedildi: ${licenseKey} -> Alıcı: ${toEmail}`);
         return false;
     }
 
-    const fromAddress = process.env.RESEND_FROM_EMAIL || 'Bar Cepte <lisans@barcepte.com.tr>';
-    const payload = JSON.stringify({
-        from: fromAddress,
-        to: [toEmail],
-        subject: '🍸 Bar Cepte VIP Aktivasyon Kodunuz Hazır!',
-        html: `
+    const isIntl = currency === 'USD' || currency === 'EUR' || /pocket bar/i.test(planName);
+    const fromAddress = isIntl 
+        ? (process.env.RESEND_FROM_EMAIL || 'Pocket Bar <lisans@barcepte.com.tr>')
+        : (process.env.RESEND_FROM_EMAIL || 'Bar Cepte <lisans@barcepte.com.tr>');
+
+    const subject = isIntl
+        ? '🍸 Pocket Bar VIP — Your Single-Use Activation Key is Ready!'
+        : '🍸 Bar Cepte VIP Aktivasyon Kodunuz Hazır!';
+
+    const html = isIntl ? `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #101b19; color: #ffffff; padding: 32px 24px; border-radius: 16px;">
+                <h1 style="color: #d5b47b; font-size: 22px; margin-top: 0;">👑 Welcome to Pocket Bar Reserve Club!</h1>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${customerName || 'Valued Customer'}</strong>,</p>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Your single-use activation key for <strong>${planName}</strong> purchased via Shopier has been generated:</p>
+                
+                <div style="background: #172922; border: 1px solid rgba(213,180,123,0.4); border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0;">
+                    <span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Your Activation Key:</span>
+                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${licenseKey}</strong>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6;">
+                    <strong>How to Activate:</strong><br>
+                    1. Open <a href="https://barcepte.com.tr" style="color: #d5b47b; text-decoration: underline;">Pocket Bar</a> on your device.<br>
+                    2. Tap the <b>Reserve 👑</b> button in the top bar.<br>
+                    3. Paste your code above and tap <b>Activate</b>.
+                </div>
+
+                <p style="color: #64748b; font-size: 11px; margin-top: 24px; text-align: center;">This key is single-use and permanently bound to your account. Enjoy your cocktails! 🍸</p>
+            </div>
+    ` : `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #101b19; color: #ffffff; padding: 32px 24px; border-radius: 16px;">
                 <h1 style="color: #d5b47b; font-size: 22px; margin-top: 0;">👑 Bar Cepte Reserve Kulübüne Hoş Geldiniz!</h1>
                 <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Merhaba <strong>${customerName || 'Değerli Müşterimiz'}</strong>,</p>
@@ -266,7 +323,13 @@ async function sendEmail(toEmail, customerName, licenseKey, planName) {
 
                 <p style="color: #64748b; font-size: 11px; margin-top: 24px; text-align: center;">Bu kod hesabınıza özeldir ve tek kullanımlıktır. Keyifli akşamlar dileriz! 🍸</p>
             </div>
-        `
+    `;
+
+    const payload = JSON.stringify({
+        from: fromAddress,
+        to: [toEmail],
+        subject,
+        html
     });
 
     return new Promise((resolve) => {
@@ -334,7 +397,7 @@ const server = http.createServer((req, res) => {
             let sentCount = 0;
             for (const s of sold) {
                 if (s.email && s.licenseKey) {
-                    const ok = await sendEmail(s.email, s.name, s.licenseKey, s.planTitle || s.planType);
+                    const ok = await sendEmail(s.email, s.name, s.licenseKey, s.planTitle || s.planType, s.currency || 'TRY');
                     if (ok) sentCount++;
                 }
             }
@@ -575,21 +638,27 @@ const server = http.createServer((req, res) => {
                                 <th>Sipariş ID</th>
                                 <th>Alıcı</th>
                                 <th>Plan</th>
+                                <th>Para Birimi</th>
                                 <th>Aktivasyon Kodu</th>
                                 <th>Durum (Tek Kullanım)</th>
                                 <th>Tarih</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${sold.length === 0 ? '<tr><td colspan="6" style="text-align:center; color:#64748b; padding:32px;">Henüz yeni sipariş yok. Shopier her 30 saniyede bir otomatik taranıyor.</td></tr>' : ''}
+                            ${sold.length === 0 ? '<tr><td colspan="7" style="text-align:center; color:#64748b; padding:32px;">Henüz yeni sipariş yok. Shopier her 30 saniyede bir otomatik taranıyor.</td></tr>' : ''}
                             ${sold.slice().reverse().map(s => {
                                 const isClaimed = !!claimed[s.licenseKey];
                                 const claimInfo = claimed[s.licenseKey];
+                                const curr = s.currency || 'TRY';
+                                const currBadge = curr === 'USD' ? 'background:rgba(59,130,246,0.2); color:#60a5fa;' :
+                                                  curr === 'EUR' ? 'background:rgba(168,85,247,0.2); color:#c084fc;' :
+                                                  'background:rgba(213,180,123,0.2); color:#d5b47b;';
                                 return `
                                 <tr>
                                     <td>#${s.orderId}</td>
                                     <td><strong>${s.name}</strong><br><small style="color:#64748b;">${s.email}</small></td>
                                     <td><span class="badge">${s.planTitle || s.planType}</span></td>
+                                    <td><span class="badge" style="${currBadge}">${curr}</span></td>
                                     <td><code>${s.licenseKey}</code></td>
                                     <td>
                                         ${isClaimed 
@@ -626,29 +695,63 @@ const server = http.createServer((req, res) => {
                 const productId = params.product_id || params.productId || '';
                 const orderId = params.platform_order_id || params.order_id || params.orderId || `ORD-${Date.now()}`;
                 const email = params.buyer_email || params.email || '';
-                const name = params.buyer_name || params.name || 'Barmen Dostumuz';
+                const name = params.buyer_name || params.name || '';
 
-                let planType = detectPlan({ product_id: productId, title: params.product_name || params.title });
+                const { plan: planType, currency } = detectPlanAndCurrency({ product_id: productId, title: params.product_name || params.title }, params);
                 const licenseKey = generateKey(planType);
-                const planTitle = planType === 'monthly' ? 'Aylık VIP (30 Gün)' : 'Yıllık VIP (365 Gün)';
+                const isIntl = currency === 'USD' || currency === 'EUR';
+                const customerName = name || (isIntl ? 'Valued Customer' : 'Barmen Dostumuz');
+                const planTitle = isIntl
+                    ? (planType === 'monthly' ? `Monthly VIP (30 Days - ${currency})` :
+                       planType === 'annual' ? `Annual VIP (365 Days - ${currency})` : `Lifetime VIP (${currency})`)
+                    : (planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
+                       planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP');
 
                 const record = {
                     orderId,
                     email,
-                    name,
+                    name: customerName,
                     planType,
                     planTitle,
+                    currency,
                     licenseKey,
                     createdAt: new Date().toISOString()
                 };
                 saveSoldLicense(record);
 
-                console.log(`✅ [Webhook] Sipariş #${orderId}: [${licenseKey}] -> ${email}`);
+                console.log(`✅ [Webhook - ${currency}] Sipariş #${orderId}: [${licenseKey}] -> ${email}`);
 
-                if (email) await sendEmail(email, name, licenseKey, planTitle);
+                if (email) await sendEmail(email, customerName, licenseKey, planTitle, currency);
 
                 res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-                res.end(`
+                if (isIntl) {
+                    res.end(`
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Congratulations! Pocket Bar VIP Key Ready</title>
+                        <style>
+                            body { background:#101b19; color:#fff; font-family:-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; }
+                            .card { background:#172922; border:1px solid rgba(213,180,123,0.3); border-radius:24px; padding:32px 24px; max-width:440px; width:100%; text-align:center; }
+                            .key-box { background:#0a1311; border:1px dashed #d5b47b; border-radius:12px; padding:16px; font-family:monospace; font-size:18px; font-weight:bold; color:#d5b47b; margin:20px 0; }
+                            .btn { display:inline-block; background:#d5b47b; color:#101b19; padding:12px 24px; border-radius:12px; text-decoration:none; font-weight:bold; font-size:13px; margin-top:12px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <div style="font-size:48px; margin-bottom:12px;">🍸👑</div>
+                            <h2 style="color:#d5b47b; margin:0 0 8px;">Your VIP Key is Ready!</h2>
+                            <p style="font-size:13px; color:#cbd5e1; margin:0 0 16px;">Order confirmed. You can activate your key below in Pocket Bar:</p>
+                            <div class="key-box">${licenseKey}</div>
+                            <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">The key has also been emailed to <b>${email || 'your email'}</b>.</p>
+                            <a href="https://barcepte.com.tr" class="btn">Return to Pocket Bar & Activate ➔</a>
+                        </div>
+                    </body>
+                    </html>
+                    `);
+                } else {
+                    res.end(`
                     <!DOCTYPE html>
                     <html lang="tr">
                     <head>
@@ -672,7 +775,8 @@ const server = http.createServer((req, res) => {
                         </div>
                     </body>
                     </html>
-                `);
+                    `);
+                }
             } catch (err) {
                 console.error('Webhook hatası:', err);
                 res.writeHead(500);
@@ -686,8 +790,17 @@ const server = http.createServer((req, res) => {
     res.end('Bulunamadı');
 });
 
-server.listen(PORT, () => {
-    console.log(`🍸 Bar Cepte Shopier API & Webhook Servisi Çalışıyor (Port: ${PORT})`);
-    console.log(`🔄 Shopier API Polling: Aktif (Her 30 saniyede bir yeni siparişler taranıyor)`);
-    console.log(`📊 Yönetim Paneli: http://localhost:${PORT}/licenses`);
-});
+if (require.main === module) {
+    server.listen(PORT, () => {
+        console.log(`🍸 Bar Cepte Shopier API & Webhook Servisi Çalışıyor (Port: ${PORT})`);
+        console.log(`🔄 Shopier API Polling: Aktif (Her 30 saniyede bir yeni siparişler taranıyor)`);
+        console.log(`📊 Yönetim Paneli: http://localhost:${PORT}/licenses`);
+    });
+}
+
+module.exports = {
+    detectPlanAndCurrency,
+    detectPlan,
+    generateKey,
+    verifyKeyChecksum
+};

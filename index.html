@@ -602,6 +602,15 @@
 
                 <!-- Abonelik Planı Seçimi -->
                 <div class="space-y-2.5">
+                    <!-- Uluslararası Para Birimi Seçimi (USD $ / EUR €) -->
+                    <div id="reserve-currency-bar" class="hidden items-center justify-end gap-1.5 text-[10px] font-bold">
+                        <span id="reserve-currency-label" class="text-slate-400">Currency:</span>
+                        <div class="inline-flex p-0.5 rounded-lg bg-black/60 border border-white/10 gap-1">
+                            <button type="button" data-currency="usd" class="reserve-currency-btn px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black cursor-pointer">$ USD</button>
+                            <button type="button" data-currency="eur" class="reserve-currency-btn px-2 py-0.5 rounded text-slate-400 hover:text-white cursor-pointer">€ EUR</button>
+                        </div>
+                    </div>
+
                     <div class="flex p-1 rounded-2xl bg-black/60 border border-white/10 gap-1 text-[11px] font-bold">
                         <button type="button" data-plan="monthly" class="reserve-plan-tab flex-1 py-1.5 px-2 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer">
                             Aylık

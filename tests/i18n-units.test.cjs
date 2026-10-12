@@ -127,4 +127,44 @@ test('Reserve UI dynamically translates all modal content and sets USD prices on
     assert.ok(reserveJs.includes("selectPlan(currentSelectedPlan);"), 'selectPlan called on init in reserve.js');
 });
 
+test('Reserve UI supports USD ($) and EUR (€) multi-currency options with strict CSP', () => {
+    const reserveJs = fs.readFileSync(path.resolve(__dirname, '../reserve.js'), 'utf8');
+
+    assert.ok(indexHtml.includes('id="reserve-currency-bar"'), 'reserve-currency-bar exists');
+    assert.ok(indexHtml.includes('data-currency="usd"'), 'USD currency button exists');
+    assert.ok(indexHtml.includes('data-currency="eur"'), 'EUR currency button exists');
+    assert.ok(!indexHtml.includes('onclick="setCurrency'), 'Strict CSP: no onclick on currency buttons');
+
+    assert.ok(reserveJs.includes('PLANS_CONFIG_EUR'), 'PLANS_CONFIG_EUR exists');
+    assert.ok(reserveJs.includes('€2.99'), 'EUR monthly price exists');
+    assert.ok(reserveJs.includes('€13.99'), 'EUR annual price exists');
+    const BarReserve = require('../reserve.js');
+    assert.strictEqual(typeof BarReserve.setCurrency, 'function');
+    assert.strictEqual(typeof BarReserve.getCurrency, 'function');
+});
+
+test('Shopier webhook detects USD and EUR multi-currency orders accurately', () => {
+    const { detectPlanAndCurrency } = require('../scripts/shopier-webhook.js');
+
+    const usdOrder = detectPlanAndCurrency({ title: 'Pocket Bar Monthly VIP ($2.99)' }, { currency: 'USD' });
+    assert.strictEqual(usdOrder.plan, 'monthly');
+    assert.strictEqual(usdOrder.currency, 'USD');
+
+    const eurOrder = detectPlanAndCurrency({ title: 'Pocket Bar Annual VIP (€13.99)' }, { currency: 'EUR' });
+    assert.strictEqual(eurOrder.plan, 'annual');
+    assert.strictEqual(eurOrder.currency, 'EUR');
+
+    const tryOrder = detectPlanAndCurrency({ title: 'Bar Cepte Ömür Boyu VIP' }, { currency: 'TRY' });
+    assert.strictEqual(tryOrder.plan, 'lifetime');
+    assert.strictEqual(tryOrder.currency, 'TRY');
+
+    const titleUsd = detectPlanAndCurrency({ title: 'Pocket Bar Lifetime VIP $29.99' }, {});
+    assert.strictEqual(titleUsd.plan, 'lifetime');
+    assert.strictEqual(titleUsd.currency, 'USD');
+
+    const titleEur = detectPlanAndCurrency({ title: 'Pocket Bar Monthly 30 Days 2.99 Euro' }, {});
+    assert.strictEqual(titleEur.plan, 'monthly');
+    assert.strictEqual(titleEur.currency, 'EUR');
+});
+
 

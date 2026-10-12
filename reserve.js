@@ -80,7 +80,45 @@
         }
     };
 
+    const PLANS_CONFIG_EUR = {
+        monthly: {
+            title: 'Monthly Pass (30 Days)',
+            price: '€2.99',
+            period: '/ month',
+            badge: 'MONTHLY PASS',
+            subtitle: '30 Days Full Access',
+            desc: 'Flexible monthly home bartending enjoyment. Cancel anytime.',
+            checkoutLabel: 'Secure Checkout via Shopier (€2.99)',
+            shopierUrl: 'https://www.shopier.com/Anawin/51736039'
+        },
+        annual: {
+            title: 'Annual Pass (Best Value)',
+            price: '€13.99',
+            period: '/ year (€1.16/mo)',
+            badge: '⭐ SAVE 60% — POPULAR',
+            subtitle: '365 Days VIP Access',
+            desc: 'Only €1.16/mo! 1 full year of uninterrupted ad-free VIP cocktail experience and gold badge.',
+            checkoutLabel: 'Secure Checkout via Shopier (€13.99)',
+            shopierUrl: 'https://www.shopier.com/Anawin/51735632'
+        },
+        lifetime: {
+            title: 'Lifetime VIP Pass',
+            price: '€27.99',
+            period: 'one-time',
+            badge: 'LIFETIME VIP',
+            subtitle: 'Yours Forever',
+            desc: 'Pay once, enjoy ad-free forever. Never pay again for future upgrades.',
+            checkoutLabel: 'Secure Checkout via Shopier (€27.99)',
+            shopierUrl: 'https://www.shopier.com/Anawin'
+        }
+    };
+
     let currentSelectedPlan = 'annual';
+    let currentCurrency = 'usd'; // 'usd' | 'eur'
+    try {
+        const storedCur = root.localStorage ? root.localStorage.getItem('barcepte_reserve_currency') : null;
+        if (storedCur === 'eur' || storedCur === 'usd') currentCurrency = storedCur;
+    } catch(e) {}
 
     function checksum(str) {
         let hash = 5381;
@@ -354,7 +392,10 @@
     function selectPlan(planKey) {
         currentSelectedPlan = planKey;
         const isEn = getCurrentLang() === 'en';
-        const dict = isEn ? PLANS_CONFIG_EN : PLANS_CONFIG;
+        let dict = PLANS_CONFIG;
+        if (isEn) {
+            dict = currentCurrency === 'eur' ? PLANS_CONFIG_EUR : PLANS_CONFIG_EN;
+        }
         const config = dict[planKey] || dict.annual;
 
         document.querySelectorAll('.reserve-plan-tab').forEach(tab => {
@@ -478,6 +519,24 @@
         const planLifetime = document.querySelector('[data-plan="lifetime"]');
         if (planLifetime) planLifetime.innerText = isEn ? 'Lifetime' : 'Ömür Boyu';
 
+        // Para birimi seçici çubuğu (Currency Bar - USD $ / EUR €)
+        const currencyBar = document.getElementById('reserve-currency-bar');
+        if (currencyBar) {
+            if (isEn) {
+                currencyBar.classList.remove('hidden');
+                currencyBar.classList.add('flex');
+                document.querySelectorAll('.reserve-currency-btn').forEach(btn => {
+                    const isTarget = btn.dataset.currency === currentCurrency;
+                    btn.className = isTarget
+                        ? 'reserve-currency-btn px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black cursor-pointer'
+                        : 'reserve-currency-btn px-2 py-0.5 rounded text-slate-400 hover:text-white cursor-pointer';
+                });
+            } else {
+                currencyBar.classList.add('hidden');
+                currencyBar.classList.remove('flex');
+            }
+        }
+
         // Aktivasyon kodu başlık & buton
         const reservePrompt = document.querySelector('#reserve-status-inactive .border-t p');
         if (reservePrompt) reservePrompt.innerText = isEn ? 'Already have an activation code?' : 'Zaten bir aktivasyon kodun var mı?';
@@ -538,6 +597,21 @@
     function init() {
         applyReserveUI();
         selectPlan(currentSelectedPlan);
+
+        // Para birimi butonları tıklamaları (USD / EUR)
+        document.querySelectorAll('.reserve-currency-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cur = btn.dataset.currency;
+                if (cur === 'usd' || cur === 'eur') {
+                    currentCurrency = cur;
+                    try {
+                        if (root.localStorage) root.localStorage.setItem('barcepte_reserve_currency', cur);
+                    } catch(e) {}
+                    applyReserveUI();
+                    selectPlan(currentSelectedPlan);
+                }
+            });
+        });
 
         // Buton ve Modal Bağlantıları
         const openBtn = document.getElementById('btn-open-reserve');
@@ -668,6 +742,19 @@
         }
     }
 
+    function setCurrency(cur) {
+        if (cur === 'usd' || cur === 'eur') {
+            currentCurrency = cur;
+            try { if (root.localStorage) root.localStorage.setItem('barcepte_reserve_currency', cur); } catch(e) {}
+            applyReserveUI();
+            selectPlan(currentSelectedPlan);
+        }
+    }
+
+    function getCurrency() {
+        return currentCurrency;
+    }
+
     const api = {
         isReserveActive,
         activateReserve,
@@ -681,6 +768,9 @@
         getPlanDisplayName,
         PLANS_CONFIG,
         PLANS_CONFIG_EN,
+        PLANS_CONFIG_EUR,
+        setCurrency,
+        getCurrency,
         applyReserveUI,
         selectPlan
     };
