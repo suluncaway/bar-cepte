@@ -167,4 +167,28 @@ test('Shopier webhook detects USD and EUR multi-currency orders accurately', () 
     assert.strictEqual(titleEur.currency, 'EUR');
 });
 
+test('Non-alcoholic labels and ABV badges are properly localized in Turkish and English', () => {
+    // Check getAbvLabel exists in game.js
+    assert.ok(gameJs.includes('function getAbvLabel('), 'getAbvLabel helper must exist in game.js');
+    assert.ok(gameJs.includes("nonAlcoholic: 'Non-Alcoholic'"), 'EN nonAlcoholic must be Non-Alcoholic');
+    assert.ok(gameJs.includes("nonAlcoholic: 'Alkolsüz'"), 'TR nonAlcoholic must be Alkolsüz');
+    assert.ok(gameJs.includes('getAbvLabel(d.computedABV, currentLang)'), 'Card and story card renderers must call getAbvLabel');
+
+    // Extract getAbvLabel function and test directly
+    const getAbvLabelRegex = /function getAbvLabel\(computedABV,\s*lang\s*=\s*currentLang\)\s*\{([\s\S]*?)\n\}/;
+    assert.ok(getAbvLabelRegex.test(gameJs), 'getAbvLabel regex must match function');
+    const getAbvLabel = new Function('computedABV', 'lang', 'currentLang', getAbvLabelRegex.exec(gameJs)[1]);
+
+    // Test non-alcoholic (0 ABV)
+    assert.strictEqual(getAbvLabel({ abv: 0 }, 'tr'), '🟢 Alkolsüz (%0)');
+    assert.strictEqual(getAbvLabel({ abv: 0 }, 'en'), '🟢 Non-Alcoholic (0%)');
+
+    // Test alcoholic
+    assert.strictEqual(getAbvLabel({ abv: 15 }, 'tr'), '🍹 ~%15 ABV');
+    assert.strictEqual(getAbvLabel({ abv: 15 }, 'en'), '🍹 ~15% ABV');
+    assert.strictEqual(getAbvLabel({ abv: 5 }, 'en'), '🍃 ~5% ABV');
+    assert.strictEqual(getAbvLabel({ abv: 25 }, 'en'), '🔥 ~25% ABV');
+});
+
+
 

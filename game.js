@@ -236,7 +236,7 @@ const I18N = {
         heroDesc: 'From ingredients on hand to your new favorite drink.<br>Build your bar, explore your taste, and mix something great.',
         heroBuildBar: 'Build My Bar',
         heroSurprise: 'Surprise Me',
-        heroNote: '<span class="status-dot"></span> Alcoholic & mocktail recipes <span class="note-divider"></span> Crafted for your taste',
+        heroNote: '<span class="status-dot"></span> Alcoholic & non-alcoholic recipes <span class="note-divider"></span> Crafted for your taste',
         heroCaptionSpan: 'POCKET BAR SELECTION',
         heroCaptionStrong: 'A little ritual<br>for a great evening.',
         discoveryEyebrow: 'DISCOVERY COUNTER',
@@ -249,7 +249,7 @@ const I18N = {
         filterByProfile: 'Filter by taste profile',
         all: 'All',
         alcoholic: 'Alcoholic',
-        nonAlcoholic: 'Mocktail',
+        nonAlcoholic: 'Non-Alcoholic',
         allTastes: 'All Tastes',
         tasteStrong: '🔥 Strong',
         tasteSweet: '🍭 Sweet',
@@ -887,6 +887,18 @@ function getTasteLabel(taste) {
         }
     }
     return taste || 'Dengeli';
+}
+
+function getAbvLabel(computedABV, lang = currentLang) {
+    if (!computedABV) return lang === 'en' ? 'Custom' : 'Özel';
+    const abv = typeof computedABV === 'object' ? (computedABV.abv ?? 0) : (Number(computedABV) || 0);
+    if (abv === 0) {
+        return lang === 'en' ? '🟢 Non-Alcoholic (0%)' : '🟢 Alkolsüz (%0)';
+    }
+    const icon = abv <= 8 ? '🍃' : abv <= 18 ? '🍹' : '🔥';
+    return lang === 'en' 
+        ? `${icon} ~${abv}% ABV` 
+        : `${icon} ~%${abv} ABV`;
 }
 
 // IndexedDB Başlatma
@@ -1788,7 +1800,7 @@ function analyzeRecipe(drink) {
 function calculateRecipeABV(drink) {
     const alcoholicStr = String(drink.strAlcoholic || '').toLowerCase();
     if (alcoholicStr.includes('non') || alcoholicStr === 'optional alcohol') {
-        return { abv: 0, label: '🟢 Alkolsüz (%0)', badgeCls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
+        return { abv: 0, label: getAbvLabel({ abv: 0 }, currentLang), badgeCls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
     }
 
     let reqs = [];
@@ -1850,17 +1862,21 @@ function calculateRecipeABV(drink) {
     });
 
     if (totalVolumeCl === 0 || pureAlcoholCl === 0) {
-        return { abv: 0, label: '🟢 Alkolsüz (%0)', badgeCls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
+        return { abv: 0, label: getAbvLabel({ abv: 0 }, currentLang), badgeCls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
     }
 
     const abvPercent = Math.min(Math.round((pureAlcoholCl / totalVolumeCl) * 100), 75);
-    if (abvPercent <= 8) {
-        return { abv: abvPercent, label: `🍃 ~%${abvPercent} ABV`, badgeCls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
-    } else if (abvPercent <= 18) {
-        return { abv: abvPercent, label: `🍹 ~%${abvPercent} ABV`, badgeCls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
-    } else {
-        return { abv: abvPercent, label: `🔥 ~%${abvPercent} ABV`, badgeCls: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
-    }
+    const badgeCls = abvPercent <= 8 
+        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+        : abvPercent <= 18 
+            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
+            : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+
+    return { 
+        abv: abvPercent, 
+        label: getAbvLabel({ abv: abvPercent }, currentLang), 
+        badgeCls 
+    };
 }
 
 // Ev Kokteyl Maliyeti Hesaplama Motoru
@@ -2374,7 +2390,7 @@ function downloadCocktailStoryCard(drinkId) {
     // Rozetler
     const glass = currentLang === 'en' ? (d.strGlass || 'Cocktail Glass') : (glassTranslations[(d.strGlass || '').toLowerCase()] || d.strGlass || 'Kokteyl Bardağı');
     const taste = getTasteLabel(d.computedTaste || 'Klasik');
-    const abv = d.computedABV ? (currentLang === 'en' ? d.computedABV.label.replace('Sert', 'Strong').replace('Hafif', 'Light').replace('Orta', 'Medium') : d.computedABV.label) : (currentLang === 'en' ? 'Custom' : 'Özel');
+    const abv = getAbvLabel(d.computedABV, currentLang);
     const cost = currentLang === 'en' 
         ? (d.computedCostUsd ? `~$${d.computedCostUsd.cost}` : '~$1.85') 
         : (d.computedCost ? `~${d.computedCost.cost} ₺` : '~45 ₺');
@@ -2746,7 +2762,7 @@ function createCocktailCardElement(item, isMissingList) {
         const card = document.createElement('div');
         const cardId = `card_${d.idDrink.replace(/[^a-zA-Z0-9_]/g, '_')}`;
         card.id = cardId;
-        card.className = "acrylic-card cocktail-card rounded-3xl p-4 shadow-xl cursor-pointer select-none relative animate-fade-in flex flex-col min-w-0 overflow-hidden";
+        card.className = "acrylic-card cocktail-card rounded-3xl p-4 shadow-xl cursor-pointer select-none relative animate-fade-in flex flex-col min-w-0 overflow-hidden self-start h-fit";
         
         const drinkIdEncoded = encodeURIComponent(d.idDrink);
         const glassBadge = getGlassBadge(d.strGlass);
@@ -2768,7 +2784,7 @@ function createCocktailCardElement(item, isMissingList) {
             : (currentLang === 'en'
                 ? escapeHTML(cleanInstructionText(d.strInstructions || ''))
                 : (rawTR ? escapeHTML(rawTR) : 'Çevriliyor...'));
-        const abvBadge = d.computedABV ? `<span class="text-[10px] font-bold ${d.computedABV.badgeCls} px-2 py-0.5 rounded-lg border font-mono">${escapeHTML(d.computedABV.label)}</span>` : '';
+        const abvBadge = d.computedABV ? `<span class="text-[10px] font-bold ${d.computedABV.badgeCls} px-2 py-0.5 rounded-lg border font-mono">${escapeHTML(getAbvLabel(d.computedABV, currentLang))}</span>` : '';
 
         card.innerHTML = `
             ${d.strDrinkThumb && safeImageSrc(d.strDrinkThumb) 
@@ -2782,7 +2798,7 @@ function createCocktailCardElement(item, isMissingList) {
             <button data-action="delete" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10 shadow-lg">🗑️</button>
             ` : ''}
             
-            <div class="flex justify-between items-start mt-auto min-w-0 gap-2">
+            <div class="flex justify-between items-start mt-2 min-w-0 gap-2">
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap gap-1.5 mb-1.5">
                         <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${escapeHTML(getTasteLabel(d.computedTaste))}</span>
@@ -2850,6 +2866,19 @@ function createCocktailCardElement(item, isMissingList) {
             const span = card.querySelector('.instruction-text span');
             if (!details.classList.contains('open')) {
                 triggerHaptic('light');
+                const parentGrid = card.parentElement;
+                if (parentGrid) {
+                    parentGrid.querySelectorAll('.cocktail-card').forEach(other => {
+                        if (other !== card) {
+                            const otherDet = other.querySelector('.details-section.open');
+                            if (otherDet) {
+                                otherDet.classList.remove('open');
+                                const otherIcon = other.querySelector('.toggle-icon');
+                                if (otherIcon) otherIcon.innerText = currentLang === 'en' ? "Details ▼" : "Detay ▼";
+                            }
+                        }
+                    });
+                }
                 details.classList.add('open');
                 icon.innerText = currentLang === 'en' ? "Close ▲" : "Kapat ▲";
 
@@ -3743,6 +3772,8 @@ function setLanguage(lang) {
     } catch(e) {}
 
     applyLanguage();
+    allCocktails.forEach(enrichDrink);
+    customRecipes.forEach(enrichDrink);
     renderIngredients();
     filterCocktails();
     updateFavoritesFilterUI();
