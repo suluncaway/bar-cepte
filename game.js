@@ -2056,11 +2056,14 @@ function renderMixStep() {
 
     const prevBtn = document.getElementById('btn-mix-prev');
     const nextBtn = document.getElementById('btn-mix-next');
-    if (prevBtn) prevBtn.textContent = currentLang === 'en' ? '← Previous' : '← Önceki';
+    if (prevBtn) {
+        prevBtn.textContent = currentLang === 'en' ? '← Previous' : '← Önceki';
+        prevBtn.disabled = currentMixStep === 0;
+    }
     if (nextBtn) {
         const isLast = currentMixStep === mixSteps.length - 1;
         nextBtn.innerHTML = isLast 
-            ? `<span>${currentLang === 'en' ? 'Finish ✓' : 'Tamamla ✓'}</span>`
+            ? `<span>${currentLang === 'en' ? 'Finish ✓' : 'Tamamla & Kapat ✓'}</span>`
             : `<span>${currentLang === 'en' ? 'Next Step →' : 'Sonraki Adım →'}</span>`;
     }
 
@@ -2087,17 +2090,6 @@ function renderMixStep() {
             timerBox.classList.remove('flex');
             clearInterval(mixTimerInterval);
             mixTimerInterval = null;
-        }
-    }
-
-    const prevBtn = document.getElementById('btn-mix-prev');
-    const nextBtn = document.getElementById('btn-mix-next');
-    if (prevBtn) prevBtn.disabled = currentMixStep === 0;
-    if (nextBtn) {
-        if (currentMixStep === mixSteps.length - 1) {
-            nextBtn.innerHTML = '<span>Tamamla & Kapat ✓</span>';
-        } else {
-            nextBtn.innerHTML = '<span>Sonraki Adım →</span>';
         }
     }
 }
