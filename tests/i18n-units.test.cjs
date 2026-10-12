@@ -271,6 +271,10 @@ test('Cocktail search allows searching by both cocktail name and kitchen/alcohol
     assert.match(js, /case 'mutfak': return (currentLang === 'en' \? 'Kitchen' : 'Mutfak'|'Mutfak')/, 'getAlcoholGroupLabel supports mutfak');
     assert.match(js, /if \(currentAlcoholSubCat === 'mutfak'\) return ing\.cat === 'mutfak'/, 'matchesAlcoholSubCategory supports mutfak');
 
+    // Verify service worker cache version is updated so clients receive latest game.js
+    const swContent = fs.readFileSync('sw.js', 'utf8');
+    assert.match(swContent, /const CACHE_NAME = 'bar-cepte-v28-kitchen-search-fix';/, 'sw.js cache name updated');
+
     // 2. recipeMatchesSearchToken helper is defined in game.js
     assert.ok(js.includes('function recipeMatchesSearchToken('), 'recipeMatchesSearchToken exists in game.js');
     assert.ok(js.includes('recipeMatchesSearchToken(d, reqs, token)'), 'filterCocktails calls recipeMatchesSearchToken');

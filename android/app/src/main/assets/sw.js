@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v12';
+const CACHE_NAME = 'bar-cepte-v13';
 const IMAGE_CACHE = 'bar-cepte-images-v1';
 const ASSETS = [
   './',
