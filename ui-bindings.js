@@ -45,24 +45,40 @@ document.querySelector('[data-ui="ui-42"]').addEventListener('click', function(e
 document.querySelector('[data-ui="ui-43"]').addEventListener('click', function(event) { resetTimer(); });
 document.querySelector('[data-ui="ui-44"]').addEventListener('click', function(event) { closeUpdateModal(); });
 document.querySelector('[data-ui="ui-45"]').addEventListener('click', function(event) { closeUpdateModal(); });
+
+// Direct bindings for language and unit toggles
+const langToggleBtn = document.getElementById('btn-lang-toggle');
+if (langToggleBtn) {
+    langToggleBtn.addEventListener('click', function(event) {
+        if (typeof toggleLanguage === 'function') toggleLanguage();
+    });
+}
+const unitToggleBtn = document.getElementById('btn-unit-toggle');
+if (unitToggleBtn) {
+    unitToggleBtn.addEventListener('click', function(event) {
+        if (typeof toggleUnit === 'function') toggleUnit();
+    });
+}
+
 let serviceWorkerAPI = null;
 try { serviceWorkerAPI = navigator.serviceWorker; } catch { /* Restricted preview: offline mode unavailable. */ }
 if (serviceWorkerAPI) {
-            window.addEventListener('load', () => {
-                serviceWorkerAPI.register('./sw.js').then(reg => {
-                    // PWA arka plan güncellemesi yakalandığında
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        if (newWorker) {
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && serviceWorkerAPI.controller) {
-                                    // PWA yeni sürüm yüklendi, kullanıcıya bildirim ver
-                                    console.log('Yeni PWA sürümü hazır.');
-                                }
-                            });
+    window.addEventListener('load', () => {
+        serviceWorkerAPI.register('./sw.js').then(reg => {
+            reg.update().catch(() => {});
+            // PWA arka plan güncellemesi yakalandığında
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                if (newWorker) {
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && serviceWorkerAPI.controller) {
+                            // PWA yeni sürüm yüklendi, kullanıcıya bildirim ver
+                            console.log('Yeni PWA sürümü hazır.');
                         }
                     });
-                }).catch(err => console.log('SW Registration failed: ', err));
+                }
             });
-        }
+        }).catch(err => console.log('SW Registration failed: ', err));
+    });
+}
     

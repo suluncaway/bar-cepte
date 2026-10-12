@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v21-license-guard';
+const CACHE_NAME = 'bar-cepte-v23-pocket-bar-i18n';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./', './index.html', './privacy.html', './style.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',

@@ -323,8 +323,11 @@ function playChimeSound() {
 }
 
 // Barmen Zamanlayıcısı (Shaker & Stir Timer) Fonksiyonları
-function openTimerModal(duration = 15, label = 'Buzla kuvvetlice çalkala (Shaker)') {
+function openTimerModal(duration = 15, label = '') {
     triggerHaptic('light');
+    if (!label) {
+        label = currentLang === 'en' ? 'Shake vigorously with ice (Shaker)' : 'Buzla kuvvetlice çalkala (Shaker)';
+    }
     setTimerDuration(duration, label);
     const modal = document.getElementById('shaker-timer-modal');
     if (modal) {
@@ -383,7 +386,7 @@ function startTimer() {
     const toggleBtn = document.getElementById('btn-timer-toggle');
     const display = document.getElementById('timer-display');
     if (toggleBtn) {
-        toggleBtn.innerText = "⏸ Duraklat";
+        toggleBtn.innerText = currentLang === 'en' ? "⏸ Pause" : "⏸ Duraklat";
         toggleBtn.className = "flex-1 bg-amber-600/80 text-white font-black py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs";
     }
     if (display) display.classList.remove('timer-finish-anim');
@@ -403,7 +406,7 @@ function pauseTimer() {
     timerInterval = null;
     const toggleBtn = document.getElementById('btn-timer-toggle');
     if (toggleBtn) {
-        toggleBtn.innerText = "▶ Başlat";
+        toggleBtn.innerText = currentLang === 'en' ? "▶ Start" : "▶ Başlat";
         toggleBtn.className = "flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs hover:from-amber-400 hover:to-amber-500";
     }
 }
@@ -428,20 +431,20 @@ function openTimerForTechnique(instructions, drinkName, event) {
     if (event) event.stopPropagation();
     const inst = (instructions || '').toLowerCase();
     let duration = 15;
-    let label = 'Buzla çalkala (Shaker)';
+    let label = currentLang === 'en' ? 'Shake with ice (Shaker)' : 'Buzla çalkala (Shaker)';
     
     if (/stir|karıştır/i.test(inst)) {
         duration = 30;
-        label = `Buzla nazikçe karıştır (Stir): ${drinkName}`;
+        label = currentLang === 'en' ? `Stir gently with ice (Stir): ${drinkName}` : `Buzla nazikçe karıştır (Stir): ${drinkName}`;
     } else if (/blend|blender/i.test(inst)) {
         duration = 20;
-        label = `Blender ile çek: ${drinkName}`;
+        label = currentLang === 'en' ? `Blend with ice: ${drinkName}` : `Blender ile çek: ${drinkName}`;
     } else if (/layer|float|katman/i.test(inst)) {
         duration = 30;
-        label = `Katmanlayarak dök: ${drinkName}`;
+        label = currentLang === 'en' ? `Layer gently: ${drinkName}` : `Katmanlayarak dök: ${drinkName}`;
     } else {
         duration = 15;
-        label = `Buzla kuvvetlice çalkala (Shaker): ${drinkName}`;
+        label = currentLang === 'en' ? `Shake vigorously with ice (Shaker): ${drinkName}` : `Buzla kuvvetlice çalkala (Shaker): ${drinkName}`;
     }
     
     openTimerModal(duration, label);
@@ -453,7 +456,7 @@ function openTimerForDrink(drinkId, event) {
     if (d) {
         openTimerForTechnique(d.strInstructions || '', d.strDrink || '', event);
     } else {
-        openTimerModal(15, 'Buzla kuvvetlice çalkala (Shaker)');
+        openTimerModal(15, currentLang === 'en' ? 'Shake vigorously with ice (Shaker)' : 'Buzla kuvvetlice çalkala (Shaker)');
     }
 }
 
@@ -818,24 +821,24 @@ async function toggleWakeLock() {
             try {
                 wakeLock = await navigator.wakeLock.request('screen');
                 if (btn) btn.className = "pill-btn px-3 py-1.5 rounded-xl border border-amber-500 bg-amber-500/15 text-[11px] font-bold text-amber-300 flex items-center gap-1.5 shadow-sm";
-                if (statusText) statusText.innerText = "Ekran Açık";
+                if (statusText) statusText.innerText = currentLang === 'en' ? "Screen On" : "Ekran Açık";
                 if (icon) icon.innerText = "⚡";
                 
                 wakeLock.addEventListener('release', () => {
                     wakeLock = null;
                     if (btn) btn.className = "pill-btn px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10";
-                    if (statusText) statusText.innerText = "Ekran Koru";
+                    if (statusText) statusText.innerText = currentLang === 'en' ? "Keep Awake" : "Ekran Koru";
                     if (icon) icon.innerText = "💡";
                 });
             } catch (err) {
-                alert("Ekran kilidi bu cihazda başlatılamadı.");
+                alert(currentLang === 'en' ? "Screen wake lock could not be initialized on this device." : "Ekran kilidi bu cihazda başlatılamadı.");
             }
         } else {
             await wakeLock.release();
             wakeLock = null;
         }
     } else {
-        alert("Tarayıcınız Ekran Uyanık Tutma (Screen Wake Lock) API'sini desteklemiyor.");
+        alert(currentLang === 'en' ? "Your browser does not support Screen Wake Lock API." : "Tarayıcınız Ekran Uyanık Tutma (Screen Wake Lock) API'sini desteklemiyor.");
     }
 }
 
@@ -1297,6 +1300,7 @@ function renderDashboard() {
     const dashClearBtn = document.getElementById('btn-dashboard-clear-bar');
     if (dashClearBtn) {
         dashClearBtn.classList.toggle('hidden', selectedIngredients.length === 0);
+        dashClearBtn.innerHTML = currentLang === 'en' ? '<span>🗑️</span> Empty Bar' : '<span>🗑️</span> Barı Boşalt';
     }
 
     const topContainer = document.getElementById('top-ingredients');
@@ -2128,9 +2132,9 @@ function toggleMixTimer() {
     if (mixTimerInterval) {
         clearInterval(mixTimerInterval);
         mixTimerInterval = null;
-        if (runBtn) runBtn.textContent = 'Devam Et';
+        if (runBtn) runBtn.textContent = currentLang === 'en' ? 'Resume' : 'Devam Et';
     } else {
-        if (runBtn) runBtn.textContent = 'Durdur';
+        if (runBtn) runBtn.textContent = currentLang === 'en' ? 'Pause' : 'Durdur';
         mixTimerInterval = setInterval(() => {
             mixTimerRemaining--;
             const display = document.getElementById('mix-timer-display');
@@ -2138,9 +2142,9 @@ function toggleMixTimer() {
                 clearInterval(mixTimerInterval);
                 mixTimerInterval = null;
                 if (display) display.textContent = '00:00';
-                if (runBtn) runBtn.textContent = 'Bitti!';
+                if (runBtn) runBtn.textContent = currentLang === 'en' ? 'Done!' : 'Bitti!';
                 triggerHaptic('success');
-                showToast('⏱️ Süre doldu! Harika bir çalkalama.', 'success');
+                showToast(currentLang === 'en' ? "⏱️ Time's up! Great shake." : '⏱️ Süre doldu! Harika bir çalkalama.', 'success');
             } else {
                 if (display) display.textContent = `00:${String(mixTimerRemaining).padStart(2, '0')}`;
             }
@@ -3111,13 +3115,23 @@ function applyLanguage() {
     // Language toggle button & Unit toggle button text
     const langBtn = document.getElementById('btn-lang-toggle');
     if (langBtn) {
-        langBtn.innerText = currentLang === 'en' ? '🇺🇸 EN' : '🇹🇷 TR';
-        langBtn.title = currentLang === 'en' ? 'Switch to Turkish' : 'İngilizceye Geç';
+        if (currentLang === 'en') {
+            langBtn.innerHTML = '<span class="text-slate-400 font-medium">TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-amber-300 font-black">EN 🇺🇸</span>';
+            langBtn.title = 'Switch to Turkish / Türkçeye Geç';
+        } else {
+            langBtn.innerHTML = '<span class="text-amber-300 font-black">🇹🇷 TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">EN</span>';
+            langBtn.title = 'Switch to English / İngilizceye Geç';
+        }
     }
     const unitBtn = document.getElementById('btn-unit-toggle');
     if (unitBtn) {
-        unitBtn.innerText = currentUnit;
-        unitBtn.title = currentLang === 'en' ? 'Switch measurement unit (cl / oz)' : 'Ölçü birimini değiştir (cl / oz)';
+        if (currentUnit === 'oz') {
+            unitBtn.innerHTML = '<span class="text-slate-400 font-medium">cl</span><span class="text-slate-500 text-[10px]">/</span><span class="text-amber-300 font-black">oz</span>';
+            unitBtn.title = currentLang === 'en' ? 'Unit: oz (Click to switch to cl)' : 'Ölçü: oz (cl birimine geçmek için tıkla)';
+        } else {
+            unitBtn.innerHTML = '<span class="text-amber-300 font-black">cl</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">oz</span>';
+            unitBtn.title = currentLang === 'en' ? 'Unit: cl (Click to switch to oz)' : 'Ölçü: cl (oz birimine geçmek için tıkla)';
+        }
     }
 
     // Navigation Tabs
@@ -3283,11 +3297,158 @@ function applyLanguage() {
     const affBtn = document.querySelector('#affiliate-banner a span:first-child');
     if (affBtn) affBtn.innerText = t.affiliateBtn;
 
-    // Header buttons
-    const supportLabel = document.querySelector('#btn-support span.hidden');
-    if (supportLabel) supportLabel.innerText = t.support;
+    // Header action buttons
+    const btnOpenTimer = document.getElementById('btn-open-timer');
+    if (btnOpenTimer) {
+        btnOpenTimer.title = currentLang === 'en' ? 'Bartender Timer (Shaker / Stir)' : 'Barmen Sayacı (Shaker / Karıştırma)';
+        const timerSpan = btnOpenTimer.querySelector('span.hidden') || btnOpenTimer.querySelectorAll('span')[1];
+        if (timerSpan) timerSpan.innerText = currentLang === 'en' ? 'Timer' : 'Sayaç';
+    }
+
+    const btnWake = document.getElementById('btn-wake-lock');
+    if (btnWake) {
+        btnWake.title = currentLang === 'en' ? 'Keeps screen awake while mixing cocktails' : 'Kokteyl yaparken ekranın kapanmasını önler';
+    }
+    const wakeStatus = document.getElementById('wake-status');
+    if (wakeStatus) {
+        if (typeof wakeLock !== 'undefined' && wakeLock) {
+            wakeStatus.innerText = currentLang === 'en' ? 'Screen On' : 'Ekran Açık';
+        } else {
+            wakeStatus.innerText = currentLang === 'en' ? 'Keep Awake' : 'Ekran Koru';
+        }
+    }
+
+    const btnPwa = document.getElementById('btn-pwa-install');
+    if (btnPwa) {
+        const pwaSpan = btnPwa.querySelector('span.hidden') || btnPwa.querySelectorAll('span')[1];
+        if (pwaSpan) pwaSpan.innerText = currentLang === 'en' ? 'Install' : 'Yükle';
+        btnPwa.title = currentLang === 'en' ? 'Install App' : 'Uygulamayı Yükle';
+    }
+
+    const btnSupport = document.querySelector('[data-support-button]');
+    if (btnSupport) {
+        btnSupport.title = currentLang === 'en' ? 'Buy the developer a coffee' : 'Geliştiriciye Bir Kahve Ismarla';
+        const supSpan = btnSupport.querySelector('span.hidden') || btnSupport.querySelectorAll('span')[1];
+        if (supSpan) supSpan.innerText = currentLang === 'en' ? 'Support' : 'Destek Ol';
+    }
+
+    const btnReserve = document.getElementById('btn-open-reserve');
+    if (btnReserve) {
+        btnReserve.title = currentLang === 'en' ? 'Pocket Bar Reserve — Ad-Free & Exclusive Curation' : 'Bar Cepte Reserve — Reklamsız & Özel Seçkiler';
+    }
+
+    const btnAuth = document.getElementById('btn-auth-user');
+    if (btnAuth) {
+        btnAuth.title = currentLang === 'en' ? 'Bartender Club & Account' : 'Barmen Kulübü & Hesabım';
+    }
     const authLabel = document.getElementById('auth-btn-label');
-    if (authLabel && !window.currentUser) authLabel.innerText = t.signIn;
+    if (authLabel && !window.currentUser) {
+        authLabel.innerText = currentLang === 'en' ? 'Sign In' : 'Giriş Yap';
+    }
+
+    // Bar Dashboard clear button
+    const btnClearBar = document.getElementById('btn-dashboard-clear-bar');
+    if (btnClearBar) {
+        btnClearBar.innerHTML = currentLang === 'en' ? '<span>🗑️</span> Empty Bar' : '<span>🗑️</span> Barı Boşalt';
+    }
+    const trayClearBtn = document.querySelector('#selected-ingredients-tray [data-action="clear-all-ingredients"]');
+    if (trayClearBtn) {
+        trayClearBtn.innerHTML = `<span>🗑️</span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
+    }
+    const trayLabel = document.querySelector('#selected-ingredients-tray span.text-amber-400');
+    if (trayLabel) {
+        trayLabel.innerHTML = `<span>🍸</span> ${currentLang === 'en' ? 'Ingredients in Your Bar' : 'Barındaki Malzemeler'} (<span id="selected-badge-count">${selectedIngredients.length}</span>)`;
+    }
+
+    // Timer Modal
+    const timerH3 = document.querySelector('#shaker-timer-modal h3');
+    if (timerH3) timerH3.innerText = currentLang === 'en' ? '⏱️ Bartender Timer' : '⏱️ Barmen Zamanlayıcısı';
+    const preset15 = document.querySelector('[data-ui="ui-39"]');
+    if (preset15) preset15.innerText = currentLang === 'en' ? '15s Shake' : '15s Shaker';
+    const preset30 = document.querySelector('[data-ui="ui-40"]');
+    if (preset30) preset30.innerText = currentLang === 'en' ? '30s Stir' : '30s Karıştır';
+    const preset45 = document.querySelector('[data-ui="ui-41"]');
+    if (preset45) preset45.innerText = currentLang === 'en' ? '45s Chill' : '45s Soğut';
+    const timerToggleBtn = document.getElementById('btn-timer-toggle');
+    if (timerToggleBtn) {
+        if (typeof timerRunning !== 'undefined' && timerRunning) {
+            timerToggleBtn.innerText = currentLang === 'en' ? '⏸ Pause' : '⏸ Duraklat';
+        } else {
+            timerToggleBtn.innerText = currentLang === 'en' ? '▶ Start' : '▶ Başlat';
+        }
+    }
+    const timerResetBtn = document.querySelector('[data-ui="ui-43"]');
+    if (timerResetBtn) timerResetBtn.innerText = currentLang === 'en' ? '🔄 Reset' : '🔄 Sıfırla';
+
+    // PWA Modal
+    const pwaLaterBtn = document.querySelector('[data-ui="ui-45"]');
+    if (pwaLaterBtn) pwaLaterBtn.innerText = currentLang === 'en' ? 'Remind Later' : 'Daha Sonra Hatırlat';
+
+    // Mix Mode Modal
+    const mixRunBtn = document.getElementById('btn-mix-timer-run');
+    if (mixRunBtn && (!mixTimerInterval)) {
+        mixRunBtn.innerText = currentLang === 'en' ? 'Start' : 'Başlat';
+    }
+    const mixPrevBtn = document.getElementById('btn-mix-prev');
+    if (mixPrevBtn) mixPrevBtn.innerText = currentLang === 'en' ? '← Previous' : '← Önceki';
+    const mixNextBtn = document.getElementById('btn-mix-next');
+    if (mixNextBtn && (!currentMixDrink)) {
+        mixNextBtn.innerText = currentLang === 'en' ? 'Next Step →' : 'Sonraki Adım →';
+    }
+
+    // Support Modal
+    const supportCloseBtn = document.getElementById('support-close');
+    if (supportCloseBtn) supportCloseBtn.innerText = currentLang === 'en' ? 'Close' : 'Tamam';
+    const supportH3 = document.querySelector('#support-modal h3');
+    if (supportH3) supportH3.innerText = currentLang === 'en' ? '☕ Support the Developer' : '☕ Geliştiriciye Destek Ol';
+    const supportP = document.querySelector('#support-modal p');
+    if (supportP) {
+        supportP.innerText = currentLang === 'en'
+            ? 'Pocket Bar is independently built. By buying a coffee, you support server hosting and future features!'
+            : 'Bar Cepte tamamen bağımsız ve reklamsız olarak geliştirilmektedir. Bir kahve ısmarlayarak sunucu masraflarına ve yeni özelliklere katkıda bulunabilirsiniz!';
+    }
+
+    // Reserve Modal
+    const planMonthly = document.querySelector('[data-plan="monthly"]');
+    if (planMonthly) planMonthly.innerText = currentLang === 'en' ? 'Monthly' : 'Aylık';
+    const planAnnual = document.querySelector('[data-plan="annual"]');
+    if (planAnnual) planAnnual.innerText = currentLang === 'en' ? '⭐ Annual' : '⭐ Yıllık';
+    const planLifetime = document.querySelector('[data-plan="lifetime"]');
+    if (planLifetime) planLifetime.innerText = currentLang === 'en' ? 'Lifetime' : 'Ömür Boyu';
+    const activateReserveBtn = document.getElementById('btn-activate-reserve');
+    if (activateReserveBtn) activateReserveBtn.innerText = currentLang === 'en' ? 'Activate' : 'Aktive Et';
+    const deactivateReserveBtn = document.getElementById('btn-deactivate-reserve');
+    if (deactivateReserveBtn) deactivateReserveBtn.innerText = currentLang === 'en' ? 'Remove membership from this device' : 'Bu cihazdan üyeliği kaldır';
+    const reserveHeading = document.querySelector('#reserve-modal h3');
+    if (reserveHeading) {
+        reserveHeading.innerHTML = currentLang === 'en'
+            ? 'POCKET BAR <span class="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">RESERVE</span>'
+            : 'BAR CEPTE <span class="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">RESERVE</span>';
+    }
+    const reserveDesc = document.querySelector('#reserve-modal .space-y-1 p');
+    if (reserveDesc) {
+        reserveDesc.innerText = currentLang === 'en'
+            ? 'Unleash your bar. Ad-free, unlimited, and master mixologist level.'
+            : 'Barının sınırlarını kaldır. Reklamsız, sınırsız ve usta miksoloji seviyesinde.';
+    }
+
+    // Auth Modal
+    const authH3 = document.querySelector('#auth-modal h3');
+    if (authH3) authH3.innerText = currentLang === 'en' ? 'BARTENDER CLUB' : 'BARMEN KULÜBÜ';
+    const authDesc = document.querySelector('#auth-view-logged-out p');
+    if (authDesc) {
+        authDesc.innerText = currentLang === 'en'
+            ? 'Connect with your Google account to sync your bar cabinet and VIP privileges across all devices.'
+            : 'Google hesabınla bağlan, bar dolabını ve VIP ayrıcalıklarını tüm cihazlarına eşitle.';
+    }
+    const demoLoginBtn = document.getElementById('btn-demo-login');
+    if (demoLoginBtn) demoLoginBtn.innerText = currentLang === 'en' ? '⚡ Or Continue as Guest Bartender' : '⚡ Veya Misafir Barmen Olarak Devam Et';
+    const authSyncNowBtn = document.getElementById('btn-auth-sync-now');
+    if (authSyncNowBtn) authSyncNowBtn.innerText = currentLang === 'en' ? 'Sync Now ⟳' : 'Şimdi Eşitle ⟳';
+    const bindLicenseBtn = document.getElementById('btn-bind-account-license');
+    if (bindLicenseBtn) bindLicenseBtn.innerText = currentLang === 'en' ? 'Link' : 'Bağla';
+    const logoutBtn = document.getElementById('btn-auth-logout');
+    if (logoutBtn) logoutBtn.innerText = currentLang === 'en' ? 'Sign Out' : 'Hesaptan Çıkış Yap';
 
     // Footer
     const footerTitle = document.querySelector('.app-footer p.font-medium');
@@ -3332,12 +3493,20 @@ function setLanguage(lang) {
     showToast(toastMsg, 'success');
 }
 
+let lastLangToggleTime = 0;
 function toggleLanguage() {
+    const now = Date.now();
+    if (now - lastLangToggleTime < 150) return;
+    lastLangToggleTime = now;
     triggerHaptic('medium');
     setLanguage(currentLang === 'tr' ? 'en' : 'tr');
 }
 
+let lastUnitToggleTime = 0;
 function toggleUnit() {
+    const now = Date.now();
+    if (now - lastUnitToggleTime < 150) return;
+    lastUnitToggleTime = now;
     triggerHaptic('light');
     currentUnit = currentUnit === 'cl' ? 'oz' : 'cl';
     try { 
@@ -3345,16 +3514,33 @@ function toggleUnit() {
         localStorage.setItem('bar_unit', currentUnit);
     } catch(e) {}
     
-    const unitBtn = document.getElementById('btn-unit-toggle');
-    if (unitBtn) unitBtn.innerText = currentUnit;
-
+    applyLanguage();
     filterCocktails();
+    if (currentTab === 'bar') renderDashboard();
     if (currentTab === 'my-recipes') renderMyRecipes();
     showToast(currentLang === 'en' ? `Unit set to ${currentUnit}` : `Ölçü birimi: ${currentUnit}`, 'info');
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
     applyLanguage();
+
+    const langToggleBtn = document.getElementById('btn-lang-toggle');
+    if (langToggleBtn && !langToggleBtn.dataset.directBound) {
+        langToggleBtn.dataset.directBound = 'true';
+        langToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleLanguage();
+        });
+    }
+    const unitToggleBtn = document.getElementById('btn-unit-toggle');
+    if (unitToggleBtn && !unitToggleBtn.dataset.directBound) {
+        unitToggleBtn.dataset.directBound = 'true';
+        unitToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleUnit();
+        });
+    }
+
     await initDB();
     fetchDataWithIndexedDB();
     updateFavoritesFilterUI();
