@@ -2226,9 +2226,9 @@ function openMixMode(drinkId) {
             const ing = d[`strIngredient${i}`];
             const m = d[`strMeasure${i}`] ? d[`strMeasure${i}`].trim() : '';
             if (ing && ing.trim()) {
-                const trName = translateIngredientName(ing.trim());
-                const trMeasure = translateMeasureText(m);
-                ingList.push(trMeasure ? `${trMeasure} ${trName}` : trName);
+                const displayName = currentLang === 'en' ? ing.trim() : translateIngredientName(ing.trim());
+                const measureText = translateMeasureText(m);
+                ingList.push(measureText ? `${measureText} ${displayName}` : displayName);
             }
         }
     }
@@ -2515,9 +2515,9 @@ function downloadCocktailStoryCard(drinkId) {
             const ing = d[`strIngredient${i}`];
             const m = d[`strMeasure${i}`] ? d[`strMeasure${i}`].trim() : '';
             if (ing && ing.trim()) {
-                const trName = translateIngredientName(ing.trim());
-                const trMeasure = translateMeasureText(m);
-                rawIngs.push(trMeasure ? `${trMeasure} ${trName}` : trName);
+                const displayName = currentLang === 'en' ? ing.trim() : translateIngredientName(ing.trim());
+                const measureText = translateMeasureText(m);
+                rawIngs.push(measureText ? `${measureText} ${displayName}` : displayName);
             }
         }
     }
@@ -2661,7 +2661,7 @@ function filterCocktails() {
     if (!readyContainer || !missingContainer) return;
 
     updateFavoritesFilterUI();
-    const isDiscovery = selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter && currentVibeFilter === 'all';
+    const isDiscovery = selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter && currentVibeFilter === 'all' && tasteFilter === 'all';
     document.getElementById('editorial-picks')?.classList.toggle('hidden', !isDiscovery);
     document.getElementById('ready-section')?.classList.toggle('hidden', isDiscovery);
     document.getElementById('missing-section')?.classList.toggle('hidden', isDiscovery);
@@ -2670,7 +2670,7 @@ function filterCocktails() {
         switchTab('alkol');
     }
 
-    if (selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter && currentVibeFilter === 'all') {
+    if (selectedIngredients.length === 0 && !cocktailSearch && !onlyFavoritesFilter && currentVibeFilter === 'all' && tasteFilter === 'all') {
         const preferred = ['11003', '11007', '17212'];
         const discoveryPool = allCocktails.filter(d => matchesAlcoholFilter(d) && matchesVibeFilter(d));
         discoveryPool.forEach(enrichDrink);
@@ -2727,7 +2727,7 @@ function filterCocktails() {
         enrichDrink(d);
 
         if (tasteFilter === 'all' || d.computedTaste === tasteFilter) {
-            if (cocktailSearch || onlyFavoritesFilter || currentVibeFilter !== 'all') {
+            if (cocktailSearch || onlyFavoritesFilter || currentVibeFilter !== 'all' || tasteFilter !== 'all') {
                 if (missing.length === 0) {
                     readyMatches.push(d);
                 } else {
@@ -2884,8 +2884,8 @@ function createCocktailCardElement(item, isMissingList) {
         let missingTextHTML = isMissingList ? missingList.map(m => {
             const encodedM = encodeURIComponent(m);
             const inShop = shoppingList.includes(m);
-            const trMissingName = translateIngredientName(m);
-            const safeM = escapeHTML(trMissingName);
+            const missingDisplayName = currentLang === 'en' ? m : translateIngredientName(m);
+            const safeM = escapeHTML(missingDisplayName);
             const sub = getIngredientSubstitute(m);
             const subHTML = sub ? `
             <div class="flex items-center justify-between gap-1 text-[10px] bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-xl text-amber-300 mt-1 min-w-0" data-stop-card>
@@ -3154,6 +3154,12 @@ function deleteCustomRecipe(id, event) {
     if(confirm(currentLang === 'en' ? "Are you sure you want to delete this custom recipe?" : "Bu özel tarifi silmek istediğine emin misin?")) {
         customRecipes = customRecipes.filter(r => r.idDrink !== id);
         try { localStorage.setItem('customRecipes', JSON.stringify(customRecipes)); } catch(e) {}
+
+        if (favoriteCocktails.includes(id)) {
+            favoriteCocktails = favoriteCocktails.filter(f => f !== id);
+            try { localStorage.setItem('favoriteCocktails', JSON.stringify(favoriteCocktails)); } catch(e) {}
+            updateFavoritesFilterUI();
+        }
         
         try {
             if (db) {
@@ -3365,7 +3371,17 @@ async function importUserData() {
     if(!input) return alert(currentLang === 'en' ? "Please paste a valid backup code." : "Lütfen geçerli bir yedekleme kodu yapıştırın.");
     try {
         if (input.length > BarSecurity.MAX_BACKUP_LENGTH) throw new Error('Yedek çok büyük');
-        const decrypted = BarSecurity.backup(JSON.parse(decodeURIComponent(escape(atob(input)))));
+        let parsedRaw;
+        try {
+            parsedRaw = JSON.parse(decodeURIComponent(escape(atob(input))));
+        } catch (e1) {
+            try {
+                parsedRaw = JSON.parse(atob(input));
+            } catch (e2) {
+                parsedRaw = JSON.parse(input);
+            }
+        }
+        const decrypted = BarSecurity.backup(parsedRaw);
         if (!confirm(currentLang === 'en' ? "This backup will replace your current favorites, custom recipes, shopping and bar shelf. Continue?" : "Bu yedek mevcut favori, tarif, alışveriş ve malzeme listelerinizin yerini alacak. Devam edilsin mi?")) return;
         const values = {
             favoriteCocktails: decrypted.favorites, customRecipes: decrypted.customs,
@@ -4032,6 +4048,21 @@ document.addEventListener("DOMContentLoaded", async () => {
             toggleUnit();
         });
     }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeMixMode();
+            closeTimerModal();
+            const reserveModal = document.getElementById('reserve-modal');
+            if (reserveModal && !reserveModal.classList.contains('hidden')) {
+                reserveModal.classList.add('hidden');
+            }
+            const authModal = document.getElementById('auth-modal');
+            if (authModal && !authModal.classList.contains('hidden')) {
+                authModal.classList.add('hidden');
+            }
+        }
+    });
 
     await initDB();
     fetchDataWithIndexedDB();
