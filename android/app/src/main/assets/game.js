@@ -919,7 +919,10 @@ function setAlcoholSubCategory(subCat, btnEl) {
     triggerHaptic('light');
     currentAlcoholSubCat = subCat;
     document.querySelectorAll('#alcohol-subcategories .alcohol-subcat-btn').forEach(b => {
-        b.className = "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap";
+        const isMutfak = b.getAttribute('data-value') === 'mutfak';
+        b.className = isMutfak
+            ? "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-emerald-400 border border-emerald-500/30 shrink-0 hover:text-white whitespace-nowrap"
+            : "alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap";
     });
     const target = btnEl || document.querySelector(`#alcohol-subcategories .alcohol-subcat-btn[data-value="${subCat}"]`);
     if (target) {
@@ -929,6 +932,7 @@ function setAlcoholSubCategory(subCat, btnEl) {
 }
 
 function getAlcoholGroup(ing) {
+    if (ing.cat === 'mutfak') return 'mutfak';
     const lower = ((ing.id || '') + ' ' + (ing.name || '')).toLowerCase();
     if (/(vodka|votka|gin|cin)/i.test(lower)) {
         return 'votka-cin';
@@ -955,12 +959,16 @@ function getAlcoholGroupLabel(groupId) {
         case 'tekila-rom': return 'Tekila & Rom';
         case 'likor-aperitif': return 'Likör & Aperitif';
         case 'sarap-bira': return 'Şarap & Vermut';
+        case 'mutfak': return 'Mutfak';
         default: return 'Özel Alkol';
     }
 }
 
 function matchesAlcoholSubCategory(ing) {
-    if (currentTab !== 'alkol' || currentAlcoholSubCat === 'all') return true;
+    if (currentTab !== 'alkol') return true;
+    if (currentAlcoholSubCat === 'mutfak') return ing.cat === 'mutfak';
+    if (currentAlcoholSubCat === 'all') return ing.cat === 'alkol';
+    if (ing.cat !== 'alkol') return false;
     const group = getAlcoholGroup(ing);
     if (currentAlcoholSubCat === group) return true;
     if (currentAlcoholSubCat === 'sarap-bira' && group === 'diger-alkol') return true;
@@ -1216,9 +1224,19 @@ function renderIngredients() {
                        (i.nameEn && i.nameEn.toLowerCase().includes(searchLowerEn)) ||
                        (i.id && (i.id.toLowerCase().includes(searchLowerEn) || i.id.toLocaleLowerCase('tr').includes(searchLowerTr)));
             }
-            if (i.cat !== currentTab) return false;
-            if (currentTab === 'alkol' && !matchesAlcoholSubCategory(i)) return false;
-            if (currentTab === 'mutfak' && !matchesKitchenSubCategory(i)) return false;
+            if (currentTab === 'alkol') {
+                if (currentAlcoholSubCat === 'mutfak') {
+                    if (i.cat !== 'mutfak') return false;
+                } else {
+                    if (i.cat !== 'alkol') return false;
+                    if (!matchesAlcoholSubCategory(i)) return false;
+                }
+            } else if (currentTab === 'mutfak') {
+                if (i.cat !== 'mutfak') return false;
+                if (!matchesKitchenSubCategory(i)) return false;
+            } else if (i.cat !== currentTab) {
+                return false;
+            }
             return true;
         })
         .sort((a, b) => {
@@ -2063,6 +2081,37 @@ function quickAddIngredientToBar(ingName, event) {
         filterCocktails();
         renderDashboard();
     }
+function recipeMatchesSearchToken(d, reqs, token) {
+    if (!token) return true;
+    const tokenNorm = normalizeSearchText(token);
+    const dNameNorm = normalizeSearchText(d.strDrink || '');
+    const dNameTrNorm = normalizeSearchText(d.strDrinkTR || '');
+
+    if (dNameNorm.includes(tokenNorm) || (dNameTrNorm && dNameTrNorm.includes(tokenNorm))) {
+        return true;
+    }
+
+    return reqs.some(r => {
+        if (!r) return false;
+        const rNorm = normalizeSearchText(r);
+        if (rNorm.includes(tokenNorm)) return true;
+
+        const trName = typeof translateIngredientName === 'function' ? normalizeSearchText(translateIngredientName(r)) : '';
+        if (trName && trName.includes(tokenNorm)) return true;
+
+        const matchedPopular = popularIngredients.filter(pi => {
+            const piNorm = normalizeSearchText(pi.name);
+            const piEnNorm = normalizeSearchText(pi.nameEn);
+            const piIdNorm = normalizeSearchText(pi.id);
+            return piNorm.includes(tokenNorm) || piEnNorm.includes(tokenNorm) || piIdNorm.includes(tokenNorm);
+        });
+
+        for (const pi of matchedPopular) {
+            if (checkIngredientMatch(r, pi.id) || checkIngredientMatch(r, pi.name)) return true;
+        }
+
+        return checkIngredientMatch(r, token);
+    });
 }
 
 function filterCocktails() {
@@ -2115,9 +2164,6 @@ function filterCocktails() {
     }
 
     pool.forEach(d => {
-        let isNameMatch = cocktailSearch ? d.strDrink.toLowerCase().includes(cocktailSearch) : true;
-        if (!isNameMatch) return; 
-
         let reqs = [];
         if (d.isCustom && Array.isArray(d.customIngredients)) {
             reqs = d.customIngredients.map(i => i.trim()).filter(Boolean);
@@ -2129,6 +2175,12 @@ function filterCocktails() {
         }
 
         if (reqs.length === 0) return;
+
+        if (cocktailSearch) {
+            const tokens = normalizeSearchText(cocktailSearch).split(/\s+/).filter(Boolean);
+            const matchesAllTokens = tokens.length > 0 && tokens.every(token => recipeMatchesSearchToken(d, reqs, token));
+            if (!matchesAllTokens) return;
+        }
 
         let missing = reqs.filter(r => !selectedIngredients.some(s => checkIngredientMatch(r, s)));
         let hasAtLeastOneMatch = reqs.some(r => selectedIngredients.some(s => checkIngredientMatch(r, s)));
@@ -2153,6 +2205,15 @@ function filterCocktails() {
     });
 
     const sortFn = (a, b) => {
+        if (cocktailSearch) {
+            const qNorm = normalizeSearchText(cocktailSearch);
+            const aDrink = a.drink || a;
+            const bDrink = b.drink || b;
+            const aNameMatch = normalizeSearchText(aDrink.strDrink || '').includes(qNorm);
+            const bNameMatch = normalizeSearchText(bDrink.strDrink || '').includes(qNorm);
+            if (aNameMatch && !bNameMatch) return -1;
+            if (!aNameMatch && bNameMatch) return 1;
+        }
         const idA = a.idDrink || a.drink?.idDrink;
         const idB = b.idDrink || b.drink?.idDrink;
         return (favoriteCocktails.includes(idB) ? 1 : 0) - (favoriteCocktails.includes(idA) ? 1 : 0);
@@ -2161,6 +2222,15 @@ function filterCocktails() {
     readyMatches.sort(sortFn);
     
     missingMatches.sort((a,b) => {
+        if (cocktailSearch) {
+            const qNorm = normalizeSearchText(cocktailSearch);
+            const aDrink = a.drink || a;
+            const bDrink = b.drink || b;
+            const aNameMatch = normalizeSearchText(aDrink.strDrink || '').includes(qNorm);
+            const bNameMatch = normalizeSearchText(bDrink.strDrink || '').includes(qNorm);
+            if (aNameMatch && !bNameMatch) return -1;
+            if (!aNameMatch && bNameMatch) return 1;
+        }
         if(a.missingList.length !== b.missingList.length) return a.missingList.length - b.missingList.length;
         return sortFn(a.drink, b.drink);
     });

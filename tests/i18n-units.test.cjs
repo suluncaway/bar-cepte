@@ -262,6 +262,101 @@ test('Ingredient search supports global search across kitchen and alcohol catego
     assert.strictEqual(romResults[0].id, 'Rum');
 });
 
+test('Cocktail search allows searching by both cocktail name and kitchen/alcohol ingredients (e.g. nane, rom nane, limon)', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    const js = fs.readFileSync('game.js', 'utf8');
+
+    // 1. Alcohol subcategories include Kitchen chip for quick access in Kokteyl Keşfet section
+    assert.match(html, /data-action="alcohol-subcat"\s+data-value="mutfak"/, 'Mutfak chip in alcohol-subcategories');
+    assert.match(js, /case 'mutfak': return (currentLang === 'en' \? 'Kitchen' : 'Mutfak'|'Mutfak')/, 'getAlcoholGroupLabel supports mutfak');
+    assert.match(js, /if \(currentAlcoholSubCat === 'mutfak'\) return ing\.cat === 'mutfak'/, 'matchesAlcoholSubCategory supports mutfak');
+
+    // 2. recipeMatchesSearchToken helper is defined in game.js
+    assert.ok(js.includes('function recipeMatchesSearchToken('), 'recipeMatchesSearchToken exists in game.js');
+    assert.ok(js.includes('recipeMatchesSearchToken(d, reqs, token)'), 'filterCocktails calls recipeMatchesSearchToken');
+
+    // 3. Test recipeMatchesSearchToken with cocktails having kitchen and alcohol ingredients
+    const normRegex = /function normalizeSearchText\(str\)\s*\{([\s\S]*?)\n\}/;
+    const normalizeSearchText = new Function('str', normRegex.exec(js)[1]);
+
+    const sampleCocktails = [
+        {
+            strDrink: 'Mojito',
+            strDrinkTR: 'Mohito',
+            strIngredient1: 'Light rum',
+            strIngredient2: 'Lime',
+            strIngredient3: 'Sugar',
+            strIngredient4: 'Mint',
+            strIngredient5: 'Soda water'
+        },
+        {
+            strDrink: 'Margarita',
+            strDrinkTR: 'Margarita',
+            strIngredient1: 'Tequila',
+            strIngredient2: 'Triple sec',
+            strIngredient3: 'Lime juice',
+            strIngredient4: 'Salt'
+        },
+        {
+            strDrink: 'Old Fashioned',
+            strDrinkTR: 'Old Fashioned',
+            strIngredient1: 'Bourbon',
+            strIngredient2: 'Angostura bitters',
+            strIngredient3: 'Sugar',
+            strIngredient4: 'Water'
+        }
+    ];
+
+    function translateDummy(ing) {
+        const map = {
+            'Light rum': 'Beyaz Rom',
+            'Lime': 'Misket Limonu',
+            'Lime juice': 'Misket Limonu Suyu',
+            'Sugar': 'Şeker',
+            'Mint': 'Nane',
+            'Tequila': 'Tekila',
+            'Bourbon': 'Burbon Viski'
+        };
+        return map[ing] || ing;
+    }
+
+    function testSearchMatch(d, query) {
+        const tokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+        const reqs = [d.strIngredient1, d.strIngredient2, d.strIngredient3, d.strIngredient4, d.strIngredient5].filter(Boolean);
+        const dNameNorm = normalizeSearchText(d.strDrink || '');
+        const dNameTrNorm = normalizeSearchText(d.strDrinkTR || '');
+
+        return tokens.every(token => {
+            if (dNameNorm.includes(token) || (dNameTrNorm && dNameTrNorm.includes(token))) return true;
+            return reqs.some(r => {
+                const rNorm = normalizeSearchText(r);
+                const trNorm = normalizeSearchText(translateDummy(r));
+                return rNorm.includes(token) || trNorm.includes(token);
+            });
+        });
+    }
+
+    // "nane" matches Mojito
+    const naneMatches = sampleCocktails.filter(d => testSearchMatch(d, 'nane'));
+    assert.strictEqual(naneMatches.length, 1);
+    assert.strictEqual(naneMatches[0].strDrink, 'Mojito');
+
+    // "rom nane" matches Mojito
+    const romNaneMatches = sampleCocktails.filter(d => testSearchMatch(d, 'rom nane'));
+    assert.strictEqual(romNaneMatches.length, 1);
+    assert.strictEqual(romNaneMatches[0].strDrink, 'Mojito');
+
+    // "tekila" matches Margarita
+    const tekilaMatches = sampleCocktails.filter(d => testSearchMatch(d, 'tekila'));
+    assert.strictEqual(tekilaMatches.length, 1);
+    assert.strictEqual(tekilaMatches[0].strDrink, 'Margarita');
+
+    // "seker" matches Mojito and Old Fashioned
+    const sekerMatches = sampleCocktails.filter(d => testSearchMatch(d, 'seker'));
+    assert.strictEqual(sekerMatches.length, 2);
+});
+
+
 
 
 
