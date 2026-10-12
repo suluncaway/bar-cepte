@@ -125,6 +125,7 @@ const I18N = {
         affiliateLabel: 'ÖNERİ',
         affiliateTitle: 'Paslanmaz Shaker & Bar Seti',
         affiliateDesc: 'Evde kokteyl hazırlamak için gereken tüm temel ekipmanlar',
+        affiliateBtn: 'İncele',
         footerTitle: 'Bar Cepte — Akıllı Bar & Kokteyl Asistanı',
         footerBarware: '🛒 Bar Ekipmanları',
         footerPrivacy: '🛡️ Gizlilik & 18+ Yasal Uyarı',
