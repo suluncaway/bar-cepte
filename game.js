@@ -3599,6 +3599,16 @@ function applyLanguage() {
     const edAside = document.querySelector('#editorial-picks .section-aside');
     if (edAside) edAside.innerText = t.editorialAside;
 
+    // Hero video toggle button
+    const heroVidText = document.getElementById('hero-video-toggle-text');
+    if (heroVidText) {
+        const video = document.getElementById('hero-cocktail-video');
+        const isPlaying = video && !video.paused && video.classList.contains('video-active');
+        heroVidText.innerText = isPlaying 
+            ? (currentLang === 'en' ? '🎬 Live' : '🎬 Canlı')
+            : (currentLang === 'en' ? '🖼️ Photo' : '🖼️ Foto');
+    }
+
     // Bar Dashboard
     const dashH2 = document.querySelector('#bar-dashboard h2');
     if (dashH2) dashH2.innerHTML = `<span>📊</span> ${t.barOverview}`;
@@ -3966,8 +3976,45 @@ function toggleUnit() {
     showToast(currentLang === 'en' ? `Unit set to ${currentUnit}` : `Ölçü birimi: ${currentUnit}`, 'info');
 }
 
+function initHeroVideo() {
+    const video = document.getElementById('hero-cocktail-video');
+    const toggleBtn = document.getElementById('btn-hero-video-toggle');
+    const toggleText = document.getElementById('hero-video-toggle-text');
+    const pulseDot = document.getElementById('hero-video-toggle-dot');
+    if (!video || !toggleBtn) return;
+
+    video.addEventListener('canplay', () => {
+        video.classList.add('video-active');
+        video.play().catch(() => {});
+        toggleBtn.classList.remove('hidden');
+    });
+
+    video.addEventListener('error', () => {
+        video.classList.remove('video-active');
+        toggleBtn.classList.add('hidden');
+    });
+
+    toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerHaptic('light');
+        if (video.paused || !video.classList.contains('video-active')) {
+            video.classList.add('video-active');
+            video.play().then(() => {
+                if (pulseDot) pulseDot.style.background = '#10b981';
+                if (toggleText) toggleText.innerText = currentLang === 'en' ? '🎬 Live' : '🎬 Canlı';
+            }).catch(() => {});
+        } else {
+            video.pause();
+            video.classList.remove('video-active');
+            if (pulseDot) pulseDot.style.background = '#64748b';
+            if (toggleText) toggleText.innerText = currentLang === 'en' ? '🖼️ Photo' : '🖼️ Foto';
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     applyLanguage();
+    initHeroVideo();
 
     const langToggleBtn = document.getElementById('btn-lang-toggle');
     if (langToggleBtn && !langToggleBtn.dataset.directBound) {

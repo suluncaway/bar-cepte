@@ -111,7 +111,14 @@
                 <div class="hero-note"><span class="status-dot"></span> Alkollü & alkolsüz tarifler <span class="note-divider"></span> Tamamen senin zevkin</div>
             </div>
             <figure class="hero-photo">
-                <img src="editorial-cocktails.webp" alt="Loş bir bar tezgâhında portakal kabuklu amber kokteyl ve kadeh" width="1200" height="900" fetchpriority="high">
+                <video id="hero-cocktail-video" autoplay loop muted playsinline poster="editorial-cocktails.webp" class="hero-media-video" preload="metadata">
+                    <source src="hero-cocktail-ambient.mp4" type="video/mp4">
+                </video>
+                <img id="hero-cocktail-img" src="editorial-cocktails.webp" alt="Loş bir bar tezgâhında portakal kabuklu amber kokteyl ve kadeh" width="1200" height="900" fetchpriority="high">
+                <button id="btn-hero-video-toggle" type="button" class="hero-video-control hidden" title="Canlı Atmosfer / Fotoğraf" aria-label="Canlı Atmosfer">
+                    <span id="hero-video-toggle-dot" class="video-pulse-dot"></span>
+                    <span id="hero-video-toggle-text">🎬 Canlı</span>
+                </button>
                 <figcaption><span>BAR CEPTE SEÇKİSİ</span><strong>İyi bir akşamın<br>küçük ritüeli.</strong></figcaption>
                 <span class="photo-edition">THE HOME BAR EDITION / 01</span>
             </figure>

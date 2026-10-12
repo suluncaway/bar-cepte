@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bar-cepte-v28-kitchen-search-fix';
+const CACHE_NAME = 'bar-cepte-v29-hero-video-ambient';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./', './index.html', './privacy.html', './privacy.js', './style.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
-    './ads.js', './reserve.js', './auth.js', './firebase-config.js', './manifest.json', './cocktails.json', './icon.png', './editorial-ui.js', './editorial-cocktails.webp'];
+    './ads.js', './reserve.js', './auth.js', './firebase-config.js', './manifest.json', './cocktails.json', './icon.png', './editorial-ui.js', './editorial-cocktails.webp', './hero-cocktail-ambient.mp4'];
 const SCOPE = new URL('./', self.location.href);
 const allowedAssets = new Set(ASSETS.map(path => new URL(path, SCOPE).pathname));
 

@@ -2857,7 +2857,44 @@ function pickRandomCocktail() {
     }
 }
 
+function initHeroVideo() {
+    const video = document.getElementById('hero-cocktail-video');
+    const toggleBtn = document.getElementById('btn-hero-video-toggle');
+    const toggleText = document.getElementById('hero-video-toggle-text');
+    const pulseDot = document.getElementById('hero-video-toggle-dot');
+    if (!video || !toggleBtn) return;
+
+    video.addEventListener('canplay', () => {
+        video.classList.add('video-active');
+        video.play().catch(() => {});
+        toggleBtn.classList.remove('hidden');
+    });
+
+    video.addEventListener('error', () => {
+        video.classList.remove('video-active');
+        toggleBtn.classList.add('hidden');
+    });
+
+    toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerHaptic('light');
+        if (video.paused || !video.classList.contains('video-active')) {
+            video.classList.add('video-active');
+            video.play().then(() => {
+                if (pulseDot) pulseDot.style.background = '#10b981';
+                if (toggleText) toggleText.innerText = currentLang === 'en' ? '🎬 Live' : '🎬 Canlı';
+            }).catch(() => {});
+        } else {
+            video.pause();
+            video.classList.remove('video-active');
+            if (pulseDot) pulseDot.style.background = '#64748b';
+            if (toggleText) toggleText.innerText = currentLang === 'en' ? '🖼️ Photo' : '🖼️ Foto';
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+    initHeroVideo();
     await initDB();
     fetchDataWithIndexedDB();
     updateFavoritesFilterUI();
