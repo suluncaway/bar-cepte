@@ -32,11 +32,13 @@ const baseIngredients = [
 ];
 
 let currentLang = 'tr';
-try { currentLang = localStorage.getItem('bar_cepte_lang') || 'tr'; } catch(e) {}
+try { currentLang = localStorage.getItem('bar_cepte_lang') || localStorage.getItem('bar_language') || 'tr'; } catch(e) {}
+if (typeof window !== 'undefined') window.currentLang = currentLang;
 let currentUnit = 'cl';
 try {
-    currentUnit = localStorage.getItem('bar_cepte_unit') || (currentLang === 'en' ? 'oz' : 'cl');
+    currentUnit = localStorage.getItem('bar_cepte_unit') || localStorage.getItem('bar_unit') || (currentLang === 'en' ? 'oz' : 'cl');
 } catch(e) {}
+if (typeof window !== 'undefined') window.currentUnit = currentUnit;
 
 const I18N = {
     tr: {
@@ -447,12 +449,30 @@ function playChimeSound() {
 }
 
 // Barmen Zamanlayıcısı (Shaker & Stir Timer) Fonksiyonları
+function getTimerPresetLabel(seconds) {
+    const isEn = (typeof currentLang !== 'undefined' ? currentLang : (typeof window !== 'undefined' && window.currentLang)) === 'en';
+    if (seconds === 15) {
+        return isEn ? 'Shake vigorously with ice (Shaker)' : 'Buzla kuvvetlice çalkala (Shaker)';
+    }
+    if (seconds === 30) {
+        return isEn ? 'Stir gently with ice (Stir)' : 'Buzla nazikçe karıştır (Stir)';
+    }
+    if (seconds === 45) {
+        return isEn ? 'Chill thoroughly & blend' : 'İyice soğut ve harmanla';
+    }
+    return isEn ? `${seconds}s Mixing Timer` : `${seconds}s Barmen Zamanlayıcısı`;
+}
+
 function openTimerModal(duration = 15, label = '') {
     triggerHaptic('light');
-    if (!label) {
-        label = currentLang === 'en' ? 'Shake vigorously with ice (Shaker)' : 'Buzla kuvvetlice çalkala (Shaker)';
+    let finalLabel = label;
+    if (!finalLabel ||
+        finalLabel === 'Buzla kuvvetlice çalkala (Shaker)' || finalLabel === 'Shake vigorously with ice (Shaker)' ||
+        finalLabel === 'Buzla nazikçe karıştır (Stir)' || finalLabel === 'Stir gently with ice (Stir)' ||
+        finalLabel === 'İyice soğut ve harmanla' || finalLabel === 'Chill thoroughly & blend') {
+        finalLabel = getTimerPresetLabel(duration);
     }
-    setTimerDuration(duration, label);
+    setTimerDuration(duration, finalLabel);
     const modal = document.getElementById('shaker-timer-modal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -474,10 +494,15 @@ function setTimerDuration(seconds, label = '') {
     timerDefault = seconds;
     timerRemaining = seconds;
     updateTimerDisplay();
-    if (label) {
-        const labelEl = document.getElementById('timer-label');
-        if (labelEl) labelEl.innerText = label;
+    let finalLabel = label;
+    if (!finalLabel ||
+        finalLabel === 'Buzla kuvvetlice çalkala (Shaker)' || finalLabel === 'Shake vigorously with ice (Shaker)' ||
+        finalLabel === 'Buzla nazikçe karıştır (Stir)' || finalLabel === 'Stir gently with ice (Stir)' ||
+        finalLabel === 'İyice soğut ve harmanla' || finalLabel === 'Chill thoroughly & blend') {
+        finalLabel = getTimerPresetLabel(seconds);
     }
+    const labelEl = document.getElementById('timer-label');
+    if (labelEl) labelEl.innerText = finalLabel;
     document.querySelectorAll('.timer-preset-btn').forEach(btn => {
         if (btn.innerText.includes(`${seconds}s`)) {
             btn.className = "timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px]";
@@ -3553,6 +3578,10 @@ function applyLanguage() {
     }
     const timerResetBtn = document.querySelector('[data-ui="ui-43"]');
     if (timerResetBtn) timerResetBtn.innerText = t.timerReset;
+    const timerLabelEl = document.getElementById('timer-label');
+    if (timerLabelEl) {
+        timerLabelEl.innerText = getTimerPresetLabel(timerDefault || 15);
+    }
 
     // Update Modal
     const updateH3 = document.querySelector('#update-modal h3');
@@ -3689,6 +3718,9 @@ function applyLanguage() {
 
 function setLanguage(lang) {
     currentLang = lang === 'en' ? 'en' : 'tr';
+    if (typeof window !== 'undefined') {
+        window.currentLang = currentLang;
+    }
     try { 
         localStorage.setItem('bar_cepte_lang', currentLang);
         localStorage.setItem('bar_language', currentLang);
@@ -3700,6 +3732,9 @@ function setLanguage(lang) {
         currentUnit = 'oz';
     } else {
         currentUnit = 'cl';
+    }
+    if (typeof window !== 'undefined') {
+        window.currentUnit = currentUnit;
     }
     try { 
         localStorage.setItem('bar_cepte_unit', currentUnit);

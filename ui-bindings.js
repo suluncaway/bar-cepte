@@ -1,5 +1,5 @@
 // Static UI handlers. Generated from trusted source markup, never from user input.
-document.querySelector('[data-ui="ui-0"]').addEventListener('click', function(event) { openTimerModal(15, 'Buzla kuvvetlice çalkala (Shaker)'); });
+document.querySelector('[data-ui="ui-0"]').addEventListener('click', function(event) { openTimerModal(15); });
 document.querySelector('[data-ui="ui-1"]').addEventListener('click', function(event) { toggleWakeLock(); });
 document.querySelector('[data-ui="ui-2"]').addEventListener('click', function(event) { installPWA(); });
 document.querySelector('[data-ui="ui-3"]').addEventListener('click', function(event) { setAlcoholFilter('all'); });
@@ -38,9 +38,9 @@ document.querySelector('[data-ui="ui-35"]').addEventListener('click', function(e
 document.querySelector('[data-ui="ui-36"]').addEventListener('click', function(event) { forceSyncOnlineDatabase(); });
 document.querySelector('[data-ui="ui-37"]').addEventListener('click', function(event) { checkForAppUpdates(true); });
 document.querySelector('[data-ui="ui-38"]').addEventListener('click', function(event) { closeTimerModal(); });
-document.querySelector('[data-ui="ui-39"]').addEventListener('click', function(event) { setTimerDuration(15, 'Buzla kuvvetlice çalkala (Shaker)'); });
-document.querySelector('[data-ui="ui-40"]').addEventListener('click', function(event) { setTimerDuration(30, 'Buzla nazikçe karıştır (Stir)'); });
-document.querySelector('[data-ui="ui-41"]').addEventListener('click', function(event) { setTimerDuration(45, 'İyice soğut ve harmanla'); });
+document.querySelector('[data-ui="ui-39"]').addEventListener('click', function(event) { setTimerDuration(15); });
+document.querySelector('[data-ui="ui-40"]').addEventListener('click', function(event) { setTimerDuration(30); });
+document.querySelector('[data-ui="ui-41"]').addEventListener('click', function(event) { setTimerDuration(45); });
 document.querySelector('[data-ui="ui-42"]').addEventListener('click', function(event) { toggleTimer(); });
 document.querySelector('[data-ui="ui-43"]').addEventListener('click', function(event) { resetTimer(); });
 document.querySelector('[data-ui="ui-44"]').addEventListener('click', function(event) { closeUpdateModal(); });

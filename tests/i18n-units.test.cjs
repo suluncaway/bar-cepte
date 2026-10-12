@@ -103,3 +103,28 @@ test('All opening modals, panels, and reserve plans have comprehensive English l
     assert.ok(gameJs.includes('1. Glassware & Prep'), 'Step-by-step mix mode steps localized in game.js');
 });
 
+test('Timer preset labels and modal bindings strictly preserve active language without reverting', () => {
+    const uiBindingsJs = fs.readFileSync(path.resolve(__dirname, '../ui-bindings.js'), 'utf8');
+
+    // UI bindings must not hardcode Turkish strings in openTimerModal or setTimerDuration
+    assert.ok(!uiBindingsJs.includes("openTimerModal(15, 'Buzla"), 'ui-0 must not hardcode Turkish preset in openTimerModal');
+    assert.ok(!uiBindingsJs.includes("setTimerDuration(15, 'Buzla"), 'ui-39 must not hardcode Turkish preset in setTimerDuration');
+    assert.ok(!uiBindingsJs.includes("setTimerDuration(30, 'Buzla"), 'ui-40 must not hardcode Turkish preset in setTimerDuration');
+    assert.ok(!uiBindingsJs.includes("setTimerDuration(45, 'İyice"), 'ui-41 must not hardcode Turkish preset in setTimerDuration');
+
+    // game.js getTimerPresetLabel and applyLanguage timer updates
+    assert.ok(gameJs.includes('function getTimerPresetLabel('), 'getTimerPresetLabel helper must exist in game.js');
+    assert.ok(gameJs.includes('timerLabelEl.innerText = getTimerPresetLabel('), 'applyLanguage must update timer-label');
+});
+
+test('Reserve UI dynamically translates all modal content and sets USD prices on initial load and plan switch', () => {
+    const reserveJs = fs.readFileSync(path.resolve(__dirname, '../reserve.js'), 'utf8');
+
+    assert.ok(reserveJs.includes('function getCurrentLang()'), 'getCurrentLang helper must exist in reserve.js');
+    assert.ok(reserveJs.includes("planMonthly.innerText = isEn ? 'Monthly' : 'Aylık'"), 'Plan monthly tab localized');
+    assert.ok(reserveJs.includes("planAnnual.innerText = isEn ? '⭐ Annual' : '⭐ Yıllık'"), 'Plan annual tab localized');
+    assert.ok(reserveJs.includes("planLifetime.innerText = isEn ? 'Lifetime' : 'Ömür Boyu'"), 'Plan lifetime tab localized');
+    assert.ok(reserveJs.includes("selectPlan(currentSelectedPlan);"), 'selectPlan called on init in reserve.js');
+});
+
+
