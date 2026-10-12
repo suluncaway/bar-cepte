@@ -2,34 +2,261 @@
 
 // Temel Malzemeler Kataloğu
 const baseIngredients = [
-    { id: "Vodka", name: "Votka", emoji: "🍸", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Gin", name: "Cin", emoji: "🌲", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Rum", name: "Rom", emoji: "🏴‍☠️", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Tequila", name: "Tekila", emoji: "🌵", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Triple Sec", name: "Portakal Likörü", emoji: "🍊", cat: "alkol", taste: "Tatlı", cal: 100 },
-    { id: "Whiskey", name: "Viski", emoji: "🥃", cat: "alkol", taste: "Sert", cal: 70 },
-    { id: "Bourbon", name: "Burbon Viski", emoji: "🪵", cat: "alkol", taste: "Sert", cal: 70 },
-    { id: "Amaretto", name: "Amaretto", emoji: "🌰", cat: "alkol", taste: "Tatlı", cal: 110 },
-    { id: "Campari", name: "Campari", emoji: "❤️", cat: "alkol", taste: "Ekşi", cal: 80 },
-    { id: "Sweet Vermouth", name: "Tatlı Vermut", emoji: "🍷", cat: "alkol", taste: "Tatlı", cal: 45 },
-    { id: "Dry Vermouth", name: "Sek Vermut", emoji: "🍸", cat: "alkol", taste: "Ekşi", cal: 45 },
-    { id: "Lime Juice", name: "Misket Limonu Suyu", emoji: "🟢", cat: "mutfak", taste: "Ekşi", cal: 8 },
-    { id: "Lemon Juice", name: "Limon Suyu", emoji: "🟡", cat: "mutfak", taste: "Ekşi", cal: 7 },
-    { id: "Orange Juice", name: "Portakal Suyu", emoji: "🍹", cat: "mutfak", taste: "Tatlı", cal: 45 },
-    { id: "Cranberry Juice", name: "Kızılcık Suyu", emoji: "🍒", cat: "mutfak", taste: "Ekşi", cal: 46 },
-    { id: "Pineapple Juice", name: "Ananas Suyu", emoji: "🍍", cat: "mutfak", taste: "Tatlı", cal: 50 },
-    { id: "Grenadine", name: "Nar Şurubu", emoji: "🩸", cat: "mutfak", taste: "Tatlı", cal: 54 },
-    { id: "Coca-Cola", name: "Kola", emoji: "🥤", cat: "mutfak", taste: "Tatlı", cal: 42 },
-    { id: "Tonic Water", name: "Tonik", emoji: "🫧", cat: "mutfak", taste: "Ekşi", cal: 34 },
-    { id: "Soda Water", name: "Maden Suyu", emoji: "💦", cat: "mutfak", taste: "Ferah", cal: 0 },
-    { id: "Egg White", name: "Yumurta Akı", emoji: "🥚", cat: "mutfak", taste: "Ferah", cal: 15 },
-    { id: "Salt", name: "Tuz", emoji: "🧂", cat: "mutfak", taste: "Sert", cal: 0 },
-    { id: "Sugar", name: "Şeker", emoji: "🍬", cat: "mutfak", taste: "Tatlı", cal: 30 },
-    { id: "Milk", name: "Süt", emoji: "🥛", cat: "mutfak", taste: "Tatlı", cal: 42 },
-    { id: "Coffee", name: "Kahve", emoji: "☕", cat: "mutfak", taste: "Sert", cal: 2 },
-    { id: "Mint", name: "Nane", emoji: "🍃", cat: "mutfak", taste: "Ferah", cal: 1 },
-    { id: "Ice", name: "Buz", emoji: "🧊", cat: "mutfak", taste: "Ferah", cal: 0 }
+    { id: "Vodka", name: "Votka", nameEn: "Vodka", emoji: "🍸", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Gin", name: "Cin", nameEn: "Gin", emoji: "🌲", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Rum", name: "Rom", nameEn: "Rum", emoji: "🏴‍☠️", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Tequila", name: "Tekila", nameEn: "Tequila", emoji: "🌵", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Triple Sec", name: "Portakal Likörü", nameEn: "Triple Sec", emoji: "🍊", cat: "alkol", taste: "Tatlı", cal: 100 },
+    { id: "Whiskey", name: "Viski", nameEn: "Whiskey", emoji: "🥃", cat: "alkol", taste: "Sert", cal: 70 },
+    { id: "Bourbon", name: "Burbon Viski", nameEn: "Bourbon", emoji: "🪵", cat: "alkol", taste: "Sert", cal: 70 },
+    { id: "Amaretto", name: "Amaretto", nameEn: "Amaretto", emoji: "🌰", cat: "alkol", taste: "Tatlı", cal: 110 },
+    { id: "Campari", name: "Campari", nameEn: "Campari", emoji: "❤️", cat: "alkol", taste: "Ekşi", cal: 80 },
+    { id: "Sweet Vermouth", name: "Tatlı Vermut", nameEn: "Sweet Vermouth", emoji: "🍷", cat: "alkol", taste: "Tatlı", cal: 45 },
+    { id: "Dry Vermouth", name: "Sek Vermut", nameEn: "Dry Vermouth", emoji: "🍸", cat: "alkol", taste: "Ekşi", cal: 45 },
+    { id: "Lime Juice", name: "Misket Limonu Suyu", nameEn: "Lime Juice", emoji: "🟢", cat: "mutfak", taste: "Ekşi", cal: 8 },
+    { id: "Lemon Juice", name: "Limon Suyu", nameEn: "Lemon Juice", emoji: "🟡", cat: "mutfak", taste: "Ekşi", cal: 7 },
+    { id: "Orange Juice", name: "Portakal Suyu", nameEn: "Orange Juice", emoji: "🍹", cat: "mutfak", taste: "Tatlı", cal: 45 },
+    { id: "Cranberry Juice", name: "Kızılcık Suyu", nameEn: "Cranberry Juice", emoji: "🍒", cat: "mutfak", taste: "Ekşi", cal: 46 },
+    { id: "Pineapple Juice", name: "Ananas Suyu", nameEn: "Pineapple Juice", emoji: "🍍", cat: "mutfak", taste: "Tatlı", cal: 50 },
+    { id: "Grenadine", name: "Nar Şurubu", nameEn: "Grenadine", emoji: "🩸", cat: "mutfak", taste: "Tatlı", cal: 54 },
+    { id: "Coca-Cola", name: "Kola", nameEn: "Cola", emoji: "🥤", cat: "mutfak", taste: "Tatlı", cal: 42 },
+    { id: "Tonic Water", name: "Tonik", nameEn: "Tonic Water", emoji: "🫧", cat: "mutfak", taste: "Ekşi", cal: 34 },
+    { id: "Soda Water", name: "Maden Suyu", nameEn: "Club Soda", emoji: "💦", cat: "mutfak", taste: "Ferah", cal: 0 },
+    { id: "Egg White", name: "Yumurta Akı", nameEn: "Egg White", emoji: "🥚", cat: "mutfak", taste: "Ferah", cal: 15 },
+    { id: "Salt", name: "Tuz", nameEn: "Salt", emoji: "🧂", cat: "mutfak", taste: "Sert", cal: 0 },
+    { id: "Sugar", name: "Şeker", nameEn: "Sugar", emoji: "🍬", cat: "mutfak", taste: "Tatlı", cal: 30 },
+    { id: "Milk", name: "Süt", nameEn: "Milk", emoji: "🥛", cat: "mutfak", taste: "Tatlı", cal: 42 },
+    { id: "Coffee", name: "Kahve", nameEn: "Coffee", emoji: "☕", cat: "mutfak", taste: "Sert", cal: 2 },
+    { id: "Mint", name: "Nane", nameEn: "Mint", emoji: "🍃", cat: "mutfak", taste: "Ferah", cal: 1 },
+    { id: "Ice", name: "Buz", nameEn: "Ice", emoji: "🧊", cat: "mutfak", taste: "Ferah", cal: 0 }
 ];
+
+let currentLang = 'tr';
+try { currentLang = localStorage.getItem('bar_cepte_lang') || 'tr'; } catch(e) {}
+let currentUnit = 'cl';
+try {
+    currentUnit = localStorage.getItem('bar_cepte_unit') || (currentLang === 'en' ? 'oz' : 'cl');
+} catch(e) {}
+
+const I18N = {
+    tr: {
+        brand: 'Bar Cepte',
+        title: 'Bar Cepte — Akıllı Bar & Kokteyl Asistanı',
+        statusReady: 'Tarifler hazır',
+        statusCount: 'Tarif Hazır',
+        statusLoading: 'Paketlenmiş veritabanı yükleniyor...',
+        timer: 'Sayaç',
+        keepScreenOn: 'Ekran Koru',
+        install: 'Yükle',
+        support: 'Destek Ol',
+        signIn: 'Giriş Yap',
+        myBar: 'Barım',
+        exploreDrinks: 'Kokteyl keşfet',
+        kitchen: 'Mutfak',
+        favorites: 'Favoriler',
+        addRecipe: '+ Tarif ekle',
+        myRecipes: 'Tariflerim',
+        shopping: 'Alışveriş',
+        backup: 'Yedekleme',
+        heroEyebrow: 'EVDEKİ BARIN, BİR ADIM ÖTEDE',
+        heroHeading: 'Bu akşam,<br><span>barmen sensin.</span>',
+        heroDesc: 'Elindeki malzemelerden yeni favorine.<br>Barını oluştur, zevkine göre keşfet ve güzel bir şeyler hazırla.',
+        heroBuildBar: 'Barımı oluştur',
+        heroSurprise: 'Bana bir tarif öner',
+        heroNote: '<span class="status-dot"></span> Alkollü & alkolsüz tarifler <span class="note-divider"></span> Tamamen senin zevkin',
+        heroCaptionSpan: 'BAR CEPTE SEÇKİSİ',
+        heroCaptionStrong: 'İyi bir akşamın<br>küçük ritüeli.',
+        discoveryEyebrow: 'KEŞİF TEZGÂHI',
+        discoveryHeading: 'Senin barında ne var?',
+        startChoosing: 'Malzemelerini seçerek başla',
+        clear: '🗑️ Temizle',
+        searchIngPlaceholder: 'Malzeme ara: cin, nane, limon…',
+        searchCocktailPlaceholder: 'Kokteyl veya malzeme yaz: \'rom nane\', \'Margarita\'…',
+        random: '🎲 Rastgele',
+        filterByProfile: 'Zevkine göre daralt',
+        all: 'Hepsi',
+        alcoholic: 'Alkollü',
+        nonAlcoholic: 'Alkolsüz',
+        allTastes: 'Tüm Tatlar',
+        tasteStrong: '🔥 Sert',
+        tasteSweet: '🍭 Tatlı',
+        tasteSour: '🍋 Ekşi',
+        tasteFresh: '🍃 Ferah',
+        vibeLabel: '🎭 Ortam:',
+        vibeAll: 'Tümü',
+        vibeSummer: '☀️ Yaz & Havuz',
+        vibeRomantic: '🕯️ Romantik Akşam',
+        vibeChill: '🍿 Dizi & Film',
+        vibeWinter: '❄️ Kış & Şömine',
+        vibeParty: '🎉 Parti & Shot',
+        readyTitle: 'Hemen Yapabileceklerin',
+        missingTitle: 'Yaklaştığın Tarifler (1-4 Eksik)',
+        missingSearchTitle: 'Arama Sonuçları (Eksik Malzemeli)',
+        missingFavTitle: 'Favorilerim (Eksik Malzemeli)',
+        emptyDiscovery: 'Yukarıdan malzeme seçerek veya kokteyl adı aratarak kokteylleri keşfedebilirsin.',
+        noSelectedIng: 'Henüz seçili malzeme yok.',
+        detailsToggle: 'Detay ▼',
+        detailsClose: 'Kapat ▲',
+        homeCost: 'Ev Maliyeti:',
+        barSavings: 'Bar Tasarrufu:',
+        portions: '👥 Porsiyon:',
+        partyPortion: '8x Parti',
+        ingredientsMeasures: 'Malzemeler & Ölçüler:',
+        timerBtn: '⏱️ Sayaç',
+        storyBtn: '📸 Story İndir',
+        servingGarnish: 'Servis/Garnitür:',
+        instructions: 'Hazırlanışı:',
+        startMix: 'Adım Adım Hazırlamaya Başla',
+        missingWarn: '⚠️ Eksik:',
+        substitute: 'Muadil:',
+        addToBar: 'Bara Ekle',
+        inCart: '🛒 Çıkar',
+        addToCart: '➕ Alışverişe Ekle',
+        shoppingInList: '🛒 Listede',
+        shoppingAdd: '🛒 Listeye Ekle',
+        smartTipTitle: 'AKILLI BAR ÖNERİSİ',
+        barOverview: 'Bar Durumu & Envanter',
+        barFillRate: 'Bar Doluluk Oranı',
+        availableCocktails: 'Yapılabilen Kokteyl',
+        ingredientsInBar: 'Barındaki Malzemeler:',
+        emptyBarBtn: '🗑️ Barı Boşalt',
+        affiliateLabel: 'ÖNERİ',
+        affiliateTitle: 'Paslanmaz Shaker & Bar Seti',
+        affiliateDesc: 'Evde kokteyl hazırlamak için gereken tüm temel ekipmanlar',
+        footerTitle: 'Bar Cepte — Akıllı Bar & Kokteyl Asistanı',
+        footerBarware: '🛒 Bar Ekipmanları',
+        footerPrivacy: '🛡️ Gizlilik & 18+ Yasal Uyarı',
+        footer18Title: '18+ YASAL BİLGİLENDİRME & SORUMLU TÜKETİM',
+        footer18Text: 'Bar Cepte içerisindeki tüm kokteyl tarifleri, rehberler ve yayınlanan reklamlar yalnızca <strong>18 yaş ve üzeri</strong> yetişkinler içindir. 18 yaşından küçüklerin alkol tüketimi ve satın alması yasalara aykırıdır. Sağlığınız için lütfen ölçülü ve sorumlu tüketiniz.',
+        emptyBarDesc: "Henüz barına malzeme eklemedin. 'Kokteyl keşfet' veya 'Mutfak' sekmesinden malzeme seçebilirsin.",
+        alcoholsLiquors: "Alkoller & Likörler",
+        kitchenMixers: "Mutfak & Mikserler",
+        emptyShoppingList: "Alışveriş listeniz boş. Eksik malzemelerden 'Alışverişe Ekle' butonuna basarak liste oluşturabilirsiniz.",
+        bought: "✓ Aldım",
+        remove: "Sil",
+        noCustomRecipes: "Henüz kendi özel tarifini eklemedin. '✨ Tarif Ekle' sekmesinden ekleyebilirsin.",
+        customTitle: "✨ Yeni Kokteyl Tarifi Ekle",
+        myRecipesTitle: "📜 Kendi Eklediğim Özel Tarifler",
+        shoppingTitle: "🛒 Eksik Malzeme Alışveriş Listesi",
+        clearAll: "Hepsini Sil",
+        syncTitle: "⚙️ Veri Yedekleme & Aktarım",
+        syncDesc: "Favori kokteyllerinizi ve kendi tariflerinizi başka bir cihaza taşımak için kodu kopyalayın veya yapıştırın.",
+        copyBackup: "Yedekleme Kodunu Kopyala",
+        pasteBackupPlaceholder: "Başka cihazdan aldığınız yedekleme kodunu buraya yapıştırın...",
+        restoreBackup: "Yedeği Geri Yükle",
+        updateDb: "Kokteyl Veritabanını Güncelle",
+        checkUpdates: "Yeni Sürüm Kontrolü Yap"
+    },
+    en: {
+        brand: 'Pocket Bar',
+        title: 'Pocket Bar — Smart Home Bar & Cocktail Assistant',
+        statusReady: 'Recipes ready',
+        statusCount: 'Recipes Ready',
+        statusLoading: 'Loading cocktail database...',
+        timer: 'Timer',
+        keepScreenOn: 'Keep Awake',
+        install: 'Install',
+        support: 'Support',
+        signIn: 'Sign In',
+        myBar: 'My Bar',
+        exploreDrinks: 'Explore Drinks',
+        kitchen: 'Kitchen',
+        favorites: 'Favorites',
+        addRecipe: '+ Add Recipe',
+        myRecipes: 'My Recipes',
+        shopping: 'Shopping List',
+        backup: 'Backup & Sync',
+        heroEyebrow: 'YOUR HOME BAR, ONE STEP AWAY',
+        heroHeading: 'Tonight,<br><span>you\'re the bartender.</span>',
+        heroDesc: 'From ingredients on hand to your new favorite drink.<br>Build your bar, explore your taste, and mix something great.',
+        heroBuildBar: 'Build My Bar',
+        heroSurprise: 'Surprise Me',
+        heroNote: '<span class="status-dot"></span> Alcoholic & mocktail recipes <span class="note-divider"></span> Crafted for your taste',
+        heroCaptionSpan: 'POCKET BAR SELECTION',
+        heroCaptionStrong: 'A little ritual<br>for a great evening.',
+        discoveryEyebrow: 'DISCOVERY COUNTER',
+        discoveryHeading: 'What\'s in your bar?',
+        startChoosing: 'Start by choosing your ingredients',
+        clear: '🗑️ Clear',
+        searchIngPlaceholder: 'Search ingredients: gin, mint, lime…',
+        searchCocktailPlaceholder: 'Search cocktail or ingredient: \'rum mint\', \'Margarita\'…',
+        random: '🎲 Random',
+        filterByProfile: 'Filter by taste profile',
+        all: 'All',
+        alcoholic: 'Alcoholic',
+        nonAlcoholic: 'Mocktail',
+        allTastes: 'All Tastes',
+        tasteStrong: '🔥 Strong',
+        tasteSweet: '🍭 Sweet',
+        tasteSour: '🍋 Sour',
+        tasteFresh: '🍃 Fresh',
+        vibeLabel: '🎭 Vibe:',
+        vibeAll: 'All',
+        vibeSummer: '☀️ Summer & Pool',
+        vibeRomantic: '🕯️ Romantic Night',
+        vibeChill: '🍿 Movie & Chill',
+        vibeWinter: '❄️ Cozy Winter',
+        vibeParty: '🎉 Party & Shots',
+        readyTitle: 'Ready to Make Right Now',
+        missingTitle: 'Almost Ready (Missing 1-4)',
+        missingSearchTitle: 'Search Results (Missing Ingredients)',
+        missingFavTitle: 'Favorites (Missing Ingredients)',
+        emptyDiscovery: 'Select ingredients above or search by cocktail name to discover drinks.',
+        noSelectedIng: 'No ingredients selected yet.',
+        detailsToggle: 'Details ▼',
+        detailsClose: 'Close ▲',
+        homeCost: 'Home Cost:',
+        barSavings: 'Bar Savings:',
+        portions: '👥 Servings:',
+        partyPortion: '8x Party',
+        ingredientsMeasures: 'Ingredients & Measures:',
+        timerBtn: '⏱️ Timer',
+        storyBtn: '📸 Story Card',
+        servingGarnish: 'Garnish / Glass:',
+        instructions: 'Instructions:',
+        startMix: 'Start Step-by-Step Mix',
+        missingWarn: '⚠️ Missing:',
+        substitute: 'Substitute:',
+        addToBar: 'Add to Bar',
+        inCart: '🛒 In Cart',
+        addToCart: '➕ Add to Cart',
+        shoppingInList: '🛒 In List',
+        shoppingAdd: '🛒 Add to List',
+        smartTipTitle: 'SMART BAR TIP',
+        barOverview: 'Bar Inventory & Overview',
+        barFillRate: 'Bar Fill Rate',
+        availableCocktails: 'Available Cocktails',
+        ingredientsInBar: 'Ingredients in Your Bar:',
+        emptyBarBtn: '🗑️ Empty Bar',
+        affiliateLabel: 'STAFF PICK',
+        affiliateTitle: 'Stainless Steel Cocktail Shaker Set',
+        affiliateDesc: 'Essential bar tools for crafting premium cocktails at home',
+        affiliateBtn: 'View',
+        footerTitle: 'Pocket Bar — Smart Home Bar & Cocktail Assistant',
+        footerBarware: '🛒 Bar Tools & Equipment',
+        footerPrivacy: '🛡️ Privacy & 21+ Notice',
+        footer18Title: '21+ LEGAL NOTICE & RESPONSIBLE DRINKING',
+        footer18Text: 'All cocktail recipes and contents in Pocket Bar are strictly intended for adults of legal drinking age (21+ in the US). Please enjoy responsibly and in moderation.',
+        emptyBarDesc: "No ingredients in your bar yet. Select ingredients from 'Explore Drinks' or 'Kitchen' tab.",
+        alcoholsLiquors: "Spirits & Liqueurs",
+        kitchenMixers: "Kitchen & Mixers",
+        emptyShoppingList: "Your shopping list is empty. Add missing items from recipe cards.",
+        bought: "✓ Got It",
+        remove: "Delete",
+        noCustomRecipes: "No custom recipes added yet. Tap '+ Add Recipe' to create one.",
+        customTitle: "✨ Add Custom Cocktail Recipe",
+        myRecipesTitle: "📜 My Custom Recipes",
+        shoppingTitle: "🛒 Shopping List",
+        clearAll: "Clear All",
+        syncTitle: "⚙️ Backup & Device Sync",
+        syncDesc: "Copy or paste your backup code to transfer your bar, favorites, and recipes between devices.",
+        copyBackup: "Copy Backup Code",
+        pasteBackupPlaceholder: "Paste your backup code here...",
+        restoreBackup: "Restore Backup",
+        updateDb: "Update Cocktail Database",
+        checkUpdates: "Check for Updates"
+    }
+};
 
 let popularIngredients = [...baseIngredients];
 let selectedIngredients = BarSecurity.readStored('selectedIngredients', BarSecurity.stringList);
@@ -421,7 +648,14 @@ const ingredientTranslations = {
 
 function translateIngredientName(ingName) {
     if (!ingName) return '';
-    const lower = ingName.trim().toLowerCase();
+    const trimmed = ingName.trim();
+    if (currentLang === 'en') {
+        const base = baseIngredients.find(b => b.id.toLowerCase() === trimmed.toLowerCase());
+        if (base && base.nameEn) return base.nameEn;
+        if (base) return base.id;
+        return trimmed;
+    }
+    const lower = trimmed.toLowerCase();
     if (ingredientTranslations[lower]) return ingredientTranslations[lower];
     const base = baseIngredients.find(b => b.id.toLowerCase() === lower);
     if (base) return base.name;
@@ -448,14 +682,58 @@ function convertOzToCl(text) {
     }).replace(/\b(oz|ounces?)\b/gi, 'cl');
 }
 
-function translateMeasureText(measureStr) {
-    if (!measureStr) return '';
-    let res = convertOzToCl(measureStr);
-    Object.keys(measureTranslations).sort((a, b) => b.length - a.length).forEach(key => {
-        const regex = new RegExp(`\\b${key}\\b`, 'gi');
-        res = res.replace(regex, measureTranslations[key]);
+function convertClToOz(text) {
+    if (!text) return text;
+    let res = text.replace(/(\d+(\.\d+)?)\s*cl\b/gi, (match, numStr) => {
+        const val = parseFloat(numStr);
+        const ozVal = Math.round((val / 3) * 10) / 10;
+        const finalNum = ozVal % 1 === 0 ? ozVal.toFixed(0) : ozVal.toFixed(1);
+        return `${finalNum} oz`;
+    });
+    res = res.replace(/(\d+(\.\d+)?)\s*ml\b/gi, (match, numStr) => {
+        const val = parseFloat(numStr);
+        const ozVal = Math.round((val / 30) * 10) / 10;
+        const finalNum = ozVal % 1 === 0 ? ozVal.toFixed(0) : ozVal.toFixed(1);
+        return `${finalNum} oz`;
     });
     return res;
+}
+
+function translateMeasureText(measureStr) {
+    if (!measureStr) return '';
+    let res = measureStr;
+    if (currentUnit === 'oz') {
+        res = convertClToOz(res);
+        if (currentLang === 'tr') {
+            Object.keys(measureTranslations).sort((a, b) => b.length - a.length).forEach(key => {
+                const regex = new RegExp(`\\b${key}\\b`, 'gi');
+                res = res.replace(regex, measureTranslations[key]);
+            });
+        }
+    } else {
+        res = convertOzToCl(res);
+        if (currentLang === 'tr') {
+            Object.keys(measureTranslations).sort((a, b) => b.length - a.length).forEach(key => {
+                const regex = new RegExp(`\\b${key}\\b`, 'gi');
+                res = res.replace(regex, measureTranslations[key]);
+            });
+        }
+    }
+    return res;
+}
+
+function getTasteLabel(taste) {
+    if (currentLang === 'en') {
+        switch (taste) {
+            case 'Sert': return 'Strong';
+            case 'Tatlı': return 'Sweet';
+            case 'Ekşi': return 'Sour';
+            case 'Ferah': return 'Fresh';
+            case 'Dengeli': return 'Balanced';
+            default: return taste || 'Classic';
+        }
+    }
+    return taste || 'Dengeli';
 }
 
 // IndexedDB Başlatma
@@ -619,17 +897,29 @@ function changePortion(cardId, multiplier, btnEl) {
 }
 
 function getTechniqueBadge(instructions) {
-    if (!instructions) return "🥄 Karıştır";
+    if (!instructions) return currentLang === 'en' ? "🥄 Stir Gently" : "🥄 Karıştır";
     const inst = instructions.toLowerCase();
-    if (/shake|çalkala/i.test(inst)) return "🧊 Shaker ile Çalkala";
-    if (/blend|blender/i.test(inst)) return "🌪️ Blender ile Çek";
-    if (/layer|float|katman/i.test(inst)) return "🍷 Katmanlayarak Dök";
-    if (/stir|karıştır/i.test(inst)) return "🥄 Kaşıkla Karıştır";
-    return "🍸 Bardağa Direkt Dök";
+    if (/shake|çalkala/i.test(inst)) return currentLang === 'en' ? "🧊 Shake with Ice" : "🧊 Shaker ile Çalkala";
+    if (/blend|blender/i.test(inst)) return currentLang === 'en' ? "🌪️ Blend with Ice" : "🌪️ Blender ile Çek";
+    if (/layer|float|katman/i.test(inst)) return currentLang === 'en' ? "🍷 Layer Gently" : "🍷 Katmanlayarak Dök";
+    if (/stir|karıştır/i.test(inst)) return currentLang === 'en' ? "🥄 Stir Well" : "🥄 Kaşıkla Karıştır";
+    return currentLang === 'en' ? "🍸 Build in Glass" : "🍸 Bardağa Direkt Dök";
 }
 
 function getGlassBadge(glassStr) {
-    if (!glassStr) return "🍸 Kokteyl Kadehi";
+    if (!glassStr) return currentLang === 'en' ? "🍸 Cocktail Glass" : "🍸 Kokteyl Kadehi";
+    if (currentLang === 'en') {
+        const lower = glassStr.trim().toLowerCase();
+        if (lower.includes('martini') || lower.includes('cocktail glass')) return `🍸 ${escapeHTML(glassStr)}`;
+        if (lower.includes('highball') || lower.includes('collins')) return `🥤 ${escapeHTML(glassStr)}`;
+        if (lower.includes('old-fashioned') || lower.includes('rocks') || lower.includes('whiskey')) return `🥃 ${escapeHTML(glassStr)}`;
+        if (lower.includes('shot')) return `🥃 ${escapeHTML(glassStr)}`;
+        if (lower.includes('champagne') || lower.includes('flute')) return `🥂 ${escapeHTML(glassStr)}`;
+        if (lower.includes('copper') || lower.includes('mug')) return `🪣 ${escapeHTML(glassStr)}`;
+        if (lower.includes('wine')) return `🍷 ${escapeHTML(glassStr)}`;
+        if (lower.includes('beer') || lower.includes('pint')) return `🍺 ${escapeHTML(glassStr)}`;
+        return `🍸 ${escapeHTML(glassStr)}`;
+    }
     const lower = glassStr.trim().toLowerCase();
     return glassTranslations[lower] || `🍸 ${escapeHTML(glassStr)}`;
 }
@@ -936,6 +1226,16 @@ function getAlcoholGroup(ing) {
 }
 
 function getAlcoholGroupLabel(groupId) {
+    if (currentLang === 'en') {
+        switch (groupId) {
+            case 'votka-cin': return 'Vodka & Gin';
+            case 'viski-konyak': return 'Whiskey & Cognac';
+            case 'tekila-rom': return 'Tequila & Rum';
+            case 'likor-aperitif': return 'Liqueurs & Aperitifs';
+            case 'sarap-bira': return 'Wine & Vermouth';
+            default: return 'Spirits';
+        }
+    }
     switch (groupId) {
         case 'votka-cin': return 'Votka & Cin';
         case 'viski-konyak': return 'Viski & Konyak';
@@ -957,7 +1257,10 @@ function matchesAlcoholSubCategory(ing) {
 function updateFavoritesFilterUI() {
     const favBtn = document.getElementById('btn-fav-filter');
     const favText = document.getElementById('fav-filter-text');
-    if (favText) favText.innerText = `Favorilerim (${favoriteCocktails.length})`;
+    if (favText) {
+        const label = currentLang === 'en' ? 'Favorites' : 'Favorilerim';
+        favText.innerText = `${label} (${favoriteCocktails.length})`;
+    }
     
     if (favBtn) {
         if (onlyFavoritesFilter) {
@@ -989,7 +1292,7 @@ function renderDashboard() {
     
     const readyCountEl = document.getElementById('ready-count');
     const countReady = document.getElementById('count-ready') ? document.getElementById('count-ready').innerText : "0";
-    if(readyCountEl) readyCountEl.innerText = `${countReady} Tarif`;
+    if(readyCountEl) readyCountEl.innerText = `${countReady} ${currentLang === 'en' ? 'Recipes' : 'Tarif'}`;
 
     const dashClearBtn = document.getElementById('btn-dashboard-clear-bar');
     if (dashClearBtn) {
@@ -999,7 +1302,7 @@ function renderDashboard() {
     const topContainer = document.getElementById('top-ingredients');
     if(topContainer) {
         if (selectedIngredients.length === 0) {
-            topContainer.innerHTML = `<span class="text-slate-500 text-xs">Henüz barına malzeme eklemedin. 'Kokteyl keşfet' veya 'Mutfak' sekmesinden malzeme seçebilirsin.</span>`;
+            topContainer.innerHTML = `<span class="text-slate-500 text-xs">${I18N[currentLang].emptyBarDesc}</span>`;
         } else {
             const selectedItems = selectedIngredients.map(id => popularIngredients.find(pi => pi.id === id) || { id, name: id, emoji: '🥃', cat: 'alkol' });
             const selectedAlcohols = selectedItems.filter(i => i.cat === 'alkol');
@@ -1010,16 +1313,17 @@ function renderDashboard() {
                 html += `
                     <div class="w-full mb-3">
                         <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                            <span>🍸</span> Alkoller & Likörler (${selectedAlcohols.length})
+                            <span>🍸</span> ${I18N[currentLang].alcoholsLiquors} (${selectedAlcohols.length})
                         </div>
                         <div class="flex flex-wrap gap-2 text-xs">
                             ${selectedAlcohols.map(item => {
                                 const encodedId = encodeURIComponent(item.id);
                                 const grpLabel = getAlcoholGroupLabel(getAlcoholGroup(item));
+                                const titleLabel = currentLang === 'en' ? 'Remove from Bar' : 'Barından Çıkar';
                                 return `
                                     <span class="bg-slate-900/90 text-amber-300 border border-amber-500/20 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
-                                        <span>${item.emoji || '🥃'} ${escapeHTML(item.name)} <span class="text-[10px] text-amber-400/70 font-semibold">(${escapeHTML(grpLabel)})</span></span>
-                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="Barından Çıkar">✕</button>
+                                        <span>${item.emoji || '🥃'} ${escapeHTML(translateIngredientName(item.name || item.id))} <span class="text-[10px] text-amber-400/70 font-semibold">(${escapeHTML(grpLabel)})</span></span>
+                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="${titleLabel}">✕</button>
                                     </span>
                                 `;
                             }).join('')}
@@ -1031,15 +1335,16 @@ function renderDashboard() {
                 html += `
                     <div class="w-full">
                         <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                            <span>🍊</span> Mutfak & Mikserler (${selectedKitchen.length})
+                            <span>🍊</span> ${I18N[currentLang].kitchenMixers} (${selectedKitchen.length})
                         </div>
                         <div class="flex flex-wrap gap-2 text-xs">
                             ${selectedKitchen.map(item => {
                                 const encodedId = encodeURIComponent(item.id);
+                                const titleLabel = currentLang === 'en' ? 'Remove from Bar' : 'Barından Çıkar';
                                 return `
                                     <span class="bg-slate-900/90 text-emerald-300 border border-emerald-500/20 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
-                                        <span>${item.emoji || '🍊'} ${escapeHTML(item.name)}</span>
-                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-emerald-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="Barından Çıkar">✕</button>
+                                        <span>${item.emoji || '🍊'} ${escapeHTML(translateIngredientName(item.name || item.id))}</span>
+                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-emerald-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="${titleLabel}">✕</button>
                                     </span>
                                 `;
                             }).join('')}
@@ -1129,20 +1434,30 @@ function renderIngredients() {
     if (!container) return;
     container.innerHTML = '';
     const summary = document.getElementById('selection-summary');
-    if (summary) summary.textContent = selectedIngredients.length
-        ? `${selectedIngredients.length} malzeme barına eklendi`
-        : 'Malzemelerini seçerek başla';
+    if (summary) {
+        if (selectedIngredients.length) {
+            summary.textContent = currentLang === 'en' 
+                ? `${selectedIngredients.length} ingredients in your bar`
+                : `${selectedIngredients.length} malzeme barına eklendi`;
+        } else {
+            summary.textContent = currentLang === 'en'
+                ? 'Start by choosing your ingredients'
+                : 'Malzemelerini seçerek başla';
+        }
+    }
 
     // Üst başlık temizleme butonu
     const headerClearBtn = document.getElementById('btn-clear-selection-header');
     if (headerClearBtn) {
         headerClearBtn.classList.toggle('hidden', selectedIngredients.length === 0);
+        headerClearBtn.textContent = currentLang === 'en' ? '🗑️ Clear' : '🗑️ Temizle';
     }
 
     // Arama yanındaki temizle butonu (Dinamik adet göstergesi)
     const searchClearBtn = document.querySelector('[data-ui="ui-13"]');
     if (searchClearBtn) {
-        searchClearBtn.textContent = selectedIngredients.length ? `🗑️ Temizle (${selectedIngredients.length})` : '🗑️ Temizle';
+        const clearText = currentLang === 'en' ? '🗑️ Clear' : '🗑️ Temizle';
+        searchClearBtn.textContent = selectedIngredients.length ? `${clearText} (${selectedIngredients.length})` : clearText;
     }
 
     // Seçili Malzemeler Paneli (Tray)
@@ -1153,16 +1468,26 @@ function renderIngredients() {
         if (selectedIngredients.length > 0) {
             tray.classList.remove('hidden');
             badgeCount.textContent = selectedIngredients.length;
+            const trayLabel = tray.querySelector('.text-amber-400.font-bold');
+            if (trayLabel) {
+                trayLabel.innerHTML = `<span>🍸</span> ${currentLang === 'en' ? 'Ingredients in Your Bar' : 'Barındaki Malzemeler'} (<span id="selected-badge-count">${selectedIngredients.length}</span>)`;
+            }
+            const clearAllBtn = tray.querySelector('[data-action="clear-all-ingredients"]');
+            if (clearAllBtn) {
+                clearAllBtn.innerHTML = `<span>🗑️</span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
+            }
             chipsContainer.innerHTML = selectedIngredients.map(id => {
                 const item = popularIngredients.find(pi => pi.id === id);
                 const emoji = item ? item.emoji : '🥃';
-                const name = item ? item.name : id;
+                const name = item 
+                    ? (currentLang === 'en' ? (item.nameEn || item.id) : item.name)
+                    : (currentLang === 'en' ? id : translateIngredientName(id));
                 const encodedId = encodeURIComponent(id);
                 return `
                     <span class="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-200 border border-amber-500/35 px-2.5 py-1 rounded-xl text-xs font-semibold shadow-sm transition-all hover:border-amber-400">
                         <span>${emoji}</span>
                         <span>${escapeHTML(name)}</span>
-                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/80 hover:text-rose-400 font-bold ml-1 text-xs w-4 h-4 flex items-center justify-center rounded-full hover:bg-white/10" title="Barından Çıkar">✕</button>
+                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/80 hover:text-rose-400 font-bold ml-1 text-xs w-4 h-4 flex items-center justify-center rounded-full hover:bg-white/10" title="${currentLang === 'en' ? 'Remove from Bar' : 'Barından Çıkar'}">✕</button>
                     </span>
                 `;
             }).join('');
@@ -1193,14 +1518,15 @@ function renderIngredients() {
                 const bOrder = groupOrder.indexOf(getAlcoholGroup(b));
                 if (aOrder !== bOrder) return aOrder - bOrder;
             }
-            return a.name.localeCompare(b.name, 'tr');
+            return a.name.localeCompare(b.name, currentLang === 'en' ? 'en' : 'tr');
         });
     
     filtered.forEach(ing => {
         const isSelected = selectedIngredients.includes(ing.id);
+        const displayName = currentLang === 'en' ? (ing.nameEn || ing.id) : ing.name;
         const card = document.createElement('div');
         card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', ing.name);
+        card.setAttribute('aria-label', displayName);
         card.setAttribute('aria-pressed', String(isSelected));
         card.tabIndex = 0;
         card.className = isSelected 
@@ -1214,11 +1540,11 @@ function renderIngredients() {
         card.innerHTML = `
             <div class="h-14 sm:h-16 w-full flex items-center justify-center mb-1 shrink-0">
                 <img src="https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(ing.id)}-Small.png" 
-                     alt="${escapeHTML(ing.name)}" 
+                     alt="${escapeHTML(displayName)}" 
                      class="max-h-full max-w-full object-contain drop-shadow-md"
                      loading="lazy" data-image-fallback>
             </div>
-            <span class="ingredient-name text-[11px] leading-tight font-semibold text-center w-full px-0.5 break-words line-clamp-2">${escapeHTML(ing.name)}</span>
+            <span class="ingredient-name text-[11px] leading-tight font-semibold text-center w-full px-0.5 break-words line-clamp-2">${escapeHTML(displayName)}</span>
             ${groupTag}
         `;
         
@@ -1487,6 +1813,11 @@ function updateSmartAdvice(missingMatches) {
         const inShop = shoppingList.includes(bestIng);
         const safeBestIng = escapeHTML(bestIng);
 
+        const tipTitle = currentLang === 'en' ? 'SMART BAR TIP' : 'AKILLI BAR ÖNERİSİ';
+        const tipBody = currentLang === 'en'
+            ? `Add just <b class="text-amber-400 font-bold">${safeBestIng}</b> to your bar to unlock <b class="text-emerald-400 font-bold">+${maxVotes} new cocktails</b> right away!`
+            : `Barına sadece <b class="text-amber-400 font-bold">${safeBestIng}</b> eklersen hemen <b class="text-emerald-400 font-bold">+${maxVotes} yeni kokteyl</b> yapabileceksin!`;
+
         const html = `
             <div class="acrylic-card border-amber-500/30 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl min-w-0 overflow-hidden">
                 <div class="flex items-center gap-3.5 min-w-0">
@@ -1494,18 +1825,16 @@ function updateSmartAdvice(missingMatches) {
                         💡
                     </div>
                     <div class="min-w-0">
-                        <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">AKILLI BAR ÖNERİSİ</p>
-                        <p class="text-xs text-slate-200 mt-0.5 break-words">
-                            Barına sadece <b class="text-amber-400 font-bold">${safeBestIng}</b> eklersen hemen <b class="text-emerald-400 font-bold">+${maxVotes} yeni kokteyl</b> yapabileceksin!
-                        </p>
+                        <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">${tipTitle}</p>
+                        <p class="text-xs text-slate-200 mt-0.5 break-words">${tipBody}</p>
                     </div>
                 </div>
                 <div class="flex gap-2 shrink-0 w-full sm:w-auto justify-end pt-1 sm:pt-0">
                     <button data-action="shopping" data-value="${escapeHTML(encodedIng)}" class="pill-btn text-xs bg-white/5 text-slate-300 border border-white/10 px-3 py-1.5 rounded-xl font-medium hover:border-amber-500/40">
-                        ${inShop ? '🛒 Listede' : '🛒 Listeye Ekle'}
+                        ${inShop ? (currentLang === 'en' ? '🛒 In List' : '🛒 Listede') : (currentLang === 'en' ? '🛒 Add to List' : '🛒 Listeye Ekle')}
                     </button>
                     <button data-action="ingredient" data-value="${escapeHTML(encodedIng)}" class="pill-btn text-xs bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl hover:bg-amber-400">
-                        + Bara Ekle
+                        ${currentLang === 'en' ? '+ Add to Bar' : '+ Bara Ekle'}
                     </button>
                 </div>
             </div>
@@ -1515,7 +1844,7 @@ function updateSmartAdvice(missingMatches) {
         banner.classList.remove('hidden');
 
         if (adviceBox && adviceText) {
-            adviceText.innerHTML = `Barına sadece <b class="text-amber-400">${safeBestIng}</b> alırsan, anında <b class="text-emerald-400">+${maxVotes} yeni kokteyl</b> hazırlayabilirsin!`;
+            adviceText.innerHTML = tipBody;
             adviceBox.classList.remove('hidden');
         }
     } else {
@@ -1641,39 +1970,68 @@ function openMixMode(drinkId) {
     }
 
     const isShaken = /shak|çalkala/i.test(d.strInstructions || '') || /shak|çalkala/i.test(d.strInstructionsTR || '');
-    const glass = d.strGlass || 'Kokteyl bardağı';
+    const glass = d.strGlass || (currentLang === 'en' ? 'Cocktail glass' : 'Kokteyl bardağı');
 
-    mixSteps = [
-        {
-            heading: '1. Hazırlık & Kadeh',
-            body: `<p>• <b>Kadeh:</b> ${escapeHTML(glass)} hazırla ve içerisine birkaç küp buz ekleyerek soğut.</p><p class="mt-2">• <b>Ekipman:</b> ${isShaken ? 'Shaker (çalkalayıcı) ve süzgeç' : 'Karıştırma bardağı ve bar kaşığı'} hazırla.</p>`,
-            hasTimer: false
-        },
-        {
-            heading: '2. Malzemeleri Ekle',
-            body: `<p class="font-semibold text-amber-300 mb-2">Ölçülü Malzeme Listesi:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span>🥃</span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
-            hasTimer: false
-        },
-        {
-            heading: isShaken ? '3. Çalkalama (Shaker)' : '3. Karıştırma (Stir)',
-            body: isShaken
-                ? `<p>Shaker'ın içine bol buz doldur, kapağını sıkıca kapat ve buzlar kırağı tutana kadar kuvvetlice salla.</p>`
-                : `<p>Buz dolu karıştırma bardağında bar kaşığı ile kokteyli nazikçe ve ritmik şekilde döndürerek soğut.</p>`,
-            hasTimer: true,
-            timerSeconds: isShaken ? 15 : 30,
-            timerLabel: isShaken ? 'Buzla kuvvetlice çalkala' : 'Bar kaşığıyla nazikçe karıştır'
-        },
-        {
-            heading: '4. Süzme & Servis',
-            body: `<p>• Soğuyan kokteyli süzerek ${escapeHTML(glass)} içine aktar.</p><p class="mt-2">• ${d.strServing ? `<b>Garnitür:</b> ${escapeHTML(d.strServing)}` : 'Garnitürünü ekle ve taze servis et.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm">🎉 Kokteylin hazır, afiyet olsun!</div>`,
-            hasTimer: false
-        }
-    ];
+    if (currentLang === 'en') {
+        mixSteps = [
+            {
+                heading: '1. Glassware & Prep',
+                body: `<p>• <b>Glass:</b> Prepare ${escapeHTML(glass)} and chill with ice cubes.</p><p class="mt-2">• <b>Barware:</b> Get ${isShaken ? 'cocktail shaker and strainer' : 'mixing glass and bar spoon'} ready.</p>`,
+                hasTimer: false
+            },
+            {
+                heading: '2. Measure & Add Ingredients',
+                body: `<p class="font-semibold text-amber-300 mb-2">Measured Ingredients:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span>🥃</span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
+                hasTimer: false
+            },
+            {
+                heading: isShaken ? '3. Shake (Shaker)' : '3. Stir with Ice',
+                body: isShaken
+                    ? `<p>Fill shaker generously with ice, seal tightly, and shake vigorously until frosty on the outside.</p>`
+                    : `<p>Stir gently and rhythmically with a bar spoon over ice to chill and dilute properly.</p>`,
+                hasTimer: true,
+                timerSeconds: isShaken ? 15 : 30,
+                timerLabel: isShaken ? 'Shake vigorously with ice' : 'Stir gently with bar spoon'
+            },
+            {
+                heading: '4. Strain & Serve',
+                body: `<p>• Strain the chilled cocktail into the ${escapeHTML(glass)}.</p><p class="mt-2">• ${d.strServing ? `<b>Garnish:</b> ${escapeHTML(d.strServing)}` : 'Add garnish and serve fresh.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm">🎉 Your cocktail is ready, cheers!</div>`,
+                hasTimer: false
+            }
+        ];
+    } else {
+        mixSteps = [
+            {
+                heading: '1. Hazırlık & Kadeh',
+                body: `<p>• <b>Kadeh:</b> ${escapeHTML(glass)} hazırla ve içerisine birkaç küp buz ekleyerek soğut.</p><p class="mt-2">• <b>Ekipman:</b> ${isShaken ? 'Shaker (çalkalayıcı) ve süzgeç' : 'Karıştırma bardağı ve bar kaşığı'} hazırla.</p>`,
+                hasTimer: false
+            },
+            {
+                heading: '2. Malzemeleri Ekle',
+                body: `<p class="font-semibold text-amber-300 mb-2">Ölçülü Malzeme Listesi:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span>🥃</span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
+                hasTimer: false
+            },
+            {
+                heading: isShaken ? '3. Çalkalama (Shaker)' : '3. Karıştırma (Stir)',
+                body: isShaken
+                    ? `<p>Shaker'ın içine bol buz doldur, kapağını sıkıca kapat ve buzlar kırağı tutana kadar kuvvetlice salla.</p>`
+                    : `<p>Buz dolu karıştırma bardağında bar kaşığı ile kokteyli nazikçe ve ritmik şekilde döndürerek soğut.</p>`,
+                hasTimer: true,
+                timerSeconds: isShaken ? 15 : 30,
+                timerLabel: isShaken ? 'Buzla kuvvetlice çalkala' : 'Bar kaşığıyla nazikçe karıştır'
+            },
+            {
+                heading: '4. Süzme & Servis',
+                body: `<p>• Soğuyan kokteyli süzerek ${escapeHTML(glass)} içine aktar.</p><p class="mt-2">• ${d.strServing ? `<b>Garnitür:</b> ${escapeHTML(d.strServing)}` : 'Garnitürünü ekle ve taze servis et.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm">🎉 Kokteylin hazır, afiyet olsun!</div>`,
+                hasTimer: false
+            }
+        ];
+    }
 
     const titleEl = document.getElementById('mix-modal-title');
     const subtitleEl = document.getElementById('mix-modal-subtitle');
     if (titleEl) titleEl.textContent = d.strDrink;
-    if (subtitleEl) subtitleEl.textContent = `${glass} • ${d.computedTaste || 'Klasik'}`;
+    if (subtitleEl) subtitleEl.textContent = `${glass} • ${getTasteLabel(d.computedTaste)}`;
     renderMixStep();
 
     const modal = document.getElementById('mix-mode-modal');
@@ -1692,9 +2050,19 @@ function renderMixStep() {
     const body = document.getElementById('mix-step-body');
     const dotsContainer = document.getElementById('mix-step-dots');
 
-    if (counter) counter.textContent = `Adım ${currentMixStep + 1} / ${mixSteps.length}`;
+    if (counter) counter.textContent = currentLang === 'en' ? `Step ${currentMixStep + 1} / ${mixSteps.length}` : `Adım ${currentMixStep + 1} / ${mixSteps.length}`;
     if (heading) heading.textContent = step.heading;
     if (body) body.innerHTML = step.body;
+
+    const prevBtn = document.getElementById('btn-mix-prev');
+    const nextBtn = document.getElementById('btn-mix-next');
+    if (prevBtn) prevBtn.textContent = currentLang === 'en' ? '← Previous' : '← Önceki';
+    if (nextBtn) {
+        const isLast = currentMixStep === mixSteps.length - 1;
+        nextBtn.innerHTML = isLast 
+            ? `<span>${currentLang === 'en' ? 'Finish ✓' : 'Tamamla ✓'}</span>`
+            : `<span>${currentLang === 'en' ? 'Next Step →' : 'Sonraki Adım →'}</span>`;
+    }
 
     if (dotsContainer) {
         dotsContainer.innerHTML = mixSteps.map((_, i) => `<span class="w-2 h-2 rounded-full ${i === currentMixStep ? 'bg-amber-400' : 'bg-white/20'}"></span>`).join('');
@@ -1711,7 +2079,7 @@ function renderMixStep() {
             const runBtn = document.getElementById('btn-mix-timer-run');
             if (display) display.textContent = `00:${String(mixTimerRemaining).padStart(2, '0')}`;
             if (label) label.textContent = step.timerLabel;
-            if (runBtn) runBtn.textContent = 'Başlat';
+            if (runBtn) runBtn.textContent = currentLang === 'en' ? 'Start' : 'Başlat';
             clearInterval(mixTimerInterval);
             mixTimerInterval = null;
         } else {
@@ -1795,7 +2163,7 @@ function downloadCocktailStoryCard(drinkId) {
     if (!d) return;
 
     triggerHaptic('medium');
-    showToast('📸 Hikaye kartı hazırlanıyor...', 'info');
+    showToast(currentLang === 'en' ? '📸 Preparing story card...' : '📸 Hikaye kartı hazırlanıyor...', 'info');
 
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
@@ -1838,11 +2206,11 @@ function downloadCocktailStoryCard(drinkId) {
     ctx.fillStyle = '#d5b47b';
     ctx.font = 'bold 26px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🍸   B A R   C E P T E', 540, 140);
+    ctx.fillText(currentLang === 'en' ? '🍸   P O C K E T   B A R' : '🍸   B A R   C E P T E', 540, 140);
 
     ctx.fillStyle = '#8a9b93';
     ctx.font = '500 18px sans-serif';
-    ctx.fillText('THE HOME BAR COLLECTION • SEÇKİ #01', 540, 180);
+    ctx.fillText(currentLang === 'en' ? 'THE HOME BAR COLLECTION • ISSUE #01' : 'THE HOME BAR COLLECTION • SEÇKİ #01', 540, 180);
 
     // Çizgi
     ctx.strokeStyle = 'rgba(213, 180, 123, 0.4)';
@@ -1854,14 +2222,16 @@ function downloadCocktailStoryCard(drinkId) {
     // Kokteyl Adı
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 70px serif';
-    const drinkName = d.strDrink || 'Kokteyl';
+    const drinkName = d.strDrink || (currentLang === 'en' ? 'Cocktail' : 'Kokteyl');
     ctx.fillText(drinkName, 540, 320);
 
     // Rozetler
-    const glass = d.strGlass || 'Kokteyl Bardağı';
-    const taste = d.computedTaste || 'Klasik';
-    const abv = d.computedABV ? d.computedABV.label : 'Özel';
-    const cost = d.computedCost ? `~${d.computedCost.cost} ₺` : '~45 ₺';
+    const glass = currentLang === 'en' ? (d.strGlass || 'Cocktail Glass') : (glassTranslations[(d.strGlass || '').toLowerCase()] || d.strGlass || 'Kokteyl Bardağı');
+    const taste = getTasteLabel(d.computedTaste || 'Klasik');
+    const abv = d.computedABV ? (currentLang === 'en' ? d.computedABV.label.replace('Sert', 'Strong').replace('Hafif', 'Light').replace('Orta', 'Medium') : d.computedABV.label) : (currentLang === 'en' ? 'Custom' : 'Özel');
+    const cost = currentLang === 'en' 
+        ? (d.computedCostUsd ? `~$${d.computedCostUsd.cost}` : '~$1.85') 
+        : (d.computedCost ? `~${d.computedCost.cost} ₺` : '~45 ₺');
 
     ctx.font = '600 24px sans-serif';
     ctx.fillStyle = '#d5b47b';
@@ -1879,7 +2249,7 @@ function downloadCocktailStoryCard(drinkId) {
     ctx.fillStyle = '#d5b47b';
     ctx.font = 'bold 28px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('MALZEMELER & ÖLÇÜLER', 150, 500);
+    ctx.fillText(currentLang === 'en' ? 'INGREDIENTS & MEASURES' : 'MALZEMELER & ÖLÇÜLER', 150, 500);
 
     let rawIngs = [];
     if (d.isCustom && Array.isArray(d.customIngredients)) {
@@ -1920,9 +2290,11 @@ function downloadCocktailStoryCard(drinkId) {
 
     ctx.fillStyle = '#d5b47b';
     ctx.font = 'bold 28px sans-serif';
-    ctx.fillText('HAZIRLANIŞI', 150, 1220);
+    ctx.fillText(currentLang === 'en' ? 'INSTRUCTIONS' : 'HAZIRLANIŞI', 150, 1220);
 
-    const instr = d.strInstructionsTR || d.strInstructions || 'Buzla karıştırın ve servis edin.';
+    const instr = currentLang === 'en' 
+        ? (d.strInstructions || d.strInstructionsTR || 'Stir with ice and serve.') 
+        : (d.strInstructionsTR || d.strInstructions || 'Buzla karıştırın ve servis edin.');
     ctx.fillStyle = '#c5d2cb';
     ctx.font = '400 24px sans-serif';
     const words = instr.split(' ');
@@ -1955,20 +2327,22 @@ function downloadCocktailStoryCard(drinkId) {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#34d399';
     ctx.font = 'bold 24px sans-serif';
-    ctx.fillText(`💰 Ev Yapımı Maliyet: ${cost}   |   Bar Tasarrufu: ~%85+`, 540, 1735);
+    ctx.fillText(currentLang === 'en' 
+        ? `💰 Home Cost: ${cost}   |   Bar Savings: ~85%+` 
+        : `💰 Ev Yapımı Maliyet: ${cost}   |   Bar Tasarrufu: ~%85+`, 540, 1735);
 
     // Alt Filigran
     ctx.fillStyle = '#6a7d74';
     ctx.font = '500 18px sans-serif';
-    ctx.fillText('Bar Cepte — Akıllı Ev Barı & Kokteyl Asistanı', 540, 1820);
+    ctx.fillText(currentLang === 'en' ? 'Pocket Bar — Smart Home Bar & Cocktail Assistant' : 'Bar Cepte — Akıllı Ev Barı & Kokteyl Asistanı', 540, 1820);
 
     // İndirme Tetikle
     const link = document.createElement('a');
-    link.download = `BarCepte-${drinkName.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+    link.download = `${currentLang === 'en' ? 'PocketBar' : 'BarCepte'}-${drinkName.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
 
-    showToast(`📸 ${drinkName} Story kartı hazırlandı!`, 'success');
+    showToast(currentLang === 'en' ? `📸 ${drinkName} story card downloaded!` : `📸 ${drinkName} Story kartı hazırlandı!`, 'success');
 }
 
 function resolveIngredientName(name) {
@@ -2090,27 +2464,37 @@ function filterCocktails() {
         return sortFn(a.drink, b.drink);
     });
 
-    const countReadyEl = document.getElementById('count-ready');
-    if (countReadyEl) countReadyEl.innerText = readyMatches.length;
+    const readySectionH2 = document.querySelector('#ready-section h2');
+    if (readySectionH2) {
+        readySectionH2.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${I18N[currentLang].readyTitle} <span id="count-ready" class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-bold">${readyMatches.length}</span>`;
+    }
 
     const titleMissing = document.getElementById('title-missing');
     if(titleMissing) {
         if(cocktailSearch) {
-            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Arama Sonuçları (Eksik Malzemeli) <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
+            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> ${I18N[currentLang].missingSearchTitle} <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
         } else if (onlyFavoritesFilter) {
-            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Favorilerim (Eksik Malzemeli) <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
+            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> ${I18N[currentLang].missingFavTitle} <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
         } else if (currentVibeFilter !== 'all') {
-            const vibeNames = {
+            const vibeNamesTr = {
                 summer: '☀️ Yaz & Havuz',
                 romantic: '🕯️ Romantik Akşam',
                 chill: '🍿 Dizi & Film',
                 winter: '❄️ Kış & Şömine',
                 party: '🎉 Parti & Shot'
             };
-            const label = vibeNames[currentVibeFilter] || 'Ortam';
-            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> ${label} Seçkisi <span id="count-missing" class="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20 font-bold">${missingMatches.length}</span>`;
+            const vibeNamesEn = {
+                summer: '☀️ Summer & Pool',
+                romantic: '🕯️ Romantic Night',
+                chill: '🍿 Movie & Chill',
+                winter: '❄️ Cozy Winter',
+                party: '🎉 Party & Shots'
+            };
+            const label = currentLang === 'en' ? (vibeNamesEn[currentVibeFilter] || 'Vibe') : (vibeNamesTr[currentVibeFilter] || 'Ortam');
+            const suffix = currentLang === 'en' ? 'Selection' : 'Seçkisi';
+            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> ${label} ${suffix} <span id="count-missing" class="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20 font-bold">${missingMatches.length}</span>`;
         } else {
-            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Yaklaştığın Tarifler (1-4 Eksik) <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
+            titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> ${I18N[currentLang].missingTitle} <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
         }
     }
 
@@ -2127,7 +2511,7 @@ function renderMyRecipes() {
     if (!container) return;
     
     if (customRecipes.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">Henüz kendi özel tarifini eklemedin. '✨ Tarif Ekle' sekmesinden ekleyebilirsin.</div>`;
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">${I18N[currentLang].noCustomRecipes}</div>`;
         return;
     }
     
@@ -2195,17 +2579,17 @@ function createCocktailCardElement(item, isMissingList) {
             const sub = getIngredientSubstitute(m);
             const subHTML = sub ? `
             <div class="flex items-center justify-between gap-1 text-[10px] bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-xl text-amber-300 mt-1 min-w-0" data-stop-card>
-                <span class="truncate">💡 <b>Muadil:</b> ${escapeHTML(sub.sub)}</span>
+                <span class="truncate">💡 <b>${currentLang === 'en' ? 'Substitute:' : 'Muadil:'}</b> ${escapeHTML(sub.sub)}</span>
                 <button data-action="substitute" data-ing="${escapeHTML(encodedM)}" data-sub="${escapeHTML(encodeURIComponent(sub.sub))}" class="pill-btn font-bold text-amber-400 hover:text-white shrink-0 ml-1.5 underline">
-                    Bara Ekle
+                    ${currentLang === 'en' ? 'Add to Bar' : 'Bara Ekle'}
                 </button>
             </div>` : '';
             return `
             <div class="flex flex-col gap-1 mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20 min-w-0">
                 <div class="flex items-center justify-between gap-2 min-w-0">
-                    <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">⚠️ Eksik: ${safeM}</p>
+                    <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">⚠️ ${currentLang === 'en' ? 'Missing:' : 'Eksik:'} ${safeM}</p>
                     <button data-action="shopping" data-value="${escapeHTML(encodedM)}" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40 shrink-0">
-                        ${inShop ? '🛒 Çıkar' : '➕ Alışverişe Ekle'}
+                        ${inShop ? (currentLang === 'en' ? '🛒 Remove' : '🛒 Çıkar') : (currentLang === 'en' ? '➕ Add to List' : '➕ Alışverişe Ekle')}
                     </button>
                 </div>
                 ${subHTML}
@@ -2235,7 +2619,9 @@ function createCocktailCardElement(item, isMissingList) {
         }
         const safeInstructions = d.isCustom 
             ? escapeHTML(cleanInstructionText(d.strInstructions || '')) 
-            : (rawTR ? escapeHTML(rawTR) : 'Çevriliyor...');
+            : (currentLang === 'en'
+                ? escapeHTML(cleanInstructionText(d.strInstructions || ''))
+                : (rawTR ? escapeHTML(rawTR) : 'Çevriliyor...'));
         const abvBadge = d.computedABV ? `<span class="text-[10px] font-bold ${d.computedABV.badgeCls} px-2 py-0.5 rounded-lg border font-mono">${escapeHTML(d.computedABV.label)}</span>` : '';
 
         card.innerHTML = `
@@ -2253,15 +2639,15 @@ function createCocktailCardElement(item, isMissingList) {
             <div class="flex justify-between items-start mt-auto min-w-0 gap-2">
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap gap-1.5 mb-1.5">
-                        <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${escapeHTML(d.computedTaste)}</span>
+                        <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${escapeHTML(getTasteLabel(d.computedTaste))}</span>
                         <span class="text-[10px] font-semibold bg-black/30 text-slate-400 px-2 py-0.5 rounded-lg border border-white/5 font-mono">🔥 ~${d.computedCalories} kcal</span>
                         ${abvBadge}
-                        <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono recipe-cost-badge">💵 ~${d.computedCost ? d.computedCost.cost : 35} ₺</span>
+                        <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono recipe-cost-badge">${currentLang === 'en' ? `💵 ~$${d.computedCost ? (d.computedCost.cost / 30).toFixed(2) : '1.20'}` : `💵 ~${d.computedCost ? d.computedCost.cost : 35} ₺`}</span>
                     </div>
                     <h3 class="font-extrabold text-white text-base leading-snug break-words hyphens-auto text-title-responsive">${safeDrinkName}</h3>
                     <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 break-words">${glassBadge}</p>
                 </div>
-                <span class="text-amber-400 text-xs font-bold toggle-icon shrink-0 pl-1 pt-1">Detay ▼</span>
+                <span class="text-amber-400 text-xs font-bold toggle-icon shrink-0 pl-1 pt-1">${currentLang === 'en' ? 'Details ▼' : 'Detay ▼'}</span>
             </div>
             
             ${isMissingList ? `<div class="mt-2.5 pt-2 border-t border-white/5 flex flex-col gap-1 min-w-0">${missingTextHTML}</div>` : ''}
@@ -2269,44 +2655,44 @@ function createCocktailCardElement(item, isMissingList) {
             <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden">
                 <!-- Ev Maliyeti ve Bar Tasarrufu -->
                 <div class="flex flex-wrap items-center justify-between gap-2 bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-2xl text-[11px] text-emerald-300">
-                    <span class="flex items-center gap-1 font-medium">💰 <b>Ev Maliyeti:</b> ~${d.computedCost ? d.computedCost.cost : 35} ₺</span>
-                    <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">Bar Tasarrufu: ~%${d.computedCost ? d.computedCost.savingsPercent : 90}</span>
+                    <span class="flex items-center gap-1 font-medium">💰 <b>${currentLang === 'en' ? 'Home Cost:' : 'Ev Maliyeti:'}</b> ${currentLang === 'en' ? `~$${d.computedCost ? (d.computedCost.cost / 30).toFixed(2) : '1.20'}` : `~${d.computedCost ? d.computedCost.cost : 35} ₺`}</span>
+                    <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${currentLang === 'en' ? `Bar Savings: ~${d.computedCost ? d.computedCost.savingsPercent : 90}%` : `Bar Tasarrufu: ~%${d.computedCost ? d.computedCost.savingsPercent : 90}`}</span>
                 </div>
 
                 <!-- Porsiyon Kontrolü (Taşmayan Esnek Düzen) -->
                 <div class="flex flex-wrap items-center justify-between gap-1.5 bg-black/30 p-2 rounded-2xl border border-white/5" data-stop-card>
-                    <span class="text-[11px] text-slate-400 font-medium shrink-0">👥 Porsiyon:</span>
+                    <span class="text-[11px] text-slate-400 font-medium shrink-0">${currentLang === 'en' ? '👥 Servings:' : '👥 Porsiyon:'}</span>
                     <div class="flex flex-wrap gap-1 shrink-0">
                         <button data-action="portion" data-card="${cardId}" data-value="1" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold">1x</button>
                         <button data-action="portion" data-card="${cardId}" data-value="2" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">2x</button>
                         <button data-action="portion" data-card="${cardId}" data-value="4" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">4x</button>
-                        <button data-action="portion" data-card="${cardId}" data-value="8" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">8x Parti</button>
+                        <button data-action="portion" data-card="${cardId}" data-value="8" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">${currentLang === 'en' ? '8x Party' : '8x Parti'}</button>
                     </div>
                 </div>
 
                 <!-- Malzemeler ve Ölçüler -->
                 <div class="space-y-1 min-w-0">
-                    <span class="text-[11px] text-slate-400 font-medium block">Malzemeler & Ölçüler:</span>
+                    <span class="text-[11px] text-slate-400 font-medium block">${currentLang === 'en' ? 'Ingredients & Measures:' : 'Malzemeler & Ölçüler:'}</span>
                     <div class="flex flex-wrap">${ingredientsHTML}</div>
                 </div>
 
                 <!-- Bardak & Teknik & Sayaç -->
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${techniqueBadge}</span>
-                    <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm">⏱️ Sayaç</button>
-                    <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm" data-stop-card>📸 Story İndir</button>
+                    <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm">⏱️ ${currentLang === 'en' ? 'Timer' : 'Sayaç'}</button>
+                    <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm" data-stop-card>📸 ${currentLang === 'en' ? 'Story Card' : 'Story İndir'}</button>
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${glassBadge}</span>
                 </div>
 
-                ${d.strServing ? `<div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-[11px] text-amber-300 italic break-words">💡 <b>Servis/Garnitür:</b> ${safeServing}</div>` : ''}
+                ${d.strServing ? `<div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-[11px] text-amber-300 italic break-words">💡 <b>${currentLang === 'en' ? 'Serving/Garnish:' : 'Servis/Garnitür:'}</b> ${safeServing}</div>` : ''}
                 
                 <p class="text-xs text-slate-300 instruction-text bg-black/30 p-3 rounded-2xl border border-white/5 leading-relaxed break-words">
-                    <b class="text-slate-400 text-[11px] block mb-1 uppercase tracking-wider font-semibold">Hazırlanışı:</b>
+                    <b class="text-slate-400 text-[11px] block mb-1 uppercase tracking-wider font-semibold">${currentLang === 'en' ? 'Instructions:' : 'Hazırlanışı:'}</b>
                     <span>${safeInstructions}</span>
                 </p>
 
                 <button data-action="open-mix-mode" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs transition-all mt-2" data-stop-card>
-                    <span>🚀</span><span>Adım Adım Hazırlamaya Başla</span>
+                    <span>🚀</span><span>${currentLang === 'en' ? 'Start Step-by-Step Mix' : 'Adım Adım Hazırlamaya Başla'}</span>
                 </button>
             </div>
         `;
@@ -2319,31 +2705,35 @@ function createCocktailCardElement(item, isMissingList) {
             if (!details.classList.contains('open')) {
                 triggerHaptic('light');
                 details.classList.add('open');
-                icon.innerText = "Kapat ▲";
+                icon.innerText = currentLang === 'en' ? "Close ▲" : "Kapat ▲";
 
                 // Android uygulaması için akıllı reklam tetikleyicisi
                 if (window.AndroidBridge && typeof window.AndroidBridge.onRecipeOpened === 'function') {
                     try { window.AndroidBridge.onRecipeOpened(); } catch (err) {}
                 }
                 if (!d.isCustom) {
-                    if (!d.strInstructionsTR) {
-                        span.textContent = "Çevriliyor...";
-                        const trText = await translateToTurkish(d.strInstructions);
-                        d.strInstructionsTR = cleanInstructionText(trText);
-                        if (db) {
-                            try {
-                                const tx = db.transaction("cocktails", "readwrite");
-                                tx.objectStore("cocktails").put(d);
-                            } catch(e) {}
-                        }
+                    if (currentLang === 'en') {
+                        span.textContent = cleanInstructionText(d.strInstructions || '');
                     } else {
-                        d.strInstructionsTR = cleanInstructionText(d.strInstructionsTR);
+                        if (!d.strInstructionsTR) {
+                            span.textContent = "Çevriliyor...";
+                            const trText = await translateToTurkish(d.strInstructions);
+                            d.strInstructionsTR = cleanInstructionText(trText);
+                            if (db) {
+                                try {
+                                    const tx = db.transaction("cocktails", "readwrite");
+                                    tx.objectStore("cocktails").put(d);
+                                } catch(e) {}
+                            }
+                        } else {
+                            d.strInstructionsTR = cleanInstructionText(d.strInstructionsTR);
+                        }
+                        span.textContent = d.strInstructionsTR;
                     }
-                    span.textContent = d.strInstructionsTR;
                 }
             } else {
                 details.classList.remove('open');
-                icon.innerText = "Detay ▼";
+                icon.innerText = currentLang === 'en' ? "Details ▼" : "Detay ▼";
             }
         };
         return card;
@@ -2480,7 +2870,7 @@ function renderShoppingList() {
     const container = document.getElementById('shopping-list-container');
     if (!container) return;
     if (shoppingList.length === 0) {
-        container.innerHTML = `<p class="text-center py-8 text-slate-500 text-xs">Alışveriş listeniz boş. Eksik malzemelerden 'Alışverişe Ekle' butonuna basarak liste oluşturabilirsiniz.</p>`;
+        container.innerHTML = `<p class="text-center py-8 text-slate-500 text-xs">${I18N[currentLang].emptyShoppingList}</p>`;
         return;
     }
     container.innerHTML = "";
@@ -2488,7 +2878,10 @@ function renderShoppingList() {
         const row = document.createElement('div');
         row.className = "flex items-center justify-between gap-2 bg-black/30 p-3 rounded-2xl border border-white/5 shadow-sm min-w-0";
         const encodedItem = encodeURIComponent(item);
-        const safeItem = escapeHTML(item);
+        const translatedName = translateIngredientName(item);
+        const safeItem = escapeHTML(translatedName || item);
+        const boughtText = I18N[currentLang].bought || (currentLang === 'en' ? '✓ Got It' : '✓ Aldım');
+        const removeText = I18N[currentLang].remove || (currentLang === 'en' ? 'Delete' : 'Sil');
         row.innerHTML = `
             <div class="flex items-center gap-2 min-w-0">
                 <span class="text-amber-400 shrink-0">🛒</span>
@@ -2496,10 +2889,10 @@ function renderShoppingList() {
             </div>
             <div class="flex gap-2 shrink-0">
                 <button data-action="purchased" data-value="${escapeHTML(encodedItem)}" class="pill-btn text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold px-2.5 py-1 rounded-xl hover:bg-emerald-500/20">
-                    ✓ Aldım
+                    ${boughtText}
                 </button>
                 <button data-action="shopping" data-value="${escapeHTML(encodedItem)}" class="pill-btn text-rose-400 text-xs font-semibold px-2 py-1 hover:text-rose-300">
-                    Sil
+                    ${removeText}
                 </button>
             </div>
         `;
@@ -2712,7 +3105,264 @@ function pickRandomCocktail() {
     }
 }
 
+function applyLanguage() {
+    const t = I18N[currentLang];
+    if (!t) return;
+
+    // Document title
+    document.title = t.title;
+
+    // Brand title in header
+    const brandTitle = document.getElementById('brand-title');
+    if (brandTitle) brandTitle.innerText = t.brand;
+
+    // Language toggle button & Unit toggle button text
+    const langBtn = document.getElementById('btn-lang-toggle');
+    if (langBtn) {
+        langBtn.innerText = currentLang === 'en' ? '🇺🇸 EN' : '🇹🇷 TR';
+        langBtn.title = currentLang === 'en' ? 'Switch to Turkish' : 'İngilizceye Geç';
+    }
+    const unitBtn = document.getElementById('btn-unit-toggle');
+    if (unitBtn) {
+        unitBtn.innerText = currentUnit;
+        unitBtn.title = currentLang === 'en' ? 'Switch measurement unit (cl / oz)' : 'Ölçü birimini değiştir (cl / oz)';
+    }
+
+    // Navigation Tabs
+    const tabMap = {
+        'tab-bar': t.myBar,
+        'tab-alkol': t.exploreDrinks,
+        'tab-mutfak': t.kitchen,
+        'tab-favorites': t.favorites,
+        'tab-custom': t.addRecipe,
+        'tab-my-recipes': t.myRecipes,
+        'tab-shop': t.shopping,
+        'tab-sync': t.backup
+    };
+    Object.entries(tabMap).forEach(([id, text]) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text;
+    });
+
+    // Hero section
+    const heroEyebrow = document.querySelector('#editorial-hero .eyebrow');
+    if (heroEyebrow) heroEyebrow.innerHTML = `<span class="eyebrow-line"></span> ${t.heroEyebrow}`;
+    const heroHeading = document.getElementById('hero-heading');
+    if (heroHeading) heroHeading.innerHTML = t.heroHeading;
+    const heroDesc = document.querySelector('#editorial-hero p');
+    if (heroDesc) heroDesc.innerHTML = t.heroDesc;
+    const heroBuildBar = document.getElementById('hero-build-bar');
+    if (heroBuildBar) heroBuildBar.innerHTML = `${t.heroBuildBar} <span aria-hidden="true">↗</span>`;
+    const heroSurprise = document.getElementById('hero-surprise');
+    if (heroSurprise) heroSurprise.innerHTML = `${t.heroSurprise} <span aria-hidden="true">→</span>`;
+    const heroNote = document.querySelector('#editorial-hero .hero-note');
+    if (heroNote) heroNote.innerHTML = t.heroNote;
+    const heroCaption = document.querySelector('#editorial-hero figcaption');
+    if (heroCaption) heroCaption.innerHTML = `<span>${t.heroCaptionSpan}</span><strong>${t.heroCaptionStrong}</strong>`;
+
+    // Discovery section
+    const discEyebrow = document.querySelector('#discovery-controls .eyebrow');
+    if (discEyebrow) discEyebrow.innerText = t.discoveryEyebrow;
+    const discHeading = document.getElementById('discovery-heading');
+    if (discHeading) discHeading.innerText = t.discoveryHeading;
+    const selSummary = document.getElementById('selection-summary');
+    if (selSummary && selectedIngredients.length === 0) selSummary.innerText = t.startChoosing;
+    const clearSelBtn = document.getElementById('btn-clear-selection-header');
+    if (clearSelBtn) clearSelBtn.innerHTML = t.clear;
+
+    // Search inputs & action buttons
+    const ingSearch = document.getElementById('ing-search');
+    if (ingSearch) ingSearch.placeholder = t.searchIngPlaceholder;
+    const cocktailSearch = document.getElementById('cocktail-search');
+    if (cocktailSearch) cocktailSearch.placeholder = t.searchCocktailPlaceholder;
+    const clearBtn13 = document.querySelector('[data-ui="ui-13"]');
+    if (clearBtn13) clearBtn13.innerHTML = t.clear;
+    const randBtn15 = document.querySelector('[data-ui="ui-15"]');
+    if (randBtn15) randBtn15.innerHTML = t.random;
+    const filterCap = document.querySelector('.filter-caption');
+    if (filterCap) filterCap.innerText = t.filterByProfile;
+
+    // Alcohol segment
+    const btnAllAlc = document.getElementById('btn-all-alcohol');
+    if (btnAllAlc) btnAllAlc.innerText = t.all;
+    const btnAlc = document.getElementById('btn-alcoholic');
+    if (btnAlc) btnAlc.innerText = t.alcoholic;
+    const btnNonAlc = document.getElementById('btn-non-alcoholic');
+    if (btnNonAlc) btnNonAlc.innerText = t.nonAlcoholic;
+
+    // Taste filters
+    const tasteBtnAll = document.querySelector('[data-taste="all"]');
+    if (tasteBtnAll) tasteBtnAll.innerText = t.allTastes;
+    const tasteBtnStrong = document.querySelector('[data-taste="Sert"]');
+    if (tasteBtnStrong) tasteBtnStrong.innerText = t.tasteStrong;
+    const tasteBtnSweet = document.querySelector('[data-taste="Tatlı"]');
+    if (tasteBtnSweet) tasteBtnSweet.innerText = t.tasteSweet;
+    const tasteBtnSour = document.querySelector('[data-taste="Ekşi"]');
+    if (tasteBtnSour) tasteBtnSour.innerText = t.tasteSour;
+    const tasteBtnFresh = document.querySelector('[data-taste="Ferah"]');
+    if (tasteBtnFresh) tasteBtnFresh.innerText = t.tasteFresh;
+
+    // Vibe filter label & buttons
+    const vibeLabel = document.querySelector('#discovery-controls .vibe-label, #discovery-controls span.uppercase');
+    if (vibeLabel && vibeLabel.innerText.includes('Ortam')) vibeLabel.innerText = t.vibeLabel;
+    const vibeAll = document.querySelector('[data-vibe="all"]');
+    if (vibeAll) vibeAll.innerText = t.vibeAll;
+    const vibeSummer = document.querySelector('[data-vibe="summer"]');
+    if (vibeSummer) vibeSummer.innerText = t.vibeSummer;
+    const vibeRom = document.querySelector('[data-vibe="romantic"]');
+    if (vibeRom) vibeRom.innerText = t.vibeRomantic;
+    const vibeChill = document.querySelector('[data-vibe="chill"]');
+    if (vibeChill) vibeChill.innerText = t.vibeChill;
+    const vibeWinter = document.querySelector('[data-vibe="winter"]');
+    if (vibeWinter) vibeWinter.innerText = t.vibeWinter;
+    const vibeParty = document.querySelector('[data-vibe="party"]');
+    if (vibeParty) vibeParty.innerText = t.vibeParty;
+
+    // Alcohol subcategories
+    const alcSubcatAll = document.querySelector('#alcohol-subcategories [data-value="all"]');
+    if (alcSubcatAll) alcSubcatAll.innerText = t.all;
+    const alcSubcatVodka = document.querySelector('#alcohol-subcategories [data-value="votka-cin"]');
+    if (alcSubcatVodka) alcSubcatVodka.innerText = currentLang === 'en' ? '🍸 Vodka & Gin' : '🍸 Votka & Cin';
+    const alcSubcatWhiskey = document.querySelector('#alcohol-subcategories [data-value="viski-konyak"]');
+    if (alcSubcatWhiskey) alcSubcatWhiskey.innerText = currentLang === 'en' ? '🥃 Whiskey & Cognac' : '🥃 Viski & Konyak';
+    const alcSubcatTequila = document.querySelector('#alcohol-subcategories [data-value="tekila-rom"]');
+    if (alcSubcatTequila) alcSubcatTequila.innerText = currentLang === 'en' ? '🌵 Tequila & Rum' : '🌵 Tekila & Rom';
+    const alcSubcatLiqueur = document.querySelector('#alcohol-subcategories [data-value="likor-aperitif"]');
+    if (alcSubcatLiqueur) alcSubcatLiqueur.innerText = currentLang === 'en' ? '🍊 Liqueur & Aperitif' : '🍊 Likör & Aperitif';
+    const alcSubcatWine = document.querySelector('#alcohol-subcategories [data-value="sarap-bira"]');
+    if (alcSubcatWine) alcSubcatWine.innerText = currentLang === 'en' ? '🍷 Wine, Vermouth & Beer' : '🍷 Şarap, Vermut & Bira';
+
+    // Kitchen subcategories
+    const kitSubcatAll = document.querySelector('#kitchen-subcategories [data-subcat="all"]');
+    if (kitSubcatAll) kitSubcatAll.innerText = t.all;
+    const kitSubcatCitrus = document.querySelector('#kitchen-subcategories [data-subcat="meyve"]');
+    if (kitSubcatCitrus) kitSubcatCitrus.innerText = currentLang === 'en' ? '🍊 Citrus & Fruit' : '🍊 Meyve & Narenciye';
+    const kitSubcatSoda = document.querySelector('#kitchen-subcategories [data-subcat="gazli"]');
+    if (kitSubcatSoda) kitSubcatSoda.innerText = currentLang === 'en' ? '🫧 Soda & Mixers' : '🫧 Gazlı & Meşrubat';
+    const kitSubcatSyrup = document.querySelector('#kitchen-subcategories [data-subcat="tatli"]');
+    if (kitSubcatSyrup) kitSubcatSyrup.innerText = currentLang === 'en' ? '🍯 Syrup & Sweet' : '🍯 Şurup & Tatlı';
+    const kitSubcatHerbs = document.querySelector('#kitchen-subcategories [data-subcat="baharat"]');
+    if (kitSubcatHerbs) kitSubcatHerbs.innerText = currentLang === 'en' ? '🌿 Herbs & Spices' : '🌿 Ot & Baharat';
+    const kitSubcatMilk = document.querySelector('#kitchen-subcategories [data-subcat="sut-kahve"]');
+    if (kitSubcatMilk) kitSubcatMilk.innerText = currentLang === 'en' ? '☕ Milk & Coffee' : '☕ Süt & Kahve';
+
+    // Panels
+    const customH2 = document.querySelector('#custom-recipe-panel h2');
+    if (customH2) customH2.innerText = t.customTitle;
+    const customNameInput = document.getElementById('custom-name');
+    if (customNameInput) customNameInput.placeholder = currentLang === 'en' ? 'Cocktail Name (e.g., Strawberry Margarita)' : 'Kokteyl Adı (Örn: Çilekli Margarita)';
+    const customIngsInput = document.getElementById('custom-ingredients');
+    if (customIngsInput) customIngsInput.placeholder = currentLang === 'en' ? 'Ingredients (comma separated: 2 oz Vodka, 1 oz Lemon Juice, Ice)' : 'Malzemeler (Virgülle ayırın: 50 ml Votka, 25 ml Limon Suyu, Buz)';
+    const customInstrInput = document.getElementById('custom-instructions');
+    if (customInstrInput) customInstrInput.placeholder = currentLang === 'en' ? 'Preparation Steps (e.g., Add ice to shaker, shake vigorously for 15s...)' : 'Hazırlanış Adımları (Örn: Shaker\'a buz ekleyin, 15 saniye kuvvetlice çalkalayın...)';
+    const customServingInput = document.getElementById('custom-serving');
+    if (customServingInput) customServingInput.placeholder = currentLang === 'en' ? 'Serving & Garnish (e.g., Salt rim and lime wedge)...' : 'Servis & Garnitür Önerisi (Örn: Tuzlu kenar ve misket limonu dilimi ile servis edin)...';
+    const saveRecipeBtn = document.querySelector('[data-ui="ui-32"]');
+    if (saveRecipeBtn) saveRecipeBtn.innerText = currentLang === 'en' ? 'Save Recipe' : 'Tarifi Kaydet';
+
+    const myRecipesH2 = document.querySelector('#my-recipes-panel h2');
+    if (myRecipesH2) myRecipesH2.innerText = t.myRecipesTitle;
+    const shopH2 = document.querySelector('#shopping-list-panel h2');
+    if (shopH2) shopH2.innerText = t.shoppingTitle;
+    const shopClearBtn = document.querySelector('#shopping-list-panel [data-ui="ui-33"]');
+    if (shopClearBtn) shopClearBtn.innerText = t.clearAll;
+    const syncH2 = document.querySelector('#sync-panel h2');
+    if (syncH2) syncH2.innerText = t.syncTitle;
+    const syncDesc = document.querySelector('#sync-panel p');
+    if (syncDesc) syncDesc.innerText = t.syncDesc;
+    const syncCopyBtn = document.querySelector('[data-ui="ui-34"]');
+    if (syncCopyBtn) syncCopyBtn.innerText = t.copyBackup;
+    const syncInput = document.getElementById('sync-data-input');
+    if (syncInput) syncInput.placeholder = t.pasteBackupPlaceholder;
+    const syncRestoreBtn = document.querySelector('[data-ui="ui-35"]');
+    if (syncRestoreBtn) syncRestoreBtn.innerText = t.restoreBackup;
+    const btnForceSync = document.getElementById('btn-force-sync');
+    if (btnForceSync) btnForceSync.innerHTML = `<span>🔄</span> ${t.updateDb}`;
+    const btnCheckUpdate = document.querySelector('[data-ui="ui-37"]');
+    if (btnCheckUpdate) btnCheckUpdate.innerHTML = `<span>🚀</span> ${t.checkUpdates} (v1.1.0)`;
+
+    // Affiliate Card
+    const affLabel = document.querySelector('#affiliate-banner span.tracking-wider');
+    if (affLabel) affLabel.innerText = t.affiliateLabel;
+    const affTitle = document.querySelector('#affiliate-banner span.font-bold');
+    if (affTitle) affTitle.innerText = t.affiliateTitle;
+    const affDesc = document.querySelector('#affiliate-banner p');
+    if (affDesc) affDesc.innerText = t.affiliateDesc;
+    const affBtn = document.querySelector('#affiliate-banner a span:first-child');
+    if (affBtn) affBtn.innerText = t.affiliateBtn;
+
+    // Header buttons
+    const supportLabel = document.querySelector('#btn-support span.hidden');
+    if (supportLabel) supportLabel.innerText = t.support;
+    const authLabel = document.getElementById('auth-btn-label');
+    if (authLabel && !window.currentUser) authLabel.innerText = t.signIn;
+
+    // Footer
+    const footerTitle = document.querySelector('.app-footer p.font-medium');
+    if (footerTitle) footerTitle.innerText = t.footerTitle;
+    const footer18Title = document.querySelector('.app-footer .mt-4 span:last-child');
+    if (footer18Title) footer18Title.innerText = t.footer18Title;
+    const footer18Text = document.querySelector('.app-footer .mt-4 p');
+    if (footer18Text) footer18Text.innerHTML = t.footer18Text;
+}
+
+function setLanguage(lang) {
+    currentLang = lang === 'en' ? 'en' : 'tr';
+    try { 
+        localStorage.setItem('bar_cepte_lang', currentLang);
+        localStorage.setItem('bar_language', currentLang);
+    } catch(e) {}
+
+    // Auto-switch default units if not explicitly locked:
+    // When going English -> default oz; when going Turkish -> default cl
+    if (currentLang === 'en') {
+        currentUnit = 'oz';
+    } else {
+        currentUnit = 'cl';
+    }
+    try { 
+        localStorage.setItem('bar_cepte_unit', currentUnit);
+        localStorage.setItem('bar_unit', currentUnit);
+    } catch(e) {}
+
+    applyLanguage();
+    renderIngredients();
+    filterCocktails();
+    updateFavoritesFilterUI();
+
+    if (currentTab === 'bar') renderDashboard();
+    if (currentTab === 'my-recipes') renderMyRecipes();
+    if (currentTab === 'shop') renderShoppingList();
+
+    const toastMsg = currentLang === 'en' 
+        ? 'Switched to Pocket Bar (English & oz units)' 
+        : 'Bar Cepte (Türkçe & cl birimi) aktif edildi';
+    showToast(toastMsg, 'success');
+}
+
+function toggleLanguage() {
+    triggerHaptic('medium');
+    setLanguage(currentLang === 'tr' ? 'en' : 'tr');
+}
+
+function toggleUnit() {
+    triggerHaptic('light');
+    currentUnit = currentUnit === 'cl' ? 'oz' : 'cl';
+    try { 
+        localStorage.setItem('bar_cepte_unit', currentUnit);
+        localStorage.setItem('bar_unit', currentUnit);
+    } catch(e) {}
+    
+    const unitBtn = document.getElementById('btn-unit-toggle');
+    if (unitBtn) unitBtn.innerText = currentUnit;
+
+    filterCocktails();
+    if (currentTab === 'my-recipes') renderMyRecipes();
+    showToast(currentLang === 'en' ? `Unit set to ${currentUnit}` : `Ölçü birimi: ${currentUnit}`, 'info');
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+    applyLanguage();
     await initDB();
     fetchDataWithIndexedDB();
     updateFavoritesFilterUI();

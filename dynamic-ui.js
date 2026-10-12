@@ -47,6 +47,12 @@ document.addEventListener('click', event => {
             case 'remove-ingredient':
                 removeIngredientFromBar(value, event);
                 break;
+            case 'toggle-language':
+                toggleLanguage();
+                break;
+            case 'toggle-unit':
+                toggleUnit();
+                break;
         }
     } else if (event.target.closest('[data-stop-card]')) {
         event.stopPropagation();

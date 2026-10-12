@@ -39,7 +39,7 @@
                     <svg viewBox="0 0 40 40" fill="none"><path d="M7 10h26L20 24 7 10Z M20 24v9 M13 33h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m27 5-5 11" stroke="currentColor" stroke-width="1.5"/><circle cx="26" cy="8" r="3" fill="currentColor"/></svg>
                 </div>
                 <div>
-                    <h1 class="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                    <h1 id="brand-title" class="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
                         Bar Cepte<span class="brand-period">.</span>
                     </h1>
                     <p id="status" class="text-[11px] text-slate-400 font-medium">Tarifler hazır</p>
@@ -47,6 +47,17 @@
             </div>
 
             <div class="flex items-center gap-1.5 shrink-0">
+                <!-- Dil Değiştirme Butonu (TR / EN - Pocket Bar) -->
+                <button id="btn-lang-toggle" data-action="toggle-language" title="Dil Değiştir / Switch to English" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-bold text-amber-300 flex items-center gap-1 hover:border-amber-400 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
+                    <span id="lang-flag">🇺🇸</span>
+                    <span id="lang-label">EN</span>
+                </button>
+
+                <!-- Ölçü Birimi Seçici (cl / oz) -->
+                <button id="btn-unit-toggle" data-action="toggle-unit" title="Ölçü Birimi (cl / oz)" class="pill-btn px-2 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-mono font-semibold text-slate-300 flex items-center gap-1 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
+                    <span id="unit-label">cl</span>
+                </button>
+
                 <!-- Barmen Zamanlayıcısı (Sayaç) -->
                 <button id="btn-open-timer" data-ui="ui-0" title="Barmen Sayacı (Shaker / Karıştırma)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
                     <span>⏱️</span>
