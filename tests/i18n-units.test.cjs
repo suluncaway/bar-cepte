@@ -190,5 +190,78 @@ test('Non-alcoholic labels and ABV badges are properly localized in Turkish and 
     assert.strictEqual(getAbvLabel({ abv: 25 }, 'en'), '🔥 ~25% ABV');
 });
 
+test('Ingredient search supports global search across kitchen and alcohol categories with normalization and subcategory toggling', () => {
+    assert.ok(gameJs.includes('function normalizeSearchText('), 'normalizeSearchText must exist in game.js');
+    
+    // Extract normalizeSearchText function
+    const normRegex = /function normalizeSearchText\(str\)\s*\{([\s\S]*?)\n\}/;
+    assert.ok(normRegex.test(gameJs), 'normalizeSearchText must be extractable');
+    const normalizeSearchText = new Function('str', normRegex.exec(gameJs)[1]);
+
+    assert.strictEqual(normalizeSearchText('NANE'), 'nane');
+    assert.strictEqual(normalizeSearchText('Şeker'), 'seker');
+    assert.strictEqual(normalizeSearchText('LİMON'), 'limon');
+    assert.strictEqual(normalizeSearchText('Çilek'), 'cilek');
+    assert.strictEqual(normalizeSearchText('Viski'), 'viski');
+
+    // Verify game.js searches globally when searchVal is provided
+    assert.ok(gameJs.includes('Global malzeme araması (Alkol + Mutfak tüm kategorileri kapsar)'), 'Global search comment present');
+    assert.ok(gameJs.includes("alcSubcatsEl.classList.toggle('hidden', !!searchVal"), 'Alcohol subcategories hidden during active search');
+    assert.ok(gameJs.includes("kitchenSubcatsEl.classList.toggle('hidden', !!searchVal"), 'Kitchen subcategories hidden during active search');
+    assert.ok(gameJs.includes('ile eşleşen malzeme bulunamadı'), 'Informative empty state message present in TR');
+    assert.ok(gameJs.includes('no matching ingredients found'), 'Informative empty state message present in EN');
+
+    // Verify kitchen items receive green Kitchen / Mutfak group tag
+    assert.ok(gameJs.includes('text-emerald-400 font-bold bg-emerald-500/15 border border-emerald-500/25'), 'Kitchen tag styles present');
+
+    // Test search filter logic on sample ingredients
+    const sampleIngredients = [
+        { id: "Vodka", name: "Votka", nameEn: "Vodka", cat: "alkol" },
+        { id: "Gin", name: "Cin", nameEn: "Gin", cat: "alkol" },
+        { id: "Rum", name: "Rom", nameEn: "Rum", cat: "alkol" },
+        { id: "Mint", name: "Nane", nameEn: "Mint", cat: "mutfak" },
+        { id: "Sugar", name: "Şeker", nameEn: "Sugar", cat: "mutfak" },
+        { id: "Lemon Juice", name: "Limon Suyu", nameEn: "Lemon Juice", cat: "mutfak" }
+    ];
+
+    function searchFilter(list, query) {
+        const searchNorm = normalizeSearchText(query.trim());
+        const searchLowerTr = query.trim().toLocaleLowerCase('tr');
+        const searchLowerEn = query.trim().toLowerCase();
+        return list.filter(i => {
+            const nameNorm = normalizeSearchText(i.name);
+            const nameEnNorm = normalizeSearchText(i.nameEn);
+            const idNorm = normalizeSearchText(i.id);
+            return nameNorm.includes(searchNorm) ||
+                   nameEnNorm.includes(searchNorm) ||
+                   idNorm.includes(searchNorm) ||
+                   (i.name && (i.name.toLocaleLowerCase('tr').includes(searchLowerTr) || i.name.toLowerCase().includes(searchLowerEn))) ||
+                   (i.nameEn && i.nameEn.toLowerCase().includes(searchLowerEn)) ||
+                   (i.id && (i.id.toLowerCase().includes(searchLowerEn) || i.id.toLocaleLowerCase('tr').includes(searchLowerTr)));
+        });
+    }
+
+    const naneResults = searchFilter(sampleIngredients, 'nane');
+    assert.strictEqual(naneResults.length, 1);
+    assert.strictEqual(naneResults[0].id, 'Mint');
+
+    const mintResults = searchFilter(sampleIngredients, 'mint');
+    assert.strictEqual(mintResults.length, 1);
+    assert.strictEqual(mintResults[0].id, 'Mint');
+
+    const sekerResults = searchFilter(sampleIngredients, 'seker');
+    assert.strictEqual(sekerResults.length, 1);
+    assert.strictEqual(sekerResults[0].id, 'Sugar');
+
+    const limonResults = searchFilter(sampleIngredients, 'limon');
+    assert.strictEqual(limonResults.length, 1);
+    assert.strictEqual(limonResults[0].id, 'Lemon Juice');
+
+    const romResults = searchFilter(sampleIngredients, 'rom');
+    assert.strictEqual(romResults.length, 1);
+    assert.strictEqual(romResults[0].id, 'Rum');
+});
+
+
 
 

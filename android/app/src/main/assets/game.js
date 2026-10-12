@@ -74,6 +74,19 @@ function debounce(func, wait = 180) {
     };
 }
 
+// Arama metinlerini normalleştirme (Türkçe karakter ve aksan duyarsızlığı)
+function normalizeSearchText(str) {
+    if (!str) return '';
+    return str.toString()
+        .toLocaleLowerCase('tr')
+        .replace(/ı/g, 'i')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c');
+}
+
 // Web Audio API ile Kristal Netliğinde Barmen Çan Sesi
 function playChimeSound() {
     try {
@@ -1172,17 +1185,56 @@ function renderIngredients() {
         }
     }
     
-    const searchVal = document.getElementById('ing-search')?.value.toLowerCase().trim() || "";
+    const searchVal = document.getElementById('ing-search')?.value.trim() || "";
+    const searchNorm = normalizeSearchText(searchVal);
+    const searchLowerTr = searchVal.toLocaleLowerCase('tr');
+    const searchLowerEn = searchVal.toLowerCase();
+
+    // Arama yapılıyorsa kafa karıştırıcı alt kategori butonlarını gizle, temizlenince aktif sekmedekini geri aç
+    const alcSubcatsEl = document.getElementById('alcohol-subcategories');
+    const kitchenSubcatsEl = document.getElementById('kitchen-subcategories');
+    if (alcSubcatsEl) {
+        alcSubcatsEl.classList.toggle('hidden', !!searchVal || currentTab !== 'alkol');
+    }
+    if (kitchenSubcatsEl) {
+        kitchenSubcatsEl.classList.toggle('hidden', !!searchVal || currentTab !== 'mutfak');
+    }
     
     const filtered = popularIngredients
         .filter(i => {
+            if (searchVal) {
+                // Global malzeme araması (Alkol + Mutfak tüm kategorileri kapsar)
+                const nameNorm = normalizeSearchText(i.name);
+                const nameEnNorm = normalizeSearchText(i.nameEn);
+                const idNorm = normalizeSearchText(i.id);
+                const trNorm = typeof translateIngredientName === 'function' ? normalizeSearchText(translateIngredientName(i.id)) : '';
+                return nameNorm.includes(searchNorm) ||
+                       nameEnNorm.includes(searchNorm) ||
+                       idNorm.includes(searchNorm) ||
+                       (trNorm && trNorm.includes(searchNorm)) ||
+                       (i.name && (i.name.toLocaleLowerCase('tr').includes(searchLowerTr) || i.name.toLowerCase().includes(searchLowerEn))) ||
+                       (i.nameEn && i.nameEn.toLowerCase().includes(searchLowerEn)) ||
+                       (i.id && (i.id.toLowerCase().includes(searchLowerEn) || i.id.toLocaleLowerCase('tr').includes(searchLowerTr)));
+            }
             if (i.cat !== currentTab) return false;
             if (currentTab === 'alkol' && !matchesAlcoholSubCategory(i)) return false;
             if (currentTab === 'mutfak' && !matchesKitchenSubCategory(i)) return false;
-            if (searchVal && !(i.name.toLowerCase().includes(searchVal) || i.id.toLowerCase().includes(searchVal))) return false;
             return true;
         })
         .sort((a, b) => {
+            if (searchVal) {
+                const aName = (a.name || a.id).toLocaleLowerCase('tr');
+                const bName = (b.name || b.id).toLocaleLowerCase('tr');
+                const aStarts = aName.startsWith(searchLowerTr) || (a.id && a.id.toLowerCase().startsWith(searchLowerEn));
+                const bStarts = bName.startsWith(searchLowerTr) || (b.id && b.id.toLowerCase().startsWith(searchLowerEn));
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+                let aIsBase = baseIngredients.some(base => base.id === a.id);
+                let bIsBase = baseIngredients.some(base => base.id === b.id);
+                if (aIsBase && !bIsBase) return -1;
+                if (!aIsBase && bIsBase) return 1;
+                return aName.localeCompare(bName, 'tr');
+            }
             let aIsBase = baseIngredients.some(base => base.id === a.id);
             let bIsBase = baseIngredients.some(base => base.id === b.id);
             if (aIsBase && !bIsBase) return -1;
@@ -1196,6 +1248,25 @@ function renderIngredients() {
             return a.name.localeCompare(b.name, 'tr');
         });
     
+    if (filtered.length === 0) {
+        const noResult = document.createElement('div');
+        noResult.className = "w-full py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2";
+        if (searchVal) {
+            noResult.innerHTML = `
+                <span class="text-2xl">🔍</span>
+                <p class="font-medium text-slate-300">"${escapeHTML(searchVal)}" ile eşleşen malzeme bulunamadı.</p>
+                <p class="text-[11px] text-slate-500">Türkçe veya İngilizce isim deneyebilirsiniz (örn: nane, limon, rom)</p>
+            `;
+        } else {
+            noResult.innerHTML = `
+                <span class="text-2xl">🍃</span>
+                <p class="font-medium text-slate-300">Bu kategoride malzeme bulunamadı.</p>
+            `;
+        }
+        container.appendChild(noResult);
+        return;
+    }
+
     filtered.forEach(ing => {
         const isSelected = selectedIngredients.includes(ing.id);
         const card = document.createElement('div');
@@ -1209,7 +1280,7 @@ function renderIngredients() {
         
         const groupTag = (ing.cat === 'alkol')
             ? `<span class="ingredient-group-tag text-[9px] ${isSelected ? 'text-slate-950 font-black bg-black/15' : 'text-amber-400 font-bold bg-amber-500/15 border border-amber-500/25'}">${escapeHTML(getAlcoholGroupLabel(getAlcoholGroup(ing)))}</span>`
-            : '';
+            : `<span class="ingredient-group-tag text-[9px] ${isSelected ? 'text-slate-950 font-black bg-black/15' : 'text-emerald-400 font-bold bg-emerald-500/15 border border-emerald-500/25'}">Mutfak</span>`;
 
         card.innerHTML = `
             <div class="h-14 sm:h-16 w-full flex items-center justify-center mb-1 shrink-0">
@@ -1243,7 +1314,10 @@ const debouncedRenderIngredients = debounce(renderIngredients, 150);
 const debouncedFilterCocktails = debounce(filterCocktails, 180);
 
 function clearSelection() {
-    if(selectedIngredients.length === 0) {
+    const searchInput = document.getElementById('ing-search');
+    const hasSearch = searchInput && searchInput.value.trim().length > 0;
+    
+    if (selectedIngredients.length === 0 && !hasSearch) {
         showToast('Barında zaten seçili malzeme yok.', 'info');
         return;
     }
@@ -1251,12 +1325,13 @@ function clearSelection() {
     const count = selectedIngredients.length;
     selectedIngredients = [];
     try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
-    const searchInput = document.getElementById('ing-search');
     if (searchInput) searchInput.value = '';
     renderIngredients();
     filterCocktails();
     renderDashboard();
-    showToast(`${count} malzeme barından temizlendi.`, 'info');
+    if (count > 0) {
+        showToast(`${count} malzeme barından temizlendi.`, 'info');
+    }
 }
 
 function removeIngredientFromBar(ingId, event) {
