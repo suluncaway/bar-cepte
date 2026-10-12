@@ -49,12 +49,43 @@ const PRODUCT_PLANS = {
 const LOG_FILE = path.resolve(__dirname, '..', 'keys', 'sold_licenses.json');
 const CLAIMED_FILE = path.resolve(__dirname, '..', 'keys', 'claimed_licenses.json');
 
+// Sunucu yeniden başlatılsa bile kalıcı bilinen satış kayıtları (Ephemeral Storage Koruması)
+const SEED_SOLD_LICENSES = [
+    {
+        orderId: "991899363",
+        email: "sulunca@gmail.com",
+        phone: "",
+        name: "Alperen Sulunc",
+        planType: "monthly",
+        planTitle: "Aylık VIP (30 Gün)",
+        currency: "TRY",
+        licenseKey: "RESERVE-MTH1-FXSU-42E5",
+        createdAt: "2026-10-11T21:36:53.000Z",
+        emailSent: true,
+        emailSentCount: 1,
+        lastEmailSentAt: "2026-10-11T21:36:53.000Z"
+    }
+];
+
+// Eşzamanlı isteklerde mükerrer üretimi önleyen kilit kümesi
+const inFlightOrders = new Set();
+
 function getSoldLicenses() {
     try {
-        if (!fs.existsSync(LOG_FILE)) return [];
-        return JSON.parse(fs.readFileSync(LOG_FILE, 'utf8') || '[]');
+        let fileList = [];
+        if (fs.existsSync(LOG_FILE)) {
+            fileList = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8') || '[]');
+        }
+        const orderMap = new Map();
+        for (const s of SEED_SOLD_LICENSES) {
+            orderMap.set(String(s.orderId).trim(), s);
+        }
+        for (const f of fileList) {
+            orderMap.set(String(f.orderId).trim(), f);
+        }
+        return Array.from(orderMap.values());
     } catch {
-        return [];
+        return [...SEED_SOLD_LICENSES];
     }
 }
 
@@ -63,11 +94,25 @@ function saveSoldLicense(record) {
         const dir = path.dirname(LOG_FILE);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         const list = getSoldLicenses();
-        list.push(record);
+        const recOrderId = String(record.orderId).trim();
+        const index = list.findIndex(s => String(s.orderId).trim() === recOrderId);
+        if (index >= 0) {
+            list[index] = { ...list[index], ...record };
+        } else {
+            list.push(record);
+        }
         fs.writeFileSync(LOG_FILE, JSON.stringify(list, null, 2), 'utf8');
     } catch (err) {
         console.error('Lisans kayıt hatası:', err);
     }
+}
+
+function isOrderProcessed(orderId) {
+    if (!orderId) return false;
+    const sId = String(orderId).trim();
+    if (inFlightOrders.has(sId)) return true;
+    const list = getSoldLicenses();
+    return list.some(s => String(s.orderId).trim() === sId);
 }
 
 // Daha önceden kullanılmış / teslim edilmiş bilinen kodların merkezi veritabanı
@@ -206,55 +251,67 @@ async function processNewOrders() {
         const orders = await fetchShopierOrders();
         if (!orders || !orders.length) return;
 
-        const sold = getSoldLicenses();
-        const processedOrderIds = new Set(sold.map(s => String(s.orderId)));
-
         for (const order of orders) {
-            const orderId = String(order.id || order.order_id || '');
-            if (!orderId || processedOrderIds.has(orderId)) continue;
+            const orderId = String(order.id || order.order_id || '').trim();
+            if (!orderId) continue;
+
+            // Kesin Mükerrer Sipariş Kontrolü (Deduplication)
+            if (isOrderProcessed(orderId)) continue;
 
             // Sadece ödenmiş (paid) siparişleri işle
             if (order.paymentStatus && order.paymentStatus !== 'paid') continue;
 
-            // Siparişteki ürünleri incele
-            const items = order.lineItems || order.items || order.products || [order];
-            for (const item of items) {
-                const { plan: planType, currency } = detectPlanAndCurrency(item, order);
-                const licenseKey = generateKey(planType);
-                const isIntl = currency === 'USD' || currency === 'EUR';
-                const planTitle = isIntl
-                    ? (planType === 'monthly' ? `Monthly VIP (30 Days - ${currency})` :
-                       planType === 'annual' ? `Annual VIP (365 Days - ${currency})` : `Lifetime VIP (${currency})`)
-                    : (planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
-                       planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP');
+            inFlightOrders.add(orderId);
+            try {
+                // Siparişteki ürünleri incele
+                const items = order.lineItems || order.items || order.products || [order];
+                for (const item of items) {
+                    const { plan: planType, currency } = detectPlanAndCurrency(item, order);
+                    const licenseKey = generateKey(planType);
+                    const isIntl = currency === 'USD' || currency === 'EUR';
+                    const planTitle = isIntl
+                        ? (planType === 'monthly' ? `Monthly VIP (30 Days - ${currency})` :
+                           planType === 'annual' ? `Annual VIP (365 Days - ${currency})` : `Lifetime VIP (${currency})`)
+                        : (planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
+                           planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP');
 
-                const customerEmail = (order.shippingInfo && order.shippingInfo.email) || order.buyer_email || order.email || '';
-                const customerName = (order.shippingInfo && order.shippingInfo.firstName)
-                    ? `${order.shippingInfo.firstName} ${order.shippingInfo.lastName || ''}`.trim()
-                    : (order.buyer_name || order.customer_name || (isIntl ? 'Valued Customer' : 'Barmen Dostumuz'));
-                const customerPhone = (order.shippingInfo && order.shippingInfo.phone) || '';
+                    const customerEmail = (order.shippingInfo && order.shippingInfo.email) || order.buyer_email || order.email || '';
+                    const customerName = (order.shippingInfo && order.shippingInfo.firstName)
+                        ? `${order.shippingInfo.firstName} ${order.shippingInfo.lastName || ''}`.trim()
+                        : (order.buyer_name || order.customer_name || (isIntl ? 'Valued Customer' : 'Barmen Dostumuz'));
+                    const customerPhone = (order.shippingInfo && order.shippingInfo.phone) || '';
 
-                const record = {
-                    orderId,
-                    email: customerEmail,
-                    phone: customerPhone,
-                    name: customerName,
-                    planType,
-                    planTitle,
-                    currency,
-                    licenseKey,
-                    createdAt: new Date().toISOString()
-                };
+                    const record = {
+                        orderId,
+                        email: customerEmail,
+                        phone: customerPhone,
+                        name: customerName,
+                        planType,
+                        planTitle,
+                        currency,
+                        licenseKey,
+                        createdAt: new Date().toISOString(),
+                        emailSent: false,
+                        emailSentCount: 0,
+                        lastEmailSentAt: null
+                    };
 
-                saveSoldLicense(record);
-                processedOrderIds.add(orderId);
+                    console.log(`\n🎉 [YENİ SİPARİŞ - ${currency}] #${orderId} | ${customerName} (${customerEmail}) [${customerPhone}]`);
+                    console.log(`🔑 [ÜRETİLEN KOD] [${planTitle}]: ${licenseKey}\n`);
 
-                console.log(`\n🎉 [YENİ SİPARİŞ - ${currency}] #${orderId} | ${customerName} (${customerEmail}) [${customerPhone}]`);
-                console.log(`🔑 [ÜRETİLEN KOD] [${planTitle}]: ${licenseKey}\n`);
+                    if (customerEmail) {
+                        const emailOk = await sendEmail(customerEmail, customerName, licenseKey, planTitle, currency);
+                        if (emailOk) {
+                            record.emailSent = true;
+                            record.emailSentCount = 1;
+                            record.lastEmailSentAt = new Date().toISOString();
+                        }
+                    }
 
-                if (customerEmail) {
-                    await sendEmail(customerEmail, customerName, licenseKey, planTitle, currency);
+                    saveSoldLicense(record);
                 }
+            } finally {
+                inFlightOrders.delete(orderId);
             }
         }
     } catch (err) {
@@ -390,22 +447,90 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Geçmiş Siparişlere Tekrar E-posta Gönderme Endpoint'i
+    // Tek Bir Siparişe Manuel Olarak Tekrar E-posta Gönderme Endpoint'i (Admin Onaylı)
+    if (req.method === 'POST' && req.url === '/api/resend-license') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                const params = JSON.parse(body || '{}');
+                const orderId = String(params.orderId || '').trim();
+                if (!orderId) {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ success: false, reason: 'orderId parametresi zorunludur.' }));
+                }
+
+                const sold = getSoldLicenses();
+                const record = sold.find(s => String(s.orderId).trim() === orderId);
+                if (!record || !record.email || !record.licenseKey) {
+                    res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ success: false, reason: 'Belirtilen sipariş ID için lisans kaydı bulunamadı.' }));
+                }
+
+                console.log(`✉️ [Manuel İstek] Sipariş #${orderId} için ${record.email} adresine e-posta tekrar gönderiliyor...`);
+                const ok = await sendEmail(record.email, record.name, record.licenseKey, record.planTitle || record.planType, record.currency || 'TRY');
+                if (ok) {
+                    record.emailSent = true;
+                    record.emailSentCount = (record.emailSentCount || 1) + 1;
+                    record.lastEmailSentAt = new Date().toISOString();
+                    saveSoldLicense(record);
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ success: true, message: `Aktivasyon kodu ${record.email} adresine başarıyla tekrar gönderildi.`, record }));
+                } else {
+                    res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ success: false, reason: 'E-posta gönderimi başarısız oldu. API anahtarını kontrol edin.' }));
+                }
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ success: false, reason: 'Sunucu hatası' }));
+            }
+        });
+        return;
+    }
+
+    // Geçmiş Siparişe Tekrar E-posta Gönderme (GET /resend?orderId=XXX)
     if (req.method === 'GET' && req.url.startsWith('/resend')) {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const orderId = parsedUrl.searchParams.get('orderId');
+        if (!orderId) {
+            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+            return res.end(`
+                <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
+                    <h2 style="color:#f87171;">⚠️ Toplu E-posta Gönderimi Devre Dışı Bırakıldı</h2>
+                    <p style="color:#cbd5e1;">Müşterilere birden fazla mükerrer e-posta gitmesini önlemek amacıyla toplu gönderim kaldırılmıştır.</p>
+                    <p style="color:#cbd5e1;">Tek bir siparişe tekrar kod göndermek için lütfen <a href="/licenses" style="color:#d5b47b; font-weight:bold;">Yönetim Paneli</a> üzerinden ilgili siparişin yanındaki <b>"✉️ Tekrar Gönder"</b> butonunu kullanın.</p>
+                    <a href="/licenses" style="display:inline-block; margin-top:16px; background:#d5b47b; color:#101b19; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold;">Panele Dön ➔</a>
+                </body>
+            `);
+        }
+
         (async () => {
             const sold = getSoldLicenses();
-            let sentCount = 0;
-            for (const s of sold) {
-                if (s.email && s.licenseKey) {
-                    const ok = await sendEmail(s.email, s.name, s.licenseKey, s.planTitle || s.planType, s.currency || 'TRY');
-                    if (ok) sentCount++;
-                }
+            const record = sold.find(s => String(s.orderId).trim() === String(orderId).trim());
+            if (!record || !record.email || !record.licenseKey) {
+                res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end(`
+                    <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
+                        <h2 style="color:#f87171;">Sipariş Bulunamadı</h2>
+                        <p>#${orderId} numaralı sipariş kayıtlarımızda yok.</p>
+                        <a href="/licenses" style="color:#d5b47b;">Panele Dön ➔</a>
+                    </body>
+                `);
             }
+
+            const ok = await sendEmail(record.email, record.name, record.licenseKey, record.planTitle || record.planType, record.currency || 'TRY');
+            if (ok) {
+                record.emailSent = true;
+                record.emailSentCount = (record.emailSentCount || 1) + 1;
+                record.lastEmailSentAt = new Date().toISOString();
+                saveSoldLicense(record);
+            }
+
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(`
                 <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
                     <h2 style="color:#d5b47b;">✉️ Gönderim Tamamlandı!</h2>
-                    <p>${sentCount} adet müşteriye lisans@barcepte.com.tr üzerinden e-posta gönderildi.</p>
+                    <p>#${orderId} siparişi için <b>${record.email}</b> adresine aktivasyon kodu iletildi.</p>
                     <a href="/licenses" style="color:#d5b47b;">Panele Dön ➔</a>
                 </body>
             `);
@@ -631,7 +756,10 @@ const server = http.createServer((req, res) => {
                         </div>
                     </div>
 
-                    <a href="/resend" class="btn-action">✉️ Tüm Müşterilere Tekrar E-posta Gönder</a>
+                    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #a7f3d0; margin-bottom: 16px;">
+                        🛡️ <b>Mükerrer E-posta Koruması Aktif:</b> Her müşteriye otomatik olarak yalnızca <b>1 adet</b> aktivasyon e-postası gider. İhtiyaç halinde aşağıdaki tablodan istediğiniz müşteriye özel olarak <b>"✉️ Tekrar Gönder"</b> butonuna basabilirsiniz.
+                    </div>
+
                     <table>
                         <thead>
                             <tr>
@@ -641,11 +769,13 @@ const server = http.createServer((req, res) => {
                                 <th>Para Birimi</th>
                                 <th>Aktivasyon Kodu</th>
                                 <th>Durum (Tek Kullanım)</th>
+                                <th>E-posta Durumu</th>
                                 <th>Tarih</th>
+                                <th>İşlem</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${sold.length === 0 ? '<tr><td colspan="7" style="text-align:center; color:#64748b; padding:32px;">Henüz yeni sipariş yok. Shopier her 30 saniyede bir otomatik taranıyor.</td></tr>' : ''}
+                            ${sold.length === 0 ? '<tr><td colspan="9" style="text-align:center; color:#64748b; padding:32px;">Henüz yeni sipariş yok. Shopier her 30 saniyede bir otomatik taranıyor.</td></tr>' : ''}
                             ${sold.slice().reverse().map(s => {
                                 const isClaimed = !!claimed[s.licenseKey];
                                 const claimInfo = claimed[s.licenseKey];
@@ -653,6 +783,9 @@ const server = http.createServer((req, res) => {
                                 const currBadge = curr === 'USD' ? 'background:rgba(59,130,246,0.2); color:#60a5fa;' :
                                                   curr === 'EUR' ? 'background:rgba(168,85,247,0.2); color:#c084fc;' :
                                                   'background:rgba(213,180,123,0.2); color:#d5b47b;';
+                                const emailStatus = s.emailSent 
+                                    ? `<span style="color:#4ade80; font-weight:bold;">✓ İletildi (${s.emailSentCount || 1}x)</span>`
+                                    : `<span style="color:#f87171;">Bekliyor</span>`;
                                 return `
                                 <tr>
                                     <td>#${s.orderId}</td>
@@ -665,12 +798,38 @@ const server = http.createServer((req, res) => {
                                             ? `<span class="badge-claimed">🔒 KULLANILDI (${new Date(claimInfo.claimedAt).toLocaleDateString('tr-TR')})</span>` 
                                             : `<span class="badge-available">✨ KULLANILMADI (BEKLİYOR)</span>`}
                                     </td>
+                                    <td>${emailStatus}</td>
                                     <td style="color:#64748b; font-size:11px;">${new Date(s.createdAt).toLocaleString('tr-TR')}</td>
+                                    <td>
+                                        <button type="button" onclick="resendOne('${s.orderId}', '${s.email}')" style="background:#d5b47b; color:#101b19; border:none; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">✉️ Tekrar Gönder</button>
+                                    </td>
                                 </tr>
                                 `;
                             }).join('')}
                         </tbody>
                     </table>
+
+                    <script>
+                        async function resendOne(orderId, email) {
+                            if (!confirm('#' + orderId + ' siparişi için ' + email + ' adresine aktivasyon e-postasını tekrar göndermek istiyor musunuz?')) return;
+                            try {
+                                const res = await fetch('/api/resend-license', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ orderId })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                    alert('✓ E-posta başarıyla ' + email + ' adresine iletildi!');
+                                    location.reload();
+                                } else {
+                                    alert('Hata: ' + (data.reason || 'Gönderilemedi'));
+                                }
+                            } catch (err) {
+                                alert('Bağlantı hatası: ' + err.message);
+                            }
+                        }
+                    </script>
                 </div>
             </body>
             </html>
@@ -693,89 +852,69 @@ const server = http.createServer((req, res) => {
                 }
 
                 const productId = params.product_id || params.productId || '';
-                const orderId = params.platform_order_id || params.order_id || params.orderId || `ORD-${Date.now()}`;
+                const orderId = String(params.platform_order_id || params.order_id || params.orderId || `ORD-${Date.now()}`).trim();
                 const email = params.buyer_email || params.email || '';
                 const name = params.buyer_name || params.name || '';
 
                 const { plan: planType, currency } = detectPlanAndCurrency({ product_id: productId, title: params.product_name || params.title }, params);
-                const licenseKey = generateKey(planType);
                 const isIntl = currency === 'USD' || currency === 'EUR';
-                const customerName = name || (isIntl ? 'Valued Customer' : 'Barmen Dostumuz');
-                const planTitle = isIntl
-                    ? (planType === 'monthly' ? `Monthly VIP (30 Days - ${currency})` :
-                       planType === 'annual' ? `Annual VIP (365 Days - ${currency})` : `Lifetime VIP (${currency})`)
-                    : (planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
-                       planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP');
 
-                const record = {
-                    orderId,
-                    email,
-                    name: customerName,
-                    planType,
-                    planTitle,
-                    currency,
-                    licenseKey,
-                    createdAt: new Date().toISOString()
-                };
-                saveSoldLicense(record);
+                // 1. Zaten İşlenmiş Sipariş Kontrolü (Idempotency - Asla Tekrar E-posta Atma!)
+                const existing = getSoldLicenses().find(s => String(s.orderId).trim() === orderId);
+                if (existing) {
+                    console.log(`ℹ️ [Webhook Mükerrer Koruma] Sipariş #${orderId} daha önce işlenmiş. Tekrar e-posta atılmadı, ekrana mevcut kod verildi.`);
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    return res.end(renderSuccessCard(existing.licenseKey, existing.email, isIntl));
+                }
 
-                console.log(`✅ [Webhook - ${currency}] Sipariş #${orderId}: [${licenseKey}] -> ${email}`);
+                if (inFlightOrders.has(orderId)) {
+                    console.log(`⏳ [Webhook Kilit] Sipariş #${orderId} şu anda işleniyor.`);
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    return res.end('Siparişiniz işleniyor...');
+                }
 
-                if (email) await sendEmail(email, customerName, licenseKey, planTitle, currency);
+                inFlightOrders.add(orderId);
+                let licenseKey = '';
+                try {
+                    licenseKey = generateKey(planType);
+                    const customerName = name || (isIntl ? 'Valued Customer' : 'Barmen Dostumuz');
+                    const planTitle = isIntl
+                        ? (planType === 'monthly' ? `Monthly VIP (30 Days - ${currency})` :
+                           planType === 'annual' ? `Annual VIP (365 Days - ${currency})` : `Lifetime VIP (${currency})`)
+                        : (planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
+                           planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP');
 
-                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-                if (isIntl) {
-                    res.end(`
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <meta charset="UTF-8">
-                        <title>Congratulations! Pocket Bar VIP Key Ready</title>
-                        <style>
-                            body { background:#101b19; color:#fff; font-family:-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; }
-                            .card { background:#172922; border:1px solid rgba(213,180,123,0.3); border-radius:24px; padding:32px 24px; max-width:440px; width:100%; text-align:center; }
-                            .key-box { background:#0a1311; border:1px dashed #d5b47b; border-radius:12px; padding:16px; font-family:monospace; font-size:18px; font-weight:bold; color:#d5b47b; margin:20px 0; }
-                            .btn { display:inline-block; background:#d5b47b; color:#101b19; padding:12px 24px; border-radius:12px; text-decoration:none; font-weight:bold; font-size:13px; margin-top:12px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="card">
-                            <div style="font-size:48px; margin-bottom:12px;">🍸👑</div>
-                            <h2 style="color:#d5b47b; margin:0 0 8px;">Your VIP Key is Ready!</h2>
-                            <p style="font-size:13px; color:#cbd5e1; margin:0 0 16px;">Order confirmed. You can activate your key below in Pocket Bar:</p>
-                            <div class="key-box">${licenseKey}</div>
-                            <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">The key has also been emailed to <b>${email || 'your email'}</b>.</p>
-                            <a href="https://barcepte.com.tr" class="btn">Return to Pocket Bar & Activate ➔</a>
-                        </div>
-                    </body>
-                    </html>
-                    `);
-                } else {
-                    res.end(`
-                    <!DOCTYPE html>
-                    <html lang="tr">
-                    <head>
-                        <meta charset="UTF-8">
-                        <title>Tebrikler! Bar Cepte Lisansınız Hazır</title>
-                        <style>
-                            body { background:#101b19; color:#fff; font-family:-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; }
-                            .card { background:#172922; border:1px solid rgba(213,180,123,0.3); border-radius:24px; padding:32px 24px; max-width:440px; width:100%; text-align:center; }
-                            .key-box { background:#0a1311; border:1px dashed #d5b47b; border-radius:12px; padding:16px; font-family:monospace; font-size:18px; font-weight:bold; color:#d5b47b; margin:20px 0; }
-                            .btn { display:inline-block; background:#d5b47b; color:#101b19; padding:12px 24px; border-radius:12px; text-decoration:none; font-weight:bold; font-size:13px; margin-top:12px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="card">
-                            <div style="font-size:48px; margin-bottom:12px;">🍸👑</div>
-                            <h2 style="color:#d5b47b; margin:0 0 8px;">Aktivasyon Kodunuz Hazır!</h2>
-                            <p style="font-size:13px; color:#cbd5e1; margin:0 0 16px;">Siparişiniz onaylandı. Aşağıdaki kodu Bar Cepte uygulamasında aktive edebilirsiniz:</p>
-                            <div class="key-box">${licenseKey}</div>
-                            <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">Kod ayrıca <b>${email || 'e-posta adresinize'}</b> gönderilmiştir.</p>
-                            <a href="https://barcepte.com.tr" class="btn">Bar Cepte'ye Dön ve Aktive Et ➔</a>
-                        </div>
-                    </body>
-                    </html>
-                    `);
+                    const record = {
+                        orderId,
+                        email,
+                        name: customerName,
+                        planType,
+                        planTitle,
+                        currency,
+                        licenseKey,
+                        createdAt: new Date().toISOString(),
+                        emailSent: false,
+                        emailSentCount: 0,
+                        lastEmailSentAt: null
+                    };
+
+                    console.log(`✅ [Webhook - ${currency}] Sipariş #${orderId}: [${licenseKey}] -> ${email}`);
+
+                    if (email) {
+                        const emailOk = await sendEmail(email, customerName, licenseKey, planTitle, currency);
+                        if (emailOk) {
+                            record.emailSent = true;
+                            record.emailSentCount = 1;
+                            record.lastEmailSentAt = new Date().toISOString();
+                        }
+                    }
+
+                    saveSoldLicense(record);
+
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderSuccessCard(licenseKey, email, isIntl));
+                } finally {
+                    inFlightOrders.delete(orderId);
                 }
             } catch (err) {
                 console.error('Webhook hatası:', err);
@@ -784,6 +923,61 @@ const server = http.createServer((req, res) => {
             }
         });
         return;
+    }
+
+    function renderSuccessCard(licenseKey, email, isIntl) {
+        if (isIntl) {
+            return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Congratulations! Pocket Bar VIP Key Ready</title>
+                <style>
+                    body { background:#101b19; color:#fff; font-family:-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; }
+                    .card { background:#172922; border:1px solid rgba(213,180,123,0.3); border-radius:24px; padding:32px 24px; max-width:440px; width:100%; text-align:center; }
+                    .key-box { background:#0a1311; border:1px dashed #d5b47b; border-radius:12px; padding:16px; font-family:monospace; font-size:18px; font-weight:bold; color:#d5b47b; margin:20px 0; }
+                    .btn { display:inline-block; background:#d5b47b; color:#101b19; padding:12px 24px; border-radius:12px; text-decoration:none; font-weight:bold; font-size:13px; margin-top:12px; }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <div style="font-size:48px; margin-bottom:12px;">🍸👑</div>
+                    <h2 style="color:#d5b47b; margin:0 0 8px;">Your VIP Key is Ready!</h2>
+                    <p style="font-size:13px; color:#cbd5e1; margin:0 0 16px;">Order confirmed. You can activate your key below in Pocket Bar:</p>
+                    <div class="key-box">${licenseKey}</div>
+                    <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">The key has also been emailed to <b>${email || 'your email'}</b>.</p>
+                    <a href="https://barcepte.com.tr" class="btn">Return to Pocket Bar & Activate ➔</a>
+                </div>
+            </body>
+            </html>
+            `;
+        }
+        return `
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+            <meta charset="UTF-8">
+            <title>Tebrikler! Bar Cepte Lisansınız Hazır</title>
+            <style>
+                body { background:#101b19; color:#fff; font-family:-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; }
+                .card { background:#172922; border:1px solid rgba(213,180,123,0.3); border-radius:24px; padding:32px 24px; max-width:440px; width:100%; text-align:center; }
+                .key-box { background:#0a1311; border:1px dashed #d5b47b; border-radius:12px; padding:16px; font-family:monospace; font-size:18px; font-weight:bold; color:#d5b47b; margin:20px 0; }
+                .btn { display:inline-block; background:#d5b47b; color:#101b19; padding:12px 24px; border-radius:12px; text-decoration:none; font-weight:bold; font-size:13px; margin-top:12px; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <div style="font-size:48px; margin-bottom:12px;">🍸👑</div>
+                <h2 style="color:#d5b47b; margin:0 0 8px;">Aktivasyon Kodunuz Hazır!</h2>
+                <p style="font-size:13px; color:#cbd5e1; margin:0 0 16px;">Siparişiniz onaylandı. Aşağıdaki kodu Bar Cepte uygulamasında aktive edebilirsiniz:</p>
+                <div class="key-box">${licenseKey}</div>
+                <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">Kod ayrıca <b>${email || 'e-posta adresinize'}</b> gönderilmiştir.</p>
+                <a href="https://barcepte.com.tr" class="btn">Bar Cepte'ye Dön ve Aktive Et ➔</a>
+            </div>
+        </body>
+        </html>
+        `;
     }
 
     res.writeHead(404);
