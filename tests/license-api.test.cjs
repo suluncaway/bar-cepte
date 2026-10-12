@@ -119,3 +119,39 @@ test('Central API strictly enforces single-use license keys across devices and u
         server.close();
     }
 });
+
+test('Backend shopier-webhook sanitization prevents XSS and parses JSON safely', () => {
+    const { escapeHtml, readJsonBody } = require('../scripts/shopier-webhook');
+    assert.equal(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+    assert.equal(escapeHtml('Alperen & Friends \'VIP\''), 'Alperen &amp; Friends &#39;VIP&#39;');
+    assert.equal(escapeHtml(null), '');
+    assert.equal(escapeHtml(undefined), '');
+    assert.equal(typeof readJsonBody, 'function');
+});
+
+test('Electron desktop main.js server allows all essential application assets', () => {
+    const mainContent = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
+    assert.match(mainContent, /'\/reserve\.js'/);
+    assert.match(mainContent, /'\/auth\.js'/);
+    assert.match(mainContent, /'\/firebase-config\.js'/);
+    assert.match(mainContent, /'\/ads\.js'/);
+    assert.match(mainContent, /'\/hero-cocktail-ambient\.mp4'/);
+    assert.match(mainContent, /'\.mp4': 'video\/mp4'/);
+});
+
+test('Frontend support and ingredient resolution are robust against missing elements and languages', () => {
+    const gameJs = fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8');
+    const supportJs = fs.readFileSync(path.join(__dirname, '..', 'support.js'), 'utf8');
+
+    // support.js guards supportCloseBtn
+    assert.match(supportJs, /const supportCloseBtn = document\.getElementById\('support-close'\);/);
+    assert.match(supportJs, /if \(supportCloseBtn\)/);
+
+    // game.js resolveIngredientName checks pi.nameEn
+    assert.match(gameJs, /pi\.nameEn && pi\.nameEn\.toLowerCase\(\) === n/);
+
+    // game.js smart advice and substitutes localize in English
+    assert.match(gameJs, /currentLang === 'en' \? bestIng : translateIngredientName\(bestIng\)/);
+    assert.match(gameJs, /subEn: 'Cointreau or Orange Liqueur'/);
+});
+

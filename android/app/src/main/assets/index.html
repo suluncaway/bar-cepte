@@ -34,19 +34,47 @@
     <!-- Üst Başlık & Kontrol Çubuğu -->
     <header class="app-header">
         <div class="topbar">
-            <div class="flex items-center gap-3">
-                <div class="brand-mark" aria-hidden="true">
-                    <svg viewBox="0 0 40 40" fill="none"><path d="M7 10h26L20 24 7 10Z M20 24v9 M13 33h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m27 5-5 11" stroke="currentColor" stroke-width="1.5"/><circle cx="26" cy="8" r="3" fill="currentColor"/></svg>
+            <div class="topbar-row">
+                <div class="topbar-brand flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <div class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 40 40" fill="none"><path d="M7 10h26L20 24 7 10Z M20 24v9 M13 33h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m27 5-5 11" stroke="currentColor" stroke-width="1.5"/><circle cx="26" cy="8" r="3" fill="currentColor"/></svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 id="brand-title" class="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                            Bar Cepte<span class="brand-period">.</span>
+                        </h1>
+                        <p id="status" class="text-[11px] text-slate-400 font-medium">Tarifler hazır</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
-                        Bar Cepte<span class="brand-period">.</span>
-                    </h1>
-                    <p id="status" class="text-[11px] text-slate-400 font-medium">Tarifler hazır</p>
+
+                <!-- Sağ Üst Ana Aksiyonlar (Dil, Reserve VIP, Hesap) -->
+                <div class="topbar-primary-actions flex items-center gap-1.5 shrink-0">
+                    <!-- Dil Değiştirme Butonu (TR / EN - Pocket Bar) -->
+                    <button id="btn-lang-toggle" data-action="toggle-language" title="Dil Değiştir / Switch Language (TR / EN)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-bold flex items-center gap-1 hover:border-amber-400 hover:bg-amber-500/20 shrink-0 whitespace-nowrap cursor-pointer">
+                        <span class="text-amber-300 font-black">🇹🇷 TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">EN</span>
+                    </button>
+
+                    <!-- Bar Cepte Reserve Üyelik Butonu -->
+                    <button id="btn-open-reserve" type="button" title="Bar Cepte Reserve — Reklamsız & Özel Seçkiler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all shrink-0 whitespace-nowrap">
+                        <span>👑</span>
+                        <span id="reserve-btn-label" class="hidden sm:inline tracking-wide">Reserve</span>
+                    </button>
+
+                    <!-- Barmen Kulübü / Google Hesabı Butonu -->
+                    <button id="btn-auth-user" type="button" title="Barmen Kulübü & Hesabım" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
+                        <span id="auth-btn-icon">👤</span>
+                        <span id="auth-btn-label" class="hidden sm:inline">Giriş Yap</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="flex items-center gap-1.5 shrink-0">
+            <!-- Barmen Hızlı Araçlar Çubuğu -->
+            <div class="topbar-tools-ribbon flex items-center gap-1.5">
+                <!-- Ölçü Birimi Seçici (cl / oz) -->
+                <button id="btn-unit-toggle" data-action="toggle-unit" title="Ölçü Birimi / Unit (cl / oz)" class="pill-btn px-2 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-mono font-semibold flex items-center gap-1 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap cursor-pointer">
+                    <span class="text-amber-300 font-black">cl</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">oz</span>
+                </button>
+
                 <!-- Barmen Zamanlayıcısı (Sayaç) -->
                 <button id="btn-open-timer" data-ui="ui-0" title="Barmen Sayacı (Shaker / Karıştırma)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
                     <span>⏱️</span>
@@ -68,18 +96,6 @@
                 <button type="button" data-support-button title="Geliştiriciye Bir Kahve Ismarla" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-semibold text-amber-300 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
                     <span>☕</span>
                     <span class="hidden sm:inline">Destek Ol</span>
-                </button>
-
-                <!-- Bar Cepte Reserve Üyelik Butonu -->
-                <button id="btn-open-reserve" type="button" title="Bar Cepte Reserve — Reklamsız & Özel Seçkiler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all shrink-0 whitespace-nowrap">
-                    <span>👑</span>
-                    <span id="reserve-btn-label" class="hidden sm:inline tracking-wide">Reserve</span>
-                </button>
-
-                <!-- Barmen Kulübü / Google Hesabı Butonu -->
-                <button id="btn-auth-user" type="button" title="Barmen Kulübü & Hesabım" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
-                    <span id="auth-btn-icon">👤</span>
-                    <span id="auth-btn-label" class="hidden sm:inline">Giriş Yap</span>
                 </button>
             </div>
         </div>
@@ -318,7 +334,7 @@
         <section id="my-recipes-panel" class="hidden px-4 animate-fade-in space-y-4">
             <div class="acrylic-card p-5 rounded-3xl space-y-3">
                 <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider">📜 Kendi Eklediğim Özel Tarifler</h2>
-                <div id="my-recipes-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                <div id="my-recipes-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"></div>
             </div>
         </section>
 
@@ -360,7 +376,7 @@
         <div id="recipes-display-sections" class="recipe-content">
             <section id="editorial-picks" class="hidden">
                 <div class="section-intro"><div><span class="eyebrow">KLASİKLERDEN İLHAM AL</span><h2>Her güzel akşamın bir tarifi var.</h2></div><span class="section-aside">Bir tarif seç, detaylarını keşfet.</span></div>
-                <div id="editorial-picks-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+                <div id="editorial-picks-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-start"></div>
             </section>
             <section id="ready-section">
                 <div class="flex items-center justify-between mb-3.5">
@@ -370,7 +386,7 @@
                         <span id="count-ready" class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-bold">0</span>
                     </h2>
                 </div>
-                <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"></div>
             </section>
 
             <!-- Sponsorlu / Önerilen Bar Ekipmanı (Affiliate Kartı) -->
@@ -413,7 +429,7 @@
                         <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">0</span>
                     </h2>
                 </div>
-                <div id="recipes-missing" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                <div id="recipes-missing" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"></div>
             </section>
         </div>
 
@@ -600,6 +616,15 @@
 
                 <!-- Abonelik Planı Seçimi -->
                 <div class="space-y-2.5">
+                    <!-- Uluslararası Para Birimi Seçimi (USD $ / EUR €) -->
+                    <div id="reserve-currency-bar" class="hidden items-center justify-end gap-1.5 text-[10px] font-bold">
+                        <span id="reserve-currency-label" class="text-slate-400">Currency:</span>
+                        <div class="inline-flex p-0.5 rounded-lg bg-black/60 border border-white/10 gap-1">
+                            <button type="button" data-currency="usd" class="reserve-currency-btn px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black cursor-pointer">$ USD</button>
+                            <button type="button" data-currency="eur" class="reserve-currency-btn px-2 py-0.5 rounded text-slate-400 hover:text-white cursor-pointer">€ EUR</button>
+                        </div>
+                    </div>
+
                     <div class="flex p-1 rounded-2xl bg-black/60 border border-white/10 gap-1 text-[11px] font-bold">
                         <button type="button" data-plan="monthly" class="reserve-plan-tab flex-1 py-1.5 px-2 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer">
                             Aylık

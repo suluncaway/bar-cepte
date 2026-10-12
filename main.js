@@ -12,7 +12,9 @@ const ROOT = __dirname;
 const PUBLIC_FILES = new Set([
   '/index.html', '/style.css', '/tailwind.css', '/game.js', '/security.js',
   '/ui-bindings.js', '/dynamic-ui.js', '/support.js', '/manifest.json', '/sw.js',
-  '/cocktails.json', '/icon.png', '/build/icon.png', '/editorial-ui.js', '/editorial-cocktails.webp'
+  '/cocktails.json', '/icon.png', '/build/icon.png', '/editorial-ui.js', '/editorial-cocktails.webp',
+  '/reserve.js', '/auth.js', '/firebase-config.js', '/ads.js', '/privacy.html', '/privacy.js',
+  '/hero-cocktail-ambient.mp4', '/shopier-aylik-kart.png'
 ]);
 
 const MIME = {
@@ -25,7 +27,8 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
-  '.webmanifest': 'application/manifest+json'
+  '.webmanifest': 'application/manifest+json',
+  '.mp4': 'video/mp4'
 };
 
 let server = null;

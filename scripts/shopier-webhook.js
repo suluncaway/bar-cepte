@@ -172,6 +172,46 @@ function saveClaimedLicense(key, claimData) {
     }
 }
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function readJsonBody(req, maxBytes = 64 * 1024) {
+    return new Promise((resolve, reject) => {
+        let body = '';
+        let bytes = 0;
+        let tooLarge = false;
+
+        req.on('data', chunk => {
+            bytes += chunk.length;
+            if (bytes > maxBytes) {
+                tooLarge = true;
+                req.destroy();
+                return reject(new Error('Payload Too Large'));
+            }
+            body += chunk.toString();
+        });
+
+        req.on('end', () => {
+            if (tooLarge) return;
+            try {
+                const parsed = JSON.parse(body || '{}');
+                resolve(parsed);
+            } catch {
+                reject(new Error('Invalid JSON'));
+            }
+        });
+
+        req.on('error', err => reject(err));
+    });
+}
+
 function verifyKeyChecksum(rawKey) {
     if (!rawKey || typeof rawKey !== 'string') return false;
     const cleanKey = rawKey.trim().toUpperCase();
@@ -449,11 +489,17 @@ const server = http.createServer((req, res) => {
 
     // Tek Bir Siparişe Manuel Olarak Tekrar E-posta Gönderme Endpoint'i (Admin Onaylı)
     if (req.method === 'POST' && req.url === '/api/resend-license') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', async () => {
+        (async () => {
             try {
-                const params = JSON.parse(body || '{}');
+                let params;
+                try {
+                    params = await readJsonBody(req);
+                } catch (jsonErr) {
+                    const status = jsonErr.message === 'Payload Too Large' ? 413 : 400;
+                    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ success: false, reason: jsonErr.message }));
+                }
+
                 const orderId = String(params.orderId || '').trim();
                 if (!orderId) {
                     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -484,7 +530,7 @@ const server = http.createServer((req, res) => {
                 res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
                 res.end(JSON.stringify({ success: false, reason: 'Sunucu hatası' }));
             }
-        });
+        })();
         return;
     }
 
@@ -512,7 +558,7 @@ const server = http.createServer((req, res) => {
                 return res.end(`
                     <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
                         <h2 style="color:#f87171;">Sipariş Bulunamadı</h2>
-                        <p>#${orderId} numaralı sipariş kayıtlarımızda yok.</p>
+                        <p>#${escapeHtml(orderId)} numaralı sipariş kayıtlarımızda yok.</p>
                         <a href="/licenses" style="color:#d5b47b;">Panele Dön ➔</a>
                     </body>
                 `);
@@ -530,7 +576,7 @@ const server = http.createServer((req, res) => {
             res.end(`
                 <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
                     <h2 style="color:#d5b47b;">✉️ Gönderim Tamamlandı!</h2>
-                    <p>#${orderId} siparişi için <b>${record.email}</b> adresine aktivasyon kodu iletildi.</p>
+                    <p>#${escapeHtml(orderId)} siparişi için <b>${escapeHtml(record.email)}</b> adresine aktivasyon kodu iletildi.</p>
                     <a href="/licenses" style="color:#d5b47b;">Panele Dön ➔</a>
                 </body>
             `);
@@ -540,11 +586,17 @@ const server = http.createServer((req, res) => {
 
     // Merkezi Lisans Kullanma / Mühürleme Endpoint'i (Single-Use Anti-Reuse Enforcement)
     if (req.method === 'POST' && req.url === '/api/claim-license') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', () => {
+        (async () => {
             try {
-                const params = JSON.parse(body || '{}');
+                let params;
+                try {
+                    params = await readJsonBody(req);
+                } catch (jsonErr) {
+                    const status = jsonErr.message === 'Payload Too Large' ? 413 : 400;
+                    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ success: false, reason: jsonErr.message }));
+                }
+
                 const rawKey = params.key || '';
                 const uid = params.uid || null;
                 const email = params.email || '';
@@ -652,17 +704,23 @@ const server = http.createServer((req, res) => {
                 res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
                 res.end(JSON.stringify({ success: false, reason: 'Sunucu hatası oluştu.' }));
             }
-        });
+        })();
         return;
     }
 
     // Merkezi Lisans Sorgulama Endpoint'i
     if (req.method === 'POST' && req.url === '/api/check-license') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', () => {
+        (async () => {
             try {
-                const params = JSON.parse(body || '{}');
+                let params;
+                try {
+                    params = await readJsonBody(req);
+                } catch (jsonErr) {
+                    const status = jsonErr.message === 'Payload Too Large' ? 413 : 400;
+                    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ valid: false, reason: jsonErr.message }));
+                }
+
                 const rawKey = params.key || '';
                 const uid = params.uid || null;
                 const deviceId = params.deviceId || null;
@@ -699,7 +757,7 @@ const server = http.createServer((req, res) => {
                 res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
                 res.end(JSON.stringify({ valid: false, error: 'Hata' }));
             }
-        });
+        })();
         return;
     }
 
@@ -788,11 +846,11 @@ const server = http.createServer((req, res) => {
                                     : `<span style="color:#f87171;">Bekliyor</span>`;
                                 return `
                                 <tr>
-                                    <td>#${s.orderId}</td>
-                                    <td><strong>${s.name}</strong><br><small style="color:#64748b;">${s.email}</small></td>
-                                    <td><span class="badge">${s.planTitle || s.planType}</span></td>
-                                    <td><span class="badge" style="${currBadge}">${curr}</span></td>
-                                    <td><code>${s.licenseKey}</code></td>
+                                    <td>#${escapeHtml(s.orderId)}</td>
+                                    <td><strong>${escapeHtml(s.name)}</strong><br><small style="color:#64748b;">${escapeHtml(s.email)}</small></td>
+                                    <td><span class="badge">${escapeHtml(s.planTitle || s.planType)}</span></td>
+                                    <td><span class="badge" style="${currBadge}">${escapeHtml(curr)}</span></td>
+                                    <td><code>${escapeHtml(s.licenseKey)}</code></td>
                                     <td>
                                         ${isClaimed 
                                             ? `<span class="badge-claimed">🔒 KULLANILDI (${new Date(claimInfo.claimedAt).toLocaleDateString('tr-TR')})</span>` 
@@ -801,7 +859,7 @@ const server = http.createServer((req, res) => {
                                     <td>${emailStatus}</td>
                                     <td style="color:#64748b; font-size:11px;">${new Date(s.createdAt).toLocaleString('tr-TR')}</td>
                                     <td>
-                                        <button type="button" onclick="resendOne('${s.orderId}', '${s.email}')" style="background:#d5b47b; color:#101b19; border:none; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">✉️ Tekrar Gönder</button>
+                                        <button type="button" class="btn-resend" data-order-id="${escapeHtml(s.orderId)}" data-email="${escapeHtml(s.email)}" style="background:#d5b47b; color:#101b19; border:none; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">✉️ Tekrar Gönder</button>
                                     </td>
                                 </tr>
                                 `;
@@ -810,13 +868,17 @@ const server = http.createServer((req, res) => {
                     </table>
 
                     <script>
-                        async function resendOne(orderId, email) {
+                        document.addEventListener('click', async function(e) {
+                            const btn = e.target.closest('.btn-resend');
+                            if (!btn) return;
+                            const orderId = btn.getAttribute('data-order-id');
+                            const email = btn.getAttribute('data-email');
                             if (!confirm('#' + orderId + ' siparişi için ' + email + ' adresine aktivasyon e-postasını tekrar göndermek istiyor musunuz?')) return;
                             try {
                                 const res = await fetch('/api/resend-license', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ orderId })
+                                    body: JSON.stringify({ orderId: orderId })
                                 });
                                 const data = await res.json();
                                 if (data.success) {
@@ -828,7 +890,7 @@ const server = http.createServer((req, res) => {
                             } catch (err) {
                                 alert('Bağlantı hatası: ' + err.message);
                             }
-                        }
+                        });
                     </script>
                 </div>
             </body>
@@ -926,6 +988,8 @@ const server = http.createServer((req, res) => {
     }
 
     function renderSuccessCard(licenseKey, email, isIntl) {
+        const safeKey = escapeHtml(licenseKey);
+        const safeEmail = escapeHtml(email);
         if (isIntl) {
             return `
             <!DOCTYPE html>
@@ -945,8 +1009,8 @@ const server = http.createServer((req, res) => {
                     <div style="font-size:48px; margin-bottom:12px;">🍸👑</div>
                     <h2 style="color:#d5b47b; margin:0 0 8px;">Your VIP Key is Ready!</h2>
                     <p style="font-size:13px; color:#cbd5e1; margin:0 0 16px;">Order confirmed. You can activate your key below in Pocket Bar:</p>
-                    <div class="key-box">${licenseKey}</div>
-                    <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">The key has also been emailed to <b>${email || 'your email'}</b>.</p>
+                    <div class="key-box">${safeKey}</div>
+                    <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">The key has also been emailed to <b>${safeEmail || 'your email'}</b>.</p>
                     <a href="https://barcepte.com.tr" class="btn">Return to Pocket Bar & Activate ➔</a>
                 </div>
             </body>
@@ -971,8 +1035,8 @@ const server = http.createServer((req, res) => {
                 <div style="font-size:48px; margin-bottom:12px;">🍸👑</div>
                 <h2 style="color:#d5b47b; margin:0 0 8px;">Aktivasyon Kodunuz Hazır!</h2>
                 <p style="font-size:13px; color:#cbd5e1; margin:0 0 16px;">Siparişiniz onaylandı. Aşağıdaki kodu Bar Cepte uygulamasında aktive edebilirsiniz:</p>
-                <div class="key-box">${licenseKey}</div>
-                <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">Kod ayrıca <b>${email || 'e-posta adresinize'}</b> gönderilmiştir.</p>
+                <div class="key-box">${safeKey}</div>
+                <p style="font-size:11px; color:#94a3b8; margin:0 0 20px;">Kod ayrıca <b>${safeEmail || 'e-posta adresinize'}</b> gönderilmiştir.</p>
                 <a href="https://barcepte.com.tr" class="btn">Bar Cepte'ye Dön ve Aktive Et ➔</a>
             </div>
         </body>
@@ -993,8 +1057,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+    server,
     detectPlanAndCurrency,
     detectPlan,
     generateKey,
-    verifyKeyChecksum
+    verifyKeyChecksum,
+    escapeHtml,
+    readJsonBody
 };

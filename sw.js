@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v30-seven-journey-fixes';
+const CACHE_NAME = 'bar-cepte-v31-audit-fixes';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./', './index.html', './privacy.html', './privacy.js', './style.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',

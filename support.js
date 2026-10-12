@@ -19,6 +19,10 @@ document.querySelectorAll('[data-support-button]').forEach(button => {
         }
     });
 });
-document.getElementById('support-close').addEventListener('click', () => {
-    document.getElementById('support-dialog').close();
-});
+const supportCloseBtn = document.getElementById('support-close');
+if (supportCloseBtn) {
+    supportCloseBtn.addEventListener('click', () => {
+        const dialog = document.getElementById('support-dialog');
+        if (dialog && typeof dialog.close === 'function') dialog.close();
+    });
+}

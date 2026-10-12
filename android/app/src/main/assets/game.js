@@ -1508,9 +1508,10 @@ function renderDashboard() {
                                 const encodedId = encodeURIComponent(item.id);
                                 const grpLabel = getAlcoholGroupLabel(getAlcoholGroup(item));
                                 const titleLabel = currentLang === 'en' ? 'Remove from Bar' : 'Barından Çıkar';
+                                const ingDisplayName = currentLang === 'en' ? (item.nameEn || item.id) : translateIngredientName(item.name || item.id);
                                 return `
                                     <span class="bg-slate-900/90 text-amber-300 border border-amber-500/20 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
-                                        <span>${item.emoji || '🥃'} ${escapeHTML(translateIngredientName(item.name || item.id))} <span class="text-[10px] text-amber-400/70 font-semibold">(${escapeHTML(grpLabel)})</span></span>
+                                        <span>${item.emoji || '🥃'} ${escapeHTML(ingDisplayName)} <span class="text-[10px] text-amber-400/70 font-semibold">(${escapeHTML(grpLabel)})</span></span>
                                         <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="${titleLabel}">✕</button>
                                     </span>
                                 `;
@@ -1529,9 +1530,10 @@ function renderDashboard() {
                             ${selectedKitchen.map(item => {
                                 const encodedId = encodeURIComponent(item.id);
                                 const titleLabel = currentLang === 'en' ? 'Remove from Bar' : 'Barından Çıkar';
+                                const ingDisplayName = currentLang === 'en' ? (item.nameEn || item.id) : translateIngredientName(item.name || item.id);
                                 return `
                                     <span class="bg-slate-900/90 text-emerald-300 border border-emerald-500/20 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
-                                        <span>${item.emoji || '🍊'} ${escapeHTML(translateIngredientName(item.name || item.id))}</span>
+                                        <span>${item.emoji || '🍊'} ${escapeHTML(ingDisplayName)}</span>
                                         <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-emerald-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="${titleLabel}">✕</button>
                                     </span>
                                 `;
@@ -1853,7 +1855,7 @@ function removeIngredientFromBar(ingId, event) {
     selectedIngredients = selectedIngredients.filter(i => i.toLowerCase() !== targetId.toLowerCase());
     try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
     const item = popularIngredients.find(pi => pi.id.toLowerCase() === targetId.toLowerCase());
-    const name = item ? translateIngredientName(item.name) : translateIngredientName(targetId);
+    const name = item ? (currentLang === 'en' ? (item.nameEn || item.id) : translateIngredientName(item.name)) : (currentLang === 'en' ? targetId : translateIngredientName(targetId));
     renderIngredients();
     filterCocktails();
     renderDashboard();
@@ -2075,7 +2077,7 @@ function updateSmartAdvice(missingMatches) {
     if (bestIng && maxVotes >= 1) {
         const encodedIng = encodeURIComponent(bestIng);
         const inShop = shoppingList.includes(bestIng);
-        const safeBestIng = escapeHTML(translateIngredientName(bestIng));
+        const safeBestIng = escapeHTML(currentLang === 'en' ? bestIng : translateIngredientName(bestIng));
 
         const tipTitle = currentLang === 'en' ? 'SMART BAR TIP' : 'AKILLI BAR ÖNERİSİ';
         const tipBody = currentLang === 'en'
@@ -2119,50 +2121,50 @@ function updateSmartAdvice(missingMatches) {
 
 // Akıllı Malzeme Muadilleri Veritabanı
 const INGREDIENT_SUBSTITUTES = {
-    'triple sec': { sub: 'Cointreau veya Portakal Likörü', note: 'Aynı narenciye tat dengesini verir.' },
-    'cointreau': { sub: 'Triple Sec veya Grand Marnier', note: 'Portakal likörü alternatifidir.' },
-    'grand marnier': { sub: 'Triple Sec veya Konyak + Portakal Kabuğu', note: 'Konyak bazlı portakal likörüdür.' },
-    'sugar syrup': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', note: 'Aynı tatlılık dengesini sağlar.' },
-    'simple syrup': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', note: 'Aynı tatlılık dengesini sağlar.' },
-    'şeker şurubu': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', note: 'Aynı tatlılık dengesini sağlar.' },
-    'sugar': { sub: 'Bal, Akçaağaç Şurubu veya Pudra Şekeri', note: 'Tatlılık dengesi sağlar.' },
-    'şeker': { sub: 'Bal veya Akçaağaç Şurubu', note: 'Tatlılık dengesi sağlar.' },
-    'lime juice': { sub: 'Taze Limon Suyu', note: 'Benzer asiditeyi ve ferahlığı verir.' },
-    'misket limonu suyu': { sub: 'Taze Limon Suyu', note: 'Benzer asiditeyi ve ferahlığı verir.' },
-    'lemon juice': { sub: 'Misket Limonu (Lime) Suyu', note: 'Asidite dengesi için 1:1 kullanılabilir.' },
-    'limon suyu': { sub: 'Misket Limonu (Lime) Suyu', note: 'Asidite dengesi için 1:1 kullanılabilir.' },
-    'bourbon': { sub: 'Rye (Çavdar) Viski veya İrlanda Viskisi', note: 'Tatlı meşe profiline benzerdir.' },
-    'rye whiskey': { sub: 'Bourbon Viski', note: 'Biraz daha tatlı bir profil elde edilir.' },
-    'viski': { sub: 'Bourbon veya Scotch', note: 'Temel tahıl alkolü alternatifi.' },
-    'club soda': { sub: 'Sade Maden Suyu', note: 'Kabarcık ve ferahlık için mükemmel alternatiftir.' },
-    'soda': { sub: 'Maden Suyu', note: 'Ferahlatıcı asit sağlar.' },
-    'tonic water': { sub: 'Soda + Limon Dilimi veya Bitter Lemon', note: 'Kinin ferahlığı için alternatif.' },
-    'tonik': { sub: 'Maden Suyu + Limon Dilimi', note: 'Ferahlatıcı alternatif.' },
-    'angostura bitters': { sub: 'Peychaud\'s veya Portakal Bitters', note: 'Birkaç damla aromatik derinlik katar.' },
-    'kahlua': { sub: 'Tia Maria veya Şekerli Espresso', note: 'Kahve likörü alternatifidir.' },
-    'campari': { sub: 'Aperol veya Select Aperitivo', note: 'Aperol daha tatlı ve hafif alkollüdür.' },
-    'aperol': { sub: 'Campari (daha az miktarda)', note: 'Campari daha acımsı ve güçlüdür.' },
-    'sweet vermouth': { sub: 'Kırmızı Şarap + az Bal/Konyak', note: 'Tatlı kırmızı vermut muadilidir.' },
-    'tatlı vermut': { sub: 'Kırmızı Şarap + az Bal/Konyak', note: 'Tatlı kırmızı vermut muadilidir.' },
-    'dry vermouth': { sub: 'Sek Beyaz Şarap veya Lillet Blanc', note: 'Sek beyaz vermut yerine kullanılabilir.' },
-    'sek vermut': { sub: 'Sek Beyaz Şarap', note: 'Sek beyaz vermut yerine kullanılabilir.' },
-    'dark rum': { sub: 'Altın Rom veya Baharatlı (Spiced) Rom', note: 'Koyu rom derinliğini yakalar.' },
-    'koyu rom': { sub: 'Altın Rom veya Baharatlı Rom', note: 'Koyu rom derinliğini yakalar.' },
-    'white rum': { sub: 'Votka + 1 çay kaşığı şeker şurubu', note: 'Nötr rom alternatifi.' },
-    'beyaz rom': { sub: 'Votka + az Şeker Şurubu', note: 'Nötr rom alternatifi.' },
-    'grenadine': { sub: 'Nar Ekşisi (tatlı) veya Ahududu Şurubu', note: 'Renk ve tatlı-mayhoşluk katar.' },
-    'nar şurubu': { sub: 'Tatlı Nar Ekşisi veya Vişne Şurubu', note: 'Renk ve tatlı-mayhoşluk katar.' },
-    'maraschino liqueur': { sub: 'Kiraz Likörü veya Amaretto', note: 'Meyvemsi badem aroması verir.' },
-    'amaretto': { sub: 'Badem Özütü + Konyak/Viski', note: 'Tatlı badem aroması sağlar.' },
-    'tequila': { sub: 'Mezcal veya Beyaz Rom', note: 'Agave aroması verir.' },
-    'tekila': { sub: 'Mezcal veya Beyaz Rom', note: 'Agave aroması verir.' },
-    'cognac': { sub: 'Brandy veya İspanyol Brendisi', note: 'Damıtılmış şarap bazlı içki muadili.' },
-    'brandy': { sub: 'Konyak veya Armagnac', note: 'Benzer meyvemsi meşe lezzeti verir.' },
-    'cream': { sub: 'Süt + az Tereyağı veya Hindistan Cevizi Kreması', note: 'Kıvam ve yumuşaklık katar.' },
-    'krema': { sub: 'Süt + az Tereyağı veya Hindistan Cevizi Kreması', note: 'Kıvam ve yumuşaklık katar.' },
-    'coconut cream': { sub: 'Krema + Hindistan Cevizi Sütü', note: 'Tropikal kıvam sağlar.' },
-    'ginger beer': { sub: 'Zencefilli Gazoz veya Zencefil Suyu + Soda', note: 'Baharatlı zencefil lezzeti verir.' },
-    'zencefilli gazoz': { sub: 'Zencefil Rendesi + Soda + Bal', note: 'Baharatlı ferahlık sağlar.' }
+    'triple sec': { sub: 'Cointreau veya Portakal Likörü', subEn: 'Cointreau or Orange Liqueur', note: 'Aynı narenciye tat dengesini verir.' },
+    'cointreau': { sub: 'Triple Sec veya Grand Marnier', subEn: 'Triple Sec or Grand Marnier', note: 'Portakal likörü alternatifidir.' },
+    'grand marnier': { sub: 'Triple Sec veya Konyak + Portakal Kabuğu', subEn: 'Triple Sec or Cognac + Orange Twist', note: 'Konyak bazlı portakal likörüdür.' },
+    'sugar syrup': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', subEn: 'Honey, Agave or Simple Syrup', note: 'Aynı tatlılık dengesini sağlar.' },
+    'simple syrup': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', subEn: 'Honey, Agave or 1:1 Sugar Water', note: 'Aynı tatlılık dengesini sağlar.' },
+    'şeker şurubu': { sub: 'Bal, Agave veya 1:1 Şeker-Sıcak Su', subEn: 'Honey, Agave or Simple Syrup', note: 'Aynı tatlılık dengesini sağlar.' },
+    'sugar': { sub: 'Bal, Akçaağaç Şurubu veya Pudra Şekeri', subEn: 'Honey, Maple Syrup or Fine Sugar', note: 'Tatlılık dengesi sağlar.' },
+    'şeker': { sub: 'Bal veya Akçaağaç Şurubu', subEn: 'Honey or Maple Syrup', note: 'Tatlılık dengesi sağlar.' },
+    'lime juice': { sub: 'Taze Limon Suyu', subEn: 'Fresh Lemon Juice', note: 'Benzer asiditeyi ve ferahlığı verir.' },
+    'misket limonu suyu': { sub: 'Taze Limon Suyu', subEn: 'Fresh Lemon Juice', note: 'Benzer asiditeyi ve ferahlığı verir.' },
+    'lemon juice': { sub: 'Misket Limonu (Lime) Suyu', subEn: 'Fresh Lime Juice', note: 'Asidite dengesi için 1:1 kullanılabilir.' },
+    'limon suyu': { sub: 'Misket Limonu (Lime) Suyu', subEn: 'Fresh Lime Juice', note: 'Asidite dengesi için 1:1 kullanılabilir.' },
+    'bourbon': { sub: 'Rye (Çavdar) Viski veya İrlanda Viskisi', subEn: 'Rye Whiskey or Irish Whiskey', note: 'Tatlı meşe profiline benzerdir.' },
+    'rye whiskey': { sub: 'Bourbon Viski', subEn: 'Bourbon Whiskey', note: 'Biraz daha tatlı bir profil elde edilir.' },
+    'viski': { sub: 'Bourbon veya Scotch', subEn: 'Bourbon or Scotch', note: 'Temel tahıl alkolü alternatifi.' },
+    'club soda': { sub: 'Sade Maden Suyu', subEn: 'Sparkling Mineral Water', note: 'Kabarcık ve ferahlık için mükemmel alternatiftir.' },
+    'soda': { sub: 'Maden Suyu', subEn: 'Sparkling Water', note: 'Ferahlatıcı asit sağlar.' },
+    'tonic water': { sub: 'Soda + Limon Dilimi veya Bitter Lemon', subEn: 'Club Soda + Lemon Wedge', note: 'Kinin ferahlığı için alternatif.' },
+    'tonik': { sub: 'Maden Suyu + Limon Dilimi', subEn: 'Club Soda + Lemon Wedge', note: 'Ferahlatıcı alternatif.' },
+    'angostura bitters': { sub: 'Peychaud\'s veya Portakal Bitters', subEn: 'Peychaud\'s or Orange Bitters', note: 'Birkaç damla aromatik derinlik katar.' },
+    'kahlua': { sub: 'Tia Maria veya Şekerli Espresso', subEn: 'Tia Maria or Sweetened Espresso', note: 'Kahve likörü alternatifidir.' },
+    'campari': { sub: 'Aperol veya Select Aperitivo', subEn: 'Aperol or Select Aperitivo', note: 'Aperol daha tatlı ve hafif alkollüdür.' },
+    'aperol': { sub: 'Campari (daha az miktarda)', subEn: 'Campari (in smaller measure)', note: 'Campari daha acımsı ve güçlüdür.' },
+    'sweet vermouth': { sub: 'Kırmızı Şarap + az Bal/Konyak', subEn: 'Red Wine + Dash of Honey/Brandy', note: 'Tatlı kırmızı vermut muadilidir.' },
+    'tatlı vermut': { sub: 'Kırmızı Şarap + az Bal/Konyak', subEn: 'Red Wine + Dash of Honey/Brandy', note: 'Tatlı kırmızı vermut muadilidir.' },
+    'dry vermouth': { sub: 'Sek Beyaz Şarap veya Lillet Blanc', subEn: 'Dry White Wine or Lillet Blanc', note: 'Sek beyaz vermut yerine kullanılabilir.' },
+    'sek vermut': { sub: 'Sek Beyaz Şarap', subEn: 'Dry White Wine', note: 'Sek beyaz vermut yerine kullanılabilir.' },
+    'dark rum': { sub: 'Altın Rom veya Baharatlı (Spiced) Rom', subEn: 'Gold Rum or Spiced Rum', note: 'Koyu rom derinliğini yakalar.' },
+    'koyu rom': { sub: 'Altın Rom veya Baharatlı Rom', subEn: 'Gold Rum or Spiced Rum', note: 'Koyu rom derinliğini yakalar.' },
+    'white rum': { sub: 'Votka + 1 çay kaşığı şeker şurubu', subEn: 'Vodka + 1 tsp Simple Syrup', note: 'Nötr rom alternatifi.' },
+    'beyaz rom': { sub: 'Votka + az Şeker Şurubu', subEn: 'Vodka + Splash of Syrup', note: 'Nötr rom alternatifi.' },
+    'grenadine': { sub: 'Nar Ekşisi (tatlı) veya Ahududu Şurubu', subEn: 'Raspberry or Cherry Syrup', note: 'Renk ve tatlı-mayhoşluk katar.' },
+    'nar şurubu': { sub: 'Tatlı Nar Ekşisi veya Vişne Şurubu', subEn: 'Sweet Pomegranate or Cherry Syrup', note: 'Renk ve tatlı-mayhoşluk katar.' },
+    'maraschino liqueur': { sub: 'Kiraz Likörü veya Amaretto', subEn: 'Cherry Liqueur or Amaretto', note: 'Meyvemsi badem aroması verir.' },
+    'amaretto': { sub: 'Badem Özütü + Konyak/Viski', subEn: 'Almond Extract + Brandy', note: 'Tatlı badem aroması sağlar.' },
+    'tequila': { sub: 'Mezcal veya Beyaz Rom', subEn: 'Mezcal or White Rum', note: 'Agave aroması verir.' },
+    'tekila': { sub: 'Mezcal veya Beyaz Rom', subEn: 'Mezcal or White Rum', note: 'Agave aroması verir.' },
+    'cognac': { sub: 'Brandy veya İspanyol Brendisi', subEn: 'Brandy or Spanish Brandy', note: 'Damıtılmış şarap bazlı içki muadili.' },
+    'brandy': { sub: 'Konyak veya Armagnac', subEn: 'Cognac or Armagnac', note: 'Benzer meyvemsi meşe lezzeti verir.' },
+    'cream': { sub: 'Süt + az Tereyağı veya Hindistan Cevizi Kreması', subEn: 'Whole Milk + Splash of Butter or Coconut Cream', note: 'Kıvam ve yumuşaklık katar.' },
+    'krema': { sub: 'Süt + az Tereyağı veya Hindistan Cevizi Kreması', subEn: 'Whole Milk + Butter or Coconut Cream', note: 'Kıvam ve yumuşaklık katar.' },
+    'coconut cream': { sub: 'Krema + Hindistan Cevizi Sütü', subEn: 'Heavy Cream + Coconut Milk', note: 'Tropikal kıvam sağlar.' },
+    'ginger beer': { sub: 'Zencefilli Gazoz veya Zencefil Suyu + Soda', subEn: 'Ginger Ale or Ginger Juice + Soda', note: 'Baharatlı zencefil lezzeti verir.' },
+    'zencefilli gazoz': { sub: 'Zencefil Rendesi + Soda + Bal', subEn: 'Fresh Ginger + Club Soda + Honey', note: 'Baharatlı ferahlık sağlar.' }
 };
 
 function getIngredientSubstitute(name) {
@@ -2603,7 +2605,11 @@ function downloadCocktailStoryCard(drinkId) {
 
 function resolveIngredientName(name) {
     const n = String(name || '').trim().toLowerCase();
-    const found = popularIngredients.find(pi => pi.id.toLowerCase() === n || pi.name.toLowerCase() === n);
+    const found = popularIngredients.find(pi => 
+        pi.id.toLowerCase() === n || 
+        (pi.name && pi.name.toLowerCase() === n) || 
+        (pi.nameEn && pi.nameEn.toLowerCase() === n)
+    );
     return found ? found.id : String(name || '').trim();
 }
 
@@ -2617,6 +2623,9 @@ function quickAddIngredientToBar(ingName, event) {
         renderIngredients();
         filterCocktails();
         renderDashboard();
+        const item = popularIngredients.find(pi => pi.id.toLowerCase() === id.toLowerCase());
+        const displayName = item ? (currentLang === 'en' ? (item.nameEn || item.id) : item.name) : id;
+        showToast(currentLang === 'en' ? `Added "${displayName}" to bar!` : `"${displayName}" barına eklendi!`, 'success');
     }
 }
 
@@ -2887,10 +2896,11 @@ function createCocktailCardElement(item, isMissingList) {
             const missingDisplayName = currentLang === 'en' ? m : translateIngredientName(m);
             const safeM = escapeHTML(missingDisplayName);
             const sub = getIngredientSubstitute(m);
+            const subDisplayName = sub ? (currentLang === 'en' ? (sub.subEn || sub.sub) : sub.sub) : '';
             const subHTML = sub ? `
             <div class="flex items-center justify-between gap-1 text-[10px] bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-xl text-amber-300 mt-1 min-w-0" data-stop-card>
-                <span class="truncate">💡 <b>${currentLang === 'en' ? 'Substitute:' : 'Muadil:'}</b> ${escapeHTML(sub.sub)}</span>
-                <button data-action="substitute" data-ing="${escapeHTML(encodedM)}" data-sub="${escapeHTML(encodeURIComponent(sub.sub))}" class="pill-btn font-bold text-amber-400 hover:text-white shrink-0 ml-1.5 underline">
+                <span class="truncate">💡 <b>${currentLang === 'en' ? 'Substitute:' : 'Muadil:'}</b> ${escapeHTML(subDisplayName)}</span>
+                <button data-action="substitute" data-ing="${escapeHTML(encodedM)}" data-sub="${escapeHTML(encodeURIComponent(subDisplayName))}" class="pill-btn font-bold text-amber-400 hover:text-white shrink-0 ml-1.5 underline">
                     ${currentLang === 'en' ? 'Add to Bar' : 'Bara Ekle'}
                 </button>
             </div>` : '';
@@ -4076,7 +4086,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function fetchDataWithIndexedDB() {
     const statusEl = document.getElementById('status');
-    if(statusEl) statusEl.innerText = "Veritabanı denetleniyor...";
+    if(statusEl) statusEl.innerText = currentLang === 'en' ? "Checking database..." : "Veritabanı denetleniyor...";
 
     try {
         if (db) {
@@ -4134,18 +4144,18 @@ async function fetchDataWithIndexedDB() {
                 renderIngredients(); 
                 filterCocktails();
                 
-                if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} Tarif Hazır`;
+                if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} ${I18N[currentLang].statusCount}`;
                 updateDataInBackground();
                 return;
             }
         }
 
-        if (statusEl) statusEl.innerText = "Paketlenmiş veritabanı yükleniyor...";
+        if (statusEl) statusEl.innerText = I18N[currentLang].statusLoading;
         await fetchAndStoreData();
 
     } catch (err) {
         console.error("Veri yükleme hatası:", err);
-        if (statusEl) statusEl.innerText = "Çevrimdışı Mod";
+        if (statusEl) statusEl.innerText = currentLang === 'en' ? "Offline Mode" : "Çevrimdışı Mod";
         autoExtractAllIngredients();
         renderIngredients();
         filterCocktails();
@@ -4174,7 +4184,7 @@ async function fetchAndStoreData() {
         for (let i = 0; i < letters.length; i += chunkSize) {
             const chunk = letters.slice(i, i + chunkSize);
             const percent = Math.round((i / letters.length) * 100);
-            if (statusEl) statusEl.innerText = `Tarifler indiriliyor (%${percent})...`;
+            if (statusEl) statusEl.innerText = currentLang === 'en' ? `Downloading recipes (${percent}%)...` : `Tarifler indiriliyor (%${percent})...`;
 
             const promises = chunk.map(async (letter) => {
                 try {
@@ -4216,7 +4226,7 @@ async function fetchAndStoreData() {
     renderIngredients();
     filterCocktails();
 
-    if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} Tarif Hazır`;
+    if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} ${I18N[currentLang].statusCount}`;
 }
 
 const SYNC_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000; // 14 günde bir otomatik kontrol
