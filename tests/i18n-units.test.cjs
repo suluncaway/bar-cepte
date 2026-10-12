@@ -72,3 +72,34 @@ test('Story card generator supports Pocket Bar and USD pricing in English mode',
     assert.ok(gameJs.includes("'PocketBar' : 'BarCepte'"), 'PocketBar download filename in EN');
     assert.ok(gameJs.includes("computedCostUsd"), 'USD computed cost used for English story card');
 });
+
+test('All opening modals, panels, and reserve plans have comprehensive English localization', () => {
+    const reserveJs = fs.readFileSync(path.resolve(__dirname, '../reserve.js'), 'utf8');
+    const authJs = fs.readFileSync(path.resolve(__dirname, '../auth.js'), 'utf8');
+    const privacyHtml = fs.readFileSync(path.resolve(__dirname, '../privacy.html'), 'utf8');
+    const privacyJs = fs.readFileSync(path.resolve(__dirname, '../privacy.js'), 'utf8');
+
+    // Reserve plans EN
+    assert.ok(reserveJs.includes('PLANS_CONFIG_EN'), 'PLANS_CONFIG_EN must exist');
+    assert.ok(reserveJs.includes('$2.99'), 'Monthly USD pricing in reserve.js');
+    assert.ok(reserveJs.includes('$14.99'), 'Annual USD pricing in reserve.js');
+    assert.ok(reserveJs.includes('$29.99'), 'Lifetime USD pricing in reserve.js');
+
+    // Auth module i18n
+    assert.ok(authJs.includes("Guest Bartender"), 'Guest Bartender English title in auth.js');
+    assert.ok(authJs.includes("bartender@pocketbar.app"), 'English fallback email in auth.js');
+    assert.ok(authJs.includes("RESERVE VIP MEMBER"), 'English VIP badge in auth.js');
+
+    // Privacy page
+    assert.ok(privacyHtml.includes('id="privacy-lang-toggle"'), 'privacy-lang-toggle in privacy.html');
+    assert.ok(privacyHtml.includes('src="privacy.js"'), 'privacy.js loaded in privacy.html');
+    assert.ok(!privacyHtml.includes('onclick='), 'Strict CSP: no onclick in privacy.html');
+    assert.ok(privacyJs.includes('Privacy Policy & 18+ Legal Notice — Pocket Bar'), 'English title in privacy.js');
+
+    // Game.js modals and panels
+    assert.ok(gameJs.includes('POCKET BAR'), 'Pocket Bar in reserve heading for English');
+    assert.ok(gameJs.includes('No cocktails found matching these criteria.'), 'Empty search state localized');
+    assert.ok(gameJs.includes('Show More'), 'Load more button localized in game.js');
+    assert.ok(gameJs.includes('1. Glassware & Prep'), 'Step-by-step mix mode steps localized in game.js');
+});
+

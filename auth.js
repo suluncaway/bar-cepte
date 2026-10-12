@@ -343,13 +343,13 @@
 
         const payload = parseJwt(response.credential);
         if (!payload || !payload.sub) {
-            alert('Google ile giriş doğrulaması başarısız oldu.');
+            showAlert(root.currentLang === 'en' ? 'Google sign-in verification failed.' : 'Google ile giriş doğrulaması başarısız oldu.');
             return;
         }
 
         const googleUser = {
             uid: 'google_' + payload.sub,
-            name: sanitizeText(payload.name || payload.email || 'Google Kullanıcısı', 100),
+            name: sanitizeText(payload.name || payload.email || (root.currentLang === 'en' ? 'Google User' : 'Google Kullanıcısı'), 100),
             email: sanitizeText(payload.email || '', 150),
             picture: safeAvatar(payload.picture || ''),
             provider: 'google',
@@ -384,7 +384,9 @@
         }
 
         closeAuthModal();
-        showAlert(`Hoş geldin, ${googleUser.name}! Bar Cepte hesabın başarıyla bağlandı.`);
+        showAlert(root.currentLang === 'en'
+            ? `Welcome, ${googleUser.name}! Your Pocket Bar account is connected.`
+            : `Hoş geldin, ${googleUser.name}! Bar Cepte hesabın başarıyla bağlandı.`);
 
         // Sayfa bileşenlerini yenile
         if (typeof root.filterCocktails === 'function') root.filterCocktails();
@@ -395,8 +397,8 @@
     function loginAsDemoUser() {
         const demoUser = {
             uid: 'demo_user_barmen',
-            name: 'Demo Barmen',
-            email: 'barmen@barcepte.com.tr',
+            name: root.currentLang === 'en' ? 'Guest Bartender' : 'Demo Barmen',
+            email: root.currentLang === 'en' ? 'bartender@pocketbar.app' : 'barmen@barcepte.com.tr',
             picture: '',
             provider: 'local',
             createdAt: Date.now(),
@@ -408,7 +410,9 @@
         saveUser(demoUser);
         syncToCloud();
         closeAuthModal();
-        showAlert('Demo üye olarak giriş yapıldı! Favorilerin ve bar dolabın bu hesaba eşitleniyor.');
+        showAlert(root.currentLang === 'en'
+            ? 'Signed in as Guest Bartender! Your favorites and bar shelf are syncing.'
+            : 'Demo üye olarak giriş yapıldı! Favorilerin ve bar dolabın bu hesaba eşitleniyor.');
     }
 
     function logout() {
@@ -418,7 +422,7 @@
         } catch {}
         updateAuthUI();
         closeAuthModal();
-        showAlert('Başarıyla çıkış yapıldı.');
+        showAlert(root.currentLang === 'en' ? 'Successfully signed out.' : 'Başarıyla çıkış yapıldı.');
     }
 
     // --- UI Güncelleme & Etkileşimler ---
@@ -432,7 +436,7 @@
         if (!authBtn) return;
 
         if (user) {
-            const firstName = user.name.split(' ')[0] || 'Hesabım';
+            const firstName = user.name.split(' ')[0] || (root.currentLang === 'en' ? 'My Account' : 'Hesabım');
             if (authBtnLabel) authBtnLabel.textContent = firstName;
             if (authBtnIcon) {
                 if (user.isReserve) {
@@ -447,7 +451,7 @@
                 ? "pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 shrink-0 whitespace-nowrap"
                 : "pill-btn px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-[11px] font-bold text-emerald-300 flex items-center gap-1.5 hover:bg-emerald-500/20 shrink-0 whitespace-nowrap";
         } else {
-            if (authBtnLabel) authBtnLabel.textContent = 'Giriş Yap';
+            if (authBtnLabel) authBtnLabel.textContent = root.currentLang === 'en' ? 'Sign In' : 'Giriş Yap';
             if (authBtnIcon) authBtnIcon.textContent = '👤';
             authBtn.className = "pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap";
         }
@@ -474,7 +478,7 @@
             const syncTimeEl = document.getElementById('auth-sync-time');
 
             if (nameEl) nameEl.textContent = user.name;
-            if (emailEl) emailEl.textContent = user.email || 'Bağlı Yerel Hesap';
+            if (emailEl) emailEl.textContent = user.email || (root.currentLang === 'en' ? 'Connected Local Account' : 'Bağlı Yerel Hesap');
             if (avatarEl) {
                 if (user.picture) {
                     avatarEl.innerHTML = `<img src="${user.picture}" alt="" class="w-14 h-14 rounded-2xl object-cover border border-amber-400/40 shadow-md">`;
@@ -485,18 +489,23 @@
 
             if (tierBadgeEl) {
                 if (user.isReserve) {
-                    tierBadgeEl.textContent = '👑 RESERVE VIP ÜYE (' + (user.plan === 'monthly' ? 'AYLIK' : 'YILLIK') + ')';
+                    const planText = user.plan === 'monthly'
+                        ? (root.currentLang === 'en' ? 'MONTHLY' : 'AYLIK')
+                        : (user.plan === 'lifetime'
+                            ? (root.currentLang === 'en' ? 'LIFETIME' : 'ÖMÜR BOYU')
+                            : (root.currentLang === 'en' ? 'ANNUAL' : 'YILLIK'));
+                    tierBadgeEl.textContent = (root.currentLang === 'en' ? '👑 RESERVE VIP MEMBER (' : '👑 RESERVE VIP ÜYE (') + planText + ')';
                     tierBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950';
                 } else {
-                    tierBadgeEl.textContent = '🍸 BARMEN KULÜBÜ ÜYESİ (ÜCRETSİZ)';
+                    tierBadgeEl.textContent = root.currentLang === 'en' ? '🍸 BARTENDER CLUB MEMBER (FREE)' : '🍸 BARMEN KULÜBÜ ÜYESİ (ÜCRETSİZ)';
                     tierBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-slate-300 border border-white/10';
                 }
             }
 
             if (syncTimeEl) {
                 syncTimeEl.textContent = user.lastSync > 0
-                    ? new Date(user.lastSync).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
-                    : 'Henüz eşitlenmedi';
+                    ? new Date(user.lastSync).toLocaleTimeString(root.currentLang === 'en' ? 'en-US' : 'tr-TR', { hour: '2-digit', minute: '2-digit' })
+                    : (root.currentLang === 'en' ? 'Not synced yet' : 'Henüz eşitlenmedi');
             }
 
             // Lisans bağlama kutusunun durumunu ayarla
@@ -580,9 +589,13 @@
         const customBtn = document.getElementById('btn-custom-google-login');
         if (customBtn) {
             customBtn.addEventListener('click', () => {
-                const name = prompt('Giriş yapılacak ad ve soyadınızı yazınız:', 'Misafir Barmen');
+                const namePrompt = root.currentLang === 'en' ? 'Enter your full name to sign in:' : 'Giriş yapılacak ad ve soyadınızı yazınız:';
+                const defaultName = root.currentLang === 'en' ? 'Guest Bartender' : 'Misafir Barmen';
+                const name = prompt(namePrompt, defaultName);
                 if (!name || !name.trim()) return;
-                const email = prompt('E-posta adresiniz (opsiyonel):', 'barmen@barcepte.com.tr') || '';
+                const emailPrompt = root.currentLang === 'en' ? 'Your email address (optional):' : 'E-posta adresiniz (opsiyonel):';
+                const defaultEmail = root.currentLang === 'en' ? 'bartender@pocketbar.app' : 'barmen@barcepte.com.tr';
+                const email = prompt(emailPrompt, defaultEmail) || '';
                 
                 const localUser = {
                     uid: 'user_' + Date.now(),
@@ -599,7 +612,7 @@
                 saveUser(localUser);
                 syncToCloud();
                 closeAuthModal();
-                alert(`Hoş geldin, ${localUser.name}! Hesabın bağlandı.`);
+                alert(root.currentLang === 'en' ? `Welcome, ${localUser.name}! Your account is connected.` : `Hoş geldin, ${localUser.name}! Hesabın bağlandı.`);
             });
         }
     }
@@ -622,7 +635,7 @@
         const logoutBtn = document.getElementById('btn-auth-logout');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
-                if (confirm('Hesabınızdan çıkış yapmak istediğinize emin misiniz?')) {
+                if (confirm(root.currentLang === 'en' ? 'Are you sure you want to sign out of your account?' : 'Hesabınızdan çıkış yapmak istediğinize emin misiniz?')) {
                     logout();
                 }
             });
@@ -633,10 +646,10 @@
             syncNowBtn.addEventListener('click', () => {
                 const result = syncToCloud();
                 if (result.success) {
-                    alert('Bulut senkronizasyonu tamamlandı! Tüm verileriniz güvende.');
+                    alert(root.currentLang === 'en' ? 'Cloud sync completed! All your data is safe.' : 'Bulut senkronizasyonu tamamlandı! Tüm verileriniz güvende.');
                     renderAuthModalState();
                 } else {
-                    alert('Senkronizasyon başarısız: ' + result.reason);
+                    alert((root.currentLang === 'en' ? 'Sync failed: ' : 'Senkronizasyon başarısız: ') + result.reason);
                 }
             });
         }
@@ -647,24 +660,24 @@
                 const input = document.getElementById('auth-license-input');
                 const rawKey = input ? input.value.trim() : '';
                 if (!rawKey) {
-                    alert('Lütfen bir aktivasyon kodu giriniz.');
+                    alert(root.currentLang === 'en' ? 'Please enter an activation key.' : 'Lütfen bir aktivasyon kodu giriniz.');
                     return;
                 }
 
                 const origText = bindLicenseBtn.textContent;
                 bindLicenseBtn.disabled = true;
-                bindLicenseBtn.textContent = 'Kontrol ediliyor...';
+                bindLicenseBtn.textContent = root.currentLang === 'en' ? 'Checking...' : 'Kontrol ediliyor...';
 
                 try {
                     if (root.BarReserve && typeof root.BarReserve.verifyAndActivateLicense === 'function') {
                         const result = await root.BarReserve.verifyAndActivateLicense(rawKey);
                         if (result.success) {
-                            alert('🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
+                            alert(root.currentLang === 'en' ? '🎉 Your license key was successfully linked to your account!' : '🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
                             if (input) input.value = '';
                             renderAuthModalState();
                             updateAuthUI();
                         } else {
-                            alert(result.reason || 'Aktivasyon gerçekleştirilemedi.');
+                            alert(result.reason || (root.currentLang === 'en' ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.'));
                         }
                     } else {
                         const check = canUseLicenseKey(rawKey);
@@ -676,12 +689,12 @@
                         if (root.BarReserve && typeof root.BarReserve.activateReserve === 'function') {
                             const activated = root.BarReserve.activateReserve(rawKey);
                             if (activated) {
-                                alert('🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
+                                alert(root.currentLang === 'en' ? '🎉 Your license key was successfully linked to your account!' : '🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
                                 if (input) input.value = '';
                                 renderAuthModalState();
                                 updateAuthUI();
                             } else {
-                                alert('Aktivasyon gerçekleştirilemedi.');
+                                alert(root.currentLang === 'en' ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.');
                             }
                         }
                     }
@@ -722,7 +735,9 @@
         sanitizeText,
         safeAvatar,
         parseJwt,
-        getClaimedLicenses
+        getClaimedLicenses,
+        updateAuthUI,
+        renderAuthModalState
     };
 
     root.BarAuth = api;

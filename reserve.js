@@ -47,6 +47,39 @@
         }
     };
 
+    const PLANS_CONFIG_EN = {
+        monthly: {
+            title: 'Monthly Pass (30 Days)',
+            price: '$2.99',
+            period: '/ month',
+            badge: 'MONTHLY PASS',
+            subtitle: '30 Days Full Access',
+            desc: 'Flexible monthly home bartending enjoyment. Cancel anytime.',
+            checkoutLabel: 'Secure Checkout via Shopier ($2.99)',
+            shopierUrl: 'https://www.shopier.com/Anawin/51736039'
+        },
+        annual: {
+            title: 'Annual Pass (Best Value)',
+            price: '$14.99',
+            period: '/ year ($1.25/mo)',
+            badge: '⭐ SAVE 58% — POPULAR',
+            subtitle: '365 Days VIP Access',
+            desc: 'Only $1.25/mo! 1 full year of uninterrupted ad-free VIP cocktail experience and gold badge.',
+            checkoutLabel: 'Secure Checkout via Shopier ($14.99)',
+            shopierUrl: 'https://www.shopier.com/Anawin/51735632'
+        },
+        lifetime: {
+            title: 'Lifetime VIP Pass',
+            price: '$29.99',
+            period: 'one-time',
+            badge: 'LIFETIME VIP',
+            subtitle: 'Yours Forever',
+            desc: 'Pay once, enjoy ad-free forever. Never pay again for future upgrades.',
+            checkoutLabel: 'Secure Checkout via Shopier ($29.99)',
+            shopierUrl: 'https://www.shopier.com/Anawin'
+        }
+    };
+
     let currentSelectedPlan = 'annual';
 
     function checksum(str) {
@@ -88,6 +121,14 @@
     }
 
     function getPlanDisplayName(plan) {
+        if (root.currentLang === 'en') {
+            switch (plan) {
+                case 'monthly': return 'Monthly Pass (30 Days)';
+                case 'annual': return 'Annual Pass (365 Days)';
+                case 'lifetime': return 'Lifetime VIP Pass';
+                default: return 'Reserve Membership';
+            }
+        }
         switch (plan) {
             case 'monthly': return 'Aylık Abonelik (Monthly Pass)';
             case 'annual': return 'Yıllık Abonelik (Annual Pass)';
@@ -193,13 +234,13 @@
 
     async function verifyAndActivateLicense(key) {
         if (!key || typeof key !== 'string') {
-            return { success: false, reason: 'Lütfen bir aktivasyon kodu giriniz.' };
+            return { success: false, reason: root.currentLang === 'en' ? 'Please enter an activation key.' : 'Lütfen bir aktivasyon kodu giriniz.' };
         }
         const cleanKey = key.trim().toUpperCase();
 
         // 1. Format ve sağlama toplamı kontrolü
         if (!validateLicenseKey(cleanKey)) {
-            return { success: false, reason: '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
+            return { success: false, reason: root.currentLang === 'en' ? '❌ Invalid activation key. Please check again.' : '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
         }
 
         // 2. Master Key kontrolü (Geliştirici anahtarları)
@@ -240,7 +281,9 @@
                 }
                 return {
                     success: false,
-                    reason: data.reason || '❌ Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.'
+                    reason: data.reason || (root.currentLang === 'en'
+                        ? '❌ This license key was already claimed by another user or device! Licenses are single-use.'
+                        : '❌ Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.')
                 };
             }
 
@@ -265,7 +308,7 @@
             if (localSuccess) {
                 return { success: true, plan: getPlanFromKey(cleanKey), offline: true };
             }
-            return { success: false, reason: 'Aktivasyon gerçekleştirilemedi.' };
+            return { success: false, reason: root.currentLang === 'en' ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.' };
         }
     }
 
@@ -298,7 +341,9 @@
 
     function selectPlan(planKey) {
         currentSelectedPlan = planKey;
-        const config = PLANS_CONFIG[planKey] || PLANS_CONFIG.annual;
+        const isEn = root.currentLang === 'en';
+        const dict = isEn ? PLANS_CONFIG_EN : PLANS_CONFIG;
+        const config = dict[planKey] || dict.annual;
 
         document.querySelectorAll('.reserve-plan-tab').forEach(tab => {
             const isTarget = tab.dataset.plan === planKey;
@@ -328,6 +373,7 @@
 
     function applyReserveUI() {
         const active = isReserveActive();
+        const isEn = root.currentLang === 'en';
         
         // Reklam alanlarını ve sponsor kartlarını gizle / göster
         const adSlots = document.querySelectorAll('.ad-slot-container');
@@ -361,7 +407,7 @@
         const reserveBtn = document.getElementById('btn-open-reserve');
         if (reserveBtnLabel && reserveBtn) {
             if (active) {
-                reserveBtnLabel.textContent = 'Reserve Aktif';
+                reserveBtnLabel.textContent = isEn ? 'Reserve Active' : 'Reserve Aktif';
                 reserveBtn.classList.add('border-amber-400', 'bg-amber-500/20');
             } else {
                 reserveBtnLabel.textContent = 'Reserve';
@@ -386,9 +432,9 @@
                 }
                 if (durationEl) {
                     if (subInfo.plan === 'lifetime') {
-                        durationEl.textContent = '♾️ Ömür Boyu (Sınırsız)';
+                        durationEl.textContent = isEn ? '♾️ Lifetime VIP (Unlimited)' : '♾️ Ömür Boyu (Sınırsız)';
                     } else if (subInfo.daysLeft !== null) {
-                        durationEl.textContent = `⏳ ${subInfo.daysLeft} Gün Kaldı`;
+                        durationEl.textContent = isEn ? `⏳ ${subInfo.daysLeft} Days Left` : `⏳ ${subInfo.daysLeft} Gün Kaldı`;
                     }
                 }
             } else {
@@ -486,7 +532,9 @@
                         const subInfo = getSubscriptionInfo();
                         const planName = getPlanDisplayName(subInfo.plan);
                         if (msgEl) {
-                            msgEl.textContent = `🎉 Tebrikler! ${planName} başarıyla aktif edildi.`;
+                            msgEl.textContent = root.currentLang === 'en'
+                                ? `🎉 Congratulations! ${planName} successfully activated.`
+                                : `🎉 Tebrikler! ${planName} başarıyla aktif edildi.`;
                             msgEl.className = 'text-xs text-emerald-400 font-bold';
                         }
                         setTimeout(() => {
@@ -494,7 +542,9 @@
                         }, 500);
                     } else {
                         if (msgEl) {
-                            msgEl.textContent = result.reason || '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.';
+                            msgEl.textContent = result.reason || (root.currentLang === 'en'
+                                ? '❌ Invalid activation key. Please check again.'
+                                : '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.');
                             msgEl.className = 'text-xs text-rose-400 font-semibold';
                         }
                     }
@@ -507,7 +557,9 @@
 
         if (deactivateBtn) {
             deactivateBtn.addEventListener('click', () => {
-                if (confirm('Reserve üyeliğinizi bu cihazdan kaldırmak istediğinize emin misiniz?')) {
+                if (confirm(root.currentLang === 'en'
+                    ? 'Are you sure you want to remove your Reserve membership from this device?'
+                    : 'Reserve üyeliğinizi bu cihazdan kaldırmak istediğinize emin misiniz?')) {
                     deactivateReserve();
                 }
             });
@@ -533,7 +585,14 @@
         getSubscriptionInfo,
         getPlanFromKey,
         getPlanDisplayName,
-        PLANS_CONFIG
+        PLANS_CONFIG,
+        PLANS_CONFIG_EN,
+        applyReserveUI,
+        selectPlan
+    };
+    root.refreshReserveUI = function() {
+        applyReserveUI();
+        selectPlan(currentSelectedPlan);
     };
     root.BarReserve = api;
     if (typeof module !== 'undefined') module.exports = api;

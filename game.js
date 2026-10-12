@@ -145,7 +145,69 @@ const I18N = {
         pasteBackupPlaceholder: "Başka cihazdan aldığınız yedekleme kodunu buraya yapıştırın...",
         restoreBackup: "Yedeği Geri Yükle",
         updateDb: "Kokteyl Veritabanını Güncelle",
-        checkUpdates: "Yeni Sürüm Kontrolü Yap"
+        checkUpdates: "Yeni Sürüm Kontrolü Yap",
+        editorialEyebrow: "KLASİKLERDEN İLHAM AL",
+        editorialHeading: "Her güzel akşamın bir tarifi var.",
+        editorialAside: "Bir tarif seç, detaylarını keşfet.",
+        overviewBadge: "GENEL BAKIŞ",
+        smartAdviceTitle: "Akıllı Bar Önerisi",
+        optAlcoholic: "Alkollü Kokteyl",
+        optMocktail: "Alkolsüz (Mocktail)",
+        optMartini: "🍸 Martini / Kadeh",
+        optHighball: "🥤 Uzun Bardak (Highball)",
+        optRocks: "🥃 Kısa Bardak (On the Rocks)",
+        optShot: "🥃 Shot Bardağı",
+        optFlute: "🥂 Şampanya Kadehi",
+        optCopper: "🪣 Bakır Kupa (Mule)",
+        photoLabel: "📷 Kokteyl Fotoğrafı:",
+        saveRecipeBtn: "Tarifi Kaydet",
+        syncOnlineDbNote: "Çevrimiçi veritabanından yeni kokteylleri kontrol et:",
+        updateTitle: "YENİ SÜRÜM MEVCUT!",
+        updateVersionText: "v1.2.0 hazır",
+        updateWhatsNew: "Yenilikler:",
+        updateNotes: "Hata düzeltmeleri ve performans iyileştirmeleri.",
+        updateBtn: "Şimdi Güncelle",
+        updateLaterBtn: "Daha Sonra Hatırlat",
+        timerTitle: "BARMEN ZAMANLAYICISI",
+        timerPreset15: "15s Shaker",
+        timerPreset30: "30s Karıştır",
+        timerPreset45: "45s Soğut",
+        timerStart: "▶ Başlat",
+        timerPause: "⏸ Duraklat",
+        timerReset: "🔄 Sıfırla",
+        mixEyebrow: "🍸 BARMEN MODU",
+        mixPrev: "← Önceki",
+        mixNext: "Sonraki Adım →",
+        mixFinish: "Tamamla & Kapat ✓",
+        reserveExclusiveClub: "ÖZEL SEÇKİ KULÜBÜ",
+        reserveBullet1: "<strong>%100 Reklamsız Deneyim:</strong> Sıfır reklam, kesintisiz hız.",
+        reserveBullet2: "<strong>Gizli Speakeasy Seçkisi:</strong> Usta barmenlerin imza kokteylleri ve şurup rehberleri.",
+        reserveBullet3: "<strong>Parti & Porsiyon Modu:</strong> 10-50 kişilik davetler için tam malzeme hesabı.",
+        reserveBullet4: "<strong>Reserve Altın Rozeti:</strong> Hesabında parıldayan statü ve öncelikli destek.",
+        reserveHaveKey: "Zaten bir aktivasyon kodun var mı?",
+        reserveActivateBtn: "Aktive Et",
+        reserveActiveHeading: "Reserve Üyeliğiniz Aktif!",
+        reserveActiveDesc: "Tüm ayrıcalıklar, gizli kokteyller ve reklamsız deneyim bu cihazda devrede.",
+        reserveActiveNote: "Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde! 🍸",
+        reserveDeactivateBtn: "Bu cihazdan üyeliği kaldır",
+        authH3: "BARMEN KULÜBÜ",
+        authDesc: "Google hesabınla bağlan, bar dolabını ve VIP ayrıcalıklarını tüm cihazlarına eşitle.",
+        authBullet1: "<strong class=\"text-white\">Bulut Senkronizasyonu:</strong> Favori kokteyllerin, bar dolabın ve tariflerin asla silinmez.",
+        authBullet2: "<strong class=\"text-white\">Çoklu Cihaz:</strong> Telefondan veya bilgisayardan açtığında tüm seçimlerin anında karşında.",
+        authBullet3: "<strong class=\"text-white\">Tek Kullanımlık Lisans Koruma:</strong> Satın aldığın Shopier kodun hesabına mühürlenir.",
+        authGuestBtn: "⚡ Veya Misafir Barmen Olarak Devam Et",
+        authSyncTitle: "Bulut Senkronizasyonu",
+        authSyncActive: "● Devrede",
+        authSyncDesc: "Favorileriniz, bar dolabınız ve özel tarifleriniz Google hesabınızla güvenle eşitleniyor.",
+        authLastSyncLabel: "Son Eşitleme:",
+        authSyncNowBtn: "Şimdi Eşitle ⟳",
+        authLinkTitle: "Shopier Kodunu Hesabına Bağla",
+        authLinkDesc: "Shopier'dan aldığın aktivasyon anahtarını hesabına mühürle; tüm cihazlarında kod yazmadan VIP ol.",
+        authLinkBtn: "Bağla",
+        authLogoutBtn: "Hesaptan Çıkış Yap",
+        supportTitle: "Bar Cepte’ye destek",
+        supportDesc: "Destek sayfamız henüz hazır değil. Bağlantı doğrulandığında buradan güvenle ulaşabileceksiniz. İlginiz için teşekkür ederiz.",
+        supportClose: "Tamam"
     },
     en: {
         brand: 'Pocket Bar',
@@ -254,7 +316,69 @@ const I18N = {
         pasteBackupPlaceholder: "Paste your backup code here...",
         restoreBackup: "Restore Backup",
         updateDb: "Update Cocktail Database",
-        checkUpdates: "Check for Updates"
+        checkUpdates: "Check for Updates",
+        editorialEyebrow: "INSPIRED BY CLASSICS",
+        editorialHeading: "Every great evening has a recipe.",
+        editorialAside: "Pick a recipe, explore the details.",
+        overviewBadge: "OVERVIEW",
+        smartAdviceTitle: "Smart Bar Tip",
+        optAlcoholic: "Alcoholic Cocktail",
+        optMocktail: "Non-Alcoholic (Mocktail)",
+        optMartini: "🍸 Martini / Cocktail Glass",
+        optHighball: "🥤 Tall Glass (Highball)",
+        optRocks: "🥃 Short Glass (On the Rocks)",
+        optShot: "🥃 Shot Glass",
+        optFlute: "🥂 Champagne Flute",
+        optCopper: "🪣 Copper Mug (Mule)",
+        photoLabel: "📷 Cocktail Photo:",
+        saveRecipeBtn: "Save Recipe",
+        syncOnlineDbNote: "Check for new cocktails from online database:",
+        updateTitle: "NEW VERSION AVAILABLE!",
+        updateVersionText: "v1.2.0 ready",
+        updateWhatsNew: "What's New:",
+        updateNotes: "Bug fixes and performance improvements.",
+        updateBtn: "Update Now",
+        updateLaterBtn: "Remind Later",
+        timerTitle: "BARTENDER TIMER",
+        timerPreset15: "15s Shake",
+        timerPreset30: "30s Stir",
+        timerPreset45: "45s Chill",
+        timerStart: "▶ Start",
+        timerPause: "⏸ Pause",
+        timerReset: "🔄 Reset",
+        mixEyebrow: "🍸 BARTENDER MODE",
+        mixPrev: "← Previous",
+        mixNext: "Next Step →",
+        mixFinish: "Finish ✓",
+        reserveExclusiveClub: "EXCLUSIVE CURATION CLUB",
+        reserveBullet1: "<strong>100% Ad-Free Experience:</strong> Zero ads, pure speed.",
+        reserveBullet2: "<strong>Secret Speakeasy Curation:</strong> Master bartenders' signature cocktails & syrup guides.",
+        reserveBullet3: "<strong>Party & Batch Calculator:</strong> Exact ingredient scaling for 10-50 guests.",
+        reserveBullet4: "<strong>Reserve Gold Badge:</strong> Shining status on your account & priority support.",
+        reserveHaveKey: "Already have an activation code?",
+        reserveActivateBtn: "Activate",
+        reserveActiveHeading: "Your Reserve Membership is Active!",
+        reserveActiveDesc: "All privileges, secret cocktails, and ad-free experience are active on this device.",
+        reserveActiveNote: "Enjoy your evening. You run the bar tonight! 🍸",
+        reserveDeactivateBtn: "Remove membership from this device",
+        authH3: "BARTENDER CLUB",
+        authDesc: "Connect with your Google account to sync your bar cabinet and VIP privileges across all devices.",
+        authBullet1: "<strong class=\"text-white\">Cloud Sync:</strong> Your favorite cocktails, home bar cabinet, and recipes are safely stored.",
+        authBullet2: "<strong class=\"text-white\">Multi-Device:</strong> Instantly access all your ingredients and drinks on phone, tablet, or PC.",
+        authBullet3: "<strong class=\"text-white\">Protected VIP License:</strong> Your purchased VIP code is permanently sealed to your account.",
+        authGuestBtn: "⚡ Or Continue as Guest Bartender",
+        authSyncTitle: "Cloud Sync",
+        authSyncActive: "● Active",
+        authSyncDesc: "Your favorites, bar cabinet, and custom recipes are securely synced with your Google account.",
+        authLastSyncLabel: "Last Synced:",
+        authSyncNowBtn: "Sync Now ⟳",
+        authLinkTitle: "Link License Key to Account",
+        authLinkDesc: "Seal your activation key to your account; enjoy VIP status across all devices without re-typing codes.",
+        authLinkBtn: "Link",
+        authLogoutBtn: "Sign Out",
+        supportTitle: "Support Pocket Bar",
+        supportDesc: "Our support page is being updated. You will be able to access verified support links shortly. Thank you for your support.",
+        supportClose: "OK"
     }
 };
 
@@ -1574,7 +1698,7 @@ const debouncedFilterCocktails = debounce(filterCocktails, 180);
 
 function clearSelection() {
     if(selectedIngredients.length === 0) {
-        showToast('Barında zaten seçili malzeme yok.', 'info');
+        showToast(currentLang === 'en' ? 'No ingredients currently selected in your bar.' : 'Barında zaten seçili malzeme yok.', 'info');
         return;
     }
     triggerHaptic('medium');
@@ -1586,7 +1710,7 @@ function clearSelection() {
     renderIngredients();
     filterCocktails();
     renderDashboard();
-    showToast(`${count} malzeme barından temizlendi.`, 'info');
+    showToast(currentLang === 'en' ? `Cleared ${count} ingredients from your bar.` : `${count} malzeme barından temizlendi.`, 'info');
 }
 
 function removeIngredientFromBar(ingId, event) {
@@ -1597,11 +1721,11 @@ function removeIngredientFromBar(ingId, event) {
     selectedIngredients = selectedIngredients.filter(i => i.toLowerCase() !== targetId.toLowerCase());
     try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
     const item = popularIngredients.find(pi => pi.id.toLowerCase() === targetId.toLowerCase());
-    const name = item ? item.name : targetId;
+    const name = item ? translateIngredientName(item.name) : translateIngredientName(targetId);
     renderIngredients();
     filterCocktails();
     renderDashboard();
-    showToast(`"${name}" barından çıkarıldı.`, 'info');
+    showToast(currentLang === 'en' ? `Removed "${name}" from bar.` : `"${name}" barından çıkarıldı.`, 'info');
 }
 
 function ingredientNameOnly(str) {
@@ -1815,7 +1939,7 @@ function updateSmartAdvice(missingMatches) {
     if (bestIng && maxVotes >= 1) {
         const encodedIng = encodeURIComponent(bestIng);
         const inShop = shoppingList.includes(bestIng);
-        const safeBestIng = escapeHTML(bestIng);
+        const safeBestIng = escapeHTML(translateIngredientName(bestIng));
 
         const tipTitle = currentLang === 'en' ? 'SMART BAR TIP' : 'AKILLI BAR ÖNERİSİ';
         const tipBody = currentLang === 'en'
@@ -1941,7 +2065,7 @@ function applySubstituteToBar(ingEncoded, subEncoded, event) {
     const ingName = decodeURIComponent(ingEncoded || '');
     const subName = decodeURIComponent(subEncoded || '');
     quickAddIngredientToBar(ingName);
-    showToast(`"${subName}" muadiliyle barına eklendi!`, 'success');
+    showToast(currentLang === 'en' ? `Added with "${subName}" substitute!` : `"${subName}" muadiliyle barına eklendi!`, 'success');
 }
 
 // --- ADIM ADIM BARMEN MODU SİSTEMİ ---
@@ -2105,7 +2229,7 @@ function nextMixStep() {
         triggerHaptic('light');
     } else {
         closeMixMode();
-        showToast('Tebrikler! Kokteylini başarıyla hazırladın 🍸', 'success');
+        showToast(currentLang === 'en' ? 'Cheers! You crafted the cocktail like a pro 🍸' : 'Tebrikler! Kokteylini başarıyla hazırladın 🍸', 'success');
     }
 }
 
@@ -2388,13 +2512,13 @@ function filterCocktails() {
             }).slice(0, 3);
         const picksGrid = document.getElementById('editorial-picks-grid');
         if (picksGrid) renderLists(picks, picksGrid, false);
-        readyContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">Yukarıdan malzeme seçerek veya kokteyl adı aratarak kokteylleri keşfedebilirsin.</div>`;
-        missingContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">Henüz seçili malzeme yok.</div>`;
+        readyContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">${I18N[currentLang].emptyDiscovery}</div>`;
+        missingContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">${I18N[currentLang].noSelectedIng}</div>`;
         const countReadyEl = document.getElementById('count-ready');
         if (countReadyEl) countReadyEl.innerText = "0";
         
         const titleMissing = document.getElementById('title-missing');
-        if(titleMissing) titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Yaklaştığın Tarifler (1-4 Eksik) <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">0</span>`;
+        if(titleMissing) titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> ${I18N[currentLang].missingTitle} <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">0</span>`;
 
         updateSmartAdvice([]);
         if (currentTab === 'bar') renderDashboard();
@@ -2740,7 +2864,7 @@ const COCKTAIL_PAGE_SIZE = 24;
 function renderLists(items, container, isMissingList) {
     container.innerHTML = "";
     if (!items || items.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">Bu kriterlere uygun kokteyl bulunamadı.</div>`;
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">${currentLang === 'en' ? 'No cocktails found matching these criteria.' : 'Bu kriterlere uygun kokteyl bulunamadı.'}</div>`;
         return;
     }
 
@@ -2762,10 +2886,12 @@ function renderLists(items, container, isMissingList) {
             const remaining = items.length - currentIndex;
             const loadMoreWrapper = document.createElement('div');
             loadMoreWrapper.className = "col-span-full flex flex-col items-center py-6 load-more-container";
+            const showMoreLabel = currentLang === 'en' ? `Show More (+${Math.min(remaining, COCKTAIL_PAGE_SIZE)})` : `Daha Fazla Göster (+${Math.min(remaining, COCKTAIL_PAGE_SIZE)})`;
+            const remainingLabel = currentLang === 'en' ? `Remaining: ${remaining}` : `Kalan: ${remaining}`;
             loadMoreWrapper.innerHTML = `
                 <button class="pill-btn px-6 py-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold hover:bg-amber-500/25 shadow-lg flex items-center gap-2">
-                    <span>Daha Fazla Göster (+${Math.min(remaining, COCKTAIL_PAGE_SIZE)})</span>
-                    <span class="text-slate-400 font-normal">Kalan: ${remaining}</span>
+                    <span>${showMoreLabel}</span>
+                    <span class="text-slate-400 font-normal">${remainingLabel}</span>
                 </button>
             `;
             const btn = loadMoreWrapper.querySelector('button');
@@ -2799,7 +2925,9 @@ async function shareCustomRecipe(id, event) {
 
     const reqs = Array.isArray(recipe.customIngredients) ? recipe.customIngredients : [];
     const ingredientsText = reqs.map(i => `- ${i}`).join('\n');
-    const shareText = `🍹 *${recipe.strDrink}* (Özel Tarif)\n\n🔹 *Malzemeler:*\n${ingredientsText}\n\n🔸 *Hazırlanışı:*\n${recipe.strInstructions}\n\n_Bar Cepte ile hazırlandı!_`;
+    const shareText = currentLang === 'en'
+        ? `🍹 *${recipe.strDrink}* (Custom Recipe)\n\n🔹 *Ingredients:*\n${ingredientsText}\n\n🔸 *Instructions:*\n${recipe.strInstructions}\n\n_Crafted with Pocket Bar!_`
+        : `🍹 *${recipe.strDrink}* (Özel Tarif)\n\n🔹 *Malzemeler:*\n${ingredientsText}\n\n🔸 *Hazırlanışı:*\n${recipe.strInstructions}\n\n_Bar Cepte ile hazırlandı!_`;
 
     if (navigator.share) {
         navigator.share({
@@ -2809,9 +2937,9 @@ async function shareCustomRecipe(id, event) {
     } else if (navigator.clipboard && navigator.clipboard.writeText) {
         try {
             await navigator.clipboard.writeText(shareText);
-            alert("Tarif panoya kopyalandı!");
+            alert(currentLang === 'en' ? "Recipe copied to clipboard!" : "Tarif panoya kopyalandı!");
         } catch(err) {
-            alert("Kopyalama başarısız oldu. Tarif içeriği:\n\n" + shareText);
+            alert((currentLang === 'en' ? "Copying failed. Recipe content:\n\n" : "Kopyalama başarısız oldu. Tarif içeriği:\n\n") + shareText);
         }
     } else {
         alert(shareText);
@@ -2820,7 +2948,7 @@ async function shareCustomRecipe(id, event) {
 
 function deleteCustomRecipe(id, event) {
     if(event) event.stopPropagation();
-    if(confirm("Bu özel tarifi silmek istediğine emin misin?")) {
+    if(confirm(currentLang === 'en' ? "Are you sure you want to delete this custom recipe?" : "Bu özel tarifi silmek istediğine emin misin?")) {
         customRecipes = customRecipes.filter(r => r.idDrink !== id);
         try { localStorage.setItem('customRecipes', JSON.stringify(customRecipes)); } catch(e) {}
         
@@ -2854,7 +2982,7 @@ function toggleShoppingList(item, event) {
 
 function clearShoppingList() {
     if (shoppingList.length === 0) return;
-    if (confirm("Alışveriş listesindeki tüm malzemeleri silmek istediğinize emin misiniz?")) {
+    if (confirm(currentLang === 'en' ? "Are you sure you want to clear all items from the shopping list?" : "Alışveriş listesindeki tüm malzemeleri silmek istediğinize emin misiniz?")) {
         shoppingList = [];
         try { localStorage.setItem('shoppingList', JSON.stringify(shoppingList)); } catch(e) {}
         renderShoppingList();
@@ -2946,18 +3074,18 @@ async function saveCustomRecipe() {
     const ingredients = ingredientsRaw.split(',').map(i => i.trim()).filter(Boolean);
 
     if(!name || !instructions || ingredients.length === 0) {
-        return alert("Lütfen tarif adı, en az bir malzeme ve hazırlanışını doldurun!");
+        return alert(currentLang === 'en' ? "Please fill in recipe name, at least one ingredient, and instructions!" : "Lütfen tarif adı, en az bir malzeme ve hazırlanışını doldurun!");
     }
     if (name.length > 200 || instructions.length > 10000 || serving.length > 1000 ||
         ingredients.length > 50 || ingredients.some(i => i.length > 200) || customRecipes.length >= 300) {
-        return alert("Tarif sınırı aşıldı. En fazla 300 tarif, 50 malzeme ve 200 karakterlik ad kullanın.");
+        return alert(currentLang === 'en' ? "Recipe limit exceeded. Max 300 recipes, 50 ingredients, and 200 character name." : "Tarif sınırı aşıldı. En fazla 300 tarif, 50 malzeme ve 200 karakterlik ad kullanın.");
     }
 
     let base64Image = "";
     if (imageInput && imageInput.files && imageInput.files[0]) {
         const file = imageInput.files[0];
         if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
-            return alert("En fazla 5 MB boyutunda JPG, PNG, WebP veya GIF seçin.");
+            return alert(currentLang === 'en' ? "Please select a JPG, PNG, WebP or GIF under 5 MB." : "En fazla 5 MB boyutunda JPG, PNG, WebP veya GIF seçin.");
         }
         base64Image = await compressImage(imageInput.files[0], 480, 480, 0.75);
     }
@@ -3002,7 +3130,7 @@ async function saveCustomRecipe() {
     document.getElementById('custom-serving').value = "";
     if (imageInput) imageInput.value = "";
 
-    alert("Özel tarif başarıyla kaydedildi!");
+    alert(currentLang === 'en' ? "Custom recipe successfully saved!" : "Özel tarif başarıyla kaydedildi!");
     
     switchTab('my-recipes');
     filterCocktails();
@@ -3015,7 +3143,7 @@ async function exportUserData() {
     try {
         if (navigator.clipboard) {
             await navigator.clipboard.writeText(encrypted);
-            alert("Yedekleme kodu panoya kopyalandı!");
+            alert(currentLang === 'en' ? "Backup code copied to clipboard!" : "Yedekleme kodu panoya kopyalandı!");
         } else {
             throw new Error("Clipboard unavailable");
         }
@@ -3024,18 +3152,18 @@ async function exportUserData() {
         if (input) {
             input.value = encrypted;
             input.select();
-            alert("Yedekleme kodu aşağıdaki kutuya yazıldı. Buradan kopyalayabilirsiniz.");
+            alert(currentLang === 'en' ? "Backup code written to the box below. You can copy it from there." : "Yedekleme kodu aşağıdaki kutuya yazıldı. Buradan kopyalayabilirsiniz.");
         }
     }
 }
 
 async function importUserData() {
     const input = document.getElementById('sync-data-input')?.value.trim();
-    if(!input) return alert("Lütfen geçerli bir yedekleme kodu yapıştırın.");
+    if(!input) return alert(currentLang === 'en' ? "Please paste a valid backup code." : "Lütfen geçerli bir yedekleme kodu yapıştırın.");
     try {
         if (input.length > BarSecurity.MAX_BACKUP_LENGTH) throw new Error('Yedek çok büyük');
         const decrypted = BarSecurity.backup(JSON.parse(decodeURIComponent(escape(atob(input)))));
-        if (!confirm("Bu yedek mevcut favori, tarif, alışveriş ve malzeme listelerinizin yerini alacak. Devam edilsin mi?")) return;
+        if (!confirm(currentLang === 'en' ? "This backup will replace your current favorites, custom recipes, shopping and bar shelf. Continue?" : "Bu yedek mevcut favori, tarif, alışveriş ve malzeme listelerinizin yerini alacak. Devam edilsin mi?")) return;
         const values = {
             favoriteCocktails: decrypted.favorites, customRecipes: decrypted.customs,
             shoppingList: decrypted.shopping, selectedIngredients: decrypted.selected
@@ -3060,23 +3188,23 @@ async function importUserData() {
                     else localStorage.setItem(key, value);
                 } catch {}
             }
-            return alert("Yedek kaydedilemedi. Depolama iznini ve boş alanı kontrol edin.");
+            return alert(currentLang === 'en' ? "Backup could not be saved. Check storage permissions and free space." : "Yedek kaydedilemedi. Depolama iznini ve boş alanı kontrol edin.");
         }
         favoriteCocktails = decrypted.favorites;
         customRecipes = decrypted.customs;
         shoppingList = decrypted.shopping;
         selectedIngredients = decrypted.selected;
         
-        alert("Senkronizasyon başarılı!");
+        alert(currentLang === 'en' ? "Sync successful!" : "Senkronizasyon başarılı!");
         location.reload();
     } catch {
-        alert("Geçersiz veya bozuk yedekleme kodu!");
+        alert(currentLang === 'en' ? "Invalid or corrupted backup code!" : "Geçersiz veya bozuk yedekleme kodu!");
     }
 }
 
 function pickRandomCocktail() {
     const pool = [...customRecipes, ...allCocktails];
-    if (pool.length === 0) return alert("Tarifler henüz yüklenmedi, lütfen bekleyin.");
+    if (pool.length === 0) return alert(currentLang === 'en' ? "Recipes not loaded yet, please wait." : "Tarifler henüz yüklenmedi, lütfen bekleyin.");
     
     const randomDrink = pool[Math.floor(Math.random() * pool.length)];
     const searchInput = document.getElementById('cocktail-search');
@@ -3111,6 +3239,12 @@ function applyLanguage() {
     // Brand title in header
     const brandTitle = document.getElementById('brand-title');
     if (brandTitle) brandTitle.innerText = t.brand;
+
+    // Status element
+    const statusEl = document.getElementById('status');
+    if (statusEl && allCocktails.length > 0) {
+        statusEl.innerText = `${allCocktails.length + customRecipes.length} ${t.statusCount}`;
+    }
 
     // Language toggle button & Unit toggle button text
     const langBtn = document.getElementById('btn-lang-toggle');
@@ -3252,11 +3386,63 @@ function applyLanguage() {
     const kitSubcatMilk = document.querySelector('#kitchen-subcategories [data-subcat="sut-kahve"]');
     if (kitSubcatMilk) kitSubcatMilk.innerText = currentLang === 'en' ? '☕ Milk & Coffee' : '☕ Süt & Kahve';
 
+    // Editorial Picks section
+    const edEyebrow = document.querySelector('#editorial-picks .eyebrow');
+    if (edEyebrow) edEyebrow.innerText = t.editorialEyebrow;
+    const edHeading = document.querySelector('#editorial-picks h2');
+    if (edHeading) edHeading.innerText = t.editorialHeading;
+    const edAside = document.querySelector('#editorial-picks .section-aside');
+    if (edAside) edAside.innerText = t.editorialAside;
+
+    // Bar Dashboard
+    const dashH2 = document.querySelector('#bar-dashboard h2');
+    if (dashH2) dashH2.innerHTML = `<span>📊</span> ${t.barOverview}`;
+    const dashOverview = document.querySelector('#bar-dashboard .border-b span.font-mono');
+    if (dashOverview) dashOverview.innerText = t.overviewBadge;
+    const dashFillRateLabel = document.querySelector('#bar-dashboard .grid > div:nth-child(1) p.text-slate-400');
+    if (dashFillRateLabel) dashFillRateLabel.innerText = t.barFillRate;
+    const dashReadyCountLabel = document.querySelector('#bar-dashboard .grid > div:nth-child(2) p.text-slate-400');
+    if (dashReadyCountLabel) dashReadyCountLabel.innerText = t.availableCocktails;
+    const dashAdviceTitle = document.querySelector('#bar-advice-box p:first-child');
+    if (dashAdviceTitle) dashAdviceTitle.innerHTML = `<span>💡</span> ${t.smartAdviceTitle}`;
+    const dashIngsLabel = document.querySelector('#bar-dashboard .flex.justify-between p.font-semibold');
+    if (dashIngsLabel) dashIngsLabel.innerText = t.ingredientsInBar;
+    const btnClearBar = document.getElementById('btn-dashboard-clear-bar');
+    if (btnClearBar) {
+        btnClearBar.innerHTML = `<span>🗑️</span> ${t.emptyBarBtn}`;
+    }
+    const trayClearBtn = document.querySelector('#selected-ingredients-tray [data-action="clear-all-ingredients"]');
+    if (trayClearBtn) {
+        trayClearBtn.innerHTML = `<span>🗑️</span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
+    }
+    const trayLabel = document.querySelector('#selected-ingredients-tray span.text-amber-400');
+    if (trayLabel) {
+        trayLabel.innerHTML = `<span>🍸</span> ${currentLang === 'en' ? 'Ingredients in Your Bar' : 'Barındaki Malzemeler'} (<span id="selected-badge-count">${selectedIngredients.length}</span>)`;
+    }
+
     // Panels
     const customH2 = document.querySelector('#custom-recipe-panel h2');
     if (customH2) customH2.innerText = t.customTitle;
     const customNameInput = document.getElementById('custom-name');
     if (customNameInput) customNameInput.placeholder = currentLang === 'en' ? 'Cocktail Name (e.g., Strawberry Margarita)' : 'Kokteyl Adı (Örn: Çilekli Margarita)';
+    const optAlc = document.querySelector('#custom-alcoholic option[value="Alcoholic"]');
+    if (optAlc) optAlc.innerText = t.optAlcoholic;
+    const optMock = document.querySelector('#custom-alcoholic option[value="Non_Alcoholic"]');
+    if (optMock) optMock.innerText = t.optMocktail;
+    const optMartini = document.querySelector('#custom-glass option[value="Cocktail glass"]');
+    if (optMartini) optMartini.innerText = t.optMartini;
+    const optHighball = document.querySelector('#custom-glass option[value="Highball glass"]');
+    if (optHighball) optHighball.innerText = t.optHighball;
+    const optRocks = document.querySelector('#custom-glass option[value="Old-fashioned glass"]');
+    if (optRocks) optRocks.innerText = t.optRocks;
+    const optShot = document.querySelector('#custom-glass option[value="Shot glass"]');
+    if (optShot) optShot.innerText = t.optShot;
+    const optFlute = document.querySelector('#custom-glass option[value="Champagne flute"]');
+    if (optFlute) optFlute.innerText = t.optFlute;
+    const optCopper = document.querySelector('#custom-glass option[value="Copper Mug"]');
+    if (optCopper) optCopper.innerText = t.optCopper;
+    const photoLabel = document.querySelector('#custom-recipe-panel label');
+    if (photoLabel) photoLabel.innerText = t.photoLabel;
     const customIngsInput = document.getElementById('custom-ingredients');
     if (customIngsInput) customIngsInput.placeholder = currentLang === 'en' ? 'Ingredients (comma separated: 2 oz Vodka, 1 oz Lemon Juice, Ice)' : 'Malzemeler (Virgülle ayırın: 50 ml Votka, 25 ml Limon Suyu, Buz)';
     const customInstrInput = document.getElementById('custom-instructions');
@@ -3264,7 +3450,7 @@ function applyLanguage() {
     const customServingInput = document.getElementById('custom-serving');
     if (customServingInput) customServingInput.placeholder = currentLang === 'en' ? 'Serving & Garnish (e.g., Salt rim and lime wedge)...' : 'Servis & Garnitür Önerisi (Örn: Tuzlu kenar ve misket limonu dilimi ile servis edin)...';
     const saveRecipeBtn = document.querySelector('[data-ui="ui-32"]');
-    if (saveRecipeBtn) saveRecipeBtn.innerText = currentLang === 'en' ? 'Save Recipe' : 'Tarifi Kaydet';
+    if (saveRecipeBtn) saveRecipeBtn.innerText = t.saveRecipeBtn;
 
     const myRecipesH2 = document.querySelector('#my-recipes-panel h2');
     if (myRecipesH2) myRecipesH2.innerText = t.myRecipesTitle;
@@ -3282,6 +3468,8 @@ function applyLanguage() {
     if (syncInput) syncInput.placeholder = t.pasteBackupPlaceholder;
     const syncRestoreBtn = document.querySelector('[data-ui="ui-35"]');
     if (syncRestoreBtn) syncRestoreBtn.innerText = t.restoreBackup;
+    const syncCheckNote = document.querySelector('#sync-panel .border-t p');
+    if (syncCheckNote) syncCheckNote.innerText = t.syncOnlineDbNote;
     const btnForceSync = document.getElementById('btn-force-sync');
     if (btnForceSync) btnForceSync.innerHTML = `<span>🔄</span> ${t.updateDb}`;
     const btnCheckUpdate = document.querySelector('[data-ui="ui-37"]');
@@ -3346,79 +3534,84 @@ function applyLanguage() {
         authLabel.innerText = currentLang === 'en' ? 'Sign In' : 'Giriş Yap';
     }
 
-    // Bar Dashboard clear button
-    const btnClearBar = document.getElementById('btn-dashboard-clear-bar');
-    if (btnClearBar) {
-        btnClearBar.innerHTML = currentLang === 'en' ? '<span>🗑️</span> Empty Bar' : '<span>🗑️</span> Barı Boşalt';
-    }
-    const trayClearBtn = document.querySelector('#selected-ingredients-tray [data-action="clear-all-ingredients"]');
-    if (trayClearBtn) {
-        trayClearBtn.innerHTML = `<span>🗑️</span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
-    }
-    const trayLabel = document.querySelector('#selected-ingredients-tray span.text-amber-400');
-    if (trayLabel) {
-        trayLabel.innerHTML = `<span>🍸</span> ${currentLang === 'en' ? 'Ingredients in Your Bar' : 'Barındaki Malzemeler'} (<span id="selected-badge-count">${selectedIngredients.length}</span>)`;
-    }
-
     // Timer Modal
     const timerH3 = document.querySelector('#shaker-timer-modal h3');
-    if (timerH3) timerH3.innerText = currentLang === 'en' ? '⏱️ Bartender Timer' : '⏱️ Barmen Zamanlayıcısı';
+    if (timerH3) timerH3.innerText = t.timerTitle;
     const preset15 = document.querySelector('[data-ui="ui-39"]');
-    if (preset15) preset15.innerText = currentLang === 'en' ? '15s Shake' : '15s Shaker';
+    if (preset15) preset15.innerText = t.timerPreset15;
     const preset30 = document.querySelector('[data-ui="ui-40"]');
-    if (preset30) preset30.innerText = currentLang === 'en' ? '30s Stir' : '30s Karıştır';
+    if (preset30) preset30.innerText = t.timerPreset30;
     const preset45 = document.querySelector('[data-ui="ui-41"]');
-    if (preset45) preset45.innerText = currentLang === 'en' ? '45s Chill' : '45s Soğut';
+    if (preset45) preset45.innerText = t.timerPreset45;
     const timerToggleBtn = document.getElementById('btn-timer-toggle');
     if (timerToggleBtn) {
         if (typeof timerRunning !== 'undefined' && timerRunning) {
-            timerToggleBtn.innerText = currentLang === 'en' ? '⏸ Pause' : '⏸ Duraklat';
+            timerToggleBtn.innerText = t.timerPause;
         } else {
-            timerToggleBtn.innerText = currentLang === 'en' ? '▶ Start' : '▶ Başlat';
+            timerToggleBtn.innerText = t.timerStart;
         }
     }
     const timerResetBtn = document.querySelector('[data-ui="ui-43"]');
-    if (timerResetBtn) timerResetBtn.innerText = currentLang === 'en' ? '🔄 Reset' : '🔄 Sıfırla';
+    if (timerResetBtn) timerResetBtn.innerText = t.timerReset;
 
-    // PWA Modal
+    // Update Modal
+    const updateH3 = document.querySelector('#update-modal h3');
+    if (updateH3) updateH3.innerText = t.updateTitle;
+    const updateVerText = document.getElementById('update-version-text');
+    if (updateVerText && !updateVerText.dataset.custom) updateVerText.innerText = t.updateVersionText;
+    const updateWhatsNew = document.querySelector('#update-notes-container p.font-semibold');
+    if (updateWhatsNew) updateWhatsNew.innerText = t.updateWhatsNew;
+    const updateNotesText = document.getElementById('update-notes-text');
+    if (updateNotesText && !updateNotesText.dataset.custom) updateNotesText.innerText = t.updateNotes;
+    const updateBtnLabel = document.getElementById('update-btn-label');
+    if (updateBtnLabel && !updateBtnLabel.dataset.custom) updateBtnLabel.innerText = t.updateBtn;
     const pwaLaterBtn = document.querySelector('[data-ui="ui-45"]');
-    if (pwaLaterBtn) pwaLaterBtn.innerText = currentLang === 'en' ? 'Remind Later' : 'Daha Sonra Hatırlat';
+    if (pwaLaterBtn) pwaLaterBtn.innerText = t.updateLaterBtn;
 
     // Mix Mode Modal
+    const mixEyebrow = document.querySelector('#mix-mode-modal span.uppercase');
+    if (mixEyebrow) mixEyebrow.innerText = t.mixEyebrow;
     const mixRunBtn = document.getElementById('btn-mix-timer-run');
     if (mixRunBtn && (!mixTimerInterval)) {
-        mixRunBtn.innerText = currentLang === 'en' ? 'Start' : 'Başlat';
+        mixRunBtn.innerText = t.timerStart;
     }
     const mixPrevBtn = document.getElementById('btn-mix-prev');
-    if (mixPrevBtn) mixPrevBtn.innerText = currentLang === 'en' ? '← Previous' : '← Önceki';
+    if (mixPrevBtn) mixPrevBtn.innerText = t.mixPrev;
     const mixNextBtn = document.getElementById('btn-mix-next');
     if (mixNextBtn && (!currentMixDrink)) {
-        mixNextBtn.innerText = currentLang === 'en' ? 'Next Step →' : 'Sonraki Adım →';
+        mixNextBtn.innerText = t.mixNext;
     }
 
-    // Support Modal
+    // Support Modal / Dialog
     const supportCloseBtn = document.getElementById('support-close');
-    if (supportCloseBtn) supportCloseBtn.innerText = currentLang === 'en' ? 'Close' : 'Tamam';
-    const supportH3 = document.querySelector('#support-modal h3');
-    if (supportH3) supportH3.innerText = currentLang === 'en' ? '☕ Support the Developer' : '☕ Geliştiriciye Destek Ol';
-    const supportP = document.querySelector('#support-modal p');
-    if (supportP) {
-        supportP.innerText = currentLang === 'en'
-            ? 'Pocket Bar is independently built. By buying a coffee, you support server hosting and future features!'
-            : 'Bar Cepte tamamen bağımsız ve reklamsız olarak geliştirilmektedir. Bir kahve ısmarlayarak sunucu masraflarına ve yeni özelliklere katkıda bulunabilirsiniz!';
-    }
+    if (supportCloseBtn) supportCloseBtn.innerText = t.supportClose;
+    const supportH2 = document.getElementById('support-title');
+    if (supportH2) supportH2.innerText = t.supportTitle;
+    const supportP = document.querySelector('#support-dialog p');
+    if (supportP) supportP.innerText = t.supportDesc;
 
     // Reserve Modal
+    const reserveClubBadge = document.querySelector('#reserve-modal .inline-flex');
+    if (reserveClubBadge) reserveClubBadge.innerHTML = `<span>👑</span> ${t.reserveExclusiveClub}`;
     const planMonthly = document.querySelector('[data-plan="monthly"]');
     if (planMonthly) planMonthly.innerText = currentLang === 'en' ? 'Monthly' : 'Aylık';
     const planAnnual = document.querySelector('[data-plan="annual"]');
     if (planAnnual) planAnnual.innerText = currentLang === 'en' ? '⭐ Annual' : '⭐ Yıllık';
     const planLifetime = document.querySelector('[data-plan="lifetime"]');
     if (planLifetime) planLifetime.innerText = currentLang === 'en' ? 'Lifetime' : 'Ömür Boyu';
+    const reserveBullets = document.querySelectorAll('#reserve-status-inactive .bg-black\\/40 > div span:last-child');
+    if (reserveBullets.length >= 4) {
+        reserveBullets[0].innerHTML = t.reserveBullet1;
+        reserveBullets[1].innerHTML = t.reserveBullet2;
+        reserveBullets[2].innerHTML = t.reserveBullet3;
+        reserveBullets[3].innerHTML = t.reserveBullet4;
+    }
+    const reservePrompt = document.querySelector('#reserve-status-inactive .border-t p');
+    if (reservePrompt) reservePrompt.innerText = t.reserveHaveKey;
     const activateReserveBtn = document.getElementById('btn-activate-reserve');
-    if (activateReserveBtn) activateReserveBtn.innerText = currentLang === 'en' ? 'Activate' : 'Aktive Et';
+    if (activateReserveBtn) activateReserveBtn.innerText = t.reserveActivateBtn;
     const deactivateReserveBtn = document.getElementById('btn-deactivate-reserve');
-    if (deactivateReserveBtn) deactivateReserveBtn.innerText = currentLang === 'en' ? 'Remove membership from this device' : 'Bu cihazdan üyeliği kaldır';
+    if (deactivateReserveBtn) deactivateReserveBtn.innerText = t.reserveDeactivateBtn;
     const reserveHeading = document.querySelector('#reserve-modal h3');
     if (reserveHeading) {
         reserveHeading.innerHTML = currentLang === 'en'
@@ -3431,32 +3624,67 @@ function applyLanguage() {
             ? 'Unleash your bar. Ad-free, unlimited, and master mixologist level.'
             : 'Barının sınırlarını kaldır. Reklamsız, sınırsız ve usta miksoloji seviyesinde.';
     }
+    const reserveActiveH4 = document.querySelector('#reserve-status-active h4');
+    if (reserveActiveH4) reserveActiveH4.innerText = t.reserveActiveHeading;
+    const reserveActiveDesc = document.querySelector('#reserve-status-active p.text-xs');
+    if (reserveActiveDesc) reserveActiveDesc.innerText = t.reserveActiveDesc;
+    const reserveActiveNote = document.querySelector('#reserve-status-active .bg-white\\/5');
+    if (reserveActiveNote) reserveActiveNote.innerText = t.reserveActiveNote;
 
     // Auth Modal
     const authH3 = document.querySelector('#auth-modal h3');
-    if (authH3) authH3.innerText = currentLang === 'en' ? 'BARTENDER CLUB' : 'BARMEN KULÜBÜ';
+    if (authH3) authH3.innerText = t.authH3;
     const authDesc = document.querySelector('#auth-view-logged-out p');
-    if (authDesc) {
-        authDesc.innerText = currentLang === 'en'
-            ? 'Connect with your Google account to sync your bar cabinet and VIP privileges across all devices.'
-            : 'Google hesabınla bağlan, bar dolabını ve VIP ayrıcalıklarını tüm cihazlarına eşitle.';
+    if (authDesc) authDesc.innerText = t.authDesc;
+    const authBullets = document.querySelectorAll('#auth-view-logged-out .bg-black\\/40 > div div');
+    if (authBullets.length >= 3) {
+        authBullets[0].innerHTML = t.authBullet1;
+        authBullets[1].innerHTML = t.authBullet2;
+        authBullets[2].innerHTML = t.authBullet3;
     }
     const demoLoginBtn = document.getElementById('btn-demo-login');
-    if (demoLoginBtn) demoLoginBtn.innerText = currentLang === 'en' ? '⚡ Or Continue as Guest Bartender' : '⚡ Veya Misafir Barmen Olarak Devam Et';
+    if (demoLoginBtn) demoLoginBtn.innerText = t.authGuestBtn;
+    const authSyncCardTitle = document.querySelector('#auth-view-logged-in .bg-white\\/5 .font-bold span:first-child');
+    if (authSyncCardTitle) authSyncCardTitle.innerHTML = `<span>☁️</span> ${t.authSyncTitle}`;
+    const authSyncCardActive = document.querySelector('#auth-view-logged-in .bg-white\\/5 .font-bold span:last-child');
+    if (authSyncCardActive) authSyncCardActive.innerHTML = t.authSyncActive;
+    const authSyncCardDesc = document.querySelector('#auth-view-logged-in .bg-white\\/5 > p');
+    if (authSyncCardDesc) authSyncCardDesc.innerText = t.authSyncDesc;
+    const authLastSyncSpan = document.querySelector('#auth-view-logged-in .border-t.border-white\\/5 > span');
+    if (authLastSyncSpan) {
+        const curTime = document.getElementById('auth-sync-time')?.innerText || '-';
+        authLastSyncSpan.innerHTML = `${t.authLastSyncLabel} <span id="auth-sync-time" class="text-white font-medium">${curTime}</span>`;
+    }
     const authSyncNowBtn = document.getElementById('btn-auth-sync-now');
-    if (authSyncNowBtn) authSyncNowBtn.innerText = currentLang === 'en' ? 'Sync Now ⟳' : 'Şimdi Eşitle ⟳';
+    if (authSyncNowBtn) authSyncNowBtn.innerText = t.authSyncNowBtn;
+    const authBindTitle = document.querySelector('#auth-license-bind-section .font-bold');
+    if (authBindTitle) authBindTitle.innerHTML = `<span>👑</span> ${t.authLinkTitle}`;
+    const authBindDesc = document.querySelector('#auth-license-bind-section > p');
+    if (authBindDesc) authBindDesc.innerText = t.authLinkDesc;
     const bindLicenseBtn = document.getElementById('btn-bind-account-license');
-    if (bindLicenseBtn) bindLicenseBtn.innerText = currentLang === 'en' ? 'Link' : 'Bağla';
+    if (bindLicenseBtn) bindLicenseBtn.innerText = t.authLinkBtn;
     const logoutBtn = document.getElementById('btn-auth-logout');
-    if (logoutBtn) logoutBtn.innerText = currentLang === 'en' ? 'Sign Out' : 'Hesaptan Çıkış Yap';
+    if (logoutBtn) logoutBtn.innerText = t.authLogoutBtn;
 
     // Footer
     const footerTitle = document.querySelector('.app-footer p.font-medium');
     if (footerTitle) footerTitle.innerText = t.footerTitle;
+    const footerEq = document.querySelector('.app-footer a[href*="amazon"]');
+    if (footerEq) footerEq.innerText = t.footerBarware;
+    const footerPriv = document.querySelector('.app-footer a[href="privacy.html"]');
+    if (footerPriv) footerPriv.innerText = t.footerPrivacy;
     const footer18Title = document.querySelector('.app-footer .mt-4 span:last-child');
     if (footer18Title) footer18Title.innerText = t.footer18Title;
     const footer18Text = document.querySelector('.app-footer .mt-4 p');
     if (footer18Text) footer18Text.innerHTML = t.footer18Text;
+
+    // Sub-module refreshes
+    if (typeof window !== 'undefined' && typeof window.refreshReserveUI === 'function') {
+        window.refreshReserveUI();
+    }
+    if (typeof window !== 'undefined' && window.BarAuth && typeof window.BarAuth.updateAuthUI === 'function') {
+        window.BarAuth.updateAuthUI();
+    }
 }
 
 function setLanguage(lang) {
@@ -3762,9 +3990,9 @@ async function updateDataInBackground(force = false) {
 async function forceSyncOnlineDatabase() {
     triggerHaptic('medium');
     const statusEl = document.getElementById('status');
-    if (statusEl) statusEl.innerText = "Online veritabanı eşitleniyor...";
+    if (statusEl) statusEl.innerText = currentLang === 'en' ? "Syncing online database..." : "Online veritabanı eşitleniyor...";
     await updateDataInBackground(true);
-    alert("Kokteyl veritabanı internet üzerinden başarıyla eşitlendi!");
+    alert(currentLang === 'en' ? "Cocktail database successfully synced from the cloud!" : "Kokteyl veritabanı internet üzerinden başarıyla eşitlendi!");
 }
 
 // ==========================================
@@ -3795,7 +4023,7 @@ async function checkForAppUpdates(manual = false) {
 
         const resp = await fetch('https://api.github.com/repos/suluncaway/bar-cepte/releases/latest');
         if (!resp.ok) {
-            if (manual) alert("Güncelleme sunucusuna erişilemedi.");
+            if (manual) alert(currentLang === 'en' ? "Could not reach update server." : "Güncelleme sunucusuna erişilemedi.");
             return;
         }
 
@@ -3806,10 +4034,10 @@ async function checkForAppUpdates(manual = false) {
         if (latestTag && isNewerVersion(CURRENT_APP_VERSION, latestTag)) {
             showUpdateModal(release);
         } else if (manual) {
-            alert(`Harika! Bar Cepte uygulamanız en güncel sürümde (v${CURRENT_APP_VERSION}).`);
+            alert(currentLang === 'en' ? `Awesome! Pocket Bar is up to date (v${CURRENT_APP_VERSION}).` : `Harika! Bar Cepte uygulamanız en güncel sürümde (v${CURRENT_APP_VERSION}).`);
         }
     } catch (e) {
-        if (manual) alert("Güncelleme denetimi sırasında bağlantı hatası oluştu.");
+        if (manual) alert(currentLang === 'en' ? "Connection error during update check." : "Güncelleme denetimi sırasında bağlantı hatası oluştu.");
     }
 }
 
@@ -3822,11 +4050,11 @@ function showUpdateModal(release) {
     const btn = document.getElementById('btn-update-download');
     const btnLabel = document.getElementById('update-btn-label');
 
-    if (verEl) verEl.innerText = `${release.tag_name} Hazır! (Mevcut: v${CURRENT_APP_VERSION})`;
+    if (verEl) verEl.innerText = currentLang === 'en' ? `${release.tag_name} Ready! (Current: v${CURRENT_APP_VERSION})` : `${release.tag_name} Hazır! (Mevcut: v${CURRENT_APP_VERSION})`;
     if (notesEl) {
         notesEl.innerText = release.body 
             ? release.body.replace(/###|\*\*|_/g, '').slice(0, 300) 
-            : "Yeni kokteyller, performans artışı ve hata düzeltmeleri.";
+            : (currentLang === 'en' ? "New cocktails, performance improvements and bug fixes." : "Yeni kokteyller, performans artışı ve hata düzeltmeleri.");
     }
 
     const ua = navigator.userAgent.toLowerCase();
@@ -3836,17 +4064,17 @@ function showUpdateModal(release) {
     let targetUrl = release.html_url || 'https://github.com/suluncaway/bar-cepte/releases/latest';
 
     if (isElectron) {
-        if (btnLabel) btnLabel.innerText = "Windows Güncellemesini İndir (.exe)";
+        if (btnLabel) btnLabel.innerText = currentLang === 'en' ? "Download Windows Update (.exe)" : "Windows Güncellemesini İndir (.exe)";
         const exeAsset = release.assets && release.assets.find(a => a.name.endsWith('.exe'));
         if (exeAsset) targetUrl = exeAsset.browser_download_url;
         else targetUrl = 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Setup.exe';
     } else if (isAndroid) {
-        if (btnLabel) btnLabel.innerText = "Yeni APK'yı İndir & Güncelle";
+        if (btnLabel) btnLabel.innerText = currentLang === 'en' ? "Download & Install New APK" : "Yeni APK'yı İndir & Güncelle";
         const apkAsset = release.assets && release.assets.find(a => a.name.endsWith('.apk'));
         if (apkAsset) targetUrl = apkAsset.browser_download_url;
         else targetUrl = 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Debug.apk';
     } else {
-        if (btnLabel) btnLabel.innerText = "Yenilikleri Gör & Sayfayı Yenile";
+        if (btnLabel) btnLabel.innerText = currentLang === 'en' ? "See What's New & Reload" : "Yenilikleri Gör & Sayfayı Yenile";
         targetUrl = window.location.href;
     }
 
