@@ -3902,6 +3902,9 @@ function applyLanguage() {
     }
     const authSyncNowBtn = document.getElementById('btn-auth-sync-now');
     if (authSyncNowBtn) authSyncNowBtn.innerText = t.authSyncNowBtn;
+    const authRestoreBtn = document.getElementById('btn-auth-restore-cloud');
+    if (authRestoreBtn) authRestoreBtn.innerText = currentLang === 'en' ? 'Restore cloud backup' : 'Buluttan geri yükle';
+    if (window.BarAuth) window.BarAuth.renderAuthModalState();
     const authBindTitle = document.querySelector('#auth-license-bind-section .font-bold');
     if (authBindTitle) authBindTitle.innerHTML = `<span>👑</span> ${t.authLinkTitle}`;
     const authBindDesc = document.querySelector('#auth-license-bind-section > p');
@@ -4402,3 +4405,9 @@ function closeUpdateModal() {
         modal.classList.remove('flex');
     }
 }
+
+// Called only after BarAuth validates an authenticated cloud response and writes local storage.
+window.applyCloudBackup = function(data) {
+    favoriteCocktails=data.favorites;customRecipes=data.customs;shoppingList=data.shopping;selectedIngredients=data.selected;
+    updateFavoritesFilterUI();renderIngredients();filterCocktails();renderDashboard();renderMyRecipes();renderShoppingList();
+};

@@ -293,20 +293,12 @@
             return { success: false, reason: isEn ? '❌ Invalid activation key. Please check again.' : '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
         }
 
-        // 3. Yerel BarAuth kontrolü
-        if (root.BarAuth && typeof root.BarAuth.canUseLicenseKey === 'function') {
-            const localCheck = root.BarAuth.canUseLicenseKey(cleanKey);
-            if (!localCheck.allowed) {
-                return { success: false, reason: localCheck.reason };
-            }
-        }
-
         // 4. Merkezi Sunucu (Render Webhook) Doğrulaması
         const user = root.BarAuth && typeof root.BarAuth.getCurrentUser === 'function' ? root.BarAuth.getCurrentUser() : null;
         const deviceId = (root.BarAuth && typeof root.BarAuth.getDeviceId === 'function') ? root.BarAuth.getDeviceId() : getLocalDeviceId();
         const payload = {
             key: cleanKey,
-            uid: user ? user.uid : null,
+            uid: user && root.BarAuth.getSessionToken && root.BarAuth.getSessionToken() ? user.uid : null,
             email: user ? user.email : '',
             deviceId: deviceId
         };
@@ -316,7 +308,7 @@
         try {
             const resp = await fetch('https://bar-cepte-webhook.onrender.com/api/claim-license', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(root.BarAuth && root.BarAuth.getSessionToken && root.BarAuth.getSessionToken()?{Authorization:'Bearer '+root.BarAuth.getSessionToken()}: {}) },
                 body: JSON.stringify(payload),
                 signal: controller ? controller.signal : undefined
             });
@@ -381,13 +373,14 @@
         }
     }
 
-    function deactivateReserve() {
+    function deactivateReserve(reload = true) {
         try {
             root.localStorage.removeItem(STORAGE_KEY);
             root.localStorage.removeItem(KEY_STORAGE);
             root.localStorage.removeItem(PLAN_STORAGE);
             root.localStorage.removeItem(EXPIRES_STORAGE);
-            root.location.reload();
+            if(reload)root.location.reload();
+            else applyReserveUI();
         } catch {}
     }
 

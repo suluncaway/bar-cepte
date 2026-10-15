@@ -69,7 +69,7 @@ public class MainActivity extends Activity {
         // Start.io SDK Başlatma
         StartAppSDK.init(this, STARTIO_APP_ID, false);
         // Gerçek para kazanma modu aktif (Test modu kapatıldı)
-        StartAppSDK.setTestAdsEnabled(false);
+        StartAppSDK.setTestAdsEnabled(BuildConfig.DEBUG);
         // Açılışta pat diye splash reklam çıkmasını engelle (kullanıcı dostu):
         StartAppAd.disableSplash();
 
@@ -102,7 +102,7 @@ public class MainActivity extends Activity {
         rootLayout.addView(startAppBanner);
 
         // Reklamı yükle
-        startAppBanner.loadAd();
+        if (!BuildConfig.DEBUG) startAppBanner.loadAd();
 
         setContentView(rootLayout);
 
@@ -243,6 +243,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void onRecipeOpened() {
+            if (BuildConfig.DEBUG) return;
             recipeCounter++;
             long now = System.currentTimeMillis();
 
