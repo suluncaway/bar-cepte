@@ -59,3 +59,20 @@ test('a delayed cloud response cannot restore a signed-out account or change its
  assert.equal(first.context.localStorage.getItem('shoppingList'),'["Nane"]');
  assert.equal(first.api.getSessionToken(),'');
 });
+
+test('restored or deleted custom recipes survive reload despite an older IndexedDB cache',async()=>{
+ const source=fs.readFileSync('game.js','utf8');
+ const fn=source.slice(source.indexOf('async function fetchDataWithIndexedDB()'),source.indexOf('async function fetchAndStoreData()'));
+ const old={idDrink:'custom_old',strDrink:'Old',strInstructions:'Mix',customIngredients:['Gin']};
+ const restored={...old,idDrink:'custom_restored',strDrink:'Çilek 🥂'};
+ for(const value of [JSON.stringify([restored]),'[]',null]) {
+  const local=storage(value===null?{}:{customRecipes:value});
+  const sandbox={console,localStorage:local,customRecipes:value===null?[]:JSON.parse(value),currentLang:'tr',I18N:{tr:{}},BarSecurity:security,
+   document:{getElementById:()=>null},fetchAndStoreData:async()=>{},autoExtractAllIngredients(){},renderIngredients(){},filterCocktails(){},
+   db:{transaction:name=>({objectStore:()=>({getAll:()=>{const req={result:[old]};queueMicrotask(()=>req.onsuccess());return req;},
+    count:()=>{const req={result:0};queueMicrotask(()=>req.onsuccess());return req;}})})}};
+  vm.createContext(sandbox);vm.runInContext(fn,sandbox);await sandbox.fetchDataWithIndexedDB();
+  const expected=value===null?[security.recipe(old)]:JSON.parse(value);
+  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.customRecipes)),expected);
+ }
+});
