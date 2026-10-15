@@ -273,7 +273,7 @@ test('Cocktail search allows searching by both cocktail name and kitchen/alcohol
 
     // Verify service worker cache version is updated so clients receive latest game.js and hero video
     const swContent = fs.readFileSync('sw.js', 'utf8');
-    assert.match(swContent, /const CACHE_NAME = 'bar-cepte-v37-inline-recipes';/, 'sw.js cache name updated');
+    assert.match(swContent, /const CACHE_NAME = 'bar-cepte-v38-personal-release';/, 'sw.js cache name updated');
 
     // 2. recipeMatchesSearchToken helper is defined in game.js
     assert.ok(js.includes('function recipeMatchesSearchToken('), 'recipeMatchesSearchToken exists in game.js');

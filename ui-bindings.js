@@ -65,7 +65,7 @@ try { serviceWorkerAPI = navigator.serviceWorker; } catch { /* Restricted previe
 // Native Android assets already work offline; a worker cannot intercept WebView asset loads reliably.
 if (serviceWorkerAPI && !window.AndroidBridge) {
     window.addEventListener('load', () => {
-        serviceWorkerAPI.register('./sw.js').then(reg => {
+        serviceWorkerAPI.register('./sw.js', {updateViaCache:'none'}).then(reg => {
             reg.update().catch(() => {});
             // PWA arka plan güncellemesi yakalandığında
             reg.addEventListener('updatefound', () => {

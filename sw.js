@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v37-inline-recipes';
+const CACHE_NAME = 'bar-cepte-v38-personal-release';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./personal-bar.js', './personal-ui.js', './', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
@@ -7,7 +7,7 @@ const SCOPE = new URL('./', self.location.href);
 const allowedAssets = new Set(ASSETS.map(path => new URL(path, SCOPE).pathname));
 
 self.addEventListener('install', event => {
-    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS.map(path => new Request(new URL(path, SCOPE), {cache:'reload'})))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
     event.waitUntil((async () => {
@@ -25,7 +25,7 @@ self.addEventListener('fetch', event => {
         event.respondWith((async () => {
             const cache = await caches.open(CACHE_NAME);
             try {
-                const response = await fetch(event.request);
+                const response = await fetch(event.request, {cache:'no-cache'});
                 if (response.ok && !response.redirected) await cache.put(event.request, response.clone());
                 return response;
             } catch {
