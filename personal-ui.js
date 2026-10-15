@@ -5,7 +5,7 @@
     let returningUser = false;
     try {returningUser = ['selectedIngredients','favoriteCocktails','customRecipes','shoppingList','bar_cepte_lang','barcepte_auth_user'].some(key=>localStorage.getItem(key)!==null);} catch {}
     let dialog, host, mode = '', step = 0, draft, draftSelected = [], feedbackId = '';
-    let returnFocus = null, manualEvent = null;
+    let returnFocus = null, manualEvent = null, nextInlineId = 0;
     const en = () => currentLang === 'en';
     const t = (tr, eng) => en() ? eng : tr;
     const e = value => escapeHTML(String(value ?? ''));
@@ -51,7 +51,7 @@
     }
     const tasteName = taste => en() ? ({Sert:'strong',Tatlı:'sweet',Ekşi:'sour',Ferah:'refreshing'}[taste] || taste) : taste;
     function button(action, label, value = '', extra = '') {
-        return `<button type="button" data-personal="${action}" data-id="${e(value)}" ${extra}>${label}</button>`;
+        return `<button type="button" data-personal="${action}" data-id="${e(value)}" ${action==='open-recipe'?'aria-expanded="false"':''} ${extra}>${label}</button>`;
     }
     function suggestionMarkup(result) {
         const rows = result.ready.length ? result.ready : result.nearby;
@@ -148,15 +148,32 @@
         if (updated!==records && !write({[HKEY]:BarSecurity.history(updated)}))return false;
         refresh(); feedback(id); return true;
     }
-    function openRecipe(id) {
+    async function openRecipe(target, id) {
         const drink=find(id); if(!drink)return;
-        close(); switchTab('alkol');
-        // Opening a saved recipe is explicit; clear transient filters so it stays reachable.
-        onlyFavoritesFilter=false; currentVibeFilter='all'; tasteFilter='all'; setAlcoholFilter('all');
-        document.getElementById('cocktail-search').value=drink.strDrink;
-        filterCocktails();
-        const card=[...document.querySelectorAll('.cocktail-card')].find(card=>card.querySelector('[data-personal="prepared"]')?.dataset.id===id);
-        if(card){card.click();card.scrollIntoView({behavior:'smooth',block:'start'});}
+        const article=target.closest('.personal-mini'); if(!article)return;
+        const existing=article.querySelector('.personal-inline');
+        if(existing){existing.remove();target.removeAttribute('aria-controls');target.setAttribute('aria-expanded','false');target.textContent=t('Tarifi aç','Open recipe');return;}
+        const panel=document.createElement('section'); panel.className='personal-inline';panel.id='personal-inline-'+(++nextInlineId);
+        target.setAttribute('aria-controls',panel.id);target.setAttribute('aria-expanded','true');target.textContent=t('Tarifi kapat','Close recipe');
+        let ingredients=[];
+        if(drink.isCustom) ingredients=(drink.customIngredients||[]).map(raw=>{
+            const parts=raw.match(/^([\d\s\/.,-]+(?:ml|oz|cl|dash|dashes|tsp|tbsp|gr|shot)?)\s*(.*)$/i);
+            return {name:parts?.[2]?.trim()||raw,measure:parts?.[1]?.trim()||''};
+        });
+        else ingredients=Array.from({length:15},(_,i)=>({name:drink['strIngredient'+(i+1)],measure:drink['strMeasure'+(i+1)]||''})).filter(row=>row.name?.trim());
+        panel.innerHTML=`<h4>${t('Malzemeler ve ölçüler','Ingredients and measures')}</h4>
+            <ul>${ingredients.map(row=>`<li>${e(en()?row.name:translateIngredientName(row.name))} <strong>${e(translateMeasureText(row.measure))}</strong>
+                ${selectedIngredients.some(selected=>checkIngredientMatch(row.name,selected))?'':`<span class="personal-missing">${t('Eksik','Missing')}</span>`}</li>`).join('')}</ul>
+            <h4>${t('Hazırlanışı','Instructions')}</h4><p class="personal-instructions">${e(cleanInstructionText(en()||drink.isCustom?drink.strInstructions:(drink.strInstructionsTR||drink.strInstructions)||''))}</p>
+            <div class="personal-actions">${button('prepared',t('Hazırladım','I made this'),id)}
+            <button type="button" data-action="open-mix-mode" data-value="${e(encodeURIComponent(id))}">${t('Adım adım hazırla','Prepare step by step')}</button></div>`;
+        article.append(panel);
+        if(!en() && !drink.isCustom && !drink.strInstructionsTR && drink.strInstructions) {
+            try {
+                const translated=await translateToTurkish(drink.strInstructions);
+                if(panel.isConnected && !en())panel.querySelector('.personal-instructions').textContent=cleanInstructionText(translated||drink.strInstructions);
+            } catch { /* Keep the original recipe readable when translation is unavailable. */ }
+        }
     }
     function mount() {
         host=document.createElement('div'); host.id='personal-bar';
@@ -186,7 +203,7 @@
                     }
                     step++;renderGuide();dialog.querySelector('h2').tabIndex=-1;dialog.querySelector('h2').focus();break;
                 case 'done': {const wasGuide=mode==='guide';close();if(wasGuide)switchTab('bar');break;}
-                case 'open-recipe':openRecipe(id);break;
+                case 'open-recipe':openRecipe(target,id);break;
                 case 'edit':feedback(id);break;
                 case 'prepared': {
                     if(manualEvent?.drinkId===id && Date.now()-manualEvent.time<1000){feedback(manualEvent.id);break;}
@@ -208,6 +225,6 @@
         const existing = selectedIngredients.length || favoriteCocktails.length || customRecipes.length || shoppingList.length || history().length;
         if(!preferences().onboardingDone && !existing && !returningUser)start();
     }
-    window.BarPersonalUI={refresh,record,reset:()=>{if(dialog?.open)close();refresh();}};
+    window.BarPersonalUI={refresh,record,close,reset:()=>{if(dialog?.open)close();refresh();}};
     document.addEventListener('DOMContentLoaded',mount);
 })();

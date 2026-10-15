@@ -30,8 +30,8 @@
                 return {drink, missing:missing(drink), taste:profile, explicit, learned,
                     count:new Set(requirements(drink).map(s=>s.toLowerCase().trim())).size};
             });
-        rows.sort((a,b) => a.missing.length-b.missing.length ||
-            (personal ? Number(b.explicit)-Number(a.explicit) || Number(b.learned)-Number(a.learned) :
+        rows.sort((a,b) => Number(a.missing.length>0)-Number(b.missing.length>0) ||
+            (personal ? a.missing.length-b.missing.length || Number(b.explicit)-Number(a.explicit) || Number(b.learned)-Number(a.learned) :
                 (classics.includes(a.drink.idDrink)?classics.indexOf(a.drink.idDrink):99) -
                 (classics.includes(b.drink.idDrink)?classics.indexOf(b.drink.idDrink):99)) ||
             a.count-b.count || Number(a.drink.idDrink===recent)-Number(b.drink.idDrink===recent) ||

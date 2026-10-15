@@ -21,6 +21,7 @@ document.addEventListener('click', event => {
                 applySubstituteToBar(button.dataset.ing, button.dataset.sub, event);
                 break;
             case 'open-mix-mode':
+                if (button.closest('#personal-dialog')) window.BarPersonalUI?.close();
                 openMixMode(value);
                 break;
             case 'close-mix-mode':
