@@ -40,6 +40,18 @@ test('stale devices cannot overwrite newer backups, and backup data cannot grant
  assert.equal(result.subscription,null);assert.equal(result.backup.data.reserve,undefined);
  assert.deepEqual(result.backup.data.shopping,['Şeker']);
 });
+test('personal backup fields round trip and survive uploads from an older client',async t=>{
+ const {request}=setup(t);
+ const token=(await request('POST','/api/auth/google',{credential:'alice'})).data.token;
+ const history=[{id:'event1',drinkId:'11003',name:'Negroni',createdAt:1,note:'Not',rating:'like',taste:'Sert'}];
+ const preferences={alcohol:'all',tastes:['Ferah'],onboardingDone:true};
+ assert.equal((await request('PUT','/api/account/backup',{data:{preferences,history},revision:0},token)).status,200);
+ assert.equal((await request('PUT','/api/account/backup',{data:{shopping:['Limon']},revision:1},token)).status,200);
+ const result=(await request('GET','/api/account/backup',null,token)).data;
+ assert.equal(result.personalDataVersion,1);
+ assert.deepEqual(result.backup.data.history,history);
+ assert.deepEqual(result.backup.data.preferences,preferences);
+});
 test('forged identities, missing sessions, malformed backups, expired sessions and signed-out sessions are denied',async t=>{
  const {request,advance}=setup(t);
  assert.equal((await request('POST','/api/auth/google',{credential:'forged'})).status,401);
