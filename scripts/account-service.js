@@ -34,16 +34,16 @@ function createAccountService({store,verifyGoogle,clock=Date.now}) {
             }
             if(path==='/api/account/backup' && req.method==='GET') {
                 const backup=await store.getBackup(user.uid);
-                json(res,200,{success:true,backup,personalDataVersion:1,subscription:await subscription(user)});return true;
+                json(res,200,{success:true,backup,personalDataVersion:1,inventoryDataVersion:1,subscription:await subscription(user)});return true;
             }
             if(path==='/api/account/backup' && req.method==='PUT') {
                 const body=await readBody(req,security.MAX_BACKUP_LENGTH);
                 if(!Number.isSafeInteger(body.revision) || body.revision<0) {json(res,400,{success:false,reason:'Geçersiz yedek sürümü.'});return true;}
                 let data;try {data=security.backup(body.data);}catch {json(res,400,{success:false,reason:'Geçersiz yedek verisi.'});return true;}
                 // Older clients must not erase fields they do not understand.
-                if (data.preferences === undefined || data.history === undefined) {
+                if (data.preferences === undefined || data.history === undefined || data.inventory === undefined) {
                     const previous = await store.getBackup(user.uid);
-                    for (const key of ['preferences', 'history']) {
+                    for (const key of ['preferences', 'history', 'inventory']) {
                         if (data[key] === undefined && previous?.data?.[key] !== undefined) data[key] = previous.data[key];
                     }
                 }
