@@ -1,5 +1,27 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const personal=require('../personal-bar');
+test('bulk shopping preserves existing items and deduplicates repeated recipes and aliases',()=>{
+ const key=name=>name.trim().toLowerCase().replace('lime juice','lime');
+ const existing=['Gin'];
+ const first=personal.mergeShopping(existing,['Lime','lime juice','Gin'],key);
+ assert.deepEqual(existing,['Gin']);
+ assert.deepEqual(first,['Gin','Lime']);
+ assert.deepEqual(personal.mergeShopping(first,['lime juice','Gin'],key),first);
+ assert.deepEqual(personal.mergeShopping(first,['Lime','Soda'],key),['Gin','Lime','Soda']);
+ assert.deepEqual(personal.mergeShopping([],[],key),[]);
+});
+test('servings scale original measures with fractions and decimal commas without scaling unknown units',()=>{
+ for(const size of [1,2,4,8]) assert.equal(personal.scaleMeasure('3 cl',size),`${3*size} cl`);
+ assert.equal(personal.scaleMeasure('1 1/2 oz',4),'6 oz');
+ assert.equal(personal.scaleMeasure('1/4 oz',2),'0.5 oz');
+ assert.equal(personal.scaleMeasure('0,5 cl',8),'4 cl');
+ assert.equal(personal.scaleMeasure('2 dashes',4),'8 dashes');
+ assert.equal(personal.scaleMeasure('To taste',8),'To taste');
+ assert.equal(personal.scaleMeasure('',4),'');
+ assert.equal(personal.scaleMeasure('1/0 oz',2),'1/0 oz');
+ assert.equal(personal.scaleMeasure('3 cl',3),'3 cl');
+ assert.equal(personal.servings('8'),8);
+});
 const prefs=()=>({...personal.defaults(),tastes:['Ferah']});
 const drink=(id,extra={})=>({idDrink:id,strAlcoholic:'Alcoholic',taste:'Ferah',req:['Gin'],...extra});
 const options={requirements:d=>d.req,missing:d=>d.missing||[],taste:d=>d.taste};

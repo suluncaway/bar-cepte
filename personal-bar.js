@@ -2,6 +2,29 @@
 (function(root) {
     'use strict';
     const defaults = () => ({alcohol:'all', tastes:[], onboardingDone:false});
+    function mergeShopping(list, missing, key = name => name.trim().toLowerCase()) {
+        const result = [], seen = new Set();
+        for (const name of [...list, ...missing]) {
+            const identity = key(name);
+            if (!identity || seen.has(identity)) continue;
+            seen.add(identity); result.push(name);
+        }
+        return result;
+    }
+    function servings(value) { return [1,2,4,8].includes(Number(value)) ? Number(value) : 1; }
+    function scaleMeasure(measure, multiplier = 1) {
+        multiplier = servings(multiplier);
+        if (!measure || multiplier === 1) return measure || '';
+        return measure.replace(/\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?/g, token => {
+            let value;
+            if (token.includes('/')) {
+                const parts=token.trim().split(/\s+/), fraction=parts.pop().split('/').map(Number);
+                if (!fraction[1]) return token;
+                value=(Number(parts[0])||0)+fraction[0]/fraction[1];
+            } else value=Number(token.replace(',','.'));
+            return String(Math.round(value*multiplier*1000)/1000);
+        });
+    }
     function addPreparation(history, record) {
         if (history.some(row => row.id === record.id)) return history;
         return [record, ...history].sort((a,b) => b.createdAt-a.createdAt).slice(0,100);
@@ -40,7 +63,7 @@
         const ready = rows.filter(row=>row.missing.length===0);
         return {ready:ready.slice(0,3), nearby:ready.length?[]:rows.slice(0,3), personal};
     }
-    const api = {defaults, addPreparation, alcoholMatches, recommend};
+    const api = {defaults, addPreparation, alcoholMatches, recommend, mergeShopping, servings, scaleMeasure};
     root.BarPersonal = api;
     if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
