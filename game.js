@@ -3902,6 +3902,9 @@ function applyLanguage() {
     }
     const authSyncNowBtn = document.getElementById('btn-auth-sync-now');
     if (authSyncNowBtn) authSyncNowBtn.innerText = t.authSyncNowBtn;
+    const authRestoreBtn = document.getElementById('btn-auth-restore-cloud');
+    if (authRestoreBtn) authRestoreBtn.innerText = currentLang === 'en' ? 'Restore cloud backup' : 'Buluttan geri yükle';
+    if (window.BarAuth) window.BarAuth.renderAuthModalState();
     const authBindTitle = document.querySelector('#auth-license-bind-section .font-bold');
     if (authBindTitle) authBindTitle.innerHTML = `<span>👑</span> ${t.authLinkTitle}`;
     const authBindDesc = document.querySelector('#auth-license-bind-section > p');
@@ -4089,7 +4092,9 @@ async function fetchDataWithIndexedDB() {
     if(statusEl) statusEl.innerText = currentLang === 'en' ? "Checking database..." : "Veritabanı denetleniyor...";
 
     try {
-        if (db) {
+        let hasLocalRecipes = true;
+        try { hasLocalRecipes = localStorage.getItem('customRecipes') !== null; } catch {}
+        if (db && !hasLocalRecipes) {
             try {
                 const customTx = db.transaction("custom_recipes", "readonly");
                 const customStore = customTx.objectStore("custom_recipes");
@@ -4097,7 +4102,9 @@ async function fetchDataWithIndexedDB() {
                 
                 await new Promise((resolve) => {
                     customReq.onsuccess = () => {
-                        if (customReq.result && customReq.result.length > 0) {
+                        let stillMissing = false;
+                        try { stillMissing = localStorage.getItem('customRecipes') === null; } catch {}
+                        if (stillMissing && customReq.result && customReq.result.length > 0) {
                             customRecipes = customReq.result.flatMap(item => {
                                 try { return [BarSecurity.recipe(item)]; } catch { return []; }
                             }).slice(0, 300);
@@ -4402,3 +4409,17 @@ function closeUpdateModal() {
         modal.classList.remove('flex');
     }
 }
+
+// Called only after BarAuth validates an authenticated cloud response and writes local storage.
+window.applyCloudBackup = function(data) {
+    favoriteCocktails=data.favorites;customRecipes=data.customs;shoppingList=data.shopping;selectedIngredients=data.selected;
+    // Local storage is authoritative; refresh the IndexedDB recipe cache when available.
+    try {
+        if(db) {
+            const tx=db.transaction('custom_recipes','readwrite');
+            tx.onerror=tx.onabort=()=>console.warn('Recipe cache could not be refreshed; local backup is preserved.');
+            const store=tx.objectStore('custom_recipes');store.clear();customRecipes.forEach(recipe=>store.put(recipe));
+        }
+    } catch {console.warn('Recipe cache unavailable; local backup is preserved.');}
+    updateFavoritesFilterUI();renderIngredients();filterCocktails();renderDashboard();renderMyRecipes();renderShoppingList();
+};

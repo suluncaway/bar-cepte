@@ -1,0 +1,78 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),vm=require('node:vm');
+const {createFileStore}=require('../scripts/license-store');const {createAccountService}=require('../scripts/account-service');
+const security=require('../security');
+function storage(initial={}) {const map=new Map(Object.entries(initial));return {getItem:k=>map.has(k)?map.get(k):null,setItem:(k,v)=>map.set(k,String(v)),removeItem:k=>map.delete(k)};}
+function client(service,initial={}) {
+ const sandbox={module:{exports:{}},console,setTimeout,clearTimeout,AbortController,URL,
+  localStorage:storage(initial),sessionStorage:storage(),BarSecurity:security,alert(){},applyCloudBackup:data=>{sandbox.applied=data;},
+  fetch:async(url,options={})=>{
+   let status,value;const req={method:options.method||'GET',headers:Object.fromEntries(Object.entries(options.headers||{}).map(([k,v])=>[k.toLowerCase(),v]))};
+   await service.handle(req,{writeHead:s=>status=s,end:s=>value=JSON.parse(s)},new URL(url).pathname,async()=>options.body?JSON.parse(options.body):{});
+   return {ok:status>=200&&status<300,status,json:async()=>value};
+  }};
+ vm.runInNewContext(fs.readFileSync('security.js','utf8'),sandbox);
+ vm.runInNewContext(fs.readFileSync('auth.js','utf8'),sandbox);
+ return {api:sandbox.module.exports,context:sandbox};
+}
+test('real auth.js clients on separate devices restore the same account from the backend',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bar-cloud-clients-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const store=createFileStore(dir);
+ const service=createAccountService({store,verifyGoogle:async token=>({uid:'google_'+token,email:token+'@example.invalid',provider:'google',name:token})});
+ const first=client(service,{favoriteCocktails:'["11000"]',shoppingList:'["Şeker"]',selectedIngredients:'["Gin"]',customRecipes:'[]'});
+ await first.api.handleGoogleCredentialResponse({credential:'alice'});
+ const second=client(service);
+ await second.api.handleGoogleCredentialResponse({credential:'alice'});
+ assert.equal(second.context.localStorage.getItem('shoppingList'),'["Şeker"]');
+ assert.equal(second.context.localStorage.getItem('favoriteCocktails'),'["11000"]');
+ assert.ok(second.context.applied);
+ const other=client(service);await other.api.handleGoogleCredentialResponse({credential:'bob'});
+ assert.equal((await store.getBackup('google_bob')).data.shopping.length,0);
+ first.context.localStorage.setItem('shoppingList','["Limon"]');assert.equal((await first.api.syncToCloud()).success,true);
+ second.context.localStorage.setItem('shoppingList','["Nane"]');
+ assert.equal((await second.api.syncToCloud()).status,409);
+ assert.equal(second.context.localStorage.getItem('shoppingList'),'["Nane"]');
+ assert.equal((await second.api.syncFromCloud()).success,true);
+ assert.equal(second.context.localStorage.getItem('shoppingList'),'["Limon"]');
+ const saved=JSON.parse(second.context.localStorage.getItem('barcepte_pre_restore_google_alice'));
+ assert.deepEqual(saved.shopping,['Nane']);
+ second.context.fetch=async()=>{throw new Error('offline');};
+ assert.equal((await second.api.syncToCloud()).success,false);
+ assert.equal(second.context.localStorage.getItem('shoppingList'),'["Limon"]');
+});
+
+test('a delayed cloud response cannot restore a signed-out account or change its successor',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bar-cloud-race-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const store=createFileStore(dir),service=createAccountService({store,verifyGoogle:async token=>({uid:'google_'+token,email:token+'@example.invalid',provider:'google'})});
+ const first=client(service,{shoppingList:'["Limon"]'});await first.api.handleGoogleCredentialResponse({credential:'alice'});
+ const realFetch=first.context.fetch;let release;
+ first.context.fetch=async(url,options={})=>{
+  const response=await realFetch(url,options);
+  if(url.endsWith('/api/account/backup') && !options.method)await new Promise(resolve=>release=resolve);
+  return response;
+ };
+ const restoring=first.api.syncFromCloud();
+ while(!release)await new Promise(resolve=>setTimeout(resolve,0));
+ first.api.logout();first.context.localStorage.setItem('shoppingList','["Nane"]');release();
+ assert.equal((await restoring).success,false);
+ assert.equal(first.api.getCurrentUser(),null);
+ assert.equal(first.context.localStorage.getItem('shoppingList'),'["Nane"]');
+ assert.equal(first.api.getSessionToken(),'');
+});
+
+test('restored or deleted custom recipes survive reload despite an older IndexedDB cache',async()=>{
+ const source=fs.readFileSync('game.js','utf8');
+ const fn=source.slice(source.indexOf('async function fetchDataWithIndexedDB()'),source.indexOf('async function fetchAndStoreData()'));
+ const old={idDrink:'custom_old',strDrink:'Old',strInstructions:'Mix',customIngredients:['Gin']};
+ const restored={...old,idDrink:'custom_restored',strDrink:'Çilek 🥂'};
+ for(const value of [JSON.stringify([restored]),'[]',null]) {
+  const local=storage(value===null?{}:{customRecipes:value});
+  const sandbox={console,localStorage:local,customRecipes:value===null?[]:JSON.parse(value),currentLang:'tr',I18N:{tr:{}},BarSecurity:security,
+   document:{getElementById:()=>null},fetchAndStoreData:async()=>{},autoExtractAllIngredients(){},renderIngredients(){},filterCocktails(){},
+   db:{transaction:name=>({objectStore:()=>({getAll:()=>{const req={result:[old]};queueMicrotask(()=>req.onsuccess());return req;},
+    count:()=>{const req={result:0};queueMicrotask(()=>req.onsuccess());return req;}})})}};
+  vm.createContext(sandbox);vm.runInContext(fn,sandbox);await sandbox.fetchDataWithIndexedDB();
+  const expected=value===null?[security.recipe(old)]:JSON.parse(value);
+  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.customRecipes)),expected);
+ }
+});

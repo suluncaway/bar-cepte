@@ -2,7 +2,7 @@
  * scripts/shopier-webhook.js
  * 
  * Shopier Otomatik Lisans Teslimatı & API Servisi
- * Sıfır harici bağımlılık (Pure Node.js) ile çalışır.
+ * Node.js ve PostgreSQL üzerinde çalışır.
  * 
  * Özellikler:
  * 1. Otomatik API Polling: Her 30 saniyede bir api.shopier.com/v1/orders adresini kontrol eder.
@@ -50,6 +50,10 @@ const PRODUCT_PLANS = {
 
 const {createLicenseStore} = require('./license-store');
 const licenseStore = createLicenseStore();
+const {createGoogleVerifier} = require('./google-identity');
+const {createAccountService} = require('./account-service');
+const googleClientId=process.env.GOOGLE_CLIENT_ID || require('../firebase-config').googleClientId;
+const accounts=createAccountService({store:licenseStore,verifyGoogle:createGoogleVerifier({clientId:googleClientId})});
 const inFlightOrders = new Set();
 const getSoldLicenses = () => licenseStore.getSold();
 const getClaimedLicenses = () => licenseStore.getClaimed();
@@ -72,24 +76,24 @@ function escapeHtml(str) {
 
 function readJsonBody(req, maxBytes = 64 * 1024) {
     return new Promise((resolve, reject) => {
-        let body = '';
+        const chunks=[];
         let bytes = 0;
         let tooLarge = false;
 
         req.on('data', chunk => {
+            if(tooLarge)return;
             bytes += chunk.length;
             if (bytes > maxBytes) {
                 tooLarge = true;
-                req.destroy();
                 return reject(new Error('Payload Too Large'));
             }
-            body += chunk.toString();
+            chunks.push(chunk);
         });
 
         req.on('end', () => {
             if (tooLarge) return;
             try {
-                const parsed = JSON.parse(body || '{}');
+                const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
                 if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid JSON object');
                 resolve(parsed);
             } catch {
@@ -139,119 +143,23 @@ function detectPlan(orderItem) {
     return detectPlanAndCurrency(orderItem).plan;
 }
 
-// Shopier API Siparişlerini Çekme
-function fetchShopierOrders() {
-    return new Promise((resolve) => {
-        if (!SHOPIER_API_TOKEN) return resolve([]);
-
-        const req = https.request({
-            hostname: 'api.shopier.com',
-            port: 443,
-            path: '/v1/orders',
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${SHOPIER_API_TOKEN}`,
-                'Accept': 'application/json'
-            }
-        }, (res) => {
-            let data = '';
-            res.on('data', chunk => { data += chunk; });
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        const parsed = JSON.parse(data);
-                        resolve(Array.isArray(parsed) ? parsed : (parsed.data || []));
-                    } catch {
-                        resolve([]);
-                    }
-                } else {
-                    resolve([]);
-                }
-            });
-        });
-        req.on('error', () => resolve([]));
-        req.end();
-    });
-}
-
-// Siparişleri Otomatik İşle
+const {createShopierClient} = require('./shopier-client');
+const {createFulfillmentService} = require('./order-fulfillment');
+const shopier = createShopierClient({token:SHOPIER_API_TOKEN});
+const fulfillment = createFulfillmentService({store:licenseStore,products:PRODUCT_PLANS,generateKey,sendEmail});
+let polling = false;
 async function processNewOrders() {
+    if (polling || !SHOPIER_API_TOKEN) return;
+    polling = true;
     try {
-        const orders = await fetchShopierOrders();
-        if (!orders || !orders.length) return;
-
-        for (const order of orders) {
-            const orderId = String(order.id || order.order_id || '').trim();
-            if (!orderId) continue;
-
-            // Kesin Mükerrer Sipariş Kontrolü (Deduplication)
-            if (await isOrderProcessed(orderId)) continue;
-
-            // Sadece ödenmiş (paid) siparişleri işle
-            if (order.paymentStatus && order.paymentStatus !== 'paid') continue;
-
-            inFlightOrders.add(orderId);
-            try {
-                // Siparişteki ürünleri incele
-                const items = order.lineItems || order.items || order.products || [order];
-                for (const item of items) {
-                    const { plan: planType, currency } = detectPlanAndCurrency(item, order);
-                    const licenseKey = generateKey(planType);
-                    const isIntl = currency === 'USD' || currency === 'EUR';
-                    const planTitle = isIntl
-                        ? (planType === 'monthly' ? `Monthly VIP (30 Days - ${currency})` :
-                           planType === 'annual' ? `Annual VIP (365 Days - ${currency})` : `Lifetime VIP (${currency})`)
-                        : (planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
-                           planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP');
-
-                    const customerEmail = (order.shippingInfo && order.shippingInfo.email) || order.buyer_email || order.email || '';
-                    const customerName = (order.shippingInfo && order.shippingInfo.firstName)
-                        ? `${order.shippingInfo.firstName} ${order.shippingInfo.lastName || ''}`.trim()
-                        : (order.buyer_name || order.customer_name || (isIntl ? 'Valued Customer' : 'Barmen Dostumuz'));
-                    const customerPhone = (order.shippingInfo && order.shippingInfo.phone) || '';
-
-                    const record = {
-                        orderId,
-                        email: customerEmail,
-                        phone: customerPhone,
-                        name: customerName,
-                        planType,
-                        planTitle,
-                        currency,
-                        licenseKey,
-                        createdAt: new Date().toISOString(),
-                        emailSent: false,
-                        emailSentCount: 0,
-                        lastEmailSentAt: null
-                    };
-
-                    console.log(`\n🎉 [YENİ SİPARİŞ - ${currency}] #${orderId} | ${customerName} (${customerEmail}) [${customerPhone}]`);
-                    console.log(`🔑 [ÜRETİLEN KOD] [${planTitle}]: ${licenseKey}\n`);
-
-                    await saveSoldLicense(record);
-                    if (customerEmail) {
-                        const emailOk = await sendEmail(customerEmail, customerName, licenseKey, planTitle, currency);
-                        if (emailOk) {
-                            record.emailSent = true;
-                            record.emailSentCount = 1;
-                            record.lastEmailSentAt = new Date().toISOString();
-                        }
-                    }
-
-                    await saveSoldLicense(record);
-                }
-            } finally {
-                inFlightOrders.delete(orderId);
-            }
-        }
-    } catch (err) {
-        console.error('Otomatik sipariş kontrol hatası:', err);
-    }
+        for (const order of await shopier.listOrders()) await fulfillment.fulfill(order);
+    } catch {console.error('Shopier order verification or delivery failed; no unverified order issued.');}
+    finally {polling = false;}
 }
 
-async function sendEmail(toEmail, customerName, licenseKey, planName, currency = 'TRY') {
+async function sendEmail(toEmail, customerName, licenseKey, planName, currency = 'TRY', options = {}) {
     if (!RESEND_API_KEY) {
-        console.log(`⚠️ [E-posta Gönderilemedi] Render'da RESEND_API_KEY tanımlanmamış! Kod konsola kaydedildi: ${licenseKey} -> Alıcı: ${toEmail}`);
+        console.warn('RESEND_API_KEY is not configured; delivery remains pending.');
         return false;
     }
 
@@ -322,21 +230,23 @@ async function sendEmail(toEmail, customerName, licenseKey, planName, currency =
             headers: {
                 'Authorization': `Bearer ${RESEND_API_KEY}`,
                 'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
+                'Content-Length': Buffer.byteLength(payload),
+                ...(options.idempotencyKey ? {'Idempotency-Key': options.idempotencyKey} : {})
             }
         }, (res) => {
             let resBody = '';
             res.on('data', c => resBody += c);
             res.on('end', () => {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
-                    console.log(`✉️ [E-posta Başarılı] ${toEmail} adresine aktivasyon kodu gönderildi!`);
+                    console.log('License email accepted by provider.');
                     resolve(true);
                 } else {
-                    console.error(`❌ [E-posta Hatası] Resend API Yanıtı (${res.statusCode}):`, resBody);
+                    console.error('Email provider rejected delivery. HTTP ' + res.statusCode);
                     resolve(false);
                 }
             });
         });
+        req.setTimeout(15000, () => req.destroy(new Error('Email timeout')));
         req.on('error', (err) => {
             console.error('❌ [E-posta İstek Hatası]:', err);
             resolve(false);
@@ -362,9 +272,14 @@ function authorizeAdmin(req) {
 }
 
 async function handleRequest(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    const origin=req.headers.origin;
+    const allowedOrigins=new Set(['https://barcepte.com.tr','https://www.barcepte.com.tr','https://suluncaway.github.io','https://appassets.androidplatform.net']);
+    let localOrigin=false;
+    try {const parsed=new URL(origin);localOrigin=parsed.protocol==='http:' && ['localhost','127.0.0.1'].includes(parsed.hostname);}catch {}
+    if(origin && !allowedOrigins.has(origin) && !localOrigin) {res.writeHead(403);res.end('Origin denied');return;}
+    if(origin) {res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');}
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Cache-Control', 'no-store');
 
     if (req.method === 'OPTIONS') {
@@ -374,6 +289,7 @@ async function handleRequest(req, res) {
     }
 
     const requestPath = new URL(req.url, 'http://localhost').pathname;
+    if(await accounts.handle(req,res,requestPath,readJsonBody)) return;
     const adminPaths = ['/licenses', '/dashboard', '/api/resend-license', '/resend', '/api/export-licenses'];
     if (adminPaths.includes(requestPath) && !authorizeAdmin(req)) {
         res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Bar Cepte Admin", charset="UTF-8"' });
@@ -399,13 +315,15 @@ async function handleRequest(req, res) {
     }
 
     // Sağlık Kontrolü
-    if (req.method === 'GET' && (req.url === '/' || req.url === '/health')) {
+    if (req.method === 'GET' && (requestPath === '/' || requestPath === '/health')) {
         await licenseStore.ping();
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
             status: 'ok',
             service: 'Bar Cepte Shopier Otomatik Lisans Servisi',
             apiConnected: !!SHOPIER_API_TOKEN,
+            shopierStatus: shopier.state.status,
+            shopierLastSuccess: shopier.state.lastSuccess,
             storage: licenseStore.kind,
             migrationRequired: licenseStore.kind === 'postgres' && process.env.LICENSE_MIGRATION_COMPLETE !== 'true',
             sender: 'lisans@barcepte.com.tr',
@@ -482,9 +400,14 @@ async function handleRequest(req, res) {
                 }
 
                 const rawKey = typeof params.key === 'string' ? params.key : '';
-                const uid = params.uid || null;
-                const email = params.email || '';
-                const deviceId = params.deviceId || null;
+                const verifiedUser=await accounts.authenticate(req);
+                if((params.uid || req.headers.authorization) && !verifiedUser) {
+                    res.writeHead(401,{'Content-Type':'application/json'});
+                    return res.end(JSON.stringify({success:false,reason:'Google ile tekrar giriş yapınız.'}));
+                }
+                const uid=verifiedUser?verifiedUser.uid:null;
+                const email=verifiedUser?verifiedUser.email:'';
+                const deviceId=typeof params.deviceId==='string' && /^[a-zA-Z0-9_-]{8,200}$/.test(params.deviceId) && params.deviceId!=='dev_unknown'?params.deviceId:null;
 
                 if (!rawKey || typeof rawKey !== 'string') {
                     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -521,7 +444,7 @@ async function handleRequest(req, res) {
                 }
                 const existing = result.existing;
                 if (existing) {
-                    const isOwner = (uid && existing.uid === uid) || (deviceId && existing.deviceId === deviceId);
+                    const isOwner = !existing.needsReview && (existing.uid ? uid===existing.uid : Boolean(deviceId && existing.deviceId===deviceId));
                     if (!isOwner) {
                         res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
                         res.end(JSON.stringify({
@@ -583,8 +506,13 @@ async function handleRequest(req, res) {
                 }
 
                 const rawKey = typeof params.key === 'string' ? params.key : '';
-                const uid = params.uid || null;
-                const deviceId = params.deviceId || null;
+                const verifiedUser=await accounts.authenticate(req);
+                if((params.uid || req.headers.authorization) && !verifiedUser) {
+                    res.writeHead(401,{'Content-Type':'application/json'});
+                    return res.end(JSON.stringify({valid:false,reason:'Google ile tekrar giriş yapınız.'}));
+                }
+                const uid=verifiedUser?verifiedUser.uid:null;
+                const deviceId=typeof params.deviceId==='string' && /^[a-zA-Z0-9_-]{8,200}$/.test(params.deviceId) && params.deviceId!=='dev_unknown'?params.deviceId:null;
                 const cleanKey = rawKey.trim().toUpperCase();
 
                 const valid = verifyKeyChecksum(cleanKey);
@@ -611,7 +539,7 @@ async function handleRequest(req, res) {
                     return;
                 }
 
-                const isOwner = (uid && existing.uid === uid) || (deviceId && existing.deviceId === deviceId);
+                const isOwner = !existing.needsReview && (existing.uid ? uid===existing.uid : Boolean(deviceId && existing.deviceId===deviceId));
                 const expired = existing.expiresAt > 0 && Date.now() > existing.expiresAt;
 
                 res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -769,93 +697,23 @@ async function handleRequest(req, res) {
         return;
     }
 
-    // Shopier Webhook / Callback Uç Noktası
-    if (req.method === 'POST' && (req.url === '/webhook/shopier' || req.url === '/callback')) {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', async () => {
-            try {
-                let params = {};
-                if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
-                    params = JSON.parse(body || '{}');
-                } else {
-                    const parsed = new URLSearchParams(body);
-                    for (const [key, value] of parsed.entries()) params[key] = value;
-                }
-
-                const productId = params.product_id || params.productId || '';
-                const orderId = String(params.platform_order_id || params.order_id || params.orderId || `ORD-${Date.now()}`).trim();
-                const email = params.buyer_email || params.email || '';
-                const name = params.buyer_name || params.name || '';
-
-                const { plan: planType, currency } = detectPlanAndCurrency({ product_id: productId, title: params.product_name || params.title }, params);
-                const isIntl = currency === 'USD' || currency === 'EUR';
-
-                // 1. Zaten İşlenmiş Sipariş Kontrolü (Idempotency - Asla Tekrar E-posta Atma!)
-                const existing = (await getSoldLicenses()).find(s => String(s.orderId).trim() === orderId);
-                if (existing) {
-                    console.log(`ℹ️ [Webhook Mükerrer Koruma] Sipariş #${orderId} daha önce işlenmiş. Tekrar e-posta atılmadı, ekrana mevcut kod verildi.`);
-                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-                    return res.end(renderSuccessCard(existing.licenseKey, existing.email, isIntl));
-                }
-
-                if (inFlightOrders.has(orderId)) {
-                    console.log(`⏳ [Webhook Kilit] Sipariş #${orderId} şu anda işleniyor.`);
-                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-                    return res.end('Siparişiniz işleniyor...');
-                }
-
-                inFlightOrders.add(orderId);
-                let licenseKey = '';
-                try {
-                    licenseKey = generateKey(planType);
-                    const customerName = name || (isIntl ? 'Valued Customer' : 'Barmen Dostumuz');
-                    const planTitle = isIntl
-                        ? (planType === 'monthly' ? `Monthly VIP (30 Days - ${currency})` :
-                           planType === 'annual' ? `Annual VIP (365 Days - ${currency})` : `Lifetime VIP (${currency})`)
-                        : (planType === 'monthly' ? 'Aylık VIP (30 Gün)' :
-                           planType === 'annual' ? 'Yıllık VIP (365 Gün)' : 'Ömür Boyu VIP');
-
-                    const record = {
-                        orderId,
-                        email,
-                        name: customerName,
-                        planType,
-                        planTitle,
-                        currency,
-                        licenseKey,
-                        createdAt: new Date().toISOString(),
-                        emailSent: false,
-                        emailSentCount: 0,
-                        lastEmailSentAt: null
-                    };
-
-                    console.log(`✅ [Webhook - ${currency}] Sipariş #${orderId}: [${licenseKey}] -> ${email}`);
-
-                    await saveSoldLicense(record);
-                    if (email) {
-                        const emailOk = await sendEmail(email, customerName, licenseKey, planTitle, currency);
-                        if (emailOk) {
-                            record.emailSent = true;
-                            record.emailSentCount = 1;
-                            record.lastEmailSentAt = new Date().toISOString();
-                        }
-                    }
-
-                    await saveSoldLicense(record);
-
-                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-                    res.end(renderSuccessCard(licenseKey, email, isIntl));
-                } finally {
-                    inFlightOrders.delete(orderId);
-                }
-            } catch (err) {
-                console.error('Webhook hatası:', err);
-                res.writeHead(500);
-                res.end('Hata');
+    // A callback is only a hint: all payment/product/customer fields come from Shopier itself.
+    if (req.method === 'POST' && ['/webhook/shopier','/callback'].includes(requestPath)) {
+        try {
+            const params = await readJsonBody(req);
+            const orderId = params.orderId || params.order_id || params.platform_order_id || params.data?.id;
+            if (!orderId || !/^[a-zA-Z0-9_-]{1,100}$/.test(String(orderId))) {
+                res.writeHead(400, {'Content-Type':'application/json'});
+                return res.end(JSON.stringify({success:false,reason:'Order ID required'}));
             }
-        });
-        return;
+            const result = await fulfillment.fulfill(await shopier.getOrder(String(orderId)));
+            const ok = ['delivered','already_processed','delivery_pending'].includes(result.status);
+            res.writeHead(ok?200:422, {'Content-Type':'application/json'});
+            return res.end(JSON.stringify({success:ok,status:result.status}));
+        } catch {
+            res.writeHead(503, {'Content-Type':'application/json'});
+            return res.end(JSON.stringify({success:false,reason:'Order verification unavailable'}));
+        }
     }
 
     function renderSuccessCard(licenseKey, email, isIntl) {
@@ -933,6 +791,14 @@ if (require.main === module) {
             ? 'Migration confirmation required; polling and activation paused.'
             : 'Shopier polling enabled (30s).');
         console.log(`📊 Yönetim Paneli: http://localhost:${PORT}/licenses`);
+        const {runEmailSmokeTest,getEmailSmokeStatus}=require('./email-smoke');
+        runEmailSmokeTest().then(receipt=>{
+            if(receipt.status!=='accepted')return;
+            console.log('Email smoke test accepted: '+receipt.id);
+            for(const delay of [30000,90000])setTimeout(()=>getEmailSmokeStatus(receipt.id)
+                .then(status=>console.log('Email smoke delivery status: '+status))
+                .catch(()=>console.error('Email smoke delivery status unavailable.')),delay);
+        }).catch(()=>console.error('Email smoke test failed; check Resend configuration.'));
         if (licenseStore.kind !== 'postgres' || process.env.LICENSE_MIGRATION_COMPLETE === 'true') {
             setInterval(processNewOrders, 30000);
             setTimeout(processNewOrders, 2000);

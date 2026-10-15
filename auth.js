@@ -14,7 +14,11 @@
 
     const AUTH_USER_KEY = 'barcepte_auth_user';
     const USED_KEYS_STORAGE = 'barcepte_claimed_licenses';
-    const CLOUD_BACKUP_PREFIX = 'barcepte_cloud_data_';
+    const SESSION_KEY='barcepte_verified_session';
+    const REVISION_KEY='barcepte_cloud_revision';
+    const API_ORIGIN='https://bar-cepte-webhook.onrender.com';
+    let sessionToken='',cloudRevision=null,loginAttempt=0;
+    try {sessionToken=root.sessionStorage.getItem(SESSION_KEY)||'';const r=root.sessionStorage.getItem(REVISION_KEY);cloudRevision=r===null?null:Number(r);}catch {}
 
     let currentUser = null;
 
@@ -50,7 +54,7 @@
         try {
             const url = new URL(src);
             if (url.protocol === 'https:' && (
-                url.hostname.endsWith('googleusercontent.com') ||
+                (url.hostname === 'googleusercontent.com' || url.hostname.endsWith('.googleusercontent.com')) ||
                 url.hostname === 'www.thecocktaildb.com'
             )) {
                 return url.href;
@@ -280,132 +284,111 @@
         }
     }
 
-    function syncToCloud() {
-        const user = getCurrentUser();
-        if (!user) return { success: false, reason: 'Giriş yapılmadı' };
-
-        const localData = collectCurrentLocalData();
-        const sec = root.BarSecurity;
-        const validated = sec ? sec.backup(localData) : localData;
-
-        // Bulut kaydını kullanıcıya özel alana mühürle
+    function getSessionToken() {return sessionToken;}
+    function sessionHeaders() {return sessionToken?{Authorization:'Bearer '+sessionToken}:{};}
+    async function accountRequest(path,options={}) {
+        const requestToken=sessionToken;
+        const controller=typeof AbortController==='function'?new AbortController():null;
+        const timer=controller?setTimeout(()=>controller.abort(),65000):null;
         try {
-            const storageKey = CLOUD_BACKUP_PREFIX + user.uid;
-            root.localStorage.setItem(storageKey, JSON.stringify({
-                updatedAt: Date.now(),
-                data: validated,
-                reserve: {
-                    active: user.isReserve,
-                    plan: user.plan,
-                    expiresAt: user.reserveExpiresAt,
-                    key: user.reserveKey
-                }
-            }));
-            user.lastSync = Date.now();
-            saveUser(user);
-            return { success: true, timestamp: user.lastSync };
-        } catch (err) {
-            return { success: false, reason: err.message };
+            const response=await root.fetch(API_ORIGIN+path,{...options,headers:{'Content-Type':'application/json',...sessionHeaders(),...(options.headers||{})},signal:controller?controller.signal:undefined});
+            const data=await response.json();
+            if(path!=='/api/auth/google' && sessionToken!==requestToken)return {success:false,reason:'Oturum değişti; işlem uygulanmadı.'};
+            if(!response.ok) {
+                if(response.status===401 && sessionToken===requestToken){sessionToken='';try {root.sessionStorage.removeItem(SESSION_KEY);}catch {}}
+                return {success:false,reason:data.reason||'İşlem tamamlanamadı.',status:response.status};
+            }
+            return data;
+        } catch {return {success:false,reason:getCurrentLang()==='en'?'Connection unavailable. Your local data is preserved.':'Bağlantı kurulamadı. Yerel verilerin korunuyor.'};}
+        finally {if(timer!==null)clearTimeout(timer);}
+    }
+    function rememberRevision(revision) {
+        cloudRevision=revision;try {root.sessionStorage.setItem(REVISION_KEY,String(revision));}catch {}
+    }
+    function applyServerSubscription(subscription) {
+        const user=getCurrentUser();if(!user)return;
+        user.isReserve=Boolean(subscription);
+        user.plan=subscription?subscription.plan:null;
+        user.reserveKey=subscription?subscription.key:'';
+        user.reserveExpiresAt=subscription?subscription.expiresAt:0;
+        saveUser(user);
+        if(root.BarReserve) {
+            if(subscription)root.BarReserve.activateFromCloud({...subscription,active:true});
+            else if(root.BarReserve.deactivateReserve)root.BarReserve.deactivateReserve(false);
         }
     }
-
-    function syncFromCloud() {
-        const user = getCurrentUser();
-        if (!user) return { success: false, reason: 'Giriş yapılmadı' };
-
+    function applyCloudData(valid,user) {
+        const keys={favorites:'favoriteCocktails',customs:'customRecipes',shopping:'shoppingList',selected:'selectedIngredients'};
+        const previous={};for(const key of Object.values(keys))previous[key]=root.localStorage.getItem(key);
+        // One local recovery copy prevents an automatic cloud restore from silently losing unsynced edits.
+        root.localStorage.setItem('barcepte_pre_restore_'+(root.localStorage.getItem('barcepte_data_owner')||user.uid),JSON.stringify(collectCurrentLocalData()));
         try {
-            const storageKey = CLOUD_BACKUP_PREFIX + user.uid;
-            const raw = root.localStorage.getItem(storageKey);
-            if (!raw) return { success: false, reason: 'Bulutta yedek bulunamadı' };
-
-            const cloudPayload = JSON.parse(raw);
-            if (!cloudPayload || !cloudPayload.data) return { success: false, reason: 'Bozuk bulut verisi' };
-
-            const sec = root.BarSecurity;
-            const valid = sec ? sec.backup(cloudPayload.data) : cloudPayload.data;
-
-            // Yerel state'i güncelle
-            root.localStorage.setItem('favoriteCocktails', JSON.stringify(valid.favorites));
-            root.localStorage.setItem('customRecipes', JSON.stringify(valid.customs));
-            root.localStorage.setItem('shoppingList', JSON.stringify(valid.shopping));
-            root.localStorage.setItem('selectedIngredients', JSON.stringify(valid.selected));
-
-            // Eğer bulutta aktif bir Reserve üyeliği varsa cihazı otomatik VIP yap
-            if (cloudPayload.reserve && cloudPayload.reserve.active) {
-                if (root.BarReserve && typeof root.BarReserve.activateFromCloud === 'function') {
-                    root.BarReserve.activateFromCloud(cloudPayload.reserve);
-                }
-                user.isReserve = true;
-                user.plan = cloudPayload.reserve.plan;
-                user.reserveExpiresAt = cloudPayload.reserve.expiresAt;
-                user.reserveKey = cloudPayload.reserve.key;
-                saveUser(user);
-            }
-
-            return { success: true, data: valid };
-        } catch (err) {
-            return { success: false, reason: err.message };
+            for(const [field,key] of Object.entries(keys))root.localStorage.setItem(key,JSON.stringify(valid[field]));
+            root.localStorage.setItem('barcepte_data_owner',user.uid);
+        } catch(error) {
+            for(const [key,value] of Object.entries(previous)){try {if(value===null)root.localStorage.removeItem(key);else root.localStorage.setItem(key,value);}catch {}}
+            throw error;
         }
+        if(typeof root.applyCloudBackup==='function')root.applyCloudBackup(valid);
     }
-
-    // --- Google Identity Services Callback ---
-    function handleGoogleCredentialResponse(response) {
-        if (!response || !response.credential) return;
-
-        const payload = parseJwt(response.credential);
-        if (!payload || !payload.sub) {
-            showAlert(getCurrentLang() === 'en' ? 'Google sign-in verification failed.' : 'Google ile giriş doğrulaması başarısız oldu.');
-            return;
+    async function syncToCloud() {
+        const user=getCurrentUser();
+        if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:getCurrentLang()==='en'?'Sign in with Google to use cloud backup.':'Bulut yedeği için Google ile giriş yapınız.'};
+        if(cloudRevision===null)return {success:false,reason:'Önce bulut yedeğini geri yükleyiniz.'};
+        try {
+            const owner=root.localStorage.getItem('barcepte_data_owner');
+            if(owner && owner!==user.uid)return {success:false,reason:'Bu cihazdaki veriler başka hesaba ait. Önce kendi bulut yedeğinizi açınız.'};
+            const data=root.BarSecurity.backup(collectCurrentLocalData());
+            const result=await accountRequest('/api/account/backup',{method:'PUT',body:JSON.stringify({data,revision:cloudRevision})});
+            if(result.success){rememberRevision(result.revision);user.lastSync=result.updatedAt;saveUser(user);root.localStorage.setItem('barcepte_data_owner',user.uid);}
+            return result;
+        }catch {return {success:false,reason:'Yerel veriler okunamadı; yedek gönderilmedi.'};}
+    }
+    async function syncFromCloud() {
+        const user=getCurrentUser();
+        if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:'Google ile giriş yapınız.'};
+        const result=await accountRequest('/api/account/backup');
+        if(!result.success)return result;
+        applyServerSubscription(result.subscription);
+        if(!result.backup){rememberRevision(0);return {success:false,notFound:true,reason:'Bulutta henüz yedek yok.'};}
+        try {
+            const valid=root.BarSecurity.backup(result.backup.data);
+            applyCloudData(valid,user);rememberRevision(result.backup.revision);
+            const current=getCurrentUser();current.lastSync=result.backup.updatedAt;saveUser(current);
+            return {success:true,data:valid};
+        }catch {return {success:false,reason:'Yedek geri yüklenemedi. Yerel veriler korunuyor.'};}
+    }
+    async function handleGoogleCredentialResponse(response) {
+        if(!response || !response.credential)return;
+        const attempt=++loginAttempt;
+        const result=await accountRequest('/api/auth/google',{method:'POST',body:JSON.stringify({credential:response.credential})});
+        if(attempt!==loginAttempt)return;
+        if(!result.success){showAlert(result.reason);return;}
+        sessionToken=result.token;rememberRevision(null);
+        try {root.sessionStorage.setItem(SESSION_KEY,sessionToken);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
+        const googleUser=saveUser({...result.user,isReserve:false,createdAt:Date.now()});
+        applyServerSubscription(result.subscription);
+        const restore=await syncFromCloud();
+        if(attempt!==loginAttempt)return;
+        if(restore.notFound) {
+            try {
+                const owner=root.localStorage.getItem('barcepte_data_owner');
+                if(owner && owner!==googleUser.uid)applyCloudData({favorites:[],customs:[],shopping:[],selected:[]},googleUser);
+            }catch {}
+            await syncToCloud();
         }
-
-        const googleUser = {
-            uid: 'google_' + payload.sub,
-            name: sanitizeText(payload.name || payload.email || (getCurrentLang() === 'en' ? 'Google User' : 'Google Kullanıcısı'), 100),
-            email: sanitizeText(payload.email || '', 150),
-            picture: safeAvatar(payload.picture || ''),
-            provider: 'google',
-            createdAt: Date.now(),
-            isReserve: false,
-            plan: null,
-            reserveKey: '',
-            reserveExpiresAt: 0
-        };
-
-        // Mevcut tarayıcıda zaten aktif bir Reserve lisansı varsa hesaba mühürle
-        if (root.BarReserve && typeof root.BarReserve.getSubscriptionInfo === 'function') {
-            const currentSub = root.BarReserve.getSubscriptionInfo();
-            if (currentSub && currentSub.active) {
-                googleUser.isReserve = true;
-                googleUser.plan = currentSub.plan;
-                googleUser.reserveKey = currentSub.key;
-                googleUser.reserveExpiresAt = currentSub.expiresAt;
-                // Lisansı bu Google kullanıcısına kaydet
-                if (currentSub.key) {
-                    claimLicenseKey(currentSub.key, currentSub.plan, currentSub.expiresAt);
-                }
-            }
-        }
-
-        saveUser(googleUser);
-
-        // Bulutta önceki cihazdan yedek varsa eşitle, yoksa mevcut yerel veriyi buluta gönder
-        const cloudSyncResult = syncFromCloud();
-        if (!cloudSyncResult.success) {
-            syncToCloud();
-        }
-
         closeAuthModal();
-        showAlert(getCurrentLang() === 'en'
-            ? `Welcome, ${googleUser.name}! Your Pocket Bar account is connected.`
-            : `Hoş geldin, ${googleUser.name}! Bar Cepte hesabın başarıyla bağlandı.`);
-
-        // Sayfa bileşenlerini yenile
-        if (typeof root.filterCocktails === 'function') root.filterCocktails();
-        if (typeof root.renderDashboard === 'function') root.renderDashboard();
+        showAlert(getCurrentLang()==='en'?`Welcome, ${googleUser.name}!`: `Hoş geldin, ${googleUser.name}!`);
+    }
+    async function restoreSession() {
+        if(!sessionToken)return;
+        const result=await accountRequest('/api/account');
+        if(result.success){saveUser({...result.user,lastSync:getCurrentUser()?.lastSync||0});applyServerSubscription(result.subscription);}
     }
 
     // --- Demo / Misafir Girişi (Test & Hızlı Kullanım) ---
     function loginAsDemoUser() {
+        clearSession();
         const demoUser = {
             uid: 'demo_user_barmen',
             name: getCurrentLang() === 'en' ? 'Guest Bartender' : 'Demo Barmen',
@@ -422,11 +405,19 @@
         syncToCloud();
         closeAuthModal();
         showAlert(getCurrentLang() === 'en'
-            ? 'Signed in as Guest Bartender! Your favorites and bar shelf are syncing.'
-            : 'Demo üye olarak giriş yapıldı! Favorilerin ve bar dolabın bu hesaba eşitleniyor.');
+            ? 'Guest Bartender mode: data stays on this device.'
+            : 'Misafir modu: veriler bu cihazda tutulur.');
     }
 
+    function clearSession() {
+        loginAttempt++;
+        const token=sessionToken;sessionToken='';cloudRevision=null;
+        try {root.sessionStorage.removeItem(SESSION_KEY);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
+        if(token && root.fetch)root.fetch(API_ORIGIN+'/api/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}).catch(()=>{});
+        if(getCurrentUser()?.provider==='google' && root.BarReserve?.deactivateReserve)root.BarReserve.deactivateReserve(false);
+    }
     function logout() {
+        clearSession();
         currentUser = null;
         try {
             root.localStorage.removeItem(AUTH_USER_KEY);
@@ -519,6 +510,13 @@
                     : (getCurrentLang() === 'en' ? 'Not synced yet' : 'Henüz eşitlenmedi');
             }
 
+            const cloudEnabled=user.provider==='google' && Boolean(sessionToken);
+            for(const id of ['btn-auth-sync-now','btn-auth-restore-cloud']) {
+                const button=document.getElementById(id);if(button)button.disabled=!cloudEnabled;
+            }
+            const cloudStatus=document.getElementById('auth-cloud-status');
+            if(cloudStatus)cloudStatus.textContent=cloudEnabled?(getCurrentLang()==='en'?'● Connected':'● Bağlı'):(getCurrentLang()==='en'?'Local mode':'Yerel mod');
+
             // Lisans bağlama kutusunun durumunu ayarla
             const licenseBindBox = document.getElementById('auth-license-bind-section');
             if (licenseBindBox) {
@@ -584,53 +582,13 @@
             }
         }
 
-        // Eğer henüz Client ID girilmemişse kullanıcıyı bilgilendiren şık buton ve rehber
-        container.innerHTML = `
-            <div class="space-y-2.5 w-full">
-                <button id="btn-custom-google-login" type="button" class="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs flex items-center justify-center gap-2.5 shadow-md transition-all cursor-pointer">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                    <span>Google ile Giriş Yap</span>
-                </button>
-                <div class="text-[10px] text-slate-400 bg-white/5 p-2 rounded-xl border border-white/10 text-center leading-relaxed">
-                    💡 <b>Google Bağlantısı:</b> <code class="text-amber-300">firebase-config.js</code> dosyasına Google Client ID bilginizi ekleyerek doğrudan Google sunucularıyla kullanabilirsiniz.
-                </div>
-            </div>
-        `;
-
-        const customBtn = document.getElementById('btn-custom-google-login');
-        if (customBtn) {
-            customBtn.addEventListener('click', () => {
-                const namePrompt = getCurrentLang() === 'en' ? 'Enter your full name to sign in:' : 'Giriş yapılacak ad ve soyadınızı yazınız:';
-                const defaultName = getCurrentLang() === 'en' ? 'Guest Bartender' : 'Misafir Barmen';
-                const name = prompt(namePrompt, defaultName);
-                if (!name || !name.trim()) return;
-                const emailPrompt = getCurrentLang() === 'en' ? 'Your email address (optional):' : 'E-posta adresiniz (opsiyonel):';
-                const defaultEmail = getCurrentLang() === 'en' ? 'bartender@pocketbar.app' : 'barmen@barcepte.com.tr';
-                const email = prompt(emailPrompt, defaultEmail) || '';
-                
-                const localUser = {
-                    uid: 'user_' + Date.now(),
-                    name: sanitizeText(name, 100),
-                    email: sanitizeText(email, 150),
-                    picture: '',
-                    provider: 'local',
-                    createdAt: Date.now(),
-                    isReserve: false,
-                    plan: null,
-                    reserveKey: '',
-                    reserveExpiresAt: 0
-                };
-                saveUser(localUser);
-                syncToCloud();
-                closeAuthModal();
-                alert(getCurrentLang() === 'en' ? `Welcome, ${localUser.name}! Your account is connected.` : `Hoş geldin, ${localUser.name}! Hesabın bağlandı.`);
-            });
-        }
+        container.textContent=getCurrentLang()==='en'?'Google sign-in is unavailable. Please try again shortly.':'Google girişine şu an ulaşılamıyor. Biraz sonra tekrar deneyiniz.';
     }
 
     function init() {
         loadStoredUser();
         updateAuthUI();
+        restoreSession();
 
         // Buton dinleyicileri
         const authBtn = document.getElementById('btn-auth-user');
@@ -654,8 +612,10 @@
 
         const syncNowBtn = document.getElementById('btn-auth-sync-now');
         if (syncNowBtn) {
-            syncNowBtn.addEventListener('click', () => {
-                const result = syncToCloud();
+            syncNowBtn.addEventListener('click', async () => {
+                syncNowBtn.disabled=true;
+                const result = await syncToCloud();
+                syncNowBtn.disabled=false;
                 if (result.success) {
                     alert(getCurrentLang() === 'en' ? 'Cloud sync completed! All your data is safe.' : 'Bulut senkronizasyonu tamamlandı! Tüm verileriniz güvende.');
                     renderAuthModalState();
@@ -665,6 +625,12 @@
             });
         }
 
+        const restoreBtn=document.getElementById('btn-auth-restore-cloud');
+        if(restoreBtn)restoreBtn.addEventListener('click',async()=>{
+            if(!confirm(getCurrentLang()==='en'?'Restore your cloud backup? Current data will be saved locally.':'Bulut yedeği geri yüklensin mi? Mevcut veriler cihazda yedeklenecek.'))return;
+            restoreBtn.disabled=true;const result=await syncFromCloud();restoreBtn.disabled=false;
+            showAlert(result.success?(getCurrentLang()==='en'?'Cloud backup restored.':'Bulut yedeği geri yüklendi.'):result.reason);
+        });
         const bindLicenseBtn = document.getElementById('btn-bind-account-license');
         if (bindLicenseBtn) {
             bindLicenseBtn.addEventListener('click', async () => {
@@ -732,6 +698,7 @@
 
     const api = {
         getCurrentUser,
+        getSessionToken,
         isLoggedIn,
         saveUser,
         logout,
