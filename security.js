@@ -45,6 +45,30 @@
         if (new Set(result.map(r => r.idDrink)).size !== result.length) throw new Error('Tekrarlanan tarif kimliği');
         return result;
     }
+    const TASTES = ['Sert', 'Tatlı', 'Ekşi', 'Ferah'];
+    function preferences(value) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Geçersiz tercihler');
+        const alcohol = value.alcohol || 'all';
+        if (!['all', 'Alcoholic', 'Non_Alcoholic'].includes(alcohol)) throw new Error('Geçersiz tercih');
+        const tastes = stringList(value.tastes || [], 4);
+        if (tastes.some(taste => !TASTES.includes(taste))) throw new Error('Geçersiz tat');
+        if (value.onboardingDone !== undefined && typeof value.onboardingDone !== 'boolean') throw new Error('Geçersiz rehber durumu');
+        return {alcohol, tastes, onboardingDone: value.onboardingDone === true};
+    }
+    function history(value) {
+        if (!Array.isArray(value) || value.length > 100) throw new Error('Geçersiz geçmiş');
+        const result = value.map(row => {
+            if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error('Geçersiz kayıt');
+            if (!Number.isSafeInteger(row.createdAt) || row.createdAt < 0) throw new Error('Geçersiz tarih');
+            if (![null, 'like', 'dislike'].includes(row.rating ?? null)) throw new Error('Geçersiz değerlendirme');
+            if (row.taste && !TASTES.includes(row.taste)) throw new Error('Geçersiz tat');
+            return {id: text(row.id, 100, true), drinkId: text(row.drinkId, 100, true),
+                name: text(row.name, 200, true), createdAt: row.createdAt,
+                taste: row.taste || '', rating: row.rating ?? null, note: text(row.note || '', 300)};
+        });
+        if (new Set(result.map(row => row.id)).size !== result.length) throw new Error('Tekrarlanan geçmiş kimliği');
+        return result.sort((a, b) => b.createdAt - a.createdAt);
+    }
     function backup(value) {
         if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Geçersiz yedek');
         // Validate the entire document before changing any application state.
@@ -52,7 +76,9 @@
             favorites: stringList(value.favorites || []),
             customs: recipes(value.customs || []),
             shopping: stringList(value.shopping || []),
-            selected: stringList(value.selected || [])
+            selected: stringList(value.selected || []),
+            ...(value.preferences === undefined ? {} : {preferences: preferences(value.preferences)}),
+            ...(value.history === undefined ? {} : {history: history(value.history)})
         };
     }
     function readStored(key, validate) {
@@ -72,7 +98,7 @@
                 ? url.href : 'https://github.com/suluncaway/bar-cepte/releases/latest';
         } catch { return 'https://github.com/suluncaway/bar-cepte/releases/latest'; }
     }
-    const api = { MAX_BACKUP_LENGTH, stringList, recipe, recipes, backup, readStored, safeImage, releaseURL };
+    const api = { MAX_BACKUP_LENGTH, stringList, recipe, recipes, backup, readStored, safeImage, releaseURL, preferences, history };
     root.BarSecurity = api;
     if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
