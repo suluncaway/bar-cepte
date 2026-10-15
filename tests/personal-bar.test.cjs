@@ -40,4 +40,7 @@ test('without a taste or rating the existing classics are used, subject to avail
  const result=personal.recommend([drink('z'),drink('17212'),drink('11007'),drink('11003')],personal.defaults(),[],options);
  assert.deepEqual(result.ready.map(row=>row.drink.idDrink),['11003','11007','17212']);
  assert.equal(result.personal,false);
+ const missing=personal.recommend([drink('z',{missing:['Gin']}),drink('11003',{missing:['Gin','Campari']})],personal.defaults(),[],options);
+ assert.equal(missing.nearby[0].drink.idDrink,'11003');
+ assert.equal(missing.ready.length,0);
 });

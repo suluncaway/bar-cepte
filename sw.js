@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v36-personal-bar';
+const CACHE_NAME = 'bar-cepte-v37-inline-recipes';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./personal-bar.js', './personal-ui.js', './', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
