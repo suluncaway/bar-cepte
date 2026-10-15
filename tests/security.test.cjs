@@ -270,7 +270,7 @@ test('Google Sign-In UI elements, modals, and CSP directives are present in inde
     assert.match(html, /id="auth-modal"/);
     assert.match(html, /id="google-signin-btn-container"/);
     assert.match(html, /src="firebase-config\.js"/);
-    assert.match(html, /src="auth\.js"/);
+    assert.match(html, /src="auth\.js(?:\?v=\d+)?"/);
     assert.match(html, /src="https:\/\/accounts\.google\.com\/gsi\/client"/);
 });
 
