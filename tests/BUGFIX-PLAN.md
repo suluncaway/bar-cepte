@@ -46,3 +46,9 @@
 - Android origin geçişi için otomatik, tekrar çalıştırılabilir veri taşıma ve iki regresyon testi eklendi.
 - Android native dosyaları çevrimdışı sunduğundan WebView içinde PWA worker kaydı atlanır.
 - Android ve Windows/Linux paket derlemeleri PR kontrollerine dahil edildi; yayın işi yalnız sürüm etiketiyle çalışır.
+
+## Neon PostgreSQL devam çalışması
+
+Kalıcı disk gereksinimi ücretsiz Neon PostgreSQL seçeneğiyle çözüldü. `DATABASE_URL` tanımlandığında üretimde JSON dosyalarına geri dönülmez. Veritabanı transaction/row lock, benzersiz satış ve kullanım kayıtları ile birden fazla sunucunun aynı lisansı sahiplenmesi engellenir. PostgreSQL yeniden bağlantı, eşzamanlı aktivasyon, süre koruma, tam yedek ve HTTP geçiş kilidi testleri eklendi. Önceki rapordaki “transaction destekli veritabanı gerekir” maddesi bu değişiklikle karşılandı; Google kimlik doğrulaması ve gerçek hesap bulut yedeklemesi ayrı mimari işler olarak kalır.
+
+Ücretsiz Render için güncel kurulum ve eski kayıtların aktarımı: [NEON-SETUP.md](NEON-SETUP.md). HTML tablo tam geçmiş içermez; eksik sahiplik bilgisi uydurulmaz, kullanılan kodlar inceleme için kilitlenir. Yeni sürüm aktarım doğrulanmadan aktivasyonu ve otomatik kod üretimini açmaz.
