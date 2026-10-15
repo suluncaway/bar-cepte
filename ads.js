@@ -5,6 +5,22 @@
     // Electron masaüstü ortamında reklamları çalıştırma
     const isElectron = typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.includes('Electron');
 
+    const observedUnits = new WeakSet();
+    function watchAd(unit) {
+        if (observedUnits.has(unit)) return;
+        observedUnits.add(unit);
+        const container = unit.closest('.ad-slot-container');
+        if (!container) return;
+        const update = () => {
+            const status = unit.getAttribute('data-ad-status');
+            container.dataset.adState = status === 'filled' ? 'filled' : 'pending';
+        };
+        new MutationObserver(update).observe(unit, {
+            attributes: true, attributeFilter: ['data-ad-status']
+        });
+        update();
+    }
+
     function initAds() {
         const adContainers = document.querySelectorAll('.ad-slot-container');
         if (isElectron) {
@@ -19,6 +35,7 @@
         try {
             const adUnits = document.querySelectorAll('.adsbygoogle');
             adUnits.forEach(unit => {
+                watchAd(unit);
                 // Eğer slot daha önce yüklenmediyse push et
                 if (!unit.getAttribute('data-adsbygoogle-status')) {
                     (root.adsbygoogle = root.adsbygoogle || []).push({});

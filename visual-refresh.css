@@ -225,3 +225,31 @@ body {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .primary-action:hover { transform: none; }
 }
+
+/* Keep third-party ad dimensions inside their slot, including after rotation. */
+.ad-slot-container {
+  width: 100%; max-width: 100%; min-width: 0;
+  overflow: hidden; contain: inline-size;
+  margin: 0; padding: 0; border: 0; background: transparent;
+  max-height: 0;
+}
+.ad-slot-container[data-ad-state="filled"] {
+  max-height: none; visibility: visible; margin-block: 24px;
+}
+.mobile-nav-hint { display: none; }
+@media (max-width: 640px) {
+  .mobile-nav-hint {
+    display: block; margin: 0; padding: 4px 16px;
+    color: var(--muted); font-size: 11px; text-align: right;
+  }
+  .mobile-nav-hint span { color: var(--accent-gold); margin-left: 6px; }
+  .main-navigation { scrollbar-width: thin; scrollbar-color: #e3c28e66 transparent; }
+  .main-navigation::-webkit-scrollbar { display: block; height: 3px; }
+  .main-navigation::-webkit-scrollbar-thumb { background: #e3c28e66; border-radius: 3px; }
+  #discovery-controls > .overflow-x-auto {
+    flex-wrap: wrap; overflow: visible; gap: 8px;
+  }
+  #discovery-controls .vibe-filters > span { flex-basis: 100%; }
+  #discovery-controls .w-px { display: none; }
+  #discovery-controls :is(.taste-btn, .vibe-btn), #btn-fav-filter { white-space: nowrap; }
+}
