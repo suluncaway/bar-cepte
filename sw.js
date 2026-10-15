@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v34-editorial-polish';
+const CACHE_NAME = 'bar-cepte-v35-responsive-slots';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
