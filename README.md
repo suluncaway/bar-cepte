@@ -19,6 +19,9 @@
 
 ## ✨ Öne Çıkan Özellikler
 
+- 🧭 **Kolay Başlangıç:** İsteğe bağlı üç adımda içecek ve tat tercihini seç, mevcut barını koruyarak malzemelerini ekle.
+- 📔 **Kişisel Defter:** Son 100 hazırlamanı, beğenilerini ve 300 karaktere kadar notlarını ücretsiz sakla; manuel veya bulut yedeğinle taşı.
+- 🍹 **Sana Uygun:** Tercihlerine ve mevcut malzemelerine göre fotoğraflı, gerekçeli öneriler; eksik malzemeler açıkça belirtilir.
 - 📚 **600+ Kokteyl Veritabanı:** Popüler klasiklerden modern miksoloji reçetelerine geniş arşiv.
 - 🧠 **Akıllı Bar Motoru:** Evindeki malzemeleri seç, anında yapabileceğin kokteylleri listele.
 - 💡 **"Bunu Alırsan +X Tarif":** En az harcamayla en çok kokteyli açacak malzeme önerileri.

@@ -59,7 +59,7 @@
         if (!Array.isArray(value) || value.length > 100) throw new Error('Geçersiz geçmiş');
         const result = value.map(row => {
             if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error('Geçersiz kayıt');
-            if (!Number.isSafeInteger(row.createdAt) || row.createdAt < 0) throw new Error('Geçersiz tarih');
+            if (!Number.isSafeInteger(row.createdAt) || row.createdAt < 0 || !Number.isFinite(new Date(row.createdAt).getTime())) throw new Error('Geçersiz tarih');
             if (![null, 'like', 'dislike'].includes(row.rating ?? null)) throw new Error('Geçersiz değerlendirme');
             if (row.taste && !TASTES.includes(row.taste)) throw new Error('Geçersiz tat');
             return {id: text(row.id, 100, true), drinkId: text(row.drinkId, 100, true),

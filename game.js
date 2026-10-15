@@ -1469,6 +1469,7 @@ function toggleOnlyFavoritesFilter() {
 }
 
 function renderDashboard() {
+    window.BarPersonalUI?.refresh();
     const baseTotal = baseIngredients.length;
     const selected = selectedIngredients.length;
     let rate = baseTotal > 0 ? Math.round((Math.min(selected, baseTotal) / baseTotal) * 100) : 0;
@@ -2208,6 +2209,7 @@ function applySubstituteToBar(ingEncoded, subEncoded, event) {
 
 // --- ADIM ADIM BARMEN MODU SİSTEMİ ---
 let currentMixDrink = null;
+let personalMixEventId = '', personalMixCompleted = false;
 let currentMixStep = 0;
 let mixSteps = [];
 let mixTimerInterval = null;
@@ -2218,6 +2220,8 @@ function openMixMode(drinkId) {
     const d = allCocktails.find(c => c.idDrink === targetId) || customRecipes.find(c => c.idDrink === targetId);
     if (!d) return;
     currentMixDrink = d;
+    personalMixEventId = crypto.randomUUID();
+    personalMixCompleted = false;
     currentMixStep = 0;
 
     let ingList = [];
@@ -2366,7 +2370,10 @@ function nextMixStep() {
         renderMixStep();
         triggerHaptic('light');
     } else {
+        if (personalMixCompleted) return;
+        personalMixCompleted = true;
         closeMixMode();
+        if (window.BarPersonalUI && !window.BarPersonalUI.record(currentMixDrink, personalMixEventId)) personalMixCompleted = false;
         showToast(currentLang === 'en' ? 'Cheers! You crafted the cocktail like a pro 🍸' : 'Tebrikler! Kokteylini başarıyla hazırladın 🍸', 'success');
     }
 }
@@ -2663,6 +2670,7 @@ function recipeMatchesSearchToken(d, reqs, token) {
 }
 
 function filterCocktails() {
+    window.BarPersonalUI?.refresh();
     const readyContainer = document.getElementById('recipes-ready');
     const missingContainer = document.getElementById('recipes-missing');
     const cocktailSearch = document.getElementById('cocktail-search')?.value.toLowerCase().trim() || "";
@@ -3011,6 +3019,7 @@ function createCocktailCardElement(item, isMissingList) {
                     <span>${safeInstructions}</span>
                 </p>
 
+                <button type="button" data-personal="prepared" data-id="${escapeHTML(d.idDrink)}" class="personal-prepared">${currentLang === 'en' ? 'I made this' : 'Hazırladım'}</button>
                 <button data-action="open-mix-mode" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs transition-all mt-2" data-stop-card>
                     <span>🚀</span><span>${currentLang === 'en' ? 'Start Step-by-Step Mix' : 'Adım Adım Hazırlamaya Başla'}</span>
                 </button>
@@ -3356,7 +3365,9 @@ async function saveCustomRecipe() {
 }
 
 async function exportUserData() {
-    const data = { favorites: favoriteCocktails, customs: customRecipes, shopping: shoppingList, selected: selectedIngredients };
+    const data = BarSecurity.backup({ favorites: favoriteCocktails, customs: customRecipes, shopping: shoppingList, selected: selectedIngredients,
+        preferences: BarSecurity.preferences({...BarSecurity.readStored('personalPreferences', BarSecurity.preferences)}),
+        history: BarSecurity.readStored('preparationHistory', BarSecurity.history) });
     const encrypted = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
     
     try {
@@ -3392,10 +3403,11 @@ async function importUserData() {
             }
         }
         const decrypted = BarSecurity.backup(parsedRaw);
-        if (!confirm(currentLang === 'en' ? "This backup will replace your current favorites, custom recipes, shopping and bar shelf. Continue?" : "Bu yedek mevcut favori, tarif, alışveriş ve malzeme listelerinizin yerini alacak. Devam edilsin mi?")) return;
+        if (!confirm(currentLang === 'en' ? "This backup will replace your bar, recipes, preferences and preparation history. Continue?" : "Bu yedek mevcut bar, tarif, tercih ve hazırlama geçmişinin yerini alacak. Devam edilsin mi?")) return;
         const values = {
             favoriteCocktails: decrypted.favorites, customRecipes: decrypted.customs,
-            shoppingList: decrypted.shopping, selectedIngredients: decrypted.selected
+            shoppingList: decrypted.shopping, selectedIngredients: decrypted.selected,
+            personalPreferences: decrypted.preferences || BarSecurity.preferences({}), preparationHistory: decrypted.history || []
         };
         const previous = Object.fromEntries(Object.keys(values).map(key => [key, localStorage.getItem(key)]));
         try {
@@ -3459,6 +3471,7 @@ function pickRandomCocktail() {
 }
 
 function applyLanguage() {
+    window.BarPersonalUI?.refresh();
     const t = I18N[currentLang];
     if (!t) return;
 
@@ -4412,6 +4425,7 @@ function closeUpdateModal() {
 
 // Called only after BarAuth validates an authenticated cloud response and writes local storage.
 window.applyCloudBackup = function(data) {
+    window.BarPersonalUI?.reset();
     favoriteCocktails=data.favorites;customRecipes=data.customs;shoppingList=data.shopping;selectedIngredients=data.selected;
     // Local storage is authoritative; refresh the IndexedDB recipe cache when available.
     try {

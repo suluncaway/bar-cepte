@@ -1,6 +1,6 @@
-const CACHE_NAME = 'bar-cepte-v35-responsive-slots';
+const CACHE_NAME = 'bar-cepte-v36-personal-bar';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
-const ASSETS = ['./', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './tailwind.css', './game.js',
+const ASSETS = ['./personal-bar.js', './personal-ui.js', './', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
     './ads.js', './reserve.js', './auth.js', './firebase-config.js', './manifest.json', './cocktails.json', './icon.png', './editorial-ui.js', './editorial-cocktails.webp', './hero-cocktail-ambient.mp4'];
 const SCOPE = new URL('./', self.location.href);

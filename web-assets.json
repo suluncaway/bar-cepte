@@ -23,5 +23,7 @@
   "auth.js",
   "firebase-config.js",
   "icon.png",
-  "storage-migration.js"
+  "storage-migration.js",
+  "personal-bar.js",
+  "personal-ui.js"
 ]

@@ -1,0 +1,213 @@
+/* Personal bar UI. Existing recipe matching, filters and storage remain authoritative. */
+(function () {
+    'use strict';
+    const PKEY = 'personalPreferences', HKEY = 'preparationHistory';
+    let returningUser = false;
+    try {returningUser = ['selectedIngredients','favoriteCocktails','customRecipes','shoppingList','bar_cepte_lang','barcepte_auth_user'].some(key=>localStorage.getItem(key)!==null);} catch {}
+    let dialog, host, mode = '', step = 0, draft, draftSelected = [], feedbackId = '';
+    let returnFocus = null, manualEvent = null;
+    const en = () => currentLang === 'en';
+    const t = (tr, eng) => en() ? eng : tr;
+    const e = value => escapeHTML(String(value ?? ''));
+    function preferences() {
+        const value = BarSecurity.readStored(PKEY, BarSecurity.preferences);
+        return Array.isArray(value) ? BarPersonal.defaults() : value;
+    }
+    const history = () => BarSecurity.readStored(HKEY, BarSecurity.history);
+    const pool = () => [...customRecipes, ...allCocktails];
+    const find = id => pool().find(drink => drink.idDrink === id);
+    function notifyFailure() {
+        alert(t('Kaydedilemedi. Depolama iznini ve boş alanı kontrol et.', 'Could not save. Check storage permissions and free space.'));
+    }
+    function write(values) {
+        const previous = {};
+        try {
+            for (const key of Object.keys(values)) previous[key] = localStorage.getItem(key);
+            for (const [key, value] of Object.entries(values)) localStorage.setItem(key, JSON.stringify(value));
+            return true;
+        } catch {
+            for (const [key, value] of Object.entries(previous)) {
+                try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch {}
+            }
+            notifyFailure(); return false;
+        }
+    }
+    function reqs(drink) {
+        return drink.isCustom ? (drink.customIngredients || []).map(ingredientNameOnly) :
+            Array.from({length:15},(_,i)=>drink['strIngredient'+(i+1)]).filter(Boolean).map(ingredientNameOnly);
+    }
+    function suggestions(selected = selectedIngredients, prefs = preferences(), active = true) {
+        return BarPersonal.recommend(pool(), prefs, history(), {
+            requirements:reqs,
+            missing:drink=>reqs(drink).filter(name=>!selected.some(id=>checkIngredientMatch(name,id))),
+            taste:drink=>{enrichDrink(drink); return drink.computedTaste;},
+            allow:drink=>!active || (matchesAlcoholFilter(drink) && matchesVibeFilter(drink) &&
+                (!onlyFavoritesFilter || favoriteCocktails.includes(drink.idDrink)) &&
+                (tasteFilter==='all' || analyzeRecipe(drink).tasteProfile===tasteFilter) &&
+                (!document.getElementById('cocktail-search')?.value.trim() ||
+                    normalizeSearchText(document.getElementById('cocktail-search').value).split(/\s+/).filter(Boolean)
+                        .every(token=>recipeMatchesSearchToken(drink,reqs(drink),token))))
+        });
+    }
+    const tasteName = taste => en() ? ({Sert:'strong',Tatlı:'sweet',Ekşi:'sour',Ferah:'refreshing'}[taste] || taste) : taste;
+    function button(action, label, value = '', extra = '') {
+        return `<button type="button" data-personal="${action}" data-id="${e(value)}" ${extra}>${label}</button>`;
+    }
+    function suggestionMarkup(result) {
+        const rows = result.ready.length ? result.ready : result.nearby;
+        if (!pool().length) return `<p role="status">${t('Tarifler yükleniyor. Çevrimdışıysan daha önce açtığın tarifler kullanılacak.', 'Loading recipes. Offline, previously cached recipes will be used.')}</p>`;
+        if (!rows.length) return `<p>${t('Bu tercihler ve filtrelerle eşleşen tarif yok. Rehberi yeniden açarak tercihlerini değiştirebilirsin.', 'No recipes match these preferences and filters. Restart the guide to change your preferences.')}</p>`;
+        return `<p>${result.ready.length ? t('Malzemelerinle hazır.', 'Ready with your ingredients.') :
+            t('Henüz hazır tarif yok. Bunlar için eksik malzemeler:', 'No recipes are ready yet. Missing ingredients for these recipes:')}</p>
+            <div class="personal-grid">${rows.map(row=>`<article class="personal-mini">
+                ${BarSecurity.safeImage(row.drink.strDrinkThumb) ? `<img class="personal-photo" src="${e(BarSecurity.safeImage(row.drink.strDrinkThumb))}" alt="${e(row.drink.strDrink)}" loading="lazy" data-image-fallback>` : '<span class="personal-photo personal-photo-fallback" aria-hidden="true">🍹</span>'}
+                <h4>${e(row.drink.strDrink)}</h4>
+                <p>${row.missing.length ? `${t('Eksik', 'Missing')}: ${row.missing.map(name=>e(en()?name:translateIngredientName(name))).join(', ')}` :
+                    row.explicit ? t(`${tasteName(row.taste)} tatları sevdiğin ve malzemelerin hazır olduğu için.`, `Because you like ${tasteName(row.taste)} flavours and have the ingredients.`) :
+                    row.learned ? t('Beğendiğin tariflerin tat profiline uyuyor; malzemelerin hazır.', 'Matches recipes you liked; your ingredients are ready.') :
+                    result.personal ? t('Tercihlerine uyuyor ve malzemelerin hazır.', 'Matches your preferences and ingredients.') :
+                    t('Klasik seçkimizden; malzemelerin hazır.', 'From our classic selection; your ingredients are ready.')}</p>
+                ${button('open-recipe',t('Tarifi aç', 'Open recipe'), row.drink.idDrink)}
+            </article>`).join('')}</div>`;
+    }
+    function refresh() {
+        if (!host) return;
+        const records = history();
+        host.innerHTML = `<section class="personal-panel" aria-labelledby="personal-welcome-title">
+            <h2 id="personal-welcome-title">${t('Barını sana göre düzenle', 'Make this bar yours')}</h2>
+            <p>${t('Tercihlerini seç, elindekileri ekle ve ilk uygun tarifini bul. Hesap gerekmez.', 'Choose your tastes, add your ingredients and find your first recipe. No account needed.')}</p>
+            ${button('start',t('Başlangıç rehberini aç', 'Open getting-started guide'))}
+        </section>
+        <section class="personal-panel" aria-labelledby="personal-picks-title">
+            <h2 id="personal-picks-title">${t('Sana uygun', 'For you')}</h2>${suggestionMarkup(suggestions())}
+        </section>
+        <section class="personal-panel" aria-labelledby="personal-history-title">
+            <h2 id="personal-history-title">${t('Yaptıklarım', 'My preparations')}</h2>
+            <p>${t('Son 100 hazırlaman bu cihazda saklanır. Yedekleme ile diğer cihazına taşıyabilirsin.', 'Your last 100 preparations are stored on this device. Use Backup to move them to another device.')}</p>
+            ${records.length ? `<div class="personal-history">${records.map(row=>`<article class="personal-mini">
+                <h3>${e(row.name)}</h3><time datetime="${new Date(row.createdAt).toISOString()}">${e(new Date(row.createdAt).toLocaleString(en()?'en-GB':'tr-TR'))}</time>
+                <p>${row.rating==='like'?t('Beğendim', 'Liked'):row.rating==='dislike'?t('Bana göre değil', 'Not for me'):t('Henüz değerlendirilmedi', 'Not rated yet')}</p>
+                ${row.note ? `<p class="personal-note">${e(row.note)}</p>` : ''}
+                <div class="personal-actions">${find(row.drinkId)?button('open-recipe',t('Tarifi aç','Open recipe'),row.drinkId):`<span>${t('Tarif artık mevcut değil.', 'Recipe is no longer available.')}</span>`}
+                ${button('edit',t('Not / değerlendirme', 'Note / rating'),row.id)}
+                ${button('delete-history',t('Kaydı sil', 'Delete entry'),row.id)}</div>
+            </article>`).join('')}</div>${button('clear-history',t('Geçmişi temizle', 'Clear history'))}` : `<p>${t('Henüz hazırlama kaydın yok. Bir tarifin detayından “Hazırladım” diyerek başlayabilirsin.', 'No preparations yet. Choose “I made this” in a recipe to get started.')}</p>`}
+        </section>`;
+        if (dialog.open && mode==='guide' && step===3) renderGuide();
+    }
+    function showDialog() {
+        if (!dialog.open) {returnFocus = document.activeElement; dialog.showModal();}
+    }
+    function close() {
+        dialog.close(); mode=''; feedbackId='';
+        if (returnFocus?.isConnected) returnFocus.focus();
+    }
+    function start() {
+        draft = {...preferences(), tastes:[...preferences().tastes]};
+        draftSelected = [...selectedIngredients]; step=0; mode='guide';
+        // A reload during the guide must not force it open again.
+        if (!preferences().onboardingDone) write({[PKEY]:{...preferences(),onboardingDone:true}});
+        renderGuide(); showDialog();
+    }
+    function renderGuide() {
+        const titles = [t('Ne keşfetmek istersin?', 'What would you like to explore?'), t('Hangi tatları seversin?', 'Which flavours do you like?'), t('Elinde neler var?', 'What do you have?'), t('Barınla ilk tariflerin', 'Your first recipes')];
+        dialog.innerHTML = `<h2 id="personal-dialog-title">${titles[step]}</h2>
+            <p>${step<3?t(`Adım ${step+1} / 3`, `Step ${step+1} / 3`):t('Tercihlerin ve barın kaydedildi.', 'Your preferences and bar have been saved.')}</p>
+            ${step===0 ? `<fieldset><legend>${t('İçecek tercihi', 'Drink preference')}</legend>${[['all',t('Hepsi','All')],['Alcoholic',t('Alkollü','Alcoholic')],['Non_Alcoholic',t('Alkolsüz','Non-alcoholic')]].map(([value,label])=>`<label><input type="radio" name="personal-alcohol" value="${value}" ${draft.alcohol===value?'checked':''}> ${label}</label>`).join('')}</fieldset>` : ''}
+            ${step===1 ? `<fieldset><legend>${t('Birden fazla seçebilir veya boş bırakabilirsin.', 'Choose several or leave blank.')}</legend>${['Sert','Tatlı','Ekşi','Ferah'].map(taste=>`<label><input type="checkbox" name="personal-taste" value="${taste}" ${draft.tastes.includes(taste)?'checked':''}> ${e(tasteName(taste))}</label>`).join('')}</fieldset>` : ''}
+            ${step===2 ? `<label for="personal-ingredient-search">${t('Malzeme ara', 'Search ingredients')}</label><input id="personal-ingredient-search" type="search" autocomplete="off"><p>${t('Mevcut barın korunur; seçimlerini buradan değiştirebilirsin.', 'Your current bar is preserved; adjust it here.')}</p><div class="personal-ingredients">${ingredientChoices('')}</div>` : ''}
+            ${step===3 ? suggestionMarkup(suggestions(draftSelected,draft,false)) : ''}
+            <div class="personal-actions">${step<3 ? button('skip',t('Atla', 'Skip')) : button('done',t('Barıma git', 'Go to my bar'))}
+            ${step>0&&step<3?button('back',t('Geri', 'Back')):''}${step<3?button('next',step===2?t('Kaydet ve tarifleri gör', 'Save and see recipes'):t('Devam', 'Next')):''}</div>`;
+    }
+    function ingredientChoices(query) {
+        const normalized = normalizeSearchText(query);
+        return popularIngredients.filter(ing=>normalizeSearchText([ing.id,ing.name,ing.nameEn].join(' ')).includes(normalized)).map(ing=>
+            `<label><input type="checkbox" data-personal-ingredient="${e(ing.id)}" ${draftSelected.includes(ing.id)?'checked':''}> ${e(en()?(ing.nameEn||ing.id):translateIngredientName(ing.name||ing.id))}</label>`).join('') || `<p>${t('Malzeme bulunamadı.', 'No ingredients found.')}</p>`;
+    }
+    function skip() {
+        if (write({[PKEY]:{...preferences(),onboardingDone:true}})) {close(); refresh();}
+    }
+    function collectStep() {
+        if (step===0) draft.alcohol=dialog.querySelector('[name="personal-alcohol"]:checked')?.value || 'all';
+        if (step===1) draft.tastes=[...dialog.querySelectorAll('[name="personal-taste"]:checked')].map(input=>input.value);
+    }
+    function feedback(id) {
+        const row=history().find(row=>row.id===id); if(!row)return;
+        feedbackId=id; mode='feedback';
+        dialog.innerHTML=`<h2 id="personal-dialog-title">${e(row.name)}</h2><p>${t('Hazırlaman kaydedildi. Değerlendirme ve not isteğe bağlı.', 'Preparation saved. Rating and note are optional.')}</p>
+            <fieldset><legend>${t('Nasıl buldun?', 'How was it?')}</legend>${[['',t('Değerlendirme yok','No rating')],['like',t('Beğendim','Liked')],['dislike',t('Bana göre değil','Not for me')]].map(([value,label])=>`<label><input type="radio" name="personal-rating" value="${value}" ${(row.rating||'')===value?'checked':''}> ${label}</label>`).join('')}</fieldset>
+            <label for="personal-note">${t('Notun (en fazla 300 karakter)', 'Your note (up to 300 characters)')}</label><textarea id="personal-note" maxlength="300" rows="4">${e(row.note)}</textarea>
+            <div class="personal-actions">${button('done',t('Kapat', 'Close'))}${button('save-feedback',t('Değerlendirmeyi kaydet','Save rating'))}</div>`;
+        showDialog();
+    }
+    function record(drink, id) {
+        if (!drink) return false;
+        const records=history();
+        const updated=BarPersonal.addPreparation(records,{id,drinkId:drink.idDrink,name:drink.strDrink,createdAt:Date.now(),taste:analyzeRecipe(drink).tasteProfile,rating:null,note:''});
+        if (updated!==records && !write({[HKEY]:BarSecurity.history(updated)}))return false;
+        refresh(); feedback(id); return true;
+    }
+    function openRecipe(id) {
+        const drink=find(id); if(!drink)return;
+        close(); switchTab('alkol');
+        // Opening a saved recipe is explicit; clear transient filters so it stays reachable.
+        onlyFavoritesFilter=false; currentVibeFilter='all'; tasteFilter='all'; setAlcoholFilter('all');
+        document.getElementById('cocktail-search').value=drink.strDrink;
+        filterCocktails();
+        const card=[...document.querySelectorAll('.cocktail-card')].find(card=>card.querySelector('[data-personal="prepared"]')?.dataset.id===id);
+        if(card){card.click();card.scrollIntoView({behavior:'smooth',block:'start'});}
+    }
+    function mount() {
+        host=document.createElement('div'); host.id='personal-bar';
+        document.getElementById('bar-dashboard').prepend(host);
+        dialog=document.createElement('dialog');dialog.id='personal-dialog';dialog.setAttribute('aria-labelledby','personal-dialog-title');document.body.append(dialog);
+        dialog.addEventListener('cancel',event=>{event.preventDefault(); if(mode==='guide'&&step<3)skip();else close();});
+        document.addEventListener('input',event=>{
+            if(event.target.id==='personal-ingredient-search') dialog.querySelector('.personal-ingredients').innerHTML=ingredientChoices(event.target.value);
+        });
+        document.addEventListener('change',event=>{
+            const id=event.target.dataset.personalIngredient;
+            if(id) draftSelected=event.target.checked?[...new Set([...draftSelected,id])]:draftSelected.filter(value=>value!==id);
+        });
+        document.addEventListener('click',event=>{
+            const target=event.target.closest('[data-personal]');if(!target)return;
+            event.preventDefault();event.stopPropagation();const id=target.dataset.id;
+            switch(target.dataset.personal) {
+                case 'start':start();break;
+                case 'skip':skip();break;
+                case 'back':collectStep();step--;renderGuide();dialog.querySelector('h2').tabIndex=-1;dialog.querySelector('h2').focus();break;
+                case 'next':
+                    collectStep();
+                    if(step===2){
+                        draft.onboardingDone=true;
+                        if(!write({[PKEY]:BarSecurity.preferences(draft),selectedIngredients:BarSecurity.stringList(draftSelected)}))return;
+                        selectedIngredients=[...draftSelected];renderIngredients();filterCocktails();
+                    }
+                    step++;renderGuide();dialog.querySelector('h2').tabIndex=-1;dialog.querySelector('h2').focus();break;
+                case 'done': {const wasGuide=mode==='guide';close();if(wasGuide)switchTab('bar');break;}
+                case 'open-recipe':openRecipe(id);break;
+                case 'edit':feedback(id);break;
+                case 'prepared': {
+                    if(manualEvent?.drinkId===id && Date.now()-manualEvent.time<1000){feedback(manualEvent.id);break;}
+                    const eventId=crypto.randomUUID();
+                    if(record(find(id),eventId))manualEvent={drinkId:id,id:eventId,time:Date.now()};break;
+                }
+                case 'save-feedback': {
+                    const rating=dialog.querySelector('[name="personal-rating"]:checked')?.value || null;
+                    const note=dialog.querySelector('#personal-note').value;
+                    if(note.length>300)return;
+                    const records=history().map(row=>row.id===feedbackId?{...row,rating,note}:row);
+                    if(write({[HKEY]:BarSecurity.history(records)})){close();refresh();}break;
+                }
+                case 'delete-history':if(write({[HKEY]:history().filter(row=>row.id!==id)}))refresh();break;
+                case 'clear-history':if(confirm(t('Tüm hazırlama geçmişi silinsin mi? Favorilerin korunur.', 'Clear all preparation history? Your favourites will be kept.'))&&write({[HKEY]:[]}))refresh();break;
+            }
+        });
+        refresh();
+        const existing = selectedIngredients.length || favoriteCocktails.length || customRecipes.length || shoppingList.length || history().length;
+        if(!preferences().onboardingDone && !existing && !returningUser)start();
+    }
+    window.BarPersonalUI={refresh,record,reset:()=>{if(dialog?.open)close();refresh();}};
+    document.addEventListener('DOMContentLoaded',mount);
+})();
