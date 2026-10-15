@@ -16,6 +16,8 @@ public class LegacySeedTest extends WebViewTestSupport {
                 +"localStorage.setItem('customRecipes',JSON.stringify([{idDrink:'custom_upgrade',strDrink:'Çilek 🥂',strInstructions:'Karıştır',customIngredients:['Gin'],strDrinkThumb:'',strAlcoholic:'Alcoholic'}]));"
                 +"localStorage.setItem('bar_cepte_lang','tr');return true;})()";
             assertEquals("true",evaluate(scenario,script));
+            // Chromium batches disk persistence; verify the fixture after a process restart below.
+            android.os.SystemClock.sleep(6000);
         }
     }
 }

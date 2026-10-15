@@ -74,7 +74,7 @@ jobs:
           python3 - <<'PYCODE'
           from pathlib import Path
           p=Path('/tmp/barcepte-legacy/android/app/src/main/java/com/barcepte/app/MainActivity.java')
-          s=p.read_text().replace('StartAppSDK.setTestAdsEnabled(false);','StartAppSDK.setTestAdsEnabled(true);').replace('startAppBanner.loadAd();','// Test fixture: no live ads.')
+          s=p.read_text().replace('StartAppSDK.setTestAdsEnabled(false);','StartAppSDK.setTestAdsEnabled(true);').replace('startAppBanner.loadAd();','// Test fixture: no live ads.').replace('settings.setJavaScriptEnabled(true);','settings.setJavaScriptEnabled(true); settings.setBlockNetworkLoads(true);')
           p.write_text(s)
           PYCODE
           echo "sdk.dir=$ANDROID_HOME" > /tmp/barcepte-legacy/android/local.properties
@@ -94,11 +94,16 @@ jobs:
             adb install /tmp/barcepte-legacy/android/app/build/outputs/apk/debug/app-debug.apk
             adb install android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb shell am instrument -w -r -e class com.barcepte.app.LegacySeedTest com.barcepte.app.test/androidx.test.runner.AndroidJUnitRunner | tee legacy-seed.log
-            adb logcat -d -t 400 > android-logcat.log
+            adb logcat -d -t 1500 > android-logcat.log
             grep -q 'OK (1 test)' legacy-seed.log
+            adb shell am force-stop com.barcepte.app
+            adb shell am instrument -w -r -e class com.barcepte.app.LegacyPersistenceTest com.barcepte.app.test/androidx.test.runner.AndroidJUnitRunner | tee legacy-persistence.log
+            adb logcat -d -t 1500 > android-logcat.log
+            grep -q 'OK (1 test)' legacy-persistence.log
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am instrument -w -r -e class com.barcepte.app.UpgradeMigrationTest com.barcepte.app.test/androidx.test.runner.AndroidJUnitRunner | tee upgrade-test.log
-            adb logcat -d -t 400 > android-logcat.log
+            adb logcat -d -t 1500 > android-logcat.log
+            adb logcat -d -s BarCepteMigration:D chromium:I
             grep -q 'OK (1 test)' upgrade-test.log
       - uses: actions/upload-artifact@v4
         if: always()
@@ -106,5 +111,6 @@ jobs:
           name: android-upgrade-test-logs
           path: |
             legacy-seed.log
+            legacy-persistence.log
             upgrade-test.log
             android-logcat.log

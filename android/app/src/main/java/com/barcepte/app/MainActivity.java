@@ -110,6 +110,9 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
+        if (BuildConfig.DEBUG && getIntent().getBooleanExtra("barcepte_offline_test", false)) {
+            settings.setBlockNetworkLoads(true);
+        }
         
         // Güvenlik Sıkılaştırması: Çapraz dosya erişimini engelle
         settings.setAllowFileAccessFromFileURLs(false);
@@ -164,6 +167,8 @@ public class MainActivity extends Activity {
                         try {
                             migrationData = new JSONArray("[" + value + "]").getString(0);
                             new JSONObject(migrationData);
+                            if (BuildConfig.DEBUG) android.util.Log.d("BarCepteMigration", "Legacy storage entries: "
+                                    + new JSONObject(migrationData).getJSONArray("entries").length());
                             view.loadUrl(MIGRATION_URL);
                         } catch (Exception error) {
                             finishMigration(false);
@@ -218,6 +223,7 @@ public class MainActivity extends Activity {
     }
 
     private void finishMigration(boolean success) {
+        if (BuildConfig.DEBUG) android.util.Log.d("BarCepteMigration", "Restore completed: " + success);
         migrating = false;
         webView.getSettings().setAllowFileAccess(false);
         migrationData = null;
