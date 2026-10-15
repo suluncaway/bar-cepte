@@ -84,7 +84,7 @@ jobs:
       - name: Verify installed-app upgrade and offline data migration
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: 35
           arch: x86_64
           profile: pixel_2
           disable-animations: true
@@ -94,9 +94,11 @@ jobs:
             adb install /tmp/barcepte-legacy/android/app/build/outputs/apk/debug/app-debug.apk
             adb install android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb shell am instrument -w -r -e class com.barcepte.app.LegacySeedTest com.barcepte.app.test/androidx.test.runner.AndroidJUnitRunner | tee legacy-seed.log
+            adb logcat -d -t 400 > android-logcat.log
             grep -q 'OK (1 test)' legacy-seed.log
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am instrument -w -r -e class com.barcepte.app.UpgradeMigrationTest com.barcepte.app.test/androidx.test.runner.AndroidJUnitRunner | tee upgrade-test.log
+            adb logcat -d -t 400 > android-logcat.log
             grep -q 'OK (1 test)' upgrade-test.log
       - uses: actions/upload-artifact@v4
         if: always()
@@ -105,3 +107,4 @@ jobs:
           path: |
             legacy-seed.log
             upgrade-test.log
+            android-logcat.log

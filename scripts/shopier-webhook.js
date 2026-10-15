@@ -791,6 +791,14 @@ if (require.main === module) {
             ? 'Migration confirmation required; polling and activation paused.'
             : 'Shopier polling enabled (30s).');
         console.log(`📊 Yönetim Paneli: http://localhost:${PORT}/licenses`);
+        const {runEmailSmokeTest,getEmailSmokeStatus}=require('./email-smoke');
+        runEmailSmokeTest().then(receipt=>{
+            if(receipt.status!=='accepted')return;
+            console.log('Email smoke test accepted: '+receipt.id);
+            for(const delay of [30000,90000])setTimeout(()=>getEmailSmokeStatus(receipt.id)
+                .then(status=>console.log('Email smoke delivery status: '+status))
+                .catch(()=>console.error('Email smoke delivery status unavailable.')),delay);
+        }).catch(()=>console.error('Email smoke test failed; check Resend configuration.'));
         if (licenseStore.kind !== 'postgres' || process.env.LICENSE_MIGRATION_COMPLETE === 'true') {
             setInterval(processNewOrders, 30000);
             setTimeout(processNewOrders, 2000);

@@ -52,3 +52,9 @@
 Kalıcı disk gereksinimi ücretsiz Neon PostgreSQL seçeneğiyle çözüldü. `DATABASE_URL` tanımlandığında üretimde JSON dosyalarına geri dönülmez. Veritabanı transaction/row lock, benzersiz satış ve kullanım kayıtları ile birden fazla sunucunun aynı lisansı sahiplenmesi engellenir. PostgreSQL yeniden bağlantı, eşzamanlı aktivasyon, süre koruma, tam yedek ve HTTP geçiş kilidi testleri eklendi. Önceki rapordaki “transaction destekli veritabanı gerekir” maddesi bu değişiklikle karşılandı; Google kimlik doğrulaması ve gerçek hesap bulut yedeklemesi ayrı mimari işler olarak kalır.
 
 Ücretsiz Render için güncel kurulum ve eski kayıtların aktarımı: [NEON-SETUP.md](NEON-SETUP.md). HTML tablo tam geçmiş içermez; eksik sahiplik bilgisi uydurulmaz, kullanılan kodlar inceleme için kilitlenir. Yeni sürüm aktarım doğrulanmadan aktivasyonu ve otomatik kod üretimini açmaz.
+
+## Doğrulanmış hesap ve yedekleme devam çalışması
+
+Önceki bölümde kalan Google token doğrulaması ve gerçek hesap yedeklemesi bu çalışmada uygulandı. Sunucu doğrulanmış oturumla lisans sahipliğini belirliyor; Neon hesap yedekleri cihazlar arasında sürüm denetimiyle paylaşılıyor. Sipariş teslimatı ödeme doğrulaması, sayfalama ve tekrar deneme koruması içeriyor. Eski claim kurtarması özgün süreyi korur. Ayrıntılar ve gerçek sağlayıcı testi sınırları: [VERIFIED-CLOUD.md](VERIFIED-CLOUD.md).
+
+İlk PR kontrolünde PostgreSQL dahil 69 test geçti; sayfalama için eklenen test sonraki kontrol grubundadır. Android APK, Windows ve Linux paketleri derlendi. Emülatör yükseltme testi CI üzerinden çalıştırılıyor; nihai sonuç PR kontrollerinde izlenebilir.

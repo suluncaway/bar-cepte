@@ -36,6 +36,6 @@ public class WebViewTestSupport {
             if("true".equals(evaluate(scenario,condition)))return;
             SystemClock.sleep(150);
         }
-        fail("WebView condition timed out: "+condition);
+        fail("WebView condition timed out: "+condition+"; user agent="+evaluate(scenario,"navigator.userAgent"));
     }
 }
