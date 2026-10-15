@@ -1038,28 +1038,14 @@ function installPWA() {
 
 // Porsiyon / Kişi Sayısına Göre Ölçü Hesaplayıcı
 function scaleMeasure(measureStr, multiplier = 1) {
-    if (!measureStr || multiplier === 1) return measureStr || '';
-    
-    return measureStr.replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d+(\.\d+)?)/g, match => {
-        let val = 0;
-        if (match.includes(' ') && match.includes('/')) {
-            const [whole, frac] = match.split(' ');
-            const [num, den] = frac.split('/');
-            val = parseFloat(whole) + (parseFloat(num) / parseFloat(den));
-        } else if (match.includes('/')) {
-            const [num, den] = match.split('/');
-            val = parseFloat(num) / parseFloat(den);
-        } else {
-            val = parseFloat(match);
-        }
-        const scaled = Math.round(val * multiplier * 10) / 10;
-        return scaled % 1 === 0 ? scaled.toFixed(0) : scaled.toFixed(1);
-    });
+    return BarPersonal.scaleMeasure(measureStr, multiplier);
 }
 
 function changePortion(cardId, multiplier, btnEl) {
     const card = document.getElementById(cardId);
     if (!card) return;
+    multiplier = BarPersonal.servings(multiplier);
+    card.dataset.servings = String(multiplier);
 
     card.querySelectorAll('.portion-btn').forEach(b => {
         b.className = "portion-btn px-2 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5";
@@ -2215,7 +2201,8 @@ let mixSteps = [];
 let mixTimerInterval = null;
 let mixTimerRemaining = 15;
 
-function openMixMode(drinkId) {
+function openMixMode(drinkId, servings = 1) {
+    servings = BarPersonal.servings(servings);
     const targetId = String(drinkId || '').trim();
     const d = allCocktails.find(c => c.idDrink === targetId) || customRecipes.find(c => c.idDrink === targetId);
     if (!d) return;
@@ -2226,14 +2213,17 @@ function openMixMode(drinkId) {
 
     let ingList = [];
     if (d.isCustom && Array.isArray(d.customIngredients)) {
-        ingList = d.customIngredients;
+        ingList = d.customIngredients.map(raw => {
+            const parts = raw.match(/^([\d\s\/.,-]+(?:ml|oz|cl|dash|dashes|tsp|tbsp|gr|shot)?)\s*(.*)$/i);
+            return parts ? `${scaleMeasure(translateMeasureText(parts[1].trim()), servings)} ${parts[2].trim()}` : raw;
+        });
     } else {
         for (let i = 1; i <= 15; i++) {
             const ing = d[`strIngredient${i}`];
             const m = d[`strMeasure${i}`] ? d[`strMeasure${i}`].trim() : '';
             if (ing && ing.trim()) {
                 const displayName = currentLang === 'en' ? ing.trim() : translateIngredientName(ing.trim());
-                const measureText = translateMeasureText(m);
+                const measureText = scaleMeasure(translateMeasureText(m), servings);
                 ingList.push(measureText ? `${measureText} ${displayName}` : displayName);
             }
         }

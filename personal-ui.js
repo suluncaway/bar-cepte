@@ -36,6 +36,31 @@
         return drink.isCustom ? (drink.customIngredients || []).map(ingredientNameOnly) :
             Array.from({length:15},(_,i)=>drink['strIngredient'+(i+1)]).filter(Boolean).map(ingredientNameOnly);
     }
+    const shoppingKey = name => normalizeSearchText(resolveIngredientName(name));
+    const missingFor = drink => reqs(drink).filter(name=>!selectedIngredients.some(id=>checkIngredientMatch(name,id)));
+    const pendingFor = drink => missingFor(drink).filter(name=>!shoppingList.some(item=>shoppingKey(item)===shoppingKey(name)));
+    function shoppingButton(drink) {
+        if (!missingFor(drink).length) return '';
+        return button('add-missing', pendingFor(drink).length ? t('Eksikleri listeye ekle','Add missing to shopping list') : t('✓ Eksikler listede','✓ Missing items are listed'),drink.idDrink);
+    }
+    function addMissing(target, id) {
+        const drink=find(id); if(!drink)return;
+        const missing=missingFor(drink), added=new Set(pendingFor(drink).map(shoppingKey)).size;
+        const updated=BarPersonal.mergeShopping(shoppingList,missing,shoppingKey);
+        try {BarSecurity.stringList(updated);}catch {notifyFailure();return;}
+        if(!write({shoppingList:updated}))return;
+        shoppingList=updated;
+        renderShoppingList();
+        document.querySelectorAll('[data-personal="add-missing"]').forEach(control=>{
+            const recipe=find(control.dataset.id);if(!recipe)return;
+            control.textContent=pendingFor(recipe).length?t('Eksikleri listeye ekle','Add missing to shopping list'):t('✓ Eksikler listede','✓ Missing items are listed');
+        });
+        const article=target.closest('.personal-mini');
+        let status=article?.querySelector('.personal-shopping-status');
+        if(article&&!status){status=document.createElement('p');status.className='personal-shopping-status';status.setAttribute('role','status');article.append(status);}
+        if(status)status.textContent=added?t(`${added} malzeme alışveriş listesine eklendi.`,`${added} ingredients added to your shopping list.`):
+            t('Eksik malzemeler zaten listede.','The missing ingredients are already listed.');
+    }
     function suggestions(selected = selectedIngredients, prefs = preferences(), active = true) {
         return BarPersonal.recommend(pool(), prefs, history(), {
             requirements:reqs,
@@ -68,6 +93,7 @@
                     result.personal ? t('Tercihlerine uyuyor ve malzemelerin hazır.', 'Matches your preferences and ingredients.') :
                     t('Klasik seçkimizden; malzemelerin hazır.', 'From our classic selection; your ingredients are ready.')}</p>
                 ${button('open-recipe',t('Tarifi aç', 'Open recipe'), row.drink.idDrink)}
+                ${shoppingButton(row.drink)}
             </article>`).join('')}</div>`;
     }
     function refresh() {
@@ -161,12 +187,16 @@
             return {name:parts?.[2]?.trim()||raw,measure:parts?.[1]?.trim()||''};
         });
         else ingredients=Array.from({length:15},(_,i)=>({name:drink['strIngredient'+(i+1)],measure:drink['strMeasure'+(i+1)]||''})).filter(row=>row.name?.trim());
-        panel.innerHTML=`<h4>${t('Malzemeler ve ölçüler','Ingredients and measures')}</h4>
-            <ul>${ingredients.map(row=>`<li>${e(en()?row.name:translateIngredientName(row.name))} <strong>${e(translateMeasureText(row.measure))}</strong>
+        panel.dataset.servings='1';
+        panel.innerHTML=`<div class="personal-servings" role="group" aria-label="${t('Porsiyon sayısı','Servings')}">
+            <span>${t('Porsiyon','Servings')}</span>${[1,2,4,8].map(count=>button('portion',`${count}×`,id,`data-size="${count}" aria-label="${count} ${t('porsiyon','servings')}" aria-pressed="${count===1}"`)).join('')}</div>
+            <h4>${t('Malzemeler ve ölçüler','Ingredients and measures')}</h4>
+            <ul>${ingredients.map(row=>`<li>${e(en()?row.name:translateIngredientName(row.name))} <strong data-personal-measure="${e(translateMeasureText(row.measure))}">${e(translateMeasureText(row.measure))}</strong>
                 ${selectedIngredients.some(selected=>checkIngredientMatch(row.name,selected))?'':`<span class="personal-missing">${t('Eksik','Missing')}</span>`}</li>`).join('')}</ul>
             <h4>${t('Hazırlanışı','Instructions')}</h4><p class="personal-instructions">${e(cleanInstructionText(en()||drink.isCustom?drink.strInstructions:(drink.strInstructionsTR||drink.strInstructions)||''))}</p>
             <div class="personal-actions">${button('prepared',t('Hazırladım','I made this'),id)}
-            <button type="button" data-action="open-mix-mode" data-value="${e(encodeURIComponent(id))}">${t('Adım adım hazırla','Prepare step by step')}</button></div>`;
+            <button type="button" data-action="open-mix-mode" data-value="${e(encodeURIComponent(id))}">${t('Adım adım hazırla','Prepare step by step')}</button></div>
+            ${shoppingButton(drink)}`;
         article.append(panel);
         if(!en() && !drink.isCustom && !drink.strInstructionsTR && drink.strInstructions) {
             try {
@@ -204,6 +234,14 @@
                     step++;renderGuide();dialog.querySelector('h2').tabIndex=-1;dialog.querySelector('h2').focus();break;
                 case 'done': {const wasGuide=mode==='guide';close();if(wasGuide)switchTab('bar');break;}
                 case 'open-recipe':openRecipe(target,id);break;
+                case 'add-missing':addMissing(target,id);break;
+                case 'portion': {
+                    const panel=target.closest('.personal-inline');if(!panel)break;
+                    const count=BarPersonal.servings(target.dataset.size);panel.dataset.servings=String(count);
+                    panel.querySelectorAll('[data-personal="portion"]').forEach(control=>control.setAttribute('aria-pressed',String(Number(control.dataset.size)===count)));
+                    panel.querySelectorAll('[data-personal-measure]').forEach(measure=>measure.textContent=scaleMeasure(measure.dataset.personalMeasure,count));
+                    break;
+                }
                 case 'edit':feedback(id);break;
                 case 'prepared': {
                     if(manualEvent?.drinkId===id && Date.now()-manualEvent.time<1000){feedback(manualEvent.id);break;}

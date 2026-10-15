@@ -250,6 +250,13 @@ body {
 .personal-inline li strong { color: var(--accent-gold); }
 .personal-missing { color: #f5baac; margin-left: 6px; font-size: 12px; }
 .personal-inline .personal-instructions { white-space: pre-wrap; }
+.personal-servings { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.personal-servings span { width: 100%; font-size: 13px; color: var(--muted); }
+.personal-servings button { min-width: 44px; }
+.personal-servings [aria-pressed="true"] { color: var(--accent-gold); border-color: var(--accent-gold); background: #403b22; }
+.personal-mini > [data-personal] { margin: 8px 6px 0 0; }
+[data-personal="add-missing"] { max-width: 100%; white-space: normal; text-align: left; }
+.personal-shopping-status { font-size: 13px; color: var(--accent-gold); margin-top: 12px; }
 .personal-inline [data-action] { min-height: 44px; padding: 10px 14px; border: 1px solid var(--border-glass); border-radius: 8px; color: var(--ink); background: #294338; font-size: 13px; }
 #personal-dialog { width: min(620px, calc(100% - 24px)); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; padding: 24px; border: 1px solid var(--accent-gold); border-radius: 16px; background: var(--surface); color: var(--ink); margin: auto; }
 #personal-dialog::backdrop { background: #06130dcc; }

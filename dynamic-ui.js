@@ -20,10 +20,12 @@ document.addEventListener('click', event => {
             case 'substitute':
                 applySubstituteToBar(button.dataset.ing, button.dataset.sub, event);
                 break;
-            case 'open-mix-mode':
+            case 'open-mix-mode': {
+                const servings = button.closest('[data-servings]')?.dataset.servings || 1;
                 if (button.closest('#personal-dialog')) window.BarPersonalUI?.close();
-                openMixMode(value);
+                openMixMode(value, servings);
                 break;
+            }
             case 'close-mix-mode':
                 closeMixMode();
                 break;
