@@ -320,6 +320,7 @@ async function handleRequest(req, res) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
             status: 'ok',
+            inventoryDataVersion: 1,
             service: 'Bar Cepte Shopier Otomatik Lisans Servisi',
             apiConnected: !!SHOPIER_API_TOKEN,
             shopierStatus: shopier.state.status,

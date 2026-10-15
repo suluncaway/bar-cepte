@@ -2,6 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const security = require('../security');
 const record = {id:'one',drinkId:'11003',name:'Negroni',createdAt:1,taste:'Sert',rating:'like',note:'Güzel'};
+test('inventory boundary rejects invalid quantities, units, duplicates and oversized event ledgers',()=>{
+ const item={ingredient:'Gin',quantity:0,unit:'ml'};
+ assert.deepEqual(security.inventory({items:[item]}),{items:[item],deductions:[]});
+ for(const value of [{items:[{...item,quantity:-1}]},{items:[{...item,quantity:Infinity}]},{items:[{...item,quantity:'3'}]},
+ {items:[{...item,unit:'bottle'}]},{items:[item,item]},{items:[],deductions:Array.from({length:101},(_,i)=>String(i))}])assert.throws(()=>security.backup({inventory:value}));
+});
 test('personal data accepts old backups and validates optional fields before restore', () => {
     assert.deepEqual(security.backup({}), {favorites:[],customs:[],shopping:[],selected:[]});
     const data = security.backup({preferences:{alcohol:'Non_Alcoholic',tastes:['Ferah']},history:[record]});
