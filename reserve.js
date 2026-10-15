@@ -293,12 +293,6 @@
             return { success: false, reason: isEn ? '❌ Invalid activation key. Please check again.' : '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
         }
 
-        // 2. Master Key kontrolü (Geliştirici anahtarları)
-        if (MASTER_KEYS.has(cleanKey)) {
-            activateReserve(cleanKey);
-            return { success: true, plan: 'lifetime', isMaster: true };
-        }
-
         // 3. Yerel BarAuth kontrolü
         if (root.BarAuth && typeof root.BarAuth.canUseLicenseKey === 'function') {
             const localCheck = root.BarAuth.canUseLicenseKey(cleanKey);
@@ -317,16 +311,19 @@
             deviceId: deviceId
         };
 
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        const timeout = controller ? setTimeout(() => controller.abort(), 15000) : null;
         try {
             const resp = await fetch('https://bar-cepte-webhook.onrender.com/api/claim-license', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: controller ? controller.signal : undefined
             });
             const data = await resp.json();
             if (!resp.ok || !data.success) {
                 // Sunucu reddetti (başkası tarafından kullanılmış veya süresi dolmuş)
-                if (root.BarAuth && typeof root.BarAuth.markLicenseClaimedLocally === 'function') {
+                if (resp.status === 409 && root.BarAuth && typeof root.BarAuth.markLicenseClaimedLocally === 'function') {
                     root.BarAuth.markLicenseClaimedLocally(cleanKey, data.claimedBy || 'external_user');
                 }
                 return {
@@ -338,8 +335,13 @@
             }
 
             // Sunucu onayladı! Lisansı bu cihaza kaydet
-            const plan = data.plan || getPlanFromKey(cleanKey);
-            const expiresAt = Number(data.expiresAt) || 0;
+            const plan = data.plan;
+            const expiresAt = data.expiresAt;
+            if (!['monthly', 'annual', 'lifetime'].includes(plan) ||
+                typeof expiresAt !== 'number' || !Number.isFinite(expiresAt) ||
+                (plan === 'lifetime' ? expiresAt !== 0 : expiresAt <= Date.now())) {
+                throw new Error('Invalid subscription response');
+            }
 
             root.localStorage.setItem(STORAGE_KEY, 'true');
             root.localStorage.setItem(KEY_STORAGE, cleanKey);
@@ -353,12 +355,12 @@
             applyReserveUI();
             return { success: true, plan, expiresAt, message: data.message };
         } catch (err) {
-            console.warn('Merkezi lisans sunucusuna ulaşılamadı, yerel doğrulama uygulanıyor:', err);
-            const localSuccess = activateReserve(cleanKey);
-            if (localSuccess) {
-                return { success: true, plan: getPlanFromKey(cleanKey), offline: true };
-            }
-            return { success: false, reason: isEn ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.' };
+            console.warn('Merkezi lisans doğrulaması tamamlanamadı:', err);
+            return { success: false, reason: isEn
+                ? 'License verification is unavailable. Please connect to the internet and try again.'
+                : 'Lisans doğrulaması yapılamadı. İnternet bağlantınızı kontrol edip tekrar deneyiniz.' };
+        } finally {
+            if (timeout !== null) clearTimeout(timeout);
         }
     }
 
@@ -432,6 +434,7 @@
     }
 
     function applyReserveUI() {
+        if (typeof document === 'undefined') return;
         const active = isReserveActive();
         const isEn = getCurrentLang() === 'en';
         

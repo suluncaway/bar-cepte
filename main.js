@@ -10,11 +10,8 @@ const path = require('path');
 
 const ROOT = __dirname;
 const PUBLIC_FILES = new Set([
-  '/index.html', '/style.css', '/tailwind.css', '/game.js', '/security.js',
-  '/ui-bindings.js', '/dynamic-ui.js', '/support.js', '/manifest.json', '/sw.js',
-  '/cocktails.json', '/icon.png', '/build/icon.png', '/editorial-ui.js', '/editorial-cocktails.webp',
-  '/reserve.js', '/auth.js', '/firebase-config.js', '/ads.js', '/privacy.html', '/privacy.js',
-  '/hero-cocktail-ambient.mp4', '/shopier-aylik-kart.png'
+  ...require('./web-assets.json').map(file => '/' + file),
+  '/build/icon.png'
 ]);
 
 const MIME = {

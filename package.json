@@ -37,33 +37,45 @@
     "productName": "Bar Cepte",
     "files": [
       "index.html",
+      "privacy.html",
+      "privacy.js",
       "style.css",
-      "game.js",
       "tailwind.css",
+      "game.js",
       "security.js",
       "ui-bindings.js",
       "dynamic-ui.js",
       "support.js",
       "editorial-ui.js",
       "editorial-cocktails.webp",
+      "hero-cocktail-ambient.mp4",
+      "shopier-aylik-kart.png",
       "manifest.json",
       "sw.js",
-      "main.js",
       "cocktails.json",
       "ads.js",
       "ads.txt",
-      "privacy.html",
-      "robots.txt",
-      "sitemap.xml",
       "reserve.js",
-      "build/icon.png"
+      "auth.js",
+      "firebase-config.js",
+      "icon.png",
+      "main.js",
+      "web-assets.json",
+      "build/icon.png",
+      "storage-migration.js"
     ],
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "build/icon.png",
       "category": "Utility"
     },

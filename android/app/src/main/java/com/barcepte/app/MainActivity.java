@@ -15,9 +15,19 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebViewClient;
+import androidx.webkit.WebViewAssetLoader;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.startapp.sdk.ads.banner.Banner;
 import com.startapp.sdk.adsbase.Ad;
@@ -32,6 +42,13 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> filePathCallback;
     private final static int FILE_CHOOSER_RESULT_CODE = 1001;
     private long backPressedTime = 0;
+    private static final String APP_URL = "https://appassets.androidplatform.net/assets/index.html";
+    private static final String MIGRATION_URL = "https://appassets.androidplatform.net/assets/__migration__.html";
+    private static final String LEGACY_URL = "file:///android_asset/index.html";
+    private String migrationScript;
+    private String migrationData;
+    private volatile boolean migrating;
+
 
     // Start.io Uygulama Kimliği
     private static final String STARTIO_APP_ID = "209724229";
@@ -97,8 +114,8 @@ public class MainActivity extends Activity {
         // Güvenlik Sıkılaştırması: Çapraz dosya erişimini engelle
         settings.setAllowFileAccessFromFileURLs(false);
         settings.setAllowUniversalAccessFromFileURLs(false);
-        settings.setAllowFileAccess(true); // Yerel assets yüklemesi için
-        settings.setAllowContentAccess(true);
+        settings.setAllowFileAccess(false);
+        settings.setAllowContentAccess(false);
 
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
@@ -109,11 +126,59 @@ public class MainActivity extends Activity {
         // Donanım hızlandırma
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
+        migrating = !getPreferences(MODE_PRIVATE).getBoolean("httpsStorageMigrated", false);
+        if (migrating) {
+            try (InputStream input = getAssets().open("storage-migration.js")) {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                byte[] buffer = new byte[4096];
+                int size;
+                while ((size = input.read(buffer)) != -1) output.write(buffer, 0, size);
+                migrationScript = output.toString("UTF-8");
+                settings.setAllowFileAccess(true);
+            } catch (Exception error) {
+                migrating = false;
+                Toast.makeText(this, "Veri aktarımı başlatılamadı. Bir sonraki açılışta tekrar denenecek.", Toast.LENGTH_LONG).show();
+            }
+        }
+
         // Güvenli URL Yönlendirmesi: Sadece yerel assets WebView içinde açılır, harici siteler sistem tarayıcısına gider
+        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                if (migrating && (LEGACY_URL.equals(url) || MIGRATION_URL.equals(url))) {
+                    return new WebResourceResponse("text/html", "UTF-8", new ByteArrayInputStream(
+                            "<!doctype html><meta charset=utf-8><title>Bar Cepte</title>".getBytes(StandardCharsets.UTF_8)));
+                }
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (!migrating) return;
+                if (LEGACY_URL.equals(url)) {
+                    view.evaluateJavascript(migrationScript + ";JSON.stringify(BarStorageMigration.snapshot(localStorage));", value -> {
+                        try {
+                            migrationData = new JSONArray("[" + value + "]").getString(0);
+                            new JSONObject(migrationData);
+                            view.loadUrl(MIGRATION_URL);
+                        } catch (Exception error) {
+                            finishMigration(false);
+                        }
+                    });
+                } else if (MIGRATION_URL.equals(url)) {
+                    String restore = migrationScript + ";BarStorageMigration.restore(localStorage,JSON.parse("
+                            + JSONObject.quote(migrationData) + "));";
+                    view.evaluateJavascript(restore, value -> finishMigration("true".equals(value)));
+                }
+            }
+
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url != null && url.startsWith("file:///android_asset/")) {
+                if (isAppUrl(url) || (migrating && LEGACY_URL.equals(url))) {
                     return false; // Yerel uygulamada kal
                 }
                 // Harici bağlantıları (http, https, mailto vb.) güvenli varsayılan tarayıcıda aç
@@ -149,7 +214,25 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
 
         // Yerel dosyaları doğrudan yükle
-        webView.loadUrl("file:///android_asset/index.html");
+        webView.loadUrl(migrating ? LEGACY_URL : APP_URL);
+    }
+
+    private void finishMigration(boolean success) {
+        migrating = false;
+        webView.getSettings().setAllowFileAccess(false);
+        migrationData = null;
+        migrationScript = null;
+        if (success) getPreferences(MODE_PRIVATE).edit().putBoolean("httpsStorageMigrated", true).apply();
+        else Toast.makeText(this, "Eski veriler korunuyor; aktarım bir sonraki açılışta tekrar denenecek.", Toast.LENGTH_LONG).show();
+        webView.loadUrl(APP_URL);
+    }
+
+    private boolean isAppUrl(String url) {
+        if (url == null) return false;
+        Uri uri = Uri.parse(url);
+        return "https".equals(uri.getScheme())
+                && "appassets.androidplatform.net".equals(uri.getHost())
+                && uri.getPath() != null && uri.getPath().startsWith("/assets/");
     }
 
     // Web arayüzü ile Android arasındaki akıllı reklam köprüsü

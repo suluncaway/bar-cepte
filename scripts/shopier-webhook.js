@@ -17,6 +17,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { timingSafeEqual } = require('crypto');
 const { generateKey, checksum } = require('./generate-keys');
 
 const PORT = process.env.PORT || 3000;
@@ -26,8 +27,9 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const MASTER_KEYS = new Set(['RESERVE-SULUNCA-2026', 'BARCEPTE-RESERVE-VIP']);
 
 // Shopier Kişisel Erişim Anahtarı (Personal Access Token - PAT)
-const SHOPIER_API_TOKEN = process.env.SHOPIER_API_TOKEN ||
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI4Y2M3YTM5OTdhNjU2MjI2NTA0Mzk2ZmQ2MjFjYTgwMyIsImp0aSI6ImEwOGViOTNjMWM0NzBkMmMzZDEwY2EyY2JkODE0MzEzYmRhODZjOWNkMGM2ZTU0YWM3YzVjMjdjMTcyN2E2YmE3NDI0NDg1ZjRiMjVlNzYxZDkxMTEzNWQ3M2FiYTk3NmJlNmRmZTExNDEyMTRhOTYxZjJiYTVmMzVmYTA5ZGI2ODczZDBmMTgwZDg0OWIwMDI5ODY3N2ZlODdmMWJjOGUiLCJpYXQiOjE3OTE3NTI1MDUsIm5iZiI6MTc5MTc1MjUwNSwiZXhwIjoxOTQ5NTM3MjY1LCJzdWIiOjE2NDg0Miwic2NvcGVzIjpbIm9yZGVyczpyZWFkIiwib3JkZXJzOndyaXRlIiwicHJvZHVjdHM6cmVhZCIsInByb2R1Y3RzOndyaXRlIiwic2hpcHBpbmdzOnJlYWQiLCJzaGlwcGluZ3M6d3JpdGUiLCJkaXNjb3VudHM6cmVhZCIsImRpc2NvdW50czp3cml0ZSIsInBheW91dHM6cmVhZCIsInJlZnVuZHM6cmVhZCIsInJlZnVuZHM6d3JpdGUiLCJzaG9wOnJlYWQiLCJzaG9wOndyaXRlIl19.U8SkJYgOFjjFRC2bDkcb0FNqCDL9LlqH80IXtea9dfl9CR_WatC3fVDyK8X0-SPpkMW1yVtckr3akMjDy55SCMe3vKEb3BVQxqEmf3RD4Yskos_ToS1fxeO_ABcJlbyDtrrV85AL0howwdDrsvwT2hXplkOPXi1yo2ZDJ0v7nRhJiR7znVR4fWmIcyaEt_rjLm7_uZ5UE0QX40HqGcrpzHrMONy_DCrrFCIt6xiqjd5NNFTVIWzTBdd8XBAW651-Wr8A2M0ElVb9j1-WaHSR_KC3_avfsHpFS3iMzpvbwex6p05V7W7kOoAFRt4VLM7Ot0HUZ8kgI8-ZDvsGieyaOg';
+const SHOPIER_API_TOKEN = process.env.SHOPIER_API_TOKEN || '';
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
+const WEBHOOK_TOKEN = process.env.WEBHOOK_TOKEN || '';
 
 // Shopier Ürün ID - Plan ve Para Birimi Eşleştirmesi (TRY, USD, EUR)
 const PRODUCT_PLANS = {
@@ -46,26 +48,12 @@ const PRODUCT_PLANS = {
     ...(process.env.SHOPIER_EUR_LIFETIME_ID ? { [process.env.SHOPIER_EUR_LIFETIME_ID]: { plan: 'lifetime', currency: 'EUR' } } : {})
 };
 
-const LOG_FILE = path.resolve(__dirname, '..', 'keys', 'sold_licenses.json');
-const CLAIMED_FILE = path.resolve(__dirname, '..', 'keys', 'claimed_licenses.json');
+const DATA_DIR = process.env.LICENSE_DATA_DIR || path.resolve(__dirname, '..', 'keys');
+const LOG_FILE = path.join(DATA_DIR, 'sold_licenses.json');
+const CLAIMED_FILE = path.join(DATA_DIR, 'claimed_licenses.json');
 
-// Sunucu yeniden başlatılsa bile kalıcı bilinen satış kayıtları (Ephemeral Storage Koruması)
-const SEED_SOLD_LICENSES = [
-    {
-        orderId: "991899363",
-        email: "sulunca@gmail.com",
-        phone: "",
-        name: "Alperen Sulunc",
-        planType: "monthly",
-        planTitle: "Aylık VIP (30 Gün)",
-        currency: "TRY",
-        licenseKey: "RESERVE-MTH1-FXSU-42E5",
-        createdAt: "2026-10-11T21:36:53.000Z",
-        emailSent: true,
-        emailSentCount: 1,
-        lastEmailSentAt: "2026-10-11T21:36:53.000Z"
-    }
-];
+// Sales belong in the persistent data directory, never in public source code.
+const SEED_SOLD_LICENSES = [];
 
 // Eşzamanlı isteklerde mükerrer üretimi önleyen kilit kümesi
 const inFlightOrders = new Set();
@@ -115,45 +103,18 @@ function isOrderProcessed(orderId) {
     return list.some(s => String(s.orderId).trim() === sId);
 }
 
-// Daha önceden kullanılmış / teslim edilmiş bilinen kodların merkezi veritabanı
-const PRE_CLAIMED_KEYS = {
-    'RESERVE-MTH1-FXSU-42E5': {
-        key: 'RESERVE-MTH1-FXSU-42E5',
-        plan: 'monthly',
-        claimedAt: 1791754613000,
-        expiresAt: 1794346613000,
-        uid: 'claimed_shopier_order_991899363',
-        email: 'sulunca@gmail.com',
-        deviceId: 'dev_shopier_order_991899363'
-    },
-    'RESERVE-MTH1-432C-C25B': {
-        key: 'RESERVE-MTH1-432C-C25B',
-        plan: 'monthly',
-        claimedAt: 1791700000000,
-        expiresAt: 1794292000000,
-        uid: 'claimed_sample_doc_mth',
-        email: 'sample@barcepte.com.tr',
-        deviceId: 'dev_sample_doc_mth'
-    },
-    'RESERVE-ANN1-6VLZ-0025': {
-        key: 'RESERVE-ANN1-6VLZ-0025',
-        plan: 'annual',
-        claimedAt: 1791700000000,
-        expiresAt: 1823236000000,
-        uid: 'claimed_sample_doc_ann',
-        email: 'sample@barcepte.com.tr',
-        deviceId: 'dev_sample_doc_ann'
-    }
-};
+// Claim history is loaded from the persistent data directory.
+const PRE_CLAIMED_KEYS = {};
 
-function getClaimedLicenses() {
+function getClaimedLicenses(strict = false) {
     try {
         let fileData = {};
         if (fs.existsSync(CLAIMED_FILE)) {
             fileData = JSON.parse(fs.readFileSync(CLAIMED_FILE, 'utf8') || '{}');
         }
         return { ...PRE_CLAIMED_KEYS, ...fileData };
-    } catch {
+    } catch (error) {
+        if (strict) throw error;
         return { ...PRE_CLAIMED_KEYS };
     }
 }
@@ -164,7 +125,9 @@ function saveClaimedLicense(key, claimData) {
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         const all = getClaimedLicenses();
         all[key] = claimData;
-        fs.writeFileSync(CLAIMED_FILE, JSON.stringify(all, null, 2), 'utf8');
+        const temporaryFile = CLAIMED_FILE + '.tmp';
+        fs.writeFileSync(temporaryFile, JSON.stringify(all, null, 2), 'utf8');
+        fs.renameSync(temporaryFile, CLAIMED_FILE);
         return true;
     } catch (err) {
         console.error('Kullanılan lisans kayıt hatası:', err);
@@ -202,6 +165,7 @@ function readJsonBody(req, maxBytes = 64 * 1024) {
             if (tooLarge) return;
             try {
                 const parsed = JSON.parse(body || '{}');
+                if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid JSON object');
                 resolve(parsed);
             } catch {
                 reject(new Error('Invalid JSON'));
@@ -215,7 +179,7 @@ function readJsonBody(req, maxBytes = 64 * 1024) {
 function verifyKeyChecksum(rawKey) {
     if (!rawKey || typeof rawKey !== 'string') return false;
     const cleanKey = rawKey.trim().toUpperCase();
-    if (MASTER_KEYS.has(cleanKey)) return true;
+    if (MASTER_KEYS.has(cleanKey)) return false;
     const parts = cleanKey.split('-');
     if (parts.length !== 4 || parts[0] !== 'RESERVE') return false;
     if (parts[1].length !== 4 || parts[2].length !== 4 || parts[3].length !== 4) return false;
@@ -462,15 +426,48 @@ async function sendEmail(toEmail, customerName, licenseKey, planName, currency =
     });
 }
 
+function tokenMatches(actual, expected) {
+    if (!expected || typeof actual !== 'string') return false;
+    const a = Buffer.from(actual);
+    const b = Buffer.from(expected);
+    return a.length === b.length && timingSafeEqual(a, b);
+}
+
+function authorizeAdmin(req) {
+    const auth = req.headers.authorization || '';
+    if (!auth.startsWith('Basic ')) return false;
+    const credentials = Buffer.from(auth.slice(6), 'base64').toString('utf8');
+    const separator = credentials.indexOf(':');
+    return separator >= 0 && tokenMatches(credentials.slice(separator + 1), ADMIN_TOKEN);
+}
+
 const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Cache-Control', 'no-store');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(200);
         res.end();
         return;
+    }
+
+    const requestPath = new URL(req.url, 'http://localhost').pathname;
+    const adminPaths = ['/licenses', '/dashboard', '/api/resend-license', '/resend'];
+    if (adminPaths.includes(requestPath) && !authorizeAdmin(req)) {
+        res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Bar Cepte Admin", charset="UTF-8"' });
+        return res.end('Unauthorized');
+    }
+    // Legacy GET requests must never send mail.
+    if (requestPath === '/resend') {
+        res.writeHead(405, { Allow: 'POST' });
+        return res.end('Use POST /api/resend-license');
+    }
+    if (['/webhook/shopier', '/callback'].includes(requestPath) &&
+        !tokenMatches(req.headers.authorization, WEBHOOK_TOKEN ? 'Bearer ' + WEBHOOK_TOKEN : '')) {
+        res.writeHead(401);
+        return res.end('Unauthorized');
     }
 
     // Sağlık Kontrolü
@@ -534,56 +531,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Geçmiş Siparişe Tekrar E-posta Gönderme (GET /resend?orderId=XXX)
-    if (req.method === 'GET' && req.url.startsWith('/resend')) {
-        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-        const orderId = parsedUrl.searchParams.get('orderId');
-        if (!orderId) {
-            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-            return res.end(`
-                <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
-                    <h2 style="color:#f87171;">⚠️ Toplu E-posta Gönderimi Devre Dışı Bırakıldı</h2>
-                    <p style="color:#cbd5e1;">Müşterilere birden fazla mükerrer e-posta gitmesini önlemek amacıyla toplu gönderim kaldırılmıştır.</p>
-                    <p style="color:#cbd5e1;">Tek bir siparişe tekrar kod göndermek için lütfen <a href="/licenses" style="color:#d5b47b; font-weight:bold;">Yönetim Paneli</a> üzerinden ilgili siparişin yanındaki <b>"✉️ Tekrar Gönder"</b> butonunu kullanın.</p>
-                    <a href="/licenses" style="display:inline-block; margin-top:16px; background:#d5b47b; color:#101b19; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold;">Panele Dön ➔</a>
-                </body>
-            `);
-        }
-
-        (async () => {
-            const sold = getSoldLicenses();
-            const record = sold.find(s => String(s.orderId).trim() === String(orderId).trim());
-            if (!record || !record.email || !record.licenseKey) {
-                res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-                return res.end(`
-                    <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
-                        <h2 style="color:#f87171;">Sipariş Bulunamadı</h2>
-                        <p>#${escapeHtml(orderId)} numaralı sipariş kayıtlarımızda yok.</p>
-                        <a href="/licenses" style="color:#d5b47b;">Panele Dön ➔</a>
-                    </body>
-                `);
-            }
-
-            const ok = await sendEmail(record.email, record.name, record.licenseKey, record.planTitle || record.planType, record.currency || 'TRY');
-            if (ok) {
-                record.emailSent = true;
-                record.emailSentCount = (record.emailSentCount || 1) + 1;
-                record.lastEmailSentAt = new Date().toISOString();
-                saveSoldLicense(record);
-            }
-
-            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(`
-                <body style="background:#101b19; color:#fff; font-family:sans-serif; text-align:center; padding:40px;">
-                    <h2 style="color:#d5b47b;">✉️ Gönderim Tamamlandı!</h2>
-                    <p>#${escapeHtml(orderId)} siparişi için <b>${escapeHtml(record.email)}</b> adresine aktivasyon kodu iletildi.</p>
-                    <a href="/licenses" style="color:#d5b47b;">Panele Dön ➔</a>
-                </body>
-            `);
-        })();
-        return;
-    }
-
     // Merkezi Lisans Kullanma / Mühürleme Endpoint'i (Single-Use Anti-Reuse Enforcement)
     if (req.method === 'POST' && req.url === '/api/claim-license') {
         (async () => {
@@ -597,7 +544,7 @@ const server = http.createServer((req, res) => {
                     return res.end(JSON.stringify({ success: false, reason: jsonErr.message }));
                 }
 
-                const rawKey = params.key || '';
+                const rawKey = typeof params.key === 'string' ? params.key : '';
                 const uid = params.uid || null;
                 const email = params.email || '';
                 const deviceId = params.deviceId || null;
@@ -610,19 +557,6 @@ const server = http.createServer((req, res) => {
 
                 const cleanKey = rawKey.trim().toUpperCase();
 
-                // 1. Master Key Kontrolü
-                if (MASTER_KEYS.has(cleanKey)) {
-                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                    res.end(JSON.stringify({
-                        success: true,
-                        plan: 'lifetime',
-                        expiresAt: 0,
-                        isMaster: true,
-                        message: '👑 Master geliştirici anahtarı onaylandı.'
-                    }));
-                    return;
-                }
-
                 // 2. Format ve Checksum Kontrolü
                 if (!verifyKeyChecksum(cleanKey)) {
                     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -633,7 +567,16 @@ const server = http.createServer((req, res) => {
                     return;
                 }
 
-                const claimed = getClaimedLicenses();
+                // A checksum detects typos; only keys in the issued sales registry may activate.
+                if (!getSoldLicenses().some(record => record.licenseKey === cleanKey)) {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ success: false, valid: false, reason: 'Bu lisans sunucu tarafından verilmemiş.' }));
+                }
+                if ((!uid || typeof uid !== 'string') && (!deviceId || typeof deviceId !== 'string')) {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ success: false, valid: false, reason: 'Kullanıcı veya cihaz kimliği gerekli.' }));
+                }
+                const claimed = getClaimedLicenses(true);
                 const existing = claimed[cleanKey];
 
                 if (existing) {
@@ -690,7 +633,10 @@ const server = http.createServer((req, res) => {
                     deviceId: deviceId || null
                 };
 
-                saveClaimedLicense(cleanKey, claimRecord);
+                if (!saveClaimedLicense(cleanKey, claimRecord)) {
+                    res.writeHead(503, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ success: false, reason: 'Lisans kaydedilemedi. Tekrar deneyiniz.' }));
+                }
                 console.log(`🔒 [LİSANS MERKEZİNDE MÜHÜRLENDİ] ${cleanKey} [${plan}] -> ${email || uid || deviceId || 'Misafir'}`);
 
                 res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -721,7 +667,7 @@ const server = http.createServer((req, res) => {
                     return res.end(JSON.stringify({ valid: false, reason: jsonErr.message }));
                 }
 
-                const rawKey = params.key || '';
+                const rawKey = typeof params.key === 'string' ? params.key : '';
                 const uid = params.uid || null;
                 const deviceId = params.deviceId || null;
                 const cleanKey = rawKey.trim().toUpperCase();
@@ -733,7 +679,16 @@ const server = http.createServer((req, res) => {
                     return;
                 }
 
-                const claimed = getClaimedLicenses();
+                // A checksum detects typos; only keys in the issued sales registry may activate.
+                if (!getSoldLicenses().some(record => record.licenseKey === cleanKey)) {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ success: false, valid: false, reason: 'Bu lisans sunucu tarafından verilmemiş.' }));
+                }
+                if ((!uid || typeof uid !== 'string') && (!deviceId || typeof deviceId !== 'string')) {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({ success: false, valid: false, reason: 'Kullanıcı veya cihaz kimliği gerekli.' }));
+                }
+                const claimed = getClaimedLicenses(true);
                 const existing = claimed[cleanKey];
                 if (!existing) {
                     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
