@@ -64,7 +64,9 @@
       "main.js",
       "web-assets.json",
       "build/icon.png",
-      "storage-migration.js"
+      "storage-migration.js",
+      "personal-bar.js",
+      "personal-ui.js"
     ],
     "win": {
       "target": [

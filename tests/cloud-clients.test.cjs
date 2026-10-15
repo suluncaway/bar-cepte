@@ -19,15 +19,23 @@ test('real auth.js clients on separate devices restore the same account from the
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bar-cloud-clients-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
  const store=createFileStore(dir);
  const service=createAccountService({store,verifyGoogle:async token=>({uid:'google_'+token,email:token+'@example.invalid',provider:'google',name:token})});
- const first=client(service,{favoriteCocktails:'["11000"]',shoppingList:'["Şeker"]',selectedIngredients:'["Gin"]',customRecipes:'[]'});
+ const personalHistory=[{id:'one',drinkId:'11003',name:'Negroni',createdAt:1,taste:'Sert',rating:'like',note:'Daha az tatlı'}];
+ const first=client(service,{favoriteCocktails:'["11000"]',shoppingList:'["Şeker"]',selectedIngredients:'["Gin"]',customRecipes:'[]',
+  personalPreferences:JSON.stringify({alcohol:'all',tastes:['Ferah'],onboardingDone:true}),preparationHistory:JSON.stringify(personalHistory)});
  await first.api.handleGoogleCredentialResponse({credential:'alice'});
  const second=client(service);
  await second.api.handleGoogleCredentialResponse({credential:'alice'});
  assert.equal(second.context.localStorage.getItem('shoppingList'),'["Şeker"]');
  assert.equal(second.context.localStorage.getItem('favoriteCocktails'),'["11000"]');
+ assert.deepEqual(JSON.parse(second.context.localStorage.getItem('preparationHistory')),personalHistory);
+ assert.deepEqual(JSON.parse(second.context.localStorage.getItem('personalPreferences')).tastes,['Ferah']);
  assert.ok(second.context.applied);
  const other=client(service);await other.api.handleGoogleCredentialResponse({credential:'bob'});
  assert.equal((await store.getBackup('google_bob')).data.shopping.length,0);
+ await second.api.handleGoogleCredentialResponse({credential:'bob'});
+ assert.equal(second.context.localStorage.getItem('preparationHistory'),'[]');
+ assert.deepEqual(JSON.parse(second.context.localStorage.getItem('personalPreferences')).tastes,[]);
+ await second.api.handleGoogleCredentialResponse({credential:'alice'});
  first.context.localStorage.setItem('shoppingList','["Limon"]');assert.equal((await first.api.syncToCloud()).success,true);
  second.context.localStorage.setItem('shoppingList','["Nane"]');
  assert.equal((await second.api.syncToCloud()).status,409);
@@ -41,6 +49,20 @@ test('real auth.js clients on separate devices restore the same account from the
  assert.equal(second.context.localStorage.getItem('shoppingList'),'["Limon"]');
 });
 
+test('an older backup server cannot silently strip local personal data',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bar-cloud-old-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const store=createFileStore(dir),service=createAccountService({store,verifyGoogle:async token=>({uid:'google_'+token,email:token+'@example.invalid',provider:'google',name:token})});
+ const history=[{id:'one',drinkId:'11003',name:'Negroni',createdAt:1,taste:'Sert',rating:null,note:'Local'}];
+ const c=client(service,{preparationHistory:JSON.stringify(history)}),fetch=c.context.fetch;
+ c.context.fetch=async(url,options)=>{
+  const response=await fetch(url,options);
+  return {...response,json:async()=>{const data=await response.json();delete data.personalDataVersion;return data;}};
+ };
+ await c.api.handleGoogleCredentialResponse({credential:'alice'});
+ assert.deepEqual(JSON.parse(c.context.localStorage.getItem('preparationHistory')),history);
+ assert.equal((await c.api.syncToCloud()).success,false);
+ assert.equal(await store.getBackup('google_alice'),null);
+});
 test('a delayed cloud response cannot restore a signed-out account or change its successor',async t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bar-cloud-race-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
  const store=createFileStore(dir),service=createAccountService({store,verifyGoogle:async token=>({uid:'google_'+token,email:token+'@example.invalid',provider:'google'})});

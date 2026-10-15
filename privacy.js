@@ -15,7 +15,7 @@
             sec2L2: "Kullanıcılar, <a href=\"https://adssettings.google.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-amber-400 hover:underline\">Google Reklam Ayarları</a> sayfasını ziyaret ederek kişiselleştirilmiş reklamcılığı devre dışı bırakabilirler.",
             sec2L3: "Tarayıcı ayarlarınız üzerinden çerez kullanımını istediğiniz zaman engelleyebilir veya temizleyebilirsiniz.",
             sec3Title: "<span>🔒</span> Veri Gizliliği ve Yerel Depolama (LocalStorage)",
-            sec3P: "Bar Cepte, kullanıcı gizliliğini en üst seviyede tutacak şekilde tasarlanmıştır. Favori kokteylleriniz, mutfak envanteriniz ve oluşturduğunuz özel tarifler uzak bir sunucuya kaydedilmez; yalnızca kendi cihazınızdaki tarayıcı hafızasında (LocalStorage) şifreli/güvenli olarak saklanır.",
+            sec3P: "Barınız, favorileriniz, özel tarifleriniz, tat tercihleriniz ve son 100 hazırlamanıza ait değerlendirme ve notlar cihazınızda (LocalStorage) saklanır. Bu alan şifreli bir kasa değildir; hassas bilgi yazmayın. Hazırlama geçmişini Barım bölümünden silebilirsiniz. Manuel yedek kodu bu verileri içerir. Google ile giriş ve bulut yedekleme kullanıldığında veriler hesabınıza bağlı sunucu yedeğine de aktarılır. Yerel silmelerin bulut yedeğine yansıması için yeniden yedekleyin.",
             sec4Title: "<span>✉️</span> İletişim & Hak Talepleri",
             sec4P: "Gizlilik politikamız, içeriklerimiz veya telif hakları ile ilgili her türlü soru ve geri bildiriminiz için GitHub profilimiz üzerinden veya proje sayfamızdan bizimle iletişime geçebilirsiniz:",
             footer: "&copy; 2026 Bar Cepte — Tüm hakları saklıdır."
@@ -34,7 +34,7 @@
             sec2L2: "Users may opt out of personalized advertising by visiting the <a href=\"https://adssettings.google.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-amber-400 hover:underline\">Google Ad Settings</a> page.",
             sec2L3: "You can block or delete cookies anytime through your web browser preferences.",
             sec3Title: "<span>🔒</span> Data Privacy & Local Storage",
-            sec3P: "Pocket Bar is engineered with complete privacy in mind. Your bar cabinet ingredients, favorites, and custom recipes are never sent to an external analytics server; they are stored locally and encrypted in your device's browser memory (LocalStorage).",
+            sec3P: "Your bar, favourites, custom recipes, taste preferences and the ratings and notes for your last 100 preparations are stored on your device (LocalStorage). This is not an encrypted vault; avoid sensitive information. You can delete preparation history in My Bar. Manual backup codes include this data. When you sign in with Google and use cloud backup, data is also sent to your account's server backup. Back up again to reflect local deletions in your cloud backup.",
             sec4Title: "<span>✉️</span> Contact & Legal Inquiries",
             sec4P: "For any questions, suggestions, or copyright inquiries regarding our privacy policy or content, please feel free to reach out via our GitHub repository:",
             footer: "&copy; 2026 Pocket Bar — All rights reserved."
