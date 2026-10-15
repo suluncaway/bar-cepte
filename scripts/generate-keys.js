@@ -10,6 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { randomInt } = require('crypto');
 
 const args = process.argv.slice(2);
 let plan = 'lifetime';
@@ -60,7 +61,7 @@ function generateKey(planType = 'lifetime') {
     if (planType === 'annual') prefix = 'ANN1';
 
     let part2 = '';
-    for (let i = 0; i < 4; i++) part2 += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < 4; i++) part2 += chars[randomInt(chars.length)];
     const check = checksum(prefix + part2);
     return `RESERVE-${prefix}-${part2}-${check}`;
 }

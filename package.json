@@ -24,46 +24,59 @@
     "dist": "electron-builder --publish never",
     "sign": "powershell -ExecutionPolicy Bypass -File ./scripts/sign-exe.ps1",
     "build:css": "tailwindcss -i tailwind.input.css -o tailwind.css --minify",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "import:licenses": "node scripts/import-licenses.js"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "4.3.0",
     "electron": "41.10.7",
     "electron-builder": "26.15.3",
-    "tailwindcss": "4.3.3",
-    "@tailwindcss/cli": "4.3.0"
+    "tailwindcss": "4.3.3"
   },
   "build": {
     "appId": "com.barcepte.app",
     "productName": "Bar Cepte",
     "files": [
       "index.html",
+      "privacy.html",
+      "privacy.js",
       "style.css",
-      "game.js",
       "tailwind.css",
+      "game.js",
       "security.js",
       "ui-bindings.js",
       "dynamic-ui.js",
       "support.js",
       "editorial-ui.js",
       "editorial-cocktails.webp",
+      "hero-cocktail-ambient.mp4",
+      "shopier-aylik-kart.png",
       "manifest.json",
       "sw.js",
-      "main.js",
       "cocktails.json",
       "ads.js",
       "ads.txt",
-      "privacy.html",
-      "robots.txt",
-      "sitemap.xml",
       "reserve.js",
-      "build/icon.png"
+      "auth.js",
+      "firebase-config.js",
+      "icon.png",
+      "main.js",
+      "web-assets.json",
+      "build/icon.png",
+      "storage-migration.js"
     ],
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "build/icon.png",
       "category": "Utility"
     },
@@ -83,5 +96,8 @@
     "deb": {
       "artifactName": "BarCepte-Linux.${ext}"
     }
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
   }
 }

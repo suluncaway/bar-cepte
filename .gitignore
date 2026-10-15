@@ -18,3 +18,7 @@ local.properties
 keys/*
 !keys/.gitkeep
 
+
+android/.gradle/
+android/app/build/
+android/build/

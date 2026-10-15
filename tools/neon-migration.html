@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; form-action 'none'">
+<title>Bar Cepte — Neon aktarımı</title>
+<style>body{font:16px system-ui;max-width:760px;margin:40px auto;padding:20px;background:#101b19;color:#fff}button,input{font:inherit;margin:12px 0;padding:12px}pre{white-space:pre-wrap}button{cursor:pointer}a{color:#fbc46b}</style>
+<h1>Neon'a lisans aktarımı</h1>
+<p>Eski lisans tablosunu tarayıcıdan <b>Ctrl+S → yalnızca HTML</b> olarak kaydedin. Bu araçta o dosyayı veya tam JSON yedeğini seçin. İşlem cihazınızda yapılır; hiçbir sunucuya veri gönderilmez. Bağlantı parolası gerekmez.</p>
+<p>HTML tablosu tam yedek değildir: kullanım sahibini ve kesin bitiş tarihini içermez. Kullanılmış kodlar <b>inceleme gerekli</b> olarak kilitlenir; yeniden kullanıma açılmaz. Tam JSON yedeğinde sahiplik ve süre korunur.</p>
+<input id="input" type="file" accept=".html,.htm,.json"><br>
+<button id="save" disabled>Neon için SQL dosyasını indir</button>
+<pre id="result" role="status"></pre>
+<script>
+/* Shared by the offline conversion tool and the Node import command. */
+(function(root) {
+    'use strict';
+    const schema = `CREATE TABLE IF NOT EXISTS barcepte_sales (
+        order_id TEXT PRIMARY KEY, license_key TEXT UNIQUE NOT NULL, payload JSONB NOT NULL);
+CREATE TABLE IF NOT EXISTS barcepte_claims (
+        license_key TEXT PRIMARY KEY REFERENCES barcepte_sales(license_key), payload JSONB NOT NULL);`;
+    function validate(data) {
+        if (!data || data.version !== 1 || !Array.isArray(data.sold) ||
+            !data.claimed || typeof data.claimed !== 'object' || Array.isArray(data.claimed)) throw new Error('Geçersiz yedek');
+        const keys = new Set(), orders = new Set();
+        for (const sale of data.sold) {
+            if (!sale || typeof sale.orderId !== 'string' || !sale.orderId.trim() ||
+                typeof sale.licenseKey !== 'string' || !/^RESERVE-[A-Z0-9-]{8,80}$/.test(sale.licenseKey) ||
+                orders.has(sale.orderId) || keys.has(sale.licenseKey)) throw new Error('Geçersiz veya yinelenen satış');
+            orders.add(sale.orderId); keys.add(sale.licenseKey);
+        }
+        for (const [key, claim] of Object.entries(data.claimed)) {
+            if (!keys.has(key) || !claim || !['monthly','annual','lifetime'].includes(claim.plan) ||
+                !Number.isFinite(claim.expiresAt) || claim.expiresAt < 0 ||
+                (claim.plan !== 'lifetime' && !claim.needsReview && claim.expiresAt === 0)) throw new Error('Geçersiz kullanım kaydı');
+            if (!claim.needsReview && !(typeof claim.uid === 'string' && claim.uid) &&
+                !(typeof claim.deviceId === 'string' && claim.deviceId)) throw new Error('Kullanım sahibinin kimliği eksik');
+        }
+        return data;
+    }
+    function toSql(data) {
+        validate(data);
+        const literal = value => "'" + String(value).replace(/'/g,"''") + "'";
+        const lines = ['BEGIN;', 'SET LOCAL standard_conforming_strings = on;', schema];
+        for (const sale of data.sold) lines.push(`INSERT INTO barcepte_sales(order_id,license_key,payload) VALUES(${literal(sale.orderId)},${literal(sale.licenseKey)},${literal(JSON.stringify(sale))}::jsonb) ON CONFLICT DO NOTHING;
+SELECT 1 / CASE WHEN EXISTS(SELECT 1 FROM barcepte_sales WHERE order_id=${literal(sale.orderId)} AND license_key=${literal(sale.licenseKey)}) THEN 1 ELSE 0 END;`);
+        for (const [key, claim] of Object.entries(data.claimed)) lines.push(`INSERT INTO barcepte_claims(license_key,payload) VALUES(${literal(key)},${literal(JSON.stringify(claim))}::jsonb) ON CONFLICT DO NOTHING;`);
+        lines.push('COMMIT;');
+        return lines.join('\n');
+    }
+    const api = {validate, toSql};
+    if (typeof module !== 'undefined' && module.exports) module.exports = api;
+    else root.BarLicenseBackup = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+'use strict';
+let sql;
+function convertLegacyHTML(html) {
+    const doc = new DOMParser().parseFromString(html,'text/html');
+    const sold = [], claimed = {};
+    for (const row of doc.querySelectorAll('tbody tr')) {
+        const cells = row.querySelectorAll('td');
+        if (cells.length !== 9) continue;
+        const text = i => cells[i].textContent.trim();
+        const orderId = row.querySelector('[data-order-id]')?.getAttribute('data-order-id') || text(0).replace(/^#/,'');
+        const key = cells[4].querySelector('code')?.textContent.trim();
+        if (!key) throw new Error('Tabloda lisans kodu bulunamadı');
+        const plan = key.includes('-MTH1-') ? 'monthly' : /-(ANN1|YIL1)-/.test(key) ? 'annual' : 'lifetime';
+        const used = cells[5].querySelector('.badge-claimed');
+        if (!used && !cells[5].querySelector('.badge-available')) throw new Error('Kodun kullanım durumu belirsiz');
+        sold.push({orderId,licenseKey:key,planType:plan,planTitle:text(2),currency:text(3),
+            name:cells[1].querySelector('strong')?.textContent.trim()||'',
+            email:cells[1].querySelector('small')?.textContent.trim()||'',
+            emailSent:/İletildi|İletild|Delivered|Sent/i.test(text(6)),legacyDate:text(7),importSource:'legacy-dashboard'});
+        if (used) claimed[key]={key,plan,expiresAt:0,claimedAt:0,uid:null,deviceId:null,needsReview:true,importSource:'legacy-dashboard'};
+    }
+    if (!sold.length) throw new Error('Lisans tablosu bulunamadı. PDF yerine HTML dosyasını seçin.');
+    return BarLicenseBackup.validate({version:1,sold,claimed});
+}
+document.querySelector('#input').addEventListener('change',async e=>{
+    const status=document.querySelector('#result'), button=document.querySelector('#save');
+    button.disabled=true;sql=null;
+    try {
+        const file=e.target.files[0];if(!file)return;
+        if(file.size>20*1024*1024)throw new Error('Dosya en fazla 20 MB olabilir');
+        const text=await file.text();
+        const data=/\.json$/i.test(file.name)?BarLicenseBackup.validate(JSON.parse(text)):convertLegacyHTML(text);
+        sql=BarLicenseBackup.toSql(data);
+        const review=Object.values(data.claimed).filter(row=>row.needsReview).length;
+        status.textContent=`${data.sold.length} satış, ${Object.keys(data.claimed).length} kullanım kaydı. İnceleme gerektiren: ${review}.\nSQL dosyasını Neon SQL Editor ile çalıştırın. Neon'daki satış/kullanım sayılarını eski tabloyla karşılaştırmadan LICENSE_MIGRATION_COMPLETE=true yapmayın.`;
+        button.disabled=false;
+    } catch(error){status.textContent=error.message;}
+});
+document.querySelector('#save').addEventListener('click',()=>{
+    if(!sql)return;
+    const url=URL.createObjectURL(new Blob([sql],{type:'text/plain;charset=utf-8'}));
+    const a=document.createElement('a');a.href=url;a.download='bar-cepte-neon-import.sql';a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+</script></html>

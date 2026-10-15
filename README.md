@@ -84,3 +84,9 @@ Bu proje ve tüm kaynak kodları, tasarımları ve varlıkları telif hakkı kor
 Tüm hakları saklıdır.
 
 [All Rights Reserved](LICENSE) © 2026 [suluncaway](https://github.com/suluncaway)
+
+## Hata inceleme raporu
+
+Uygulanan düzeltmeler, doğrulama sonuçları ve yayın öncesi gereksinimler: [15 Ekim 2026 raporu](tests/BUGFIX-PLAN.md).
+
+Ücretsiz kalıcı lisans deposu: [Neon + Render kurulumu](tests/NEON-SETUP.md).

@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 plugins {
     id 'com.android.application'
 }
@@ -12,6 +14,10 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0.0"
+    }
+
+    sourceSets {
+        main.assets.srcDirs = [layout.buildDirectory.dir('generated/webAssets')]
     }
 
     buildTypes {
@@ -29,6 +35,7 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.webkit:webkit:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     // Start.io SDK - compileSdk 34 uyumlu stabil sürüm
     implementation 'com.startapp:inapp-sdk:5.1.0'
@@ -36,3 +43,19 @@ dependencies {
 
 
 
+
+// Bundle the same reviewed files as desktop; stale checked-in copies are not used.
+def webRoot = rootProject.projectDir.parentFile
+def webAssets = new JsonSlurper().parse(new File(webRoot, 'web-assets.json'))
+tasks.register('syncWebAssets', Sync) {
+    from(webRoot) { include webAssets }
+    into(layout.buildDirectory.dir('generated/webAssets'))
+    doFirst {
+        webAssets.each { asset ->
+            if (!new File(webRoot, asset).isFile()) {
+                throw new GradleException("Missing web asset: ${asset}")
+            }
+        }
+    }
+}
+tasks.named('preBuild').configure { dependsOn('syncWebAssets') }
