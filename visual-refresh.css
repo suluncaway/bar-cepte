@@ -218,3 +218,47 @@ body {
   .cocktail-card:hover,.primary-action:hover,
   #ingredients-container > div:hover,.topbar button:hover { transform: none; }
 }
+
+
+/* Second pass: polished touch surfaces and consistent editorial rhythm */
+::selection { background: rgba(230,197,141,.32); color: #fffaf0; }
+:where(.app-main, .app-header) button { touch-action: manipulation; }
+.main-navigation { scroll-snap-type: x proximity; }
+.main-navigation > button { scroll-snap-align: start; }
+.hero-actions { row-gap: 14px; }
+.hero-note { opacity: .92; }
+#discovery-controls .taste-btn,
+#btn-fav-filter,
+.ingredient-shelf > button {
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+#discovery-controls .taste-btn:hover,
+#btn-fav-filter:hover { border-color: rgba(230,197,141,.65); }
+.ingredient-shelf > button {
+  border-radius: 10px;
+  background: #294338;
+  border-color: rgba(230,197,141,.26);
+}
+.ingredient-shelf > button:hover { background: #355345; }
+.cocktail-card .toggle-icon { transition: transform .2s ease; }
+.cocktail-card:hover .toggle-icon { transform: translateY(2px); }
+#count-ready, #count-missing {
+  border-radius: 999px;
+  padding-inline: 9px;
+}
+#affiliate-banner a {
+  border-radius: 999px;
+  transition: background .2s ease;
+}
+#affiliate-banner a:hover { background: #34513f; }
+@media (hover: none) {
+  .cocktail-card:hover,
+  #ingredients-container > div:hover,
+  .topbar button:hover { transform: none; }
+}
+@media (max-width: 640px) {
+  .hero-actions { gap: 12px; }
+  .primary-action { min-height: 48px; }
+  .cocktail-card > button[data-action] { min-width: 40px; min-height: 40px; }
+  #discovery-controls .taste-btn, #btn-fav-filter { min-height: 36px; }
+}
