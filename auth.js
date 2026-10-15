@@ -289,7 +289,7 @@
     async function accountRequest(path,options={}) {
         const requestToken=sessionToken;
         const controller=typeof AbortController==='function'?new AbortController():null;
-        const timer=controller?setTimeout(()=>controller.abort(),20000):null;
+        const timer=controller?setTimeout(()=>controller.abort(),65000):null;
         try {
             const response=await root.fetch(API_ORIGIN+path,{...options,headers:{'Content-Type':'application/json',...sessionHeaders(),...(options.headers||{})},signal:controller?controller.signal:undefined});
             const data=await response.json();

@@ -34,10 +34,22 @@ function createShopierClient({token, transport = requestJson}) {
     return {
         state,
         async listOrders() {
-            const result = await get('/orders');
-            const rows = Array.isArray(result) ? result : result.data || result.items;
-            if (!Array.isArray(rows)) {state.status='invalid_response'; throw new Error('Invalid order list');}
-            return rows;
+            const orders=[],seen=new Set();
+            // Shopier defaults to ten orders; walk the documented 50-item pages.
+            for(let page=1;page<=100;page++) {
+                const result=await get('/orders?limit=50&page='+page);
+                const rows=Array.isArray(result)?result:result.data||result.items;
+                if(!Array.isArray(rows)) {state.status='invalid_response';throw new Error('Invalid order list');}
+                let added=0;
+                for(const row of rows) {
+                    const id=String(row.id||row.order_id||'');
+                    if(!id) {state.status='invalid_response';throw new Error('Missing order ID');}
+                    if(!seen.has(id)){seen.add(id);orders.push(row);added++;}
+                }
+                if(rows.length<50)return orders;
+                if(!added) {state.status='invalid_response';throw new Error('Order pagination repeated');}
+            }
+            state.status='pagination_limit';throw new Error('Order pagination requires review');
         },
         async getOrder(id) {
             if (!/^[a-zA-Z0-9_-]{1,100}$/.test(String(id))) throw new Error('Invalid order ID');

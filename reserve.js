@@ -304,7 +304,7 @@
         };
 
         const controller = typeof AbortController === 'function' ? new AbortController() : null;
-        const timeout = controller ? setTimeout(() => controller.abort(), 15000) : null;
+        const timeout = controller ? setTimeout(() => controller.abort(), 65000) : null;
         try {
             const resp = await fetch('https://bar-cepte-webhook.onrender.com/api/claim-license', {
                 method: 'POST',

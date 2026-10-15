@@ -51,3 +51,13 @@ test('Shopier callback lookup rejects mismatched order and exposes provider fail
  const failed=createShopierClient({token:'test-only',transport:async()=>{throw new Error('401');}});
  await assert.rejects(failed.listOrders());assert.equal(failed.state.status,'unavailable');
 });
+test('Shopier polling includes paid orders beyond the first page and fails visibly on a broken page',async()=>{
+ const paths=[];
+ const client=createShopierClient({token:'test-only',transport:async url=>{
+  paths.push(url);return url.endsWith('page=1')?Array.from({length:50},(_,i)=>({...order,id:'order-'+i})):[{...order,id:'last-order'}];
+ }});
+ const orders=await client.listOrders();assert.equal(orders.length,51);assert.equal(orders[50].id,'last-order');
+ assert.equal(paths.length,2);assert.ok(paths[1].endsWith('limit=50&page=2'));
+ const repeated=createShopierClient({token:'test-only',transport:async()=>Array.from({length:50},(_,i)=>({...order,id:'order-'+i}))});
+ await assert.rejects(repeated.listOrders(),/repeated/);assert.equal(repeated.state.status,'invalid_response');
+});

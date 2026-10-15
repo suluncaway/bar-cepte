@@ -25,3 +25,5 @@ Eski kullanılan lisanslar için satın alma e-postasıyla eşleşen doğrulanm�
 ## Doğrulama sınırları
 
 Otomatik testler sağlayıcı cevapları ve e-posta gönderimini taklit eder; ücret tahsil etmez ve gerçek e-posta göndermez. İki ayrı auth.js istemcisi aynı hesap yedeğini sunucudan geri yükler. CI, PostgreSQL üzerinde eşzamanlı işlemleri ve Android emülatöründe eski APK'dan yeni APK'ya veri geçişini sınar. Fiziksel cihaz ve gerçek OAuth/ödeme/e-posta teslimi ayrıca kontrol edilmelidir. Statik istemcide yerel üyelik göstergesi değiştirilebilir; ücretli sunucu işlemlerinin yetkisi daima sunucudan alınmalıdır.
+
+Shopier siparişleri resmi `limit=50&page=N` sayfalamasıyla taranır. API varsayılan olarak son 60 günü döndürür; daha eski eksik kayıtlar yönetici aktarımı gerektirir. Kaynaklar: [Sipariş listesi](https://developer.shopier.com/reference/get-orders), [Sayfalama](https://developer.shopier.com/reference/pagination). Ücretsiz Render servisinin uyanmasına fırsat vermek için istemci zaman aşımı 65 saniyedir.
