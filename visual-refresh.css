@@ -1,264 +1,227 @@
-/* Bar Cepte — editorial visual refresh
-   Visual-only enhancements: existing layout, interactions and data stay intact. */
+/* Bar Cepte — warm editorial surfaces, built on the shared app styles. */
 :root {
-  --bg-main: #0b1716;
-  --surface: #152724;
-  --surface-raised: #213731;
-  --accent-gold: #e6c58d;
-  --accent-cyan: #a9cfc1;
-  --ink: #f8f2e8;
-  --muted: #b1c2b8;
-  --border-glass: rgba(229, 205, 159, .17);
+  --bg-main: #0d1917;
+  --surface: #172923;
+  --surface-raised: #233b32;
+  --accent-gold: #e3c28e;
+  --accent-cyan: #accdbb;
+  --ink: #f6f0e4;
+  --muted: #b1c1b6;
+  --border-glass: rgba(227, 194, 142, .17);
 }
 body {
-  background:
-    radial-gradient(ellipse 70% 32% at 80% 0%, rgba(68, 107, 88, .16), transparent 76%),
-    radial-gradient(ellipse 45% 32% at 0% 48%, rgba(182, 137, 69, .055), transparent 78%),
-    var(--bg-main);
+  background: radial-gradient(ellipse at 85% 0%, #223b303d, transparent 48%), var(--bg-main);
 }
+::selection { background: #e3c28e; color: #172923; }
+:where(.app-main, .app-header) button { touch-action: manipulation; }
 .app-header {
-  background: rgba(11, 23, 22, .91);
-  border-bottom-color: rgba(229, 205, 159, .13);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  background: #0d1917f2;
+  border-bottom-color: var(--border-glass);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
-.brand-mark {
-  border-color: rgba(230, 197, 141, .55);
-  background: linear-gradient(150deg, rgba(230, 197, 141, .15), rgba(230, 197, 141, .015));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
-}
+.brand-mark { background: #e3c28e0a; border-color: #e3c28e66; }
 .topbar button {
-  border-radius: 999px;
-  transition: background .2s ease, border-color .2s ease, transform .2s ease;
+  border-radius: 10px;
+  transition: background .18s, border-color .18s;
 }
-.topbar button:hover { transform: translateY(-1px); }
+.topbar button:hover { border-color: #e3c28e66; }
+.main-navigation { gap: 8px; padding-bottom: 10px; scroll-snap-type: x proximity; }
 .main-navigation > button {
-  transition: color .2s ease;
+  min-height: 42px;
+  padding: 9px 15px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  scroll-snap-align: start;
+  transition: background .18s, color .18s;
 }
-.main-navigation > button[aria-current="page"]::after {
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  box-shadow: 0 0 12px rgba(230,197,141,.28);
+.main-navigation > button[aria-current="page"] {
+  color: var(--accent-gold);
+  background: #e3c28e10;
+  border-color: #e3c28e38;
 }
+.main-navigation > button[aria-current="page"]::after { display: none; }
+.main-navigation > button:hover { background: #ffffff06; }
 .editorial-hero {
-  position: relative;
-  gap: clamp(24px, 4.5vw, 64px);
-  padding-top: clamp(40px, 5vw, 70px);
-  padding-bottom: clamp(48px, 5vw, 76px);
+  gap: clamp(28px, 5vw, 72px);
+  padding-block: clamp(40px, 5vw, 68px);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
 }
-.editorial-hero::before {
-  content: "";
-  position: absolute;
-  width: 300px; height: 300px;
-  left: -190px; top: 24px;
-  border-radius: 50%;
-  background: rgba(230,197,141,.045);
-  filter: blur(68px);
-  pointer-events: none;
-}
-.eyebrow { color: var(--accent-gold); letter-spacing: .17em; }
+.hero-copy { min-width: 0; }
+.eyebrow { color: var(--accent-gold); letter-spacing: .16em; font-size: 11px; }
 .hero-copy h2 {
+  font-size: clamp(52px, 5.8vw, 80px);
   font-weight: 500;
+  line-height: 1.02;
   letter-spacing: -.045em;
-  text-wrap: balance;
+  margin-block: 24px;
 }
-.hero-copy h2 span {
-  background: linear-gradient(110deg, #fff0cb 0%, #e6c58d 58%, #b4d2bc 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.hero-copy > p { color: #bbcbc0; font-size: 15px; line-height: 1.85; }
+.hero-copy h2 span { color: var(--accent-gold); font-style: italic; }
+.hero-copy > p { font-size: 15px; line-height: 1.9; color: var(--muted); }
+.hero-actions { flex-wrap: wrap; column-gap: 24px; row-gap: 14px; margin-top: 30px; }
 .primary-action {
-  border-radius: 999px;
-  background: linear-gradient(125deg, #f3d6a6, #d7ad6e);
-  border-color: #f3d6a6;
-  box-shadow: 0 12px 30px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.45);
-  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+  min-height: 50px;
+  border-radius: 8px;
+  background: var(--accent-gold);
+  color: #172923;
+  border-color: var(--accent-gold);
+  transition: background .18s, transform .18s;
 }
-.primary-action:hover {
-  background: linear-gradient(125deg, #f7dfba, #e5bd7f);
-  transform: translateY(-2px);
-  box-shadow: 0 16px 35px rgba(0,0,0,.25);
-}
-.text-action { transition: color .2s ease, border-color .2s ease; }
+.primary-action:hover { background: #f1d6ab; transform: translateY(-2px); }
+.text-action { min-height: 44px; border-color: #e3c28e55; }
 .text-action:hover { border-color: var(--accent-gold); }
+.hero-note { color: var(--muted); line-height: 1.7; white-space: normal; flex-wrap: wrap; }
+.status-dot { flex: 0 0 5px; background: #accdbb; }
+.note-divider { flex: 0 0 1px; }
 .hero-photo {
-  height: clamp(350px, 34vw, 450px);
-  border-radius: clamp(100px, 13vw, 165px) 18px 18px 18px;
-  border: 1px solid rgba(230,197,141,.29);
-  box-shadow: 0 28px 64px rgba(0,0,0,.30), 0 2px 0 rgba(255,255,255,.025) inset;
+  height: clamp(360px, 33vw, 440px);
+  border-radius: 140px 140px 14px 14px;
+  border-color: #e3c28e33;
+  box-shadow: 0 24px 55px #00000030;
   isolation: isolate;
 }
-.hero-photo::after {
-  background: linear-gradient(0deg, rgba(2,11,9,.86), transparent 65%),
-    linear-gradient(100deg, rgba(7,21,18,.19), transparent 62%);
+.hero-photo::after { background: linear-gradient(0deg, #05120ef2, #05120e00 66%); }
+.hero-photo figcaption { left: 30px; bottom: 28px; }
+.hero-photo figcaption strong { font-size: clamp(30px, 3vw, 38px); line-height: 1.08; }
+.hero-photo figcaption > span { font-size: 10px; letter-spacing: .2em; }
+.photo-edition { font-size: 10px; letter-spacing: .16em; }
+.hero-video-control { top: 42%; right: 16px; background: #0d1917e6; border-color: #e3c28e66; }
+.discovery-controls {
+  padding: 28px;
+  background: #172923a6;
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  scroll-margin-top: 20px;
 }
-.hero-photo figcaption { left: clamp(20px, 3vw, 36px); bottom: 26px; }
-.hero-photo figcaption strong { font-size: clamp(29px, 3vw, 39px); }
-.hero-video-control {
-  background: rgba(14,31,27,.82);
-  border-color: rgba(230,197,141,.45);
-  color: #f9e9c7;
-}
-.discovery-controls { border-top-color: rgba(230,197,141,.19); }
-.section-intro h2 { font-size: clamp(31px, 3.7vw, 43px); letter-spacing: -.035em; }
+.section-intro { gap: 20px; }
+.section-intro h2 { font-size: clamp(30px, 3.2vw, 40px); line-height: 1.15; letter-spacing: -.025em; }
+.selection-summary { background: #ffffff06; border: 1px solid #ffffff0f; border-radius: 6px; padding: 8px 12px; }
 #discovery-controls input {
-  border-radius: 13px;
-  background: rgba(28, 48, 40, .75);
-  border-color: rgba(230,197,141,.2);
-  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+  min-width: 0;
+  min-height: 50px;
+  border-radius: 8px;
+  background: #0d1917a6;
+  border-color: #a2b5a533;
+  transition: background .18s, box-shadow .18s;
 }
-#discovery-controls input:focus {
-  background: #20382e;
-  box-shadow: 0 0 0 3px rgba(230,197,141,.10);
-}
+#discovery-controls input:focus { background: #0d1917; box-shadow: 0 0 0 4px #e3c28e12; }
+#discovery-controls input::placeholder { color: #afc0b3; }
 #discovery-controls [data-ui="ui-13"],
-#discovery-controls [data-ui="ui-15"],
-#discovery-controls .taste-btn, #btn-fav-filter { border-radius: 999px; }
-.ingredient-shelf {
-  border-radius: 20px;
-  background: linear-gradient(165deg, rgba(31,54,44,.86), rgba(14,29,25,.94));
-  border-color: rgba(230,197,141,.15);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+#discovery-controls [data-ui="ui-15"] { min-height: 50px; border-radius: 8px; padding-inline: 14px; }
+.filter-caption { color: var(--muted); font-size: 10px; letter-spacing: .16em; margin-top: 24px; }
+#discovery-controls > .overflow-x-auto { flex-wrap: wrap; overflow: visible; gap: 8px; padding-bottom: 8px; }
+#discovery-controls > .overflow-x-auto > div:first-child { border-radius: 8px; background: #0d1917; }
+#discovery-controls > .overflow-x-auto > div:first-child > button { min-height: 36px; padding-inline: 12px; border-radius: 6px; }
+#discovery-controls .taste-btn, #btn-fav-filter, #discovery-controls .vibe-btn {
+  min-height: 38px;
+  padding: 8px 13px;
+  border-radius: 8px;
+  font-size: 12px;
+  transition: border-color .18s, background .18s;
 }
-#ingredients-container > div {
-  border-radius: 18px;
-  background: linear-gradient(160deg, #223a31, #172c25);
-  border-color: rgba(230,197,141,.15);
-  box-shadow: 0 8px 20px rgba(0,0,0,.11);
-  transition: transform .25s ease, background .25s ease, border-color .25s ease, box-shadow .25s ease;
+#discovery-controls .taste-btn:hover, #btn-fav-filter:hover,
+#discovery-controls .vibe-btn:hover { border-color: #e3c28e80; }
+#discovery-controls .vibe-filters { border-top: 1px solid var(--border-glass); margin-top: 8px; padding-top: 16px; }
+#discovery-controls button[class*="bg-amber-500"]:not(#btn-fav-filter) {
+  background: var(--accent-gold); border-color: var(--accent-gold); color: #172923;
 }
-#ingredients-container > div:hover {
-  transform: translateY(-4px);
-  border-color: rgba(230,197,141,.58);
-  box-shadow: 0 14px 25px rgba(0,0,0,.2);
-}
-#ingredients-container > div[aria-pressed="true"] {
-  background: linear-gradient(145deg, #f0d49f, #dbb77c);
-  color: #17251d;
-}
-.acrylic-card {
-  background: linear-gradient(160deg, #1b3029, #14251f);
-  border-color: rgba(230,197,141,.17);
-  box-shadow: 0 12px 36px rgba(0,0,0,.12);
-  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
-}
-.acrylic-card:hover { border-color: rgba(230,197,141,.45); }
-.cocktail-card {
-  border-radius: 18px;
-  padding: 12px;
-  background: linear-gradient(160deg, #1c332b, #132720);
-  box-shadow: 0 14px 36px rgba(0,0,0,.15);
-  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
-}
-.cocktail-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(230,197,141,.48);
-  box-shadow: 0 19px 44px rgba(0,0,0,.24);
-}
-.cocktail-card > img {
-  height: 235px;
-  border-radius: 12px;
-  margin-bottom: 16px;
-  transition: filter .3s ease, transform .45s ease;
-}
-.cocktail-card:hover > img { filter: saturate(1.12) contrast(1.04); }
-.cocktail-card h3 { font-size: 32px; letter-spacing: -.025em; }
-.cocktail-card .instruction-text,
-#bar-dashboard .grid > div {
-  background: rgba(7,23,19,.67);
+#btn-fav-filter[class*="bg-rose-500"] { background: #9f355838; color: #ffc8da; border-color: #e98ca661; }
+#ingredients-section { margin-top: 22px; margin-bottom: 48px; }
+#alcohol-subcategories, #kitchen-subcategories { padding-bottom: 10px; gap: 8px; }
+#alcohol-subcategories > button, #kitchen-subcategories > button { min-height: 38px; padding-inline: 13px; }
+.ingredient-shelf { background: #13241e; border-radius: 14px; border-color: var(--border-glass); }
+#ingredients-container { gap: 12px; padding-block: 14px; }
+#ingredients-container > div[role="button"] {
+  position: relative;
+  background: #1b3027;
+  border-color: #afc0a526;
   border-radius: 10px;
+  box-shadow: none;
+  transition: background .18s, border-color .18s;
 }
-.cocktail-card .details-section > div { border-radius: 10px; }
-.cocktail-card > button[data-action] {
-  border-radius: 999px;
-  background: rgba(10,24,21,.82);
-  backdrop-filter: blur(8px);
+#ingredients-container > div[role="button"]:hover { background: #243d30; border-color: #e3c28e80; transform: none; }
+#ingredients-container > div[aria-pressed="true"] { background: #e3c28e; border-color: #f1d6ab; color: #172923; }
+#ingredients-container > div[aria-pressed="true"]::after {
+  content: "✓";
+  position: absolute; top: 5px; right: 5px;
+  display: grid; place-items: center;
+  width: 20px; height: 20px;
+  border-radius: 50%; background: #172923; color: #f6f0e4;
+  font-size: 12px; font-weight: 800;
 }
-#editorial-picks-grid,#recipes-ready,#recipes-missing,#my-recipes-container { gap: 22px; }
-#affiliate-banner { border-radius: 16px; }
-#smart-recommendation-banner .acrylic-card { border-radius: 17px; }
-#bar-dashboard > .acrylic-card,
-#custom-recipe-panel > .acrylic-card,
-#my-recipes-panel > .acrylic-card,
-#shopping-list-panel > .acrylic-card,
-#sync-panel > .acrylic-card { border-radius: 19px; }
-#custom-recipe-panel input,#custom-recipe-panel select,
-#custom-recipe-panel textarea,#sync-panel textarea { border-radius: 11px; }
-#reserve-modal .acrylic-card,#auth-modal .acrylic-card {
-  border-color: rgba(230,197,141,.35);
-  box-shadow: 0 24px 72px rgba(0,0,0,.44);
+#ingredients-container .ingredient-name { font-size: 12px; line-height: 1.35; }
+#ingredients-container .ingredient-group-tag { font-size: 10px; padding: 3px 5px; }
+.ingredient-shelf > button { width: 32px; height: 44px; border-radius: 8px; background: #233b32; }
+.acrylic-card { background: var(--surface); border-color: var(--border-glass); }
+.acrylic-card:hover { border-color: #e3c28e55; }
+.cocktail-card {
+  padding: 12px;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px #00000014;
+  transition: border-color .2s, box-shadow .2s;
 }
-@media (max-width: 900px) {
-  .hero-photo { height: 350px; }
+.cocktail-card:hover { border-color: #e3c28e66; box-shadow: 0 14px 36px #00000026; }
+.cocktail-card > img { height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; margin-bottom: 18px; }
+.cocktail-card h3 { font-size: 32px; line-height: 1.12; letter-spacing: -.02em; }
+.cocktail-card .instruction-text { border-radius: 8px; background: #0d1917; color: #cad5cb; }
+.cocktail-card > button[data-action] { border-radius: 50%; min-width: 40px; min-height: 40px; background: #0d1917e6; }
+.cocktail-card .portion-btn { min-height: 36px; min-width: 40px; border-radius: 6px; }
+#editorial-picks-grid, #recipes-ready, #recipes-missing, #my-recipes-container { gap: 24px; }
+.recipe-content { gap: 40px; }
+#count-ready, #count-missing { border-radius: 6px; padding-inline: 9px; }
+#affiliate-banner { border-radius: 12px; background: #17292366; }
+#affiliate-banner a { border-radius: 8px; min-height: 44px; }
+#bar-dashboard > .acrylic-card, #custom-recipe-panel > .acrylic-card,
+#my-recipes-panel > .acrylic-card, #shopping-list-panel > .acrylic-card,
+#sync-panel > .acrylic-card, #smart-recommendation-banner .acrylic-card { border-radius: 14px; }
+#custom-recipe-panel :is(input, select, textarea), #sync-panel textarea { border-radius: 8px; }
+#reserve-modal .acrylic-card, #auth-modal .acrylic-card { border-color: #e3c28e55; box-shadow: 0 24px 72px #00000066; }
+@media (max-width: 1024px) and (min-width: 641px) {
+  .topbar-tools-ribbon button { padding-inline: 8px; }
+  .topbar-tools-ribbon span.hidden.sm\:inline { display: none !important; }
+  .hero-copy h2 { font-size: clamp(48px, 6.8vw, 64px); }
+  #discovery-controls > .space-y-2 { grid-template-columns: 1fr; gap: 12px; }
 }
 @media (max-width: 640px) {
-  .topbar-primary-actions button { border-radius: 10px; }
-  .editorial-hero { padding-top: 28px; padding-bottom: 38px; }
-  .hero-copy h2 { letter-spacing: -.035em; }
-  .hero-copy > p { font-size: 14px; }
-  .hero-photo {
-    height: 295px;
-    border-radius: 88px 15px 15px 15px;
-    box-shadow: 0 15px 36px rgba(0,0,0,.25);
-  }
-  .primary-action { border-radius: 999px; }
-  #discovery-controls input { border-radius: 12px; }
-  .ingredient-shelf { border-radius: 16px; }
-  #ingredients-container > div { border-radius: 14px; }
-  .cocktail-card { border-radius: 17px; }
-  .cocktail-card > img { height: 225px; }
-  .cocktail-card:hover { transform: none; }
+  html { scroll-padding-top: 180px; }
+  .topbar { padding: 10px 16px 6px; gap: 8px; }
+  .topbar-primary-actions button { min-height: 40px; height: 40px; min-width: 40px; border-radius: 8px; }
+  .topbar-tools-ribbon { padding-bottom: 2px; gap: 8px; }
+  .topbar-tools-ribbon button { min-height: 38px; height: 38px; padding-inline: 11px; }
+  .main-navigation { padding: 2px 16px 8px; gap: 5px; }
+  .main-navigation > button { min-height: 44px; padding: 10px 12px; }
+  .app-main { padding-inline: 16px; }
+  .editorial-hero { grid-template-columns: 1fr; gap: 28px; padding-block: 32px 36px; }
+  .hero-copy > .eyebrow { font-size: 10px; letter-spacing: .13em; }
+  .hero-copy h2 { font-size: clamp(44px, 12vw, 68px); margin-block: 20px; }
+  .hero-copy > p { font-size: 14px; max-width: 100%; }
+  .hero-actions { gap: 12px 20px; margin-top: 24px; }
+  .primary-action { font-size: 13px; min-height: 48px; }
+  .hero-note { font-size: 11px; margin-top: 22px; }
+  .hero-photo { height: 300px; border-radius: 100px 100px 12px 12px; }
+  .hero-photo figcaption { left: 24px; bottom: 24px; }
+  .hero-photo figcaption strong { font-size: 32px; }
+  .discovery-controls { padding: 20px 14px 14px; border-radius: 12px; scroll-margin-top: 12px; }
+  .section-intro { margin-bottom: 20px; }
   .section-intro h2 { font-size: 32px; }
+  .section-intro > .flex { flex-wrap: wrap; }
+  .selection-summary { font-size: 11px; }
+  #discovery-controls input { font-size: 16px; padding-left: 34px; min-height: 48px; }
+  #discovery-controls [data-ui="ui-13"], #discovery-controls [data-ui="ui-15"] { padding-inline: 10px; min-height: 48px; }
+  #discovery-controls > .overflow-x-auto { flex-wrap: nowrap; overflow-x: auto; padding-block: 4px 10px; }
+  #discovery-controls .vibe-filters { padding-top: 14px; }
+  #discovery-controls :is(.taste-btn, .vibe-btn), #btn-fav-filter { min-height: 40px; }
+  #discovery-controls > .overflow-x-auto > div:first-child > button { min-height: 36px; }
+  #ingredients-section { margin-block: 18px 36px; }
+  #ingredients-container { padding-inline: 44px; }
+  #ingredients-container > div[role="button"] { width: 112px; min-height: 156px; }
+  .ingredient-shelf > button { width: 30px; height: 44px; }
+  #editorial-picks-grid, #recipes-ready, #recipes-missing, #my-recipes-container { gap: 20px; }
+  .cocktail-card > img { height: auto; aspect-ratio: 4 / 3; }
+  .recipe-content { gap: 32px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cocktail-card,.primary-action,#ingredients-container > div,
-  .topbar button { transition: none; }
-  .cocktail-card:hover,.primary-action:hover,
-  #ingredients-container > div:hover,.topbar button:hover { transform: none; }
-}
-
-
-/* Second pass: polished touch surfaces and consistent editorial rhythm */
-::selection { background: rgba(230,197,141,.32); color: #fffaf0; }
-:where(.app-main, .app-header) button { touch-action: manipulation; }
-.main-navigation { scroll-snap-type: x proximity; }
-.main-navigation > button { scroll-snap-align: start; }
-.hero-actions { row-gap: 14px; }
-.hero-note { opacity: .92; }
-#discovery-controls .taste-btn,
-#btn-fav-filter,
-.ingredient-shelf > button {
-  transition: background .2s ease, border-color .2s ease, color .2s ease;
-}
-#discovery-controls .taste-btn:hover,
-#btn-fav-filter:hover { border-color: rgba(230,197,141,.65); }
-.ingredient-shelf > button {
-  border-radius: 10px;
-  background: #294338;
-  border-color: rgba(230,197,141,.26);
-}
-.ingredient-shelf > button:hover { background: #355345; }
-.cocktail-card .toggle-icon { transition: transform .2s ease; }
-.cocktail-card:hover .toggle-icon { transform: translateY(2px); }
-#count-ready, #count-missing {
-  border-radius: 999px;
-  padding-inline: 9px;
-}
-#affiliate-banner a {
-  border-radius: 999px;
-  transition: background .2s ease;
-}
-#affiliate-banner a:hover { background: #34513f; }
-@media (hover: none) {
-  .cocktail-card:hover,
-  #ingredients-container > div:hover,
-  .topbar button:hover { transform: none; }
-}
-@media (max-width: 640px) {
-  .hero-actions { gap: 12px; }
-  .primary-action { min-height: 48px; }
-  .cocktail-card > button[data-action] { min-width: 40px; min-height: 40px; }
-  #discovery-controls .taste-btn, #btn-fav-filter { min-height: 36px; }
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .primary-action:hover { transform: none; }
 }

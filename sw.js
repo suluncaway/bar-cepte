@@ -1,6 +1,6 @@
-const CACHE_NAME = 'bar-cepte-v33-verified-cloud';
+const CACHE_NAME = 'bar-cepte-v34-editorial-polish';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
-const ASSETS = ['./', './index.html', './privacy.html', './privacy.js', './style.css', './tailwind.css', './game.js',
+const ASSETS = ['./', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
     './ads.js', './reserve.js', './auth.js', './firebase-config.js', './manifest.json', './cocktails.json', './icon.png', './editorial-ui.js', './editorial-cocktails.webp', './hero-cocktail-ambient.mp4'];
 const SCOPE = new URL('./', self.location.href);
