@@ -62,9 +62,11 @@
             if (!Number.isSafeInteger(row.createdAt) || row.createdAt < 0 || !Number.isFinite(new Date(row.createdAt).getTime())) throw new Error('Geçersiz tarih');
             if (![null, 'like', 'dislike'].includes(row.rating ?? null)) throw new Error('Geçersiz değerlendirme');
             if (row.taste && !TASTES.includes(row.taste)) throw new Error('Geçersiz tat');
+            if (row.servings !== undefined && ![1,2,4,8].includes(row.servings)) throw new Error('Invalid servings');
             return {id: text(row.id, 100, true), drinkId: text(row.drinkId, 100, true),
                 name: text(row.name, 200, true), createdAt: row.createdAt,
-                taste: row.taste || '', rating: row.rating ?? null, note: text(row.note || '', 300)};
+                taste: row.taste || '', rating: row.rating ?? null, note: text(row.note || '', 300),
+                ...(row.servings === undefined ? {} : {servings:row.servings})};
         });
         if (new Set(result.map(row => row.id)).size !== result.length) throw new Error('Tekrarlanan geçmiş kimliği');
         return result.sort((a, b) => b.createdAt - a.createdAt);
