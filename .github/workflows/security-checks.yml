@@ -33,7 +33,7 @@ jobs:
       - run: npm run build:css
       - name: Check JavaScript syntax
         run: |
-          for file in game.js security.js auth.js personal-bar.js inventory.js personal-ui.js ui-bindings.js dynamic-ui.js support.js sw.js main.js; do
+          for file in game.js security.js auth.js personal-bar.js inventory.js personal-ui.js business-rules.js business-ui.js scripts/business-service.js scripts/business-store.js ui-bindings.js dynamic-ui.js support.js sw.js main.js; do
             node --check "$file"
           done
       - name: Reject tracked signing secrets
