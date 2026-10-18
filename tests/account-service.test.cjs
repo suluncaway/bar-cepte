@@ -45,10 +45,13 @@ test('personal backup fields round trip and survive uploads from an older client
  const token=(await request('POST','/api/auth/google',{credential:'alice'})).data.token;
  const history=[{id:'event1',drinkId:'11003',name:'Negroni',createdAt:1,note:'Not',rating:'like',taste:'Sert'}];
  const preferences={alcohol:'all',tastes:['Ferah'],onboardingDone:true};
- assert.equal((await request('PUT','/api/account/backup',{data:{preferences,history},revision:0},token)).status,200);
+ const inventory={items:[{ingredient:'Gin',quantity:50,unit:'cl'}],deductions:['event1']};
+ assert.equal((await request('PUT','/api/account/backup',{data:{preferences,history,inventory},revision:0},token)).status,200);
  assert.equal((await request('PUT','/api/account/backup',{data:{shopping:['Limon']},revision:1},token)).status,200);
  const result=(await request('GET','/api/account/backup',null,token)).data;
  assert.equal(result.personalDataVersion,1);
+ assert.equal(result.inventoryDataVersion,1);
+ assert.deepEqual(result.backup.data.inventory,inventory);
  assert.deepEqual(result.backup.data.history,history);
  assert.deepEqual(result.backup.data.preferences,preferences);
 });
