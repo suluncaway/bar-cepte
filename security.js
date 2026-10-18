@@ -78,7 +78,19 @@
             return {ingredient:text(row.ingredient,200,true),quantity:Math.round(row.quantity*1000)/1000,unit:row.unit};
         });
         if (new Set(items.map(row=>row.ingredient.trim().toLowerCase())).size !== items.length) throw new Error('Duplicate stock ingredient');
-        return {items, deductions:stringList(value.deductions || [],100)};
+        const deductions=stringList(value.deductions || [],100);
+        const receipts=value.receipts || [];
+        if (!Array.isArray(receipts) || receipts.length > 100) throw new Error('Invalid stock receipts');
+        const checked=receipts.map(row=>{
+            if (!row || typeof row !== 'object' || !Number.isSafeInteger(row.createdAt) || row.createdAt<0 || typeof row.undone!=='boolean') throw new Error('Invalid stock receipt');
+            const changes=inventory({items:row.changes}).items;
+            if (!changes.length || changes.length>50 || changes.some(item=>item.quantity<=0)) throw new Error('Invalid stock changes');
+            const id=text(row.id,100,true);
+            if (!deductions.includes(id)) throw new Error('Missing stock event');
+            return {id,name:text(row.name,200,true),createdAt:row.createdAt,undone:row.undone,changes};
+        });
+        if (new Set(checked.map(row=>row.id)).size!==checked.length) throw new Error('Duplicate stock receipt');
+        return {items, deductions, ...(value.receipts===undefined?{}:{receipts:checked})};
     }
     function backup(value) {
         if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Geçersiz yedek');
