@@ -16,6 +16,7 @@ document.addEventListener('click', event => {
             case 'purchased':
                 quickAddIngredientToBar(value, event);
                 toggleShoppingList(value, event);
+                window.BarPersonalUI?.editStock(resolveIngredientName(value));
                 break;
             case 'substitute':
                 applySubstituteToBar(button.dataset.ing, button.dataset.sub, event);

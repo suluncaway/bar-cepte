@@ -15,12 +15,15 @@ function client(initial={}) {
 test('manual export/import round trips preferences and notes without network; old backups reset optional fields',async()=>{
  const preferences={alcohol:'Non_Alcoholic',tastes:['Ferah'],onboardingDone:true};
  const history=[{id:'one',drinkId:'11003',name:'Çilek',createdAt:1,taste:'Ferah',rating:'like',note:'Şeker ekleme'}];
- const first=client({personalPreferences:JSON.stringify(preferences),preparationHistory:JSON.stringify(history)});
+ const inventory={items:[{ingredient:'Gin',quantity:12,unit:'cl'}],deductions:['one'],receipts:[{id:'one',name:'Negroni',createdAt:1,undone:false,changes:[{ingredient:'Gin',quantity:3,unit:'cl'}]}]};
+ const first=client({personalPreferences:JSON.stringify(preferences),preparationHistory:JSON.stringify(history),barInventory:JSON.stringify(inventory)});
  await first.context.exportUserData();const second=client();second.setCode(first.getCode());await second.context.importUserData();
  assert.deepEqual(JSON.parse(second.map.get('personalPreferences')),preferences);
  assert.deepEqual(JSON.parse(second.map.get('preparationHistory')),history);assert.equal(second.context.reloaded,true);
+ assert.deepEqual(JSON.parse(second.map.get('barInventory')),inventory);
  second.setCode(JSON.stringify({selected:['Lime']}));await second.context.importUserData();
  assert.equal(second.map.get('preparationHistory'),'[]');
+ assert.deepEqual(JSON.parse(second.map.get('barInventory')),{items:[],deductions:[],receipts:[]});
  assert.deepEqual(JSON.parse(second.map.get('personalPreferences')),security.preferences({}));
 });
 test('invalid personal data cannot partially overwrite the bar',async()=>{
