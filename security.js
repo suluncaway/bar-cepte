@@ -82,7 +82,7 @@
         const receipts=value.receipts || [];
         if (!Array.isArray(receipts) || receipts.length > 100) throw new Error('Invalid stock receipts');
         const checked=receipts.map(row=>{
-            if (!row || typeof row !== 'object' || !Number.isSafeInteger(row.createdAt) || row.createdAt<0 || typeof row.undone!=='boolean') throw new Error('Invalid stock receipt');
+            if (!row || typeof row !== 'object' || !Number.isSafeInteger(row.createdAt) || row.createdAt<0 || !Number.isFinite(new Date(row.createdAt).getTime()) || typeof row.undone!=='boolean') throw new Error('Invalid stock receipt');
             const changes=inventory({items:row.changes}).items;
             if (!changes.length || changes.length>50 || changes.some(item=>item.quantity<=0)) throw new Error('Invalid stock changes');
             const id=text(row.id,100,true);

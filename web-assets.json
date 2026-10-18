@@ -25,5 +25,6 @@
   "icon.png",
   "storage-migration.js",
   "personal-bar.js",
-  "personal-ui.js"
+  "personal-ui.js",
+  "inventory.js"
 ]

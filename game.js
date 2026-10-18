@@ -1046,6 +1046,14 @@ function changePortion(cardId, multiplier, btnEl) {
     if (!card) return;
     multiplier = BarPersonal.servings(multiplier);
     card.dataset.servings = String(multiplier);
+    const drinkId=cardId.replace(/^card_/,'');
+    const drink=[...allCocktails,...customRecipes].find(row=>row.idDrink===drinkId);
+    const stockMessage=card.querySelector('[data-stock-message]');
+    if(stockMessage && drink) {
+        const missing=window.BarPersonalUI?.missing(drink,multiplier)||[];
+        stockMessage.textContent=missing.length?(currentLang==='en'?'Missing / insufficient stock: ':'Eksik / stok yetersiz: ')+missing.map(name=>currentLang==='en'?name:translateIngredientName(name)).join(', '):
+            (currentLang==='en'?'Known quantities are sufficient. Check unspecified measures manually.':'Bilinen stok miktarları yeterli. Belirtilmeyen ölçüleri elle kontrol et.');
+    }
 
     card.querySelectorAll('.portion-btn').forEach(b => {
         b.className = "portion-btn px-2 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5";
@@ -2195,7 +2203,7 @@ function applySubstituteToBar(ingEncoded, subEncoded, event) {
 
 // --- ADIM ADIM BARMEN MODU SİSTEMİ ---
 let currentMixDrink = null;
-let personalMixEventId = '', personalMixCompleted = false;
+let personalMixEventId = '', personalMixCompleted = false, personalMixServings = 1;
 let currentMixStep = 0;
 let mixSteps = [];
 let mixTimerInterval = null;
@@ -2203,6 +2211,7 @@ let mixTimerRemaining = 15;
 
 function openMixMode(drinkId, servings = 1) {
     servings = BarPersonal.servings(servings);
+    personalMixServings = servings;
     const targetId = String(drinkId || '').trim();
     const d = allCocktails.find(c => c.idDrink === targetId) || customRecipes.find(c => c.idDrink === targetId);
     if (!d) return;
@@ -2211,23 +2220,11 @@ function openMixMode(drinkId, servings = 1) {
     personalMixCompleted = false;
     currentMixStep = 0;
 
-    let ingList = [];
-    if (d.isCustom && Array.isArray(d.customIngredients)) {
-        ingList = d.customIngredients.map(raw => {
-            const parts = raw.match(/^([\d\s\/.,-]+(?:ml|oz|cl|dash|dashes|tsp|tbsp|gr|shot)?)\s*(.*)$/i);
-            return parts ? `${scaleMeasure(translateMeasureText(parts[1].trim()), servings)} ${parts[2].trim()}` : raw;
-        });
-    } else {
-        for (let i = 1; i <= 15; i++) {
-            const ing = d[`strIngredient${i}`];
-            const m = d[`strMeasure${i}`] ? d[`strMeasure${i}`].trim() : '';
-            if (ing && ing.trim()) {
-                const displayName = currentLang === 'en' ? ing.trim() : translateIngredientName(ing.trim());
-                const measureText = scaleMeasure(translateMeasureText(m), servings);
-                ingList.push(measureText ? `${measureText} ${displayName}` : displayName);
-            }
-        }
-    }
+    const ingList = BarInventory.ingredients(d).map(row => {
+        const name = currentLang === 'en' ? row.name : translateIngredientName(row.name);
+        const measure = scaleMeasure(translateMeasureText(row.measure), servings);
+        return measure ? `${measure} ${name}` : name;
+    });
 
     const isShaken = /shak|çalkala/i.test(d.strInstructions || '') || /shak|çalkala/i.test(d.strInstructionsTR || '');
     const glass = d.strGlass || (currentLang === 'en' ? 'Cocktail glass' : 'Kokteyl bardağı');
@@ -2363,7 +2360,7 @@ function nextMixStep() {
         if (personalMixCompleted) return;
         personalMixCompleted = true;
         closeMixMode();
-        if (window.BarPersonalUI && !window.BarPersonalUI.record(currentMixDrink, personalMixEventId)) personalMixCompleted = false;
+        if (window.BarPersonalUI && !window.BarPersonalUI.record(currentMixDrink, personalMixEventId, personalMixServings)) personalMixCompleted = false;
         showToast(currentLang === 'en' ? 'Cheers! You crafted the cocktail like a pro 🍸' : 'Tebrikler! Kokteylini başarıyla hazırladın 🍸', 'success');
     }
 }
@@ -2728,7 +2725,7 @@ function filterCocktails() {
             if (!matchesAllTokens) return;
         }
 
-        let missing = reqs.filter(r => !selectedIngredients.some(s => checkIngredientMatch(r, s)));
+        let missing = window.BarPersonalUI?.missing(d) || reqs.filter(r => !selectedIngredients.some(s => checkIngredientMatch(r, s)));
         let hasAtLeastOneMatch = reqs.some(r => selectedIngredients.some(s => checkIngredientMatch(r, s)));
 
         enrichDrink(d);
@@ -2988,6 +2985,8 @@ function createCocktailCardElement(item, isMissingList) {
                     </div>
                 </div>
 
+                <p data-stock-message class="personal-stock-status">${window.BarPersonalUI?.missing(d).length?escapeHTML((currentLang==='en'?'Missing / insufficient stock: ':'Eksik / stok yetersiz: ')+window.BarPersonalUI.missing(d).map(name=>currentLang==='en'?name:translateIngredientName(name)).join(', ')):
+                    (currentLang==='en'?'Check unspecified quantities manually.':'Miktarı belirtilmeyen malzemeleri elle kontrol et.')}</p>
                 <!-- Malzemeler ve Ölçüler -->
                 <div class="space-y-1 min-w-0">
                     <span class="text-[11px] text-slate-400 font-medium block">${currentLang === 'en' ? 'Ingredients & Measures:' : 'Malzemeler & Ölçüler:'}</span>
@@ -3357,7 +3356,8 @@ async function saveCustomRecipe() {
 async function exportUserData() {
     const data = BarSecurity.backup({ favorites: favoriteCocktails, customs: customRecipes, shopping: shoppingList, selected: selectedIngredients,
         preferences: BarSecurity.preferences({...BarSecurity.readStored('personalPreferences', BarSecurity.preferences)}),
-        history: BarSecurity.readStored('preparationHistory', BarSecurity.history) });
+        history: BarSecurity.readStored('preparationHistory', BarSecurity.history),
+        inventory: BarSecurity.inventory({items:[],deductions:[],receipts:[],...BarSecurity.readStored('barInventory',BarSecurity.inventory)}) });
     const encrypted = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
     
     try {
@@ -3393,11 +3393,12 @@ async function importUserData() {
             }
         }
         const decrypted = BarSecurity.backup(parsedRaw);
-        if (!confirm(currentLang === 'en' ? "This backup will replace your bar, recipes, preferences and preparation history. Continue?" : "Bu yedek mevcut bar, tarif, tercih ve hazırlama geçmişinin yerini alacak. Devam edilsin mi?")) return;
+        if (!confirm(currentLang === 'en' ? "This backup will replace your bar, recipes, stock quantities, preferences and preparation history. Continue?" : "Bu yedek mevcut bar, tarif, stok miktarı, tercih ve hazırlama geçmişinin yerini alacak. Devam edilsin mi?")) return;
         const values = {
             favoriteCocktails: decrypted.favorites, customRecipes: decrypted.customs,
             shoppingList: decrypted.shopping, selectedIngredients: decrypted.selected,
-            personalPreferences: decrypted.preferences || BarSecurity.preferences({}), preparationHistory: decrypted.history || []
+            personalPreferences: decrypted.preferences || BarSecurity.preferences({}), preparationHistory: decrypted.history || [],
+            barInventory: decrypted.inventory || {items:[],deductions:[],receipts:[]}
         };
         const previous = Object.fromEntries(Object.keys(values).map(key => [key, localStorage.getItem(key)]));
         try {

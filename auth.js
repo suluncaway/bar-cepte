@@ -17,7 +17,7 @@
     const SESSION_KEY='barcepte_verified_session';
     const REVISION_KEY='barcepte_cloud_revision';
     const API_ORIGIN='https://bar-cepte-webhook.onrender.com';
-    let sessionToken='',cloudRevision=null,loginAttempt=0,personalDataVersion=0;
+    let sessionToken='',cloudRevision=null,loginAttempt=0,personalDataVersion=0,inventoryDataVersion=0;
     try {sessionToken=root.sessionStorage.getItem(SESSION_KEY)||'';const r=root.sessionStorage.getItem(REVISION_KEY);cloudRevision=r===null?null:Number(r);}catch {}
 
     let currentUser = null;
@@ -279,7 +279,8 @@
                 shopping: sec ? sec.readStored('shoppingList', sec.stringList) : JSON.parse(root.localStorage.getItem('shoppingList') || '[]'),
                 selected: sec ? sec.readStored('selectedIngredients', sec.stringList) : JSON.parse(root.localStorage.getItem('selectedIngredients') || '[]'),
                 preferences: sec.preferences({...sec.readStored('personalPreferences',sec.preferences)}),
-                history: sec.readStored('preparationHistory',sec.history)
+                history: sec.readStored('preparationHistory',sec.history),
+                inventory: sec.inventory({...{items:[],deductions:[],receipts:[]},...sec.readStored('barInventory',sec.inventory)})
             };
         } catch {
             return { favorites: [], customs: [], shopping: [], selected: [] };
@@ -320,8 +321,8 @@
         }
     }
     function applyCloudData(valid,user) {
-        valid={...valid,preferences:valid.preferences||root.BarSecurity.preferences({}),history:valid.history||[]};
-        const keys={favorites:'favoriteCocktails',customs:'customRecipes',shopping:'shoppingList',selected:'selectedIngredients',preferences:'personalPreferences',history:'preparationHistory'};
+        valid={...valid,preferences:valid.preferences||root.BarSecurity.preferences({}),history:valid.history||[],inventory:valid.inventory||{items:[],deductions:[],receipts:[]}};
+        const keys={favorites:'favoriteCocktails',customs:'customRecipes',shopping:'shoppingList',selected:'selectedIngredients',preferences:'personalPreferences',history:'preparationHistory',inventory:'barInventory'};
         const previous={};for(const key of Object.values(keys))previous[key]=root.localStorage.getItem(key);
         // One local recovery copy prevents an automatic cloud restore from silently losing unsynced edits.
         root.localStorage.setItem('barcepte_pre_restore_'+(root.localStorage.getItem('barcepte_data_owner')||user.uid),JSON.stringify(collectCurrentLocalData()));
@@ -341,11 +342,12 @@
         try {
             const owner=root.localStorage.getItem('barcepte_data_owner');
             if(owner && owner!==user.uid)return {success:false,reason:'Bu cihazdaki veriler başka hesaba ait. Önce kendi bulut yedeğinizi açınız.'};
-            if(personalDataVersion!==1) {
+            if(personalDataVersion!==1 || inventoryDataVersion!==1) {
                 const capability=await accountRequest('/api/account/backup');
                 if(!capability.success)return capability;
                 personalDataVersion=capability.personalDataVersion||0;
-                if(personalDataVersion!==1)return {success:false,reason:getCurrentLang()==='en'?'Backup server is updating. Your local data is safe.':'Yedek sunucusu güncelleniyor. Yerel verilerin korunuyor.'};
+                inventoryDataVersion=capability.inventoryDataVersion||0;
+                if(personalDataVersion!==1 || inventoryDataVersion!==1)return {success:false,reason:getCurrentLang()==='en'?'Backup server is updating. Your local data is safe.':'Yedek sunucusu güncelleniyor. Yerel verilerin korunuyor.'};
             }
             const data=root.BarSecurity.backup(collectCurrentLocalData());
             const result=await accountRequest('/api/account/backup',{method:'PUT',body:JSON.stringify({data,revision:cloudRevision})});
@@ -359,7 +361,8 @@
         const result=await accountRequest('/api/account/backup');
         if(!result.success)return result;
         personalDataVersion=result.personalDataVersion||0;
-        if(personalDataVersion!==1)return {success:false,reason:getCurrentLang()==='en'?'Backup server is updating. Your local data is safe.':'Yedek sunucusu güncelleniyor. Yerel verilerin korunuyor.'};
+        inventoryDataVersion=result.inventoryDataVersion||0;
+        if(personalDataVersion!==1 || inventoryDataVersion!==1)return {success:false,reason:getCurrentLang()==='en'?'Backup server is updating. Your local data is safe.':'Yedek sunucusu güncelleniyor. Yerel verilerin korunuyor.'};
         applyServerSubscription(result.subscription);
         if(!result.backup){rememberRevision(0);return {success:false,notFound:true,reason:'Bulutta henüz yedek yok.'};}
         try {
@@ -426,6 +429,7 @@
 
     function clearSession() {
         personalDataVersion=0;
+        inventoryDataVersion=0;
         loginAttempt++;
         const token=sessionToken;sessionToken='';cloudRevision=null;
         try {root.sessionStorage.removeItem(SESSION_KEY);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
