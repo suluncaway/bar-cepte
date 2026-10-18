@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {recoverLegacyClaim} = require('./legacy-recovery');
+const {createBusinessStore} = require('./business-store');
 
 function createFileStore(directory) {
     const soldFile = path.join(directory, 'sold_licenses.json');
@@ -96,7 +97,7 @@ function createFileStore(directory) {
         exportBackup: async () => ({version: 1, sold: read(soldFile, []), claimed: read(claimedFile, {})}),
         pending: Promise.resolve()
     };
-    return store;
+    return Object.assign(store,createBusinessStore({read,write,file:path.join(directory,'businesses.json')}));
 }
 
 function createPostgresStore(connectionString) {
@@ -127,6 +128,11 @@ function createPostgresStore(connectionString) {
                             token_hash TEXT PRIMARY KEY, uid TEXT NOT NULL, payload JSONB NOT NULL, expires_at BIGINT NOT NULL);
                         CREATE TABLE IF NOT EXISTS barcepte_backups (
                             uid TEXT PRIMARY KEY, payload JSONB NOT NULL, revision BIGINT NOT NULL, updated_at BIGINT NOT NULL);
+                        CREATE TABLE IF NOT EXISTS barcepte_businesses (
+                            id TEXT PRIMARY KEY, owner_uid TEXT UNIQUE NOT NULL, payload JSONB NOT NULL);
+                        CREATE TABLE IF NOT EXISTS barcepte_business_events (
+                            business_id TEXT NOT NULL REFERENCES barcepte_businesses(id), event_id TEXT NOT NULL,
+                            seq BIGINT NOT NULL, payload JSONB NOT NULL, PRIMARY KEY(business_id,event_id), UNIQUE(business_id,seq));
                     `);
                     await client.query('COMMIT');
                 } catch (error) {
@@ -242,7 +248,7 @@ function createPostgresStore(connectionString) {
             } finally {client.release();}
         }
     };
-    return store;
+    return Object.assign(store,createBusinessStore({pool,ready:()=>store.ready()}));
 }
 
 function createLicenseStore(options = {}) {

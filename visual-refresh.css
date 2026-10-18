@@ -308,3 +308,4 @@ body {
   #discovery-controls .w-px { display: none; }
   #discovery-controls :is(.taste-btn, .vibe-btn), #btn-fav-filter { white-space: nowrap; }
 }
+.main-navigation > a { display: inline-flex; align-items: center; min-height: 44px; white-space: nowrap; }

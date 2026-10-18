@@ -54,6 +54,7 @@ const {createGoogleVerifier} = require('./google-identity');
 const {createAccountService} = require('./account-service');
 const googleClientId=process.env.GOOGLE_CLIENT_ID || require('../firebase-config').googleClientId;
 const accounts=createAccountService({store:licenseStore,verifyGoogle:createGoogleVerifier({clientId:googleClientId})});
+const businesses=require('./business-service').createBusinessService({store:licenseStore,authenticate:accounts.authenticate});
 const inFlightOrders = new Set();
 const getSoldLicenses = () => licenseStore.getSold();
 const getClaimedLicenses = () => licenseStore.getClaimed();
@@ -290,6 +291,7 @@ async function handleRequest(req, res) {
 
     const requestPath = new URL(req.url, 'http://localhost').pathname;
     if(await accounts.handle(req,res,requestPath,readJsonBody)) return;
+    if(await businesses.handle(req,res,requestPath,readJsonBody)) return;
     const adminPaths = ['/licenses', '/dashboard', '/api/resend-license', '/resend', '/api/export-licenses'];
     if (adminPaths.includes(requestPath) && !authorizeAdmin(req)) {
         res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Bar Cepte Admin", charset="UTF-8"' });
@@ -321,6 +323,7 @@ async function handleRequest(req, res) {
         res.end(JSON.stringify({
             status: 'ok',
             inventoryDataVersion: 1,
+            businessDataVersion: 1,
             service: 'Bar Cepte Shopier Otomatik Lisans Servisi',
             apiConnected: !!SHOPIER_API_TOKEN,
             shopierStatus: shopier.state.status,
