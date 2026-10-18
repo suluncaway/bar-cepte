@@ -72,7 +72,7 @@
  async function send(command){
   if(demo){const previous=events.find(row=>row.id===command.data?.eventId);const result=BarBusiness.apply(state,command,user,Date.now(),previous);state=result.state;events.unshift(result.event);pending=null;render();return;}
   const result=await request('/api/business/'+state.id+'/commands',{method:'POST',body:JSON.stringify(command)});state=result.state;const previousPending=pending;pending=null;try{savePending();}catch(error){pending=previousPending;throw error;}
-  let refreshFailed=false;try{const recent=await request('/api/business/'+state.id);state=recent.state;events=recent.events;}catch(error){if(error.stale)throw error;refreshFailed=true;}render();
+  let refreshFailed=false;try{const recent=await request('/api/business/'+state.id);state=recent.state;events=recent.events;}catch(error){if(error.stale||[401,403].includes(error.status))throw error;refreshFailed=true;}render();
   if(result.invite){const box=document.getElementById('business-invite');if(box)box.innerHTML=field('inviteCode',t('Davet kodu (24 saat)','Invite code (24 hours)'),'text',result.invite,'readonly class="invite-code"');}
   return refreshFailed;
  }
