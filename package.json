@@ -70,7 +70,7 @@
       "personal-bar.js",
       "personal-ui.js",
   "inventory.js",
-  "business.html", "business.css", "business-rules.js", "business-ui.js"
+  "business.html", "business.css", "business-rules.js", "business-reports.js", "business-ui.js"
     ],
     "win": {
       "target": [

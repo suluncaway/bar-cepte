@@ -20,6 +20,14 @@ function createBusinessStore({pool,ready,read,write,file}) {
   async getBusiness(id){if(!pool)return all()[id]?.state||null;await ready();return (await pool.query('SELECT payload FROM barcepte_businesses WHERE id=$1',[id])).rows[0]?.payload||null;},
   async businessEvents(id,before=Number.MAX_SAFE_INTEGER){if(!pool)return (all()[id]?.events||[]).filter(row=>row.seq<before).sort((a,b)=>b.seq-a.seq).slice(0,100);
    await ready();return (await pool.query('SELECT payload FROM barcepte_business_events WHERE business_id=$1 AND seq<$2 ORDER BY seq DESC LIMIT 100',[id,before])).rows.map(row=>row.payload);},
+  async businessReportRows(id,dates,revision){
+   const check=rows=>{if(rows.length>50000){const error=new Error('Kayıt sayısı çok yüksek; tarih aralığını daralt / Narrow the date range');error.status=413;throw error;}return rows;};
+   if(!pool){const events=all()[id]?.events||[],byId=new Map(events.map(event=>[event.id,event]));return check(events.filter(event=>event.seq<=revision&&event.createdAt>=dates.start&&event.createdAt<dates.end&&['sale','gift','purchase','waste','return','count','reverse'].includes(event.kind)).map(event=>({event,original:byId.get(event.details?.reverses)})));}
+   await ready();return check((await pool.query(`SELECT e.payload AS event, r.payload AS original FROM barcepte_business_events e
+    LEFT JOIN barcepte_business_events r ON r.business_id=e.business_id AND r.event_id=e.payload->'details'->>'reverses'
+    WHERE e.business_id=$1 AND e.seq<=$4 AND (e.payload->>'createdAt')::bigint >= $2 AND (e.payload->>'createdAt')::bigint < $3
+    AND e.payload->>'kind' IN ('sale','gift','purchase','waste','return','count','reverse') ORDER BY e.seq LIMIT 50001`,[id,dates.start,dates.end,revision])).rows);
+  },
   async businessTransaction(id,fn){
    if(!pool)return serialize(async()=>{const data=all(),row=data[id];if(!row)return null;
     const result=await fn(structuredClone(row.state),async eventId=>row.events.find(event=>event.id===eventId));

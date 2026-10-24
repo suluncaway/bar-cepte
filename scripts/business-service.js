@@ -1,6 +1,7 @@
 'use strict';
 const {randomBytes,randomUUID,createHash}=require('node:crypto');
 const rules=require('../business-rules');
+const reports=require('../business-reports');
 const hash=value=>createHash('sha256').update(value).digest('hex');
 function createBusinessService({store,authenticate,clock=Date.now}) {
  const json=(res,status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(value));};
@@ -21,6 +22,12 @@ function createBusinessService({store,authenticate,clock=Date.now}) {
     return json(res,201,{success:true,state:rules.snapshot(state,user)}),true;
    }
    rules.id(businessId);
+   if(req.method==='GET'&&parts.length===4&&parts[3]==='report'){
+    const state=await store.getBusiness(businessId);if(!state)rules.fail('Bulunamadı / Not found',404);rules.member(state,user);
+    const query=new URL(req.url,'http://localhost').searchParams,dates=reports.range(query.get('from'),query.get('to'));
+    const summary=reports.summarize(await store.businessReportRows(businessId,dates,state.revision),dates);
+    return json(res,200,{success:true,report:{...summary,from:dates.from,to:dates.to,timeZone:dates.timeZone,revision:state.revision,generatedAt:clock()}}),true;
+   }
    if(req.method==='GET'&&parts.length===3){const state=await store.getBusiness(businessId);if(!state)rules.fail('İşletme bulunamadı / Business not found',404);rules.member(state,user);
     return json(res,200,{success:true,state:rules.snapshot(state,user),events:await store.businessEvents(businessId,state.revision+1)}),true;}
    if(req.method==='GET'&&parts[3]==='events'&&parts.length===4){
