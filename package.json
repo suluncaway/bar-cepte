@@ -38,6 +38,8 @@
     "productName": "Bar Cepte",
     "files": [
       "index.html",
+      "landing.html",
+      "landing.css",
       "privacy.html",
       "privacy.js",
       "style.css",
