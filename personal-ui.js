@@ -361,6 +361,6 @@
         const existing = selectedIngredients.length || favoriteCocktails.length || customRecipes.length || shoppingList.length || history().length;
         if(!preferences().onboardingDone && !existing && !returningUser)start();
     }
-    window.BarPersonalUI={refresh,record,close,missing:missingFor,editStock,reset:()=>{manualEvent=null;if(dialog?.open)close();refresh();}};
+    window.BarPersonalUI={refresh,record,close,start,missing:missingFor,editStock,reset:()=>{manualEvent=null;if(dialog?.open)close();refresh();}};
     document.addEventListener('DOMContentLoaded',mount);
 })();

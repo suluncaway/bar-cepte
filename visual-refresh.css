@@ -309,3 +309,4 @@ body {
   #discovery-controls :is(.taste-btn, .vibe-btn), #btn-fav-filter { white-space: nowrap; }
 }
 .main-navigation > a { display: inline-flex; align-items: center; min-height: 44px; white-space: nowrap; }
+.hero-business-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 10px; color: var(--accent-gold); font-size: 13px; line-height: 1.6; text-decoration: underline; text-underline-offset: 4px; }

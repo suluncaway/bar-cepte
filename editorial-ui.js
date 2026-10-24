@@ -2,6 +2,11 @@
 const heroBuildBarBtn = document.getElementById('hero-build-bar');
 if (heroBuildBarBtn) {
     heroBuildBarBtn.addEventListener('click', () => {
+        if (window.BarPersonalUI?.start) {
+            if (typeof switchTab === 'function') switchTab('bar');
+            window.BarPersonalUI.start();
+            return;
+        }
         if (typeof switchTab === 'function') switchTab('alkol');
         const target = document.getElementById('discovery-controls') || document.getElementById('ingredients-section');
         if (target) target.scrollIntoView({behavior: 'smooth', block: 'start'});
