@@ -6,6 +6,22 @@
  const id=value=>{if(typeof value!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(value))fail('Geçersiz kimlik / Invalid ID');return value;};
  const quantity=(value,zero=false)=>{if(typeof value!=='number'||!Number.isFinite(value)||value<0||(!zero&&value===0)||value>1e9||Math.abs(value*1000-Math.round(value*1000))>0.0001)fail('Geçersiz miktar / Invalid quantity');return value;};
  const round=value=>Math.round(value*1000)/1000;
+ function movementPlan(state,kind,data){
+  const product=productId=>{const row=state.products.find(item=>item.id===productId);if(!row)fail('Ürün bulunamadı / Product not found');return row;};
+  if(['sale','gift'].includes(kind)){
+   const recipe=state.recipes.find(row=>row.id===data.recipeId),count=quantity(data.count);
+   if(!recipe||!Number.isInteger(count)||count>10000)fail('Geçersiz reçete / Invalid recipe');
+   return {label:recipe.name,details:{recipeId:recipe.id,count},lines:recipe.ingredients.map(row=>({productId:product(row.productId).id,delta:-round(row.quantity*count)}))};
+  }
+  if(!['purchase','waste','return','count'].includes(kind))return null;
+  const row=product(data.productId),amount=quantity(data.quantity,kind==='count');
+  const factor=kind==='purchase'?(data.pack==='case'?row.packSize*row.caseSize:data.pack==='pack'?row.packSize:data.pack==='base'?1:NaN):1;
+  if(!Number.isFinite(factor))fail('Geçersiz ambalaj / Invalid pack');
+  if(kind==='purchase'&&data.pack!=='base'&&!Number.isInteger(amount))fail('Tam ambalaj adedi gir / Enter whole packs');
+  const delta=kind==='count'?round(amount-row.stock):round(amount*factor*(kind==='waste'||kind==='return'?-1:1));
+  quantity(Math.abs(delta),true);
+  return {label:row.name,details:kind==='count'?{expected:row.stock,observed:amount,difference:delta}:{quantity:amount,pack:data.pack||'base'},lines:[{productId:row.id,delta}]};
+ }
  function member(state,user){const role=state.members[user.uid]?.role;if(!role)fail('Bu işletmeye erişimin yok / Access denied',403);return role;}
  function apply(original,command,user,now,previous){
   const role=member(original,user),kind=text(command.kind,30),eventId=id(command.id);
@@ -30,19 +46,8 @@
    const ingredients=data.ingredients.map(row=>({productId:product(row.productId).id,quantity:quantity(row.quantity)}));
    if(new Set(ingredients.map(row=>row.productId)).size!==ingredients.length)fail('Tekrarlanan malzeme / Duplicate ingredient');
    const recipe={id:existing?.id||eventId,name:text(data.name),ingredients};if(existing)state.recipes[state.recipes.indexOf(existing)]=recipe;else state.recipes.push(recipe);label=recipe.name;details={before:existing,recipe};
-  }else if(['sale','gift'].includes(kind)){
-   const recipe=state.recipes.find(row=>row.id===data.recipeId),count=quantity(data.count);
-   if(!recipe||!Number.isInteger(count)||count>10000)fail('Geçersiz reçete / Invalid recipe');
-   for(const row of recipe.ingredients)move(row.productId,-round(row.quantity*count));
-   label=recipe.name;details={recipeId:recipe.id,count};
-  }else if(['purchase','waste','return','count'].includes(kind)){
-   const row=product(data.productId),amount=quantity(data.quantity,kind==='count');
-   const factor=kind==='purchase'?(data.pack==='case'?row.packSize*row.caseSize:data.pack==='pack'?row.packSize:data.pack==='base'?1:NaN):1;
-   if(!Number.isFinite(factor))fail('Geçersiz ambalaj / Invalid pack');
-   if(kind==='purchase'&&data.pack!=='base'&&!Number.isInteger(amount))fail('Tam ambalaj adedi gir / Enter whole packs');
-   const delta=kind==='count'?round(amount-row.stock):round(amount*factor*(kind==='waste'||kind==='return'?-1:1));
-   details=kind==='count'?{expected:row.stock,observed:amount,difference:delta}:{quantity:amount,pack:data.pack||'base'};
-   move(row.id,delta);label=row.name;
+  }else if(['sale','gift','purchase','waste','return','count'].includes(kind)){
+   const plan=movementPlan(state,kind,data);for(const line of plan.lines)move(line.productId,line.delta);label=plan.label;details=plan.details;
   }else if(kind==='reverse'){
    if(!previous||!['sale','gift','purchase','waste','return','count'].includes(previous.kind)||state.reversed[previous.id])fail('İşlem ters kaydedilemiyor / Cannot reverse operation',409);
    for(const line of previous.lines)move(line.productId,-line.delta);
@@ -61,5 +66,5 @@
   return {state,event:{id:eventId,seq:state.revision,kind,label,actor:{uid:user.uid,name:user.name||user.uid},createdAt:now,note,lines,details}};
  }
  function snapshot(state,user){member(state,user);const {invites,...safe}=state;return {...safe,role:state.members[user.uid].role};}
- const api={apply,member,snapshot,id,text,quantity,fail};root.BarBusiness=api;if(typeof module!=='undefined')module.exports=api;
+ const api={apply,member,snapshot,id,text,quantity,movementPlan,fail};root.BarBusiness=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

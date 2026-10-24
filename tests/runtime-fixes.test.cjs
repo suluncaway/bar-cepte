@@ -58,7 +58,7 @@ test('public legacy master strings cannot bypass central verification', async ()
 });
 
 test('all local HTML entrypoint resources are bundled on desktop and Android', () => {
-    for (const entry of ['index.html', 'privacy.html']) {
+    for (const entry of ['index.html', 'privacy.html', 'business.html', 'landing.html']) {
         const html = fs.readFileSync(entry, 'utf8');
         for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
             const resource = match[1];

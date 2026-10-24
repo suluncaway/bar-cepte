@@ -3528,6 +3528,8 @@ function applyLanguage() {
     if (heroBuildBar) heroBuildBar.innerHTML = `${t.heroBuildBar} <span aria-hidden="true">↗</span>`;
     const heroSurprise = document.getElementById('hero-surprise');
     if (heroSurprise) heroSurprise.innerHTML = `${t.heroSurprise} <span aria-hidden="true">→</span>`;
+    const heroBusiness = document.getElementById('hero-business-entry');
+    if (heroBusiness) heroBusiness.textContent = currentLang === 'en' ? 'Run a bar? Open the business panel →' : 'Bir bar mı yönetiyorsun? İşletme panelini aç →';
     const heroNote = document.querySelector('#editorial-hero .hero-note');
     if (heroNote) heroNote.innerHTML = t.heroNote;
     const heroCaption = document.querySelector('#editorial-hero figcaption');
