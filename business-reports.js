@@ -46,6 +46,6 @@
   for(let time=dates.start;time<dates.end;time+=DAY){const date=day(time);if(!daily.has(date))daily.set(date,{date,...counts()});}
   return {totals,daily:[...daily.values()].sort((a,b)=>a.date.localeCompare(b.date)),recipes:[...recipes.values()].sort((a,b)=>b.netSales-a.netSales||a.name.localeCompare(b.name,'tr')),products:productRows};
  }
- function csv(rows){return '\ufeff'+rows.map(row=>row.map(value=>{let text=String(value??'');if(typeof value==='string'&&(/^[\s]*[=+\-@]/.test(text)||/^[\t\r\n]/.test(text)))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';}).join(';')).join('\r\n');}
+ function csv(rows,decimalSeparator='.') {return '\ufeff'+rows.map(row=>row.map(value=>{let text=String(value??'');if(typeof value==='number'&&decimalSeparator===',')text=text.replace('.',',');if(typeof value==='string'&&(/^[\s]*[=+\-@]/.test(text)||/^[\t\r\n]/.test(text)))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';}).join(';')).join('\r\n');}
  const api={day,range,summarize,csv};root.BarBusinessReports=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

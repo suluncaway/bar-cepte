@@ -50,6 +50,7 @@ test('CSV keeps numeric negatives while escaping formulas and quoted or multilin
  const csv=reports.csv([['Name','Value'],['=HYPERLINK("bad")',-3],['  +SUM(1)',0],['Gin; "house"\nnew',.5],['\tformula',1]]);
  assert.ok(csv.startsWith('\ufeff"Name";"Value"\r\n'));assert.ok(csv.includes('"\'=HYPERLINK(""bad"")";"-3"'));
  assert.ok(csv.includes('"\'  +SUM(1)"'));assert.ok(csv.includes('"Gin; ""house""\nnew"'));assert.ok(csv.includes('"\'\tformula"'));
+ assert.equal(reports.csv([[.125,-3.5]],','),'\ufeff"0,125";"-3,5"');
 });
 async function storeFixture(t,store){
  if(!store){const directory=fs.mkdtempSync(path.join(os.tmpdir(),'bar-reports-'));t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));store=createFileStore(directory);}
