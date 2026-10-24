@@ -324,6 +324,7 @@ async function handleRequest(req, res) {
             status: 'ok',
             inventoryDataVersion: 1,
             businessDataVersion: 1,
+            businessReportsVersion: 1,
             service: 'Bar Cepte Shopier Otomatik Lisans Servisi',
             apiConnected: !!SHOPIER_API_TOKEN,
             shopierStatus: shopier.state.status,

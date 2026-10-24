@@ -133,6 +133,7 @@ function createPostgresStore(connectionString) {
                         CREATE TABLE IF NOT EXISTS barcepte_business_events (
                             business_id TEXT NOT NULL REFERENCES barcepte_businesses(id), event_id TEXT NOT NULL,
                             seq BIGINT NOT NULL, payload JSONB NOT NULL, PRIMARY KEY(business_id,event_id), UNIQUE(business_id,seq));
+                        CREATE INDEX IF NOT EXISTS barcepte_business_events_time ON barcepte_business_events (business_id, ((payload->>'createdAt')::bigint));
                     `);
                     await client.query('COMMIT');
                 } catch (error) {

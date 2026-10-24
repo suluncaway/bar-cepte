@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.0",
-    "electron": "41.10.7",
+    "electron": "42.11.16",
     "electron-builder": "26.15.3",
     "tailwindcss": "4.3.3"
   },
@@ -70,7 +70,7 @@
       "personal-bar.js",
       "personal-ui.js",
   "inventory.js",
-  "business.html", "business.css", "business-rules.js", "business-ui.js"
+  "business.html", "business.css", "business-rules.js", "business-reports.js", "business-ui.js"
     ],
     "win": {
       "target": [

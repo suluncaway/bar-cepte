@@ -1,5 +1,7 @@
 # Bar Cepte İşletme v1
 
+Daily reports: `/api/business/:id/report?from=YYYY-MM-DD&to=YYYY-MM-DD`, with the same membership checks as the audit history. Reports use inclusive Istanbul calendar dates (2020–2099), at most 366 days, all matching events through the captured business revision, and up to 50,000 movements before requiring a narrower range. Reversals resolve their original event even outside the date interval; the reversal changes the period in which it was recorded. Original recipe quantities are used, not today's edited recipes. Consumption (sales + complimentary + waste) is distinct from supplier returns, receiving and count adjustments. Units are never combined. Days without movements are retained as zero rows. Daily, recipe and product CSV exports include date/timezone metadata and escape spreadsheet formulas in labels. Personal storage is unchanged.
+
 Separate entry: `business.html`. Personal inventory, preferences, history and backup keys are never read by the business client. Business sign-in uses the existing Google verification service with a separate session-storage key.
 
 One owner business, one stockroom, up to 30 members. Owner: products, recipe revisions, receipts, supplier returns, reversals, invitations and access revocation. Staff: sales, complimentary drinks, waste and physical counts. The server enforces permissions inside the same transaction as stock changes. Invites are hashed, single-use and expire in 24 hours.
