@@ -64,13 +64,19 @@
       "firebase-config.js",
       "icon.png",
       "main.js",
+      "desktop-server.js",
       "web-assets.json",
       "build/icon.png",
       "storage-migration.js",
       "personal-bar.js",
       "personal-ui.js",
-  "inventory.js",
-  "business.html", "business.css", "business-rules.js", "business-flow.js", "business-reports.js", "business-ui.js"
+      "inventory.js",
+      "business.html",
+      "business.css",
+      "business-rules.js",
+      "business-flow.js",
+      "business-reports.js",
+      "business-ui.js"
     ],
     "win": {
       "target": [
