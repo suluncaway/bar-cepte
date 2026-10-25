@@ -93,7 +93,14 @@ test('Electron desktop main.js server allows all essential application assets', 
     }
     const mainContent = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
     assert.match(mainContent, /require\('\.\/web-assets\.json'\)/);
-    assert.match(mainContent, /'\.mp4': 'video\/mp4'/);
+    assert.match(mainContent, /require\('\.\/desktop-server'\)/);
+    assert.ok(packaged.includes('desktop-server.js'), 'not packaged: desktop-server.js');
+    const serverContent = fs.readFileSync(path.join(__dirname, '..', 'desktop-server.js'), 'utf8');
+    assert.match(serverContent, /'\.mp4': 'video\/mp4'/);
+    // Sabit port: rastgele port origin değiştirir ve tarayıcı depolamasını erişilmez kılır.
+    assert.ok(!/server\.listen\(0/.test(serverContent), 'random port must not be used');
+    assert.ok(/DESKTOP_PORT = \d+/.test(serverContent), 'single fixed desktop port');
+    assert.match(fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8'), /requestSingleInstanceLock/);
 });
 
 test('Frontend support and ingredient resolution are robust against missing elements and languages', () => {
