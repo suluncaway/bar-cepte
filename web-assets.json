@@ -20,6 +20,7 @@
   "ads.js",
   "ads.txt",
   "reserve.js",
+  "ai-assistant-ui.js",
   "auth.js",
   "firebase-config.js",
   "icon.png",
