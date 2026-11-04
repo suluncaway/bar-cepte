@@ -1257,7 +1257,7 @@ function scrollIngredients(amount) {
 
 function switchTab(tab) {
     currentTab = tab;
-    ['tab-bar', 'tab-alkol', 'tab-mutfak', 'tab-favorites', 'tab-custom', 'tab-my-recipes', 'tab-shop', 'tab-sync'].forEach(t => {
+    ['tab-bar', 'tab-alkol', 'tab-mutfak', 'tab-favorites', 'tab-custom', 'tab-my-recipes', 'tab-shop', 'tab-sync', 'tab-ai'].forEach(t => {
         const el = document.getElementById(t);
         if(el) {
             el.className = "text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white";
@@ -1276,7 +1276,7 @@ function switchTab(tab) {
         document.getElementById('smart-recommendation-banner')?.classList.add('hidden');
     }
 
-    const sections = ['bar-dashboard', 'ingredients-section', 'custom-recipe-panel', 'my-recipes-panel', 'shopping-list-panel', 'sync-panel', 'recipes-display-sections'];
+    const sections = ['bar-dashboard', 'ingredients-section', 'custom-recipe-panel', 'my-recipes-panel', 'shopping-list-panel', 'sync-panel', 'ai-assistant-panel', 'recipes-display-sections'];
     sections.forEach(id => {
         const el = document.getElementById(id);
         if(el) el.classList.add('hidden');
@@ -1300,7 +1300,10 @@ function switchTab(tab) {
         }
     }
 
-    if (tab === 'bar') { 
+    if (tab === 'ai') {
+        document.getElementById('ai-assistant-panel')?.classList.remove('hidden');
+        window.BarAI?.onOpen();
+    } else if (tab === 'bar') { 
         document.getElementById('bar-dashboard').classList.remove('hidden'); 
         renderDashboard(); 
     } else if (tab === 'custom') {
@@ -4429,4 +4432,56 @@ window.applyCloudBackup = function(data) {
         }
     } catch {console.warn('Recipe cache unavailable; local backup is preserved.');}
     updateFavoritesFilterUI();renderIngredients();filterCocktails();renderDashboard();renderMyRecipes();renderShoppingList();
+};
+
+
+// Bar Cepte AI: canlı bar ve tarif bağlamı; veriler yalnızca kullanıcı isteğiyle sunucuya gönderilir.
+window.BarAIContext = function() {
+    const inventory = selectedIngredients.map(id => {
+        const item = popularIngredients.find(row => row.id === id);
+        return item ? (currentLang === 'en' ? item.nameEn : item.name) : id;
+    });
+    const recipeRows = (Array.isArray(allCocktails) ? allCocktails : []).map(drink => {
+        const ingredients = Array.isArray(drink.customIngredients) ? drink.customIngredients :
+            Array.from({length:15}, (_, index) => drink['strIngredient' + (index + 1)]).filter(Boolean);
+        return { drink, ingredients };
+    });
+    const relevant = recipeRows
+        .map(row => ({...row, matches: row.ingredients.filter(name => selectedIngredients.some(id => checkIngredientMatch(name, id))).length}))
+        .filter(row => row.matches > 0)
+        .sort((a,b) => b.matches - a.matches)
+        .slice(0, 12)
+        .map(row => ({
+            name: row.drink.strDrink || row.drink.name || 'Tarif',
+            ingredients: row.ingredients.slice(0, 15),
+            instructions: String(row.drink.strInstructions || row.drink.instructions || '').slice(0, 500)
+        }));
+    return { inventory, recipes: relevant, language: currentLang === 'en' ? 'en' : 'tr', unit: currentUnit === 'oz' ? 'oz' : 'cl' };
+};
+
+window.BarAIAddRecipe = function(recipe) {
+    if (!recipe || !recipe.name || !Array.isArray(recipe.ingredients) || !recipe.ingredients.length || !Array.isArray(recipe.instructions)) return false;
+    if (customRecipes.length >= 300) return false;
+    const saved = {
+        idDrink: 'custom_ai_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        strDrink: String(recipe.name).slice(0, 100),
+        strCategory: 'AI Özel',
+        strAlcoholic: recipe.alcoholic ? 'Alcoholic' : 'Non_Alcoholic',
+        strGlass: String(recipe.glass || 'Highball glass').slice(0, 60),
+        strInstructions: recipe.instructions.map(step => String(step).slice(0, 500)).join('\n'),
+        isCustom: true,
+        customIngredients: recipe.ingredients.map(item => (String(item.amount || '').trim() + ' ' + String(item.name || '').trim()).trim()).filter(Boolean).slice(0, 15)
+    };
+    customRecipes.unshift(saved);
+    try { localStorage.setItem('customRecipes', JSON.stringify(customRecipes)); } catch(e) { return false; }
+    if (currentTab === 'my-recipes') renderMyRecipes();
+    return true;
+};
+
+window.BarAIAddMissingToShopping = function(items) {
+    const names = Array.isArray(items) ? items.filter(item => typeof item === 'string').slice(0, 30) : [];
+    shoppingList = [...new Set([...shoppingList, ...names])];
+    try { localStorage.setItem('shoppingList', JSON.stringify(shoppingList)); } catch(e) { return false; }
+    if (currentTab === 'shop') renderShoppingList();
+    return true;
 };
