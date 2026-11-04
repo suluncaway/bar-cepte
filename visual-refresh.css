@@ -310,3 +310,84 @@ body {
 }
 .main-navigation > a { display: inline-flex; align-items: center; min-height: 44px; white-space: nowrap; }
 .hero-business-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 10px; color: var(--accent-gold); font-size: 13px; line-height: 1.6; text-decoration: underline; text-underline-offset: 4px; }
+
+
+/* Bar Cepte 2026 visual system: refined typography, calmer surfaces, clearer hierarchy. */
+:root {
+  --bg-main:#0b1412;
+  --surface:#121f1b;
+  --surface-raised:#1a2b24;
+  --accent-gold:#d9b77d;
+  --accent-cyan:#a5c6b3;
+  --ink:#f4f1e8;
+  --muted:#a7b5ac;
+  --border-glass:rgba(221,196,151,.14);
+  --font-body:'DM Sans',sans-serif;
+  --font-display:'Playfair Display',Georgia,serif;
+  --font-ui:'DM Sans',sans-serif;
+  --shadow-soft:0 12px 34px rgba(0,0,0,.20);
+}
+html { scroll-padding-top:160px; }
+body {
+  background:radial-gradient(ellipse at 78% -10%,rgba(67,105,82,.20),transparent 42%),linear-gradient(180deg,#0b1412 0%,#0d1814 48%,#0b1412 100%);
+  color:var(--ink); font-family:var(--font-body); letter-spacing:-.012em;
+}
+:where(button,input,textarea,select) { font-family:var(--font-ui); }
+.app-header {
+  background:rgba(11,20,18,.88); border-bottom:1px solid rgba(217,183,125,.13);
+  box-shadow:0 10px 35px rgba(0,0,0,.12); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+}
+.brand-mark { border-radius:13px; background:linear-gradient(145deg,rgba(217,183,125,.15),rgba(217,183,125,.035)); box-shadow:inset 0 1px rgba(255,255,255,.07); }
+#brand-title { font-family:'Playfair Display',Georgia,serif; font-size:21px; letter-spacing:-.035em; font-weight:600; }
+#status { letter-spacing:.015em; }
+.topbar { gap:14px; }
+.topbar-primary-actions,.topbar-tools-ribbon { gap:8px; }
+.pill-btn { min-height:37px; border-radius:11px!important; border-color:rgba(255,255,255,.09)!important; background:rgba(255,255,255,.035)!important; transition:transform .18s ease,border-color .18s ease,background .18s ease; }
+.pill-btn:hover { transform:translateY(-1px); border-color:rgba(217,183,125,.42)!important; background:rgba(217,183,125,.08)!important; }
+.main-navigation { gap:6px; padding:9px 0 12px; }
+.main-navigation > button,.main-navigation > a {
+  min-height:42px; padding:9px 14px!important; border:1px solid transparent; border-radius:11px!important;
+  color:#aab7ae; font-size:12px; font-weight:600; letter-spacing:.005em; transition:all .18s ease;
+}
+.main-navigation > button:hover,.main-navigation > a:hover { color:#f4e6ca; background:rgba(217,183,125,.07); border-color:rgba(217,183,125,.13); }
+.main-navigation > button[aria-current="page"],.main-navigation > button.bg-amber-500\/15 {
+  color:#f0d7aa!important; background:rgba(217,183,125,.12)!important; border-color:rgba(217,183,125,.28)!important; box-shadow:inset 0 1px rgba(255,255,255,.04);
+}
+.app-main { max-width:1320px; }
+.editorial-hero {
+  border:1px solid rgba(217,183,125,.15); border-radius:24px; overflow:hidden;
+  background:linear-gradient(115deg,rgba(19,39,30,.96),rgba(15,28,23,.90) 58%,rgba(27,40,30,.78));
+  box-shadow:var(--shadow-soft);
+}
+.editorial-hero h2 { font-family:'Playfair Display',Georgia,serif; letter-spacing:-.045em; line-height:1.08; }
+.eyebrow { font-size:10px; letter-spacing:.17em; font-weight:700; }
+:where(.app-main) :is(input:not([type=checkbox]):not([type=radio]),textarea,select) {
+  border-radius:11px; border-color:rgba(255,255,255,.12); background-color:rgba(8,17,13,.52); color:var(--ink);
+}
+:where(.app-main) :is(input,textarea,select):focus { outline:2px solid rgba(217,183,125,.32); outline-offset:1px; border-color:rgba(217,183,125,.55); }
+:where(.app-main) :is(button.primary-action,.primary-action,.btn-primary) { border-radius:12px; box-shadow:0 7px 20px rgba(0,0,0,.18); transition:transform .18s ease,filter .18s ease; }
+:where(.app-main) :is(button.primary-action,.primary-action,.btn-primary):hover { transform:translateY(-2px); filter:brightness(1.06); }
+:where(.app-main) :is(.recipe-card,.cocktail-card,.ingredient-card,.panel-card,.surface-card) {
+  border-radius:16px; border-color:rgba(217,183,125,.12); box-shadow:0 8px 25px rgba(0,0,0,.12); transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+:where(.app-main) :is(.recipe-card,.cocktail-card,.ingredient-card):hover { transform:translateY(-3px); border-color:rgba(217,183,125,.3); box-shadow:0 14px 32px rgba(0,0,0,.2); }
+:where(.app-main) h2,:where(.app-main) h3 { letter-spacing:-.025em; }
+:where(.app-main) h2 { font-family:'Playfair Display',Georgia,serif; }
+:where(.app-main) :is(.text-slate-400,.text-slate-500) { color:#9aa99f; }
+.ai-assistant-shell { border-color:rgba(217,183,125,.2); border-radius:20px; background:linear-gradient(145deg,#15271f,#0e1915 72%); }
+.ai-assistant-heading h2,.ai-recipe-card h3 { font-family:'Playfair Display',Georgia,serif; }
+.ai-chat-composer { border-radius:14px; }
+:where(button,a,[role=button]) { -webkit-tap-highlight-color:transparent; }
+:where(button,a,[role=button]):focus-visible { outline:2px solid #d9b77d; outline-offset:3px; }
+@media(max-width:640px) {
+  .app-header { padding-inline:12px; }
+  .topbar { gap:9px; }
+  .topbar-primary-actions { gap:5px; }
+  .main-navigation { padding-top:7px; }
+  .main-navigation > button,.main-navigation > a { min-height:40px; padding:8px 11px!important; font-size:11px; }
+  .editorial-hero { border-radius:18px; }
+  #brand-title { font-size:19px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; animation-iteration-count:1!important; }
+}
