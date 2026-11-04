@@ -112,6 +112,7 @@
                 <button id="tab-my-recipes" data-ui="ui-21" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Tariflerim</button>
                 <button id="tab-shop" data-ui="ui-22" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Alışveriş</button>
                 <button id="tab-sync" data-ui="ui-23" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Yedekleme</button>
+                <button id="tab-ai" type="button" class="text-amber-300 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-amber-200 font-semibold">✦ AI Barmen</button>
                 <a href="business.html" class="text-amber-300 py-1.5 px-2.5 rounded-xl shrink-0" id="business-entry">İşletme / Business ↗</a>
             </div>
 
@@ -373,6 +374,32 @@
                         <span>🚀</span> Yeni Sürüm Kontrolü Yap (v1.1.0)
                     </button>
                 </div>
+            </div>
+        </section>
+
+        <section id="ai-assistant-panel" class="hidden px-4 animate-fade-in space-y-4" aria-labelledby="ai-assistant-title">
+            <div class="ai-assistant-shell">
+                <div class="ai-assistant-heading">
+                    <div class="ai-orb" aria-hidden="true">✦</div>
+                    <div><span class="ai-kicker">BAR CEPTE INTELLIGENCE</span><h2 id="ai-assistant-title">AI Barmen</h2><p>Barını tanıyan, tarif geliştiren kişisel miksoloji asistanın.</p></div>
+                    <span class="ai-status"><i></i> Hazır</span>
+                </div>
+                <div class="ai-context-strip"><span>🍸 <b id="ai-inventory-count">0</b> malzeme barında</span><span>Tariflerini ve tercihlerini dikkate alır</span></div>
+                <div id="ai-chat-messages" class="ai-chat-messages" role="log" aria-live="polite" aria-relevant="additions">
+                    <div class="ai-message ai-message-assistant"><span class="ai-message-avatar">✦</span><div class="ai-message-bubble">Merhaba! Barındaki malzemeleri kullanarak tarif önerebilir, yeni kokteyller tasarlayabilir veya mevcut tarifleri geliştirebilirim. Ne hazırlamak istersin?</div></div>
+                </div>
+                <div id="ai-recipe-results" class="ai-recipe-results" aria-live="polite"></div>
+                <div class="ai-quick-prompts">
+                    <button type="button" data-ai-prompt="Barımdaki malzemelerle hemen yapabileceğim 3 tarif öner.">🍸 Barımla ne yapabilirim?</button>
+                    <button type="button" data-ai-prompt="Tatlı ve ferah, dengeli bir kokteyl tasarla.">✨ Bana özel tarif oluştur</button>
+                    <button type="button" data-ai-prompt="Klasik bir kokteyl için elimdeki malzemelerle en iyi alternatifleri öner.">↗ Malzeme alternatifi bul</button>
+                </div>
+                <form id="ai-chat-form" class="ai-chat-composer">
+                    <label class="sr-only" for="ai-chat-input">AI Barmen'e mesaj yaz</label>
+                    <textarea id="ai-chat-input" rows="1" maxlength="1000" placeholder="Örneğin: Ekşi, ferah ve cin bazlı bir tarif istiyorum…" required></textarea>
+                    <button id="ai-chat-send" type="submit" aria-label="Mesajı gönder">↑</button>
+                </form>
+                <div class="ai-assistant-footnote"><span>18+ · Sorumlu tüketim</span><span>AI yanıtları tahmin içerebilir. Ölçüleri kontrol et.</span></div>
             </div>
         </section>
 
@@ -816,6 +843,7 @@
     <script src="support.js"></script>
     <script src="ads.js"></script>
     <script src="reserve.js"></script>
+    <script src="ai-assistant-ui.js?v=1"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
