@@ -24,6 +24,7 @@
 - 🍹 **Sana Uygun:** Tercihlerine ve mevcut malzemelerine göre fotoğraflı, gerekçeli öneriler; eksik malzemeler açıkça belirtilir.
 - 📚 **600+ Kokteyl Veritabanı:** Popüler klasiklerden modern miksoloji reçetelerine geniş arşiv.
 - 🧠 **Akıllı Bar Motoru:** Evindeki malzemeleri seç, anında yapabileceğin kokteylleri listele.
+- ✦ **AI Barmen:** Bar envanterini ve tarif arşivini dikkate alan sohbet asistanı; yeni kokteyl oluşturma, tarifleri kişisel deftere kaydetme ve eksik malzemeleri alışveriş listesine ekleme.
 - 💡 **"Bunu Alırsan +X Tarif":** En az harcamayla en çok kokteyli açacak malzeme önerileri.
 - 👑 **Bar Cepte Reserve:** Reklamsız deneyim, özel speakeasy seçkileri ve parti modu.
 - 🍹 **Gelişmiş Filtreler:** Alkollü / alkolsüz, tat profilleri (tatlı, ekşi, sert, ferah).
@@ -65,6 +66,10 @@ Uygulamayı doğrudan web üzerinden kullanabilir veya cihazınıza kurabilirsin
 - **Mobil:** Android WebView Wrapper
 
 ---
+
+## 🤖 AI Barmen yapılandırması
+
+AI Barmen için Render servisinde `OPENAI_API_KEY` gizli ortam değişkenini tanımlayın. İsteğe bağlı `OPENAI_MODEL` varsayılanı `gpt-5.5` değeridir. API anahtarını hiçbir zaman HTML/JavaScript dosyasına veya Git deposuna eklemeyin. İstekler IP başına saatlik 12 çağrı ile sınırlandırılır.
 
 ## 🚀 Yerel Geliştirme
 
