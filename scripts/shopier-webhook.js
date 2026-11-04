@@ -55,6 +55,22 @@ const {createAccountService} = require('./account-service');
 const googleClientId=process.env.GOOGLE_CLIENT_ID || require('../firebase-config').googleClientId;
 const accounts=createAccountService({store:licenseStore,verifyGoogle:createGoogleVerifier({clientId:googleClientId})});
 const businesses=require('./business-service').createBusinessService({store:licenseStore,authenticate:accounts.authenticate});
+const { createAIAssistant } = require('./ai-assistant');
+const aiAssistant = createAIAssistant();
+const aiRateLimits = new Map();
+function allowAIRequest(ip) {
+    const now = Date.now();
+    const windowMs = 60 * 60 * 1000;
+    const row = aiRateLimits.get(ip) || { startedAt: now, count: 0 };
+    if (now - row.startedAt >= windowMs) { row.startedAt = now; row.count = 0; }
+    if (row.count >= 12) return false;
+    row.count++;
+    aiRateLimits.set(ip, row);
+    if (aiRateLimits.size > 5000) {
+        for (const [key, value] of aiRateLimits) if (now - value.startedAt >= windowMs) aiRateLimits.delete(key);
+    }
+    return true;
+}
 const inFlightOrders = new Set();
 const getSoldLicenses = () => licenseStore.getSold();
 const getClaimedLicenses = () => licenseStore.getClaimed();
@@ -314,6 +330,26 @@ async function handleRequest(req, res) {
             'Content-Disposition': 'attachment; filename=bar-cepte-licenses.json'});
         res.end(JSON.stringify(backup));
         return;
+    }
+
+    // AI kokteyl asistanı: anahtar yalnızca sunucuda tutulur; istekler IP başına sınırlandırılır.
+    if (req.method === 'POST' && requestPath === '/api/ai-assistant') {
+        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+        const clientIp = forwarded || req.socket?.remoteAddress || 'unknown';
+        if (!allowAIRequest(clientIp)) {
+            res.writeHead(429, {'Content-Type':'application/json; charset=utf-8'});
+            return res.end(JSON.stringify({success:false,reason:'Saatlik AI kullanım sınırına ulaştın. Bir saat sonra tekrar dene.'}));
+        }
+        try {
+            const params = await readJsonBody(req, 32 * 1024);
+            const result = await aiAssistant.respond(params);
+            res.writeHead(200, {'Content-Type':'application/json; charset=utf-8'});
+            return res.end(JSON.stringify({success:true,...result}));
+        } catch (error) {
+            const status = Number(error.status) || 502;
+            res.writeHead(status, {'Content-Type':'application/json; charset=utf-8'});
+            return res.end(JSON.stringify({success:false,reason:error.message || 'AI isteği tamamlanamadı.'}));
+        }
     }
 
     // Sağlık Kontrolü
