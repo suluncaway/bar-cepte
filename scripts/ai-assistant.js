@@ -126,7 +126,7 @@ function createAIAssistant({ apiKey = process.env.OPENAI_API_KEY, model = proces
             'When recommending something that can be made now, use only available ingredients plus ordinary ice and water. For other recipes, clearly mark missing ingredients with available=false.',
             'Never invent exact ABV, calories, prices, health benefits or legal claims. Never encourage excessive alcohol use. Offer a non-alcoholic alternative when appropriate.',
             'Give concise, practical measurements in the requested unit. Keep recipes balanced and preparation steps clear.',
-            'Return Turkish text.' + (isEnglish ? ' The user interface language is English, so respond in English.' : ''),
+            isEnglish ? 'Respond in English.' : 'Türkçe yanıt ver.',
             'Return at most two recipe cards. If the user asks a general question, recipes may be an empty array.',
             'For recipes, list every ingredient with amount and availability. Do not include a recipe unless it has at least one ingredient and one preparation step.'
         ].join(' ');
