@@ -1256,8 +1256,31 @@ function autoExtractAllIngredients() {
 
 function scrollIngredients(amount) {
     const container = document.getElementById('ingredients-container');
-    if(container) container.scrollBy({ left: amount, behavior: 'smooth' });
+    if (!container) return;
+    // Arrows move most of a visible "page" instead of a single card.
+    const step = Math.max(Math.abs(amount), Math.round(container.clientWidth * 0.8));
+    container.scrollBy({ left: Math.sign(amount) * step, behavior: 'smooth' });
 }
+
+// Desktop mouse wheels only send vertical deltas; turn them into horizontal shelf scrolling.
+// When the shelf is already at its start/end the wheel scrolls the page as usual.
+function enableIngredientWheelScroll() {
+    const container = document.getElementById('ingredients-container');
+    if (!container || container.dataset.wheelScroll) return;
+    container.dataset.wheelScroll = '1';
+    container.addEventListener('wheel', (event) => {
+        if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+        const max = container.scrollWidth - container.clientWidth;
+        if (max <= 0) return;
+        const delta = event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY;
+        const atStart = container.scrollLeft <= 0 && delta < 0;
+        const atEnd = container.scrollLeft >= max - 1 && delta > 0;
+        if (atStart || atEnd) return;
+        event.preventDefault();
+        container.scrollLeft += delta;
+    }, { passive: false });
+}
+enableIngredientWheelScroll();
 
 function switchTab(tab) {
     // "home" and "ingredients" are pages of the cocktail explorer; data logic keeps using the "alkol" tab.
