@@ -63,6 +63,11 @@ const I18N = {
         shopping: 'Alışveriş',
         backup: 'Yedekleme',
         heroEyebrow: 'EVDEKİ BARIN, BİR ADIM ÖTEDE',
+        shortcutTiles: [['Malzemelerim', 'Elindekileri seç'], ['Tarifler', 'Ara, filtrele, keşfet'], ['Favoriler', 'Kaydettiklerin'], ['AI Barmen', 'Sana özel öneri']],
+        ingredientsEyebrow: 'MALZEMELERİM',
+        ingredientsHeading: 'Senin barında ne var?',
+        ingredientsAside: 'Elindekileri seç, tarifler sana göre şekillensin.',
+        seeRecipes: 'Tarifleri gör',
         heroHeading: 'Bu akşam,<br><span>barmen sensin.</span>',
         heroDesc: 'Elindeki malzemelerden yeni favorine.<br>Barını oluştur, zevkine göre keşfet ve güzel bir şeyler hazırla.',
         heroBuildBar: 'Barımı oluştur',
@@ -236,6 +241,11 @@ const I18N = {
         shopping: 'Shopping List',
         backup: 'Backup & Sync',
         heroEyebrow: 'YOUR HOME BAR, ONE STEP AWAY',
+        shortcutTiles: [['My Ingredients', 'Pick what you have'], ['Recipes', 'Search, filter, explore'], ['Favorites', 'Your saved drinks'], ['AI Bartender', 'Suggestions for you']],
+        ingredientsEyebrow: 'MY INGREDIENTS',
+        ingredientsHeading: "What's in your bar?",
+        ingredientsAside: 'Pick what you have and recipes adapt to you.',
+        seeRecipes: 'See recipes',
         heroHeading: 'Tonight,<br><span>you\'re the bartender.</span>',
         heroDesc: 'From ingredients on hand to your new favorite drink.<br>Build your bar, explore your taste, and mix something great.',
         heroBuildBar: 'Build My Bar',
@@ -3560,6 +3570,21 @@ function applyLanguage() {
         const el = document.getElementById(id);
         if (el) el.innerText = text;
     });
+
+    // Page sections added with the Home / Ingredients / Recipes split
+    document.querySelectorAll('#home-shortcuts .shortcut-tile').forEach((tile, i) => {
+        const [title, hint] = t.shortcutTiles?.[i] || [];
+        if (title) tile.querySelector('strong').textContent = title;
+        if (hint) tile.querySelector('small').textContent = hint;
+    });
+    const ingIntro = document.querySelector('#ingredients-section .page-intro');
+    if (ingIntro && t.ingredientsHeading) {
+        ingIntro.querySelector('.eyebrow').textContent = t.ingredientsEyebrow;
+        ingIntro.querySelector('h2').textContent = t.ingredientsHeading;
+        ingIntro.querySelector('.section-aside').textContent = t.ingredientsAside;
+    }
+    const seeRecipesBtn = document.getElementById('btn-ingredients-to-recipes');
+    if (seeRecipesBtn && t.seeRecipes) seeRecipesBtn.innerHTML = `${t.seeRecipes} <span aria-hidden="true">→</span>`;
 
     // Hero section
     const heroEyebrow = document.querySelector('#editorial-hero .eyebrow');
