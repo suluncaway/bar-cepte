@@ -247,3 +247,16 @@ html body { font-family:var(--font-body); -webkit-font-smoothing:antialiased; te
 @keyframes skeleton { to { background-position:-200% 0; } }
 @media (prefers-reduced-motion:reduce) { #recipes-ready:empty, #recipes-missing:empty, #editorial-picks-grid:empty { animation:none; } }
 .empty-state { display:flex; flex-direction:column; align-items:center; gap:12px; padding:32px 16px; color:var(--muted); font-size:13px; text-align:center; border:1px dashed var(--border-glass); border-radius:22px; }
+
+/* Page switches: a short fade instead of a hard jump (sections re-animate when un-hidden) */
+@media (prefers-reduced-motion:no-preference) {
+  .app-main > section:not(.hidden), #recipes-display-sections:not(.hidden) { animation:page-in .22s ease-out; }
+  @keyframes page-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+}
+
+/* Readability: lift the faintest greys and the 9–10px text a notch */
+.text-slate-500, .text-slate-600 { color:#8f8a83!important; }
+.text-slate-400 { color:#b3ada5!important; }
+.text-\[10px\] { font-size:11px!important; }
+.text-\[9px\] { font-size:10px!important; }
+.app-footer, .section-aside, .selection-summary { color:#b3ada5; }

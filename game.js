@@ -90,17 +90,17 @@ const I18N = {
         alcoholic: 'Alkollü',
         nonAlcoholic: 'Alkolsüz',
         allTastes: 'Tüm Tatlar',
-        tasteStrong: '🔥 Sert',
-        tasteSweet: '🍭 Tatlı',
-        tasteSour: '🍋 Ekşi',
-        tasteFresh: '🍃 Ferah',
-        vibeLabel: '🎭 Ortam:',
+        tasteStrong: 'Sert',
+        tasteSweet: 'Tatlı',
+        tasteSour: 'Ekşi',
+        tasteFresh: 'Ferah',
+        vibeLabel: 'Ortam:',
         vibeAll: 'Tümü',
-        vibeSummer: '☀️ Yaz & Havuz',
-        vibeRomantic: '🕯️ Romantik Akşam',
-        vibeChill: '🍿 Dizi & Film',
-        vibeWinter: '❄️ Kış & Şömine',
-        vibeParty: '🎉 Parti & Shot',
+        vibeSummer: 'Yaz & Havuz',
+        vibeRomantic: 'Romantik Akşam',
+        vibeChill: 'Dizi & Film',
+        vibeWinter: 'Kış & Şömine',
+        vibeParty: 'Parti & Shot',
         readyTitle: 'Hemen Yapabileceklerin',
         missingTitle: 'Yaklaştığın Tarifler (1-4 Eksik)',
         missingSearchTitle: 'Arama Sonuçları (Eksik Malzemeli)',
@@ -271,17 +271,17 @@ const I18N = {
         alcoholic: 'Alcoholic',
         nonAlcoholic: 'Non-Alcoholic',
         allTastes: 'All Tastes',
-        tasteStrong: '🔥 Strong',
-        tasteSweet: '🍭 Sweet',
-        tasteSour: '🍋 Sour',
-        tasteFresh: '🍃 Fresh',
-        vibeLabel: '🎭 Vibe:',
+        tasteStrong: 'Strong',
+        tasteSweet: 'Sweet',
+        tasteSour: 'Sour',
+        tasteFresh: 'Fresh',
+        vibeLabel: 'Vibe:',
         vibeAll: 'All',
-        vibeSummer: '☀️ Summer & Pool',
-        vibeRomantic: '🕯️ Romantic Night',
-        vibeChill: '🍿 Movie & Chill',
-        vibeWinter: '❄️ Cozy Winter',
-        vibeParty: '🎉 Party & Shots',
+        vibeSummer: 'Summer & Pool',
+        vibeRomantic: 'Romantic Night',
+        vibeChill: 'Movie & Chill',
+        vibeWinter: 'Cozy Winter',
+        vibeParty: 'Party & Shots',
         readyTitle: 'Ready to Make Right Now',
         missingTitle: 'Almost Ready (Missing 1-4)',
         missingSearchTitle: 'Search Results (Missing Ingredients)',
@@ -3712,31 +3712,31 @@ function applyLanguage() {
     const alcSubcatAll = document.querySelector('#alcohol-subcategories [data-value="all"]');
     if (alcSubcatAll) alcSubcatAll.innerText = t.all;
     const alcSubcatVodka = document.querySelector('#alcohol-subcategories [data-value="votka-cin"]');
-    if (alcSubcatVodka) alcSubcatVodka.innerText = currentLang === 'en' ? '🍸 Vodka & Gin' : '🍸 Votka & Cin';
+    if (alcSubcatVodka) alcSubcatVodka.innerText = currentLang === 'en' ? 'Vodka & Gin' : 'Votka & Cin';
     const alcSubcatWhiskey = document.querySelector('#alcohol-subcategories [data-value="viski-konyak"]');
-    if (alcSubcatWhiskey) alcSubcatWhiskey.innerText = currentLang === 'en' ? '🥃 Whiskey & Cognac' : '🥃 Viski & Konyak';
+    if (alcSubcatWhiskey) alcSubcatWhiskey.innerText = currentLang === 'en' ? 'Whiskey & Cognac' : 'Viski & Konyak';
     const alcSubcatTequila = document.querySelector('#alcohol-subcategories [data-value="tekila-rom"]');
-    if (alcSubcatTequila) alcSubcatTequila.innerText = currentLang === 'en' ? '🌵 Tequila & Rum' : '🌵 Tekila & Rom';
+    if (alcSubcatTequila) alcSubcatTequila.innerText = currentLang === 'en' ? 'Tequila & Rum' : 'Tekila & Rom';
     const alcSubcatLiqueur = document.querySelector('#alcohol-subcategories [data-value="likor-aperitif"]');
-    if (alcSubcatLiqueur) alcSubcatLiqueur.innerText = currentLang === 'en' ? '🍊 Liqueur & Aperitif' : '🍊 Likör & Aperitif';
+    if (alcSubcatLiqueur) alcSubcatLiqueur.innerText = currentLang === 'en' ? 'Liqueur & Aperitif' : 'Likör & Aperitif';
     const alcSubcatWine = document.querySelector('#alcohol-subcategories [data-value="sarap-bira"]');
-    if (alcSubcatWine) alcSubcatWine.innerText = currentLang === 'en' ? '🍷 Wine, Vermouth & Beer' : '🍷 Şarap, Vermut & Bira';
+    if (alcSubcatWine) alcSubcatWine.innerText = currentLang === 'en' ? 'Wine, Vermouth & Beer' : 'Şarap, Vermut & Bira';
     const alcSubcatKitchen = document.querySelector('#alcohol-subcategories [data-value="mutfak"]');
-    if (alcSubcatKitchen) alcSubcatKitchen.innerText = currentLang === 'en' ? '🌿 Kitchen & Garnishes' : '🌿 Mutfak & Garnitür';
+    if (alcSubcatKitchen) alcSubcatKitchen.innerText = currentLang === 'en' ? 'Kitchen & Garnishes' : 'Mutfak & Garnitür';
 
     // Kitchen subcategories
     const kitSubcatAll = document.querySelector('#kitchen-subcategories [data-subcat="all"]');
     if (kitSubcatAll) kitSubcatAll.innerText = t.all;
     const kitSubcatCitrus = document.querySelector('#kitchen-subcategories [data-subcat="meyve"]');
-    if (kitSubcatCitrus) kitSubcatCitrus.innerText = currentLang === 'en' ? '🍊 Citrus & Fruit' : '🍊 Meyve & Narenciye';
+    if (kitSubcatCitrus) kitSubcatCitrus.innerText = currentLang === 'en' ? 'Citrus & Fruit' : 'Meyve & Narenciye';
     const kitSubcatSoda = document.querySelector('#kitchen-subcategories [data-subcat="gazli"]');
-    if (kitSubcatSoda) kitSubcatSoda.innerText = currentLang === 'en' ? '🫧 Soda & Mixers' : '🫧 Gazlı & Meşrubat';
+    if (kitSubcatSoda) kitSubcatSoda.innerText = currentLang === 'en' ? 'Soda & Mixers' : 'Gazlı & Meşrubat';
     const kitSubcatSyrup = document.querySelector('#kitchen-subcategories [data-subcat="tatli"]');
-    if (kitSubcatSyrup) kitSubcatSyrup.innerText = currentLang === 'en' ? '🍯 Syrup & Sweet' : '🍯 Şurup & Tatlı';
+    if (kitSubcatSyrup) kitSubcatSyrup.innerText = currentLang === 'en' ? 'Syrup & Sweet' : 'Şurup & Tatlı';
     const kitSubcatHerbs = document.querySelector('#kitchen-subcategories [data-subcat="baharat"]');
-    if (kitSubcatHerbs) kitSubcatHerbs.innerText = currentLang === 'en' ? '🌿 Herbs & Spices' : '🌿 Ot & Baharat';
+    if (kitSubcatHerbs) kitSubcatHerbs.innerText = currentLang === 'en' ? 'Herbs & Spices' : 'Ot & Baharat';
     const kitSubcatMilk = document.querySelector('#kitchen-subcategories [data-subcat="sut-kahve"]');
-    if (kitSubcatMilk) kitSubcatMilk.innerText = currentLang === 'en' ? '☕ Milk & Coffee' : '☕ Süt & Kahve';
+    if (kitSubcatMilk) kitSubcatMilk.innerText = currentLang === 'en' ? 'Milk & Coffee' : 'Süt & Kahve';
 
     // Editorial Picks section
     const edEyebrow = document.querySelector('#editorial-picks .eyebrow');
@@ -4132,6 +4132,8 @@ function initHeroVideo() {
     const toggleText = document.getElementById('hero-video-toggle-text');
     const pulseDot = document.getElementById('hero-video-toggle-dot');
     if (!video || !toggleBtn) return;
+    // The 5 MB loop only loads where the photo is shown (desktop) and motion/data saving is not requested.
+    const wantsVideo = matchMedia('(min-width: 768px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !navigator.connection?.saveData;
 
     video.addEventListener('canplay', () => {
         video.classList.add('video-active');
@@ -4143,6 +4145,7 @@ function initHeroVideo() {
         video.classList.remove('video-active');
         toggleBtn.classList.add('hidden');
     });
+    if (wantsVideo) { video.preload = 'auto'; video.load(); }
 
     toggleBtn.addEventListener('click', (e) => {
         e.preventDefault();
