@@ -21,7 +21,9 @@ html body {
 
 /* Header */
 .app-header { background:rgba(8,8,8,.82); border-bottom:1px solid var(--border-glass); box-shadow:var(--shadow-soft); }
-.brand-mark { background:var(--grad-hot); border:0; border-radius:14px; color:#fff; box-shadow:0 6px 18px rgba(255,106,0,.45); }
+.brand-mark { background:#121f1b; border:1px solid rgba(217,183,125,.35); border-radius:14px; color:#d9b77d; box-shadow:0 6px 18px rgba(0,0,0,.4); }
+.brand-mark svg { width:auto!important; height:30px!important; }
+@media (max-width:767px) { .brand-mark svg { height:26px!important; } }
 .brand-period { color:#ff9d4d; }
 .topbar #btn-open-reserve,.topbar #btn-open-reserve * { color:#fff!important; }
 .topbar [data-support-button],.topbar-tools-ribbon [data-support-button] { color:#ffc48a; border-color:rgba(255,154,46,.4); }
