@@ -334,7 +334,8 @@ async function handleRequest(req, res) {
 
     // AI kokteyl asistanı: anahtar yalnızca sunucuda tutulur; istekler IP başına sınırlandırılır.
     if (req.method === 'POST' && requestPath === '/api/ai-assistant') {
-        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+        // Render appends the real client address last; earlier entries are client-controlled and spoofable.
+        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
         const clientIp = forwarded || req.socket?.remoteAddress || 'unknown';
         if (!allowAIRequest(clientIp)) {
             res.writeHead(429, {'Content-Type':'application/json; charset=utf-8'});
