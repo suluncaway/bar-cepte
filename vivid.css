@@ -187,3 +187,12 @@ html body { font-family:var(--font-body); -webkit-font-smoothing:antialiased; te
   #brand-title { font-size:18px; }
   .section-intro h2 { font-size:24px; }
 }
+
+/* Ingredient shelf: wheel-driven scrolling must not fight smooth/snap behaviour; show a thin bar for mouse users */
+#ingredients-container { scroll-behavior:auto; overscroll-behavior-x:contain; }
+@media (hover:hover) and (pointer:fine) {
+  #ingredients-container { scroll-snap-type:none; }
+  #ingredients-container.custom-scroll { scrollbar-width:thin; scrollbar-color:rgba(255,122,26,.55) transparent; }
+  #ingredients-container.custom-scroll::-webkit-scrollbar { display:block; height:6px; }
+  #ingredients-container.custom-scroll::-webkit-scrollbar-thumb { background:rgba(255,122,26,.55); border-radius:6px; }
+}
