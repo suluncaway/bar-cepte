@@ -21,7 +21,7 @@ html body {
 
 /* Header */
 .app-header { background:rgba(8,8,8,.82); border-bottom:1px solid var(--border-glass); box-shadow:var(--shadow-soft); }
-.brand-mark { background:#0b0b0b; border:1px solid rgba(255,122,26,.45); border-radius:14px; color:#ff7a1a; box-shadow:0 6px 18px rgba(255,106,0,.25); }
+.brand-mark { background:#121f1b; border:1px solid rgba(217,183,125,.35); border-radius:14px; color:#d9b77d; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 .brand-mark svg { width:auto!important; height:30px!important; }
 @media (max-width:767px) { .brand-mark svg { height:26px!important; } }
 .brand-period { color:#ff9d4d; }
