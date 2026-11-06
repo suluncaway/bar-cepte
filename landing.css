@@ -5,3 +5,6 @@
 /* Vivid theme: black + orange */
 body{background:#050505 radial-gradient(900px 480px at 50% -10%,rgba(255,106,0,.14),transparent 65%) no-repeat}
 .button{border-radius:999px;background:linear-gradient(135deg,#ff9a2e,#ff6a00);border-color:transparent;box-shadow:0 8px 22px rgba(255,106,0,.3)}
+/* Pocket logo in the same black tile as the app header */
+.brand-mark{width:38px;height:38px;border-radius:12px;background:#0b0b0b;border-color:rgba(217,183,125,.4)}
+.brand-mark svg{width:auto;height:24px}

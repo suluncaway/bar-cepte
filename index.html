@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=9">
+    <link rel="stylesheet" href="vivid.css?v=10">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -138,7 +138,7 @@
                 <div class="hero-note"><span class="status-dot"></span> Alkollü & alkolsüz tarifler <span class="note-divider"></span> Tamamen senin zevkin</div>
             </div>
             <figure class="hero-photo">
-                <video id="hero-cocktail-video" autoplay loop muted playsinline poster="editorial-cocktails.webp" class="hero-media-video" preload="metadata">
+                <video id="hero-cocktail-video" loop muted playsinline poster="editorial-cocktails.webp" class="hero-media-video" preload="none">
                     <source src="hero-cocktail-ambient.mp4" type="video/mp4">
                 </video>
                 <img id="hero-cocktail-img" src="editorial-cocktails.webp" alt="Loş bir bar tezgâhında portakal kabuklu amber kokteyl ve kadeh" width="1200" height="900" fetchpriority="high">
@@ -199,21 +199,21 @@
             </button>
             <div class="w-px h-4 bg-white/10 shrink-0"></div>
             <button data-taste="all" data-ui="ui-7" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 whitespace-nowrap shadow-sm">Tüm Tatlar</button>
-            <button data-taste="Sert" data-ui="ui-8" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🔥 Sert</button>
-            <button data-taste="Tatlı" data-ui="ui-9" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍭 Tatlı</button>
-            <button data-taste="Ekşi" data-ui="ui-10" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍋 Ekşi</button>
-            <button data-taste="Ferah" data-ui="ui-11" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">🍃 Ferah</button>
+            <button data-taste="Sert" data-ui="ui-8" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">Sert</button>
+            <button data-taste="Tatlı" data-ui="ui-9" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">Tatlı</button>
+            <button data-taste="Ekşi" data-ui="ui-10" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">Ekşi</button>
+            <button data-taste="Ferah" data-ui="ui-11" class="taste-btn pill-btn px-3 py-1.5 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 whitespace-nowrap hover:text-white hover:border-white/20">Ferah</button>
         </div>
 
         <!-- Ortam & Ruh Hali Filtresi (Vibe Matcher) -->
         <div class="vibe-filters flex items-center gap-1.5 overflow-x-auto pt-1 pb-1 text-[11px] font-medium no-scrollbar">
-            <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider shrink-0 mr-1">🎭 Ortam:</span>
+            <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider shrink-0 mr-1">Ortam:</span>
             <button data-action="vibe" data-vibe="all" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 font-bold">Tümü</button>
-            <button data-action="vibe" data-vibe="summer" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">☀️ Yaz & Havuz</button>
-            <button data-action="vibe" data-vibe="romantic" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">🕯️ Romantik Akşam</button>
-            <button data-action="vibe" data-vibe="chill" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">🍿 Dizi & Film</button>
-            <button data-action="vibe" data-vibe="winter" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">❄️ Kış & Şömine</button>
-            <button data-action="vibe" data-vibe="party" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">🎉 Parti & Shot</button>
+            <button data-action="vibe" data-vibe="summer" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">Yaz & Havuz</button>
+            <button data-action="vibe" data-vibe="romantic" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">Romantik Akşam</button>
+            <button data-action="vibe" data-vibe="chill" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">Dizi & Film</button>
+            <button data-action="vibe" data-vibe="winter" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">Kış & Şömine</button>
+            <button data-action="vibe" data-vibe="party" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">Parti & Shot</button>
         </div>
 
 
@@ -289,22 +289,22 @@
             <!-- Alkol Alt Kategori Çipleri (Alkol / Kokteyl sekmesinde otomatik açılır) -->
             <div id="alcohol-subcategories" class="flex items-center gap-1.5 overflow-x-auto pb-1 px-2 text-[11px] font-medium no-scrollbar">
                 <button data-action="alcohol-subcat" data-value="all" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm whitespace-nowrap">Tümü</button>
-                <button data-action="alcohol-subcat" data-value="votka-cin" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">🍸 Votka & Cin</button>
-                <button data-action="alcohol-subcat" data-value="viski-konyak" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">🥃 Viski & Konyak</button>
-                <button data-action="alcohol-subcat" data-value="tekila-rom" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">🌵 Tekila & Rom</button>
-                <button data-action="alcohol-subcat" data-value="likor-aperitif" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">🍊 Likör & Aperitif</button>
-                <button data-action="alcohol-subcat" data-value="sarap-bira" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">🍷 Şarap, Vermut & Bira</button>
-                <button data-action="alcohol-subcat" data-value="mutfak" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-emerald-400 border border-emerald-500/30 shrink-0 hover:text-white whitespace-nowrap">🌿 Mutfak & Garnitür</button>
+                <button data-action="alcohol-subcat" data-value="votka-cin" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">Votka & Cin</button>
+                <button data-action="alcohol-subcat" data-value="viski-konyak" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">Viski & Konyak</button>
+                <button data-action="alcohol-subcat" data-value="tekila-rom" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">Tekila & Rom</button>
+                <button data-action="alcohol-subcat" data-value="likor-aperitif" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">Likör & Aperitif</button>
+                <button data-action="alcohol-subcat" data-value="sarap-bira" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white whitespace-nowrap">Şarap, Vermut & Bira</button>
+                <button data-action="alcohol-subcat" data-value="mutfak" class="alcohol-subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-emerald-400 border border-emerald-500/30 shrink-0 hover:text-white whitespace-nowrap">Mutfak & Garnitür</button>
             </div>
 
             <!-- Mutfak Alt Kategori Çipleri (Mutfak sekmesinde otomatik açılır) -->
             <div id="kitchen-subcategories" class="hidden flex items-center gap-1.5 overflow-x-auto pb-1 px-2 text-[11px] font-medium no-scrollbar">
                 <button data-subcat="all" data-ui="ui-24" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold shrink-0 shadow-sm">Tümü</button>
-                <button data-subcat="meyve" data-ui="ui-25" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍊 Meyve & Narenciye</button>
-                <button data-subcat="gazli" data-ui="ui-26" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🫧 Gazlı & Meşrubat</button>
-                <button data-subcat="tatli" data-ui="ui-27" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🍯 Şurup & Tatlı</button>
-                <button data-subcat="baharat" data-ui="ui-28" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">🌿 Ot & Baharat</button>
-                <button data-subcat="sut-kahve" data-ui="ui-29" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">☕ Süt & Kahve</button>
+                <button data-subcat="meyve" data-ui="ui-25" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">Meyve & Narenciye</button>
+                <button data-subcat="gazli" data-ui="ui-26" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">Gazlı & Meşrubat</button>
+                <button data-subcat="tatli" data-ui="ui-27" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">Şurup & Tatlı</button>
+                <button data-subcat="baharat" data-ui="ui-28" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">Ot & Baharat</button>
+                <button data-subcat="sut-kahve" data-ui="ui-29" class="subcat-btn pill-btn px-2.5 py-1 rounded-full bg-slate-900/80 text-slate-400 border border-white/10 shrink-0 hover:text-white">Süt & Kahve</button>
             </div>
 
             <div class="ingredient-shelf">
@@ -633,7 +633,7 @@
             <!-- Başlık & Logo -->
             <div class="space-y-1 pt-1">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-black tracking-widest uppercase">
-                    <span>👑</span> ÖZEL SEÇKİ KULÜBÜ
+                    <span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span> ÖZEL SEÇKİ KULÜBÜ
                 </div>
                 <h3 class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center justify-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
                     BAR CEPTE <span class="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">RESERVE</span>
@@ -658,7 +658,7 @@
                         <span><strong>Parti & Porsiyon Modu:</strong> 10-50 kişilik davetler için tam malzeme hesabı.</span>
                     </div>
                     <div class="flex items-center gap-2.5">
-                        <span class="text-base text-amber-400 shrink-0">👑</span>
+                        <span class="text-base text-amber-400 shrink-0"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span>
                         <span><strong>Reserve Altın Rozeti:</strong> Hesabında parıldayan statü ve öncelikli destek.</span>
                     </div>
                 </div>
@@ -724,7 +724,7 @@
             <!-- Aktif Durum (Reserve Zaten Açık) -->
             <div id="reserve-status-active" class="hidden space-y-4 py-2">
                 <div class="w-16 h-16 mx-auto rounded-3xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-3xl shadow-xl shadow-amber-500/10">
-                    👑
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg>
                 </div>
                 <div>
                     <h4 class="text-lg font-black text-amber-400">Reserve Üyeliğiniz Aktif!</h4>
@@ -774,7 +774,7 @@
                         </div>
                     </div>
                     <div class="flex items-start gap-2.5 min-w-0">
-                        <span class="text-sm text-amber-400 shrink-0 mt-0.5 select-none">👑</span>
+                        <span class="text-sm text-amber-400 shrink-0 mt-0.5 select-none"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span>
                         <div class="min-w-0 flex-1 leading-snug break-words">
                             <strong class="text-white">Tek Kullanımlık Lisans Koruma:</strong> Satın aldığın Shopier kodun hesabına mühürlenir.
                         </div>
@@ -827,7 +827,7 @@
                 <!-- VIP Lisansını Hesaba Bağlama (Eğer henüz VIP değilse) -->
                 <div id="auth-license-bind-section" class="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-black to-black border border-amber-500/30 space-y-2">
                     <div class="flex items-center gap-1.5 font-bold text-amber-300 text-xs">
-                        <span>👑</span> Shopier Kodunu Hesabına Bağla
+                        <span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span> Shopier Kodunu Hesabına Bağla
                     </div>
                     <p class="text-[11px] text-slate-400">Shopier'dan aldığın aktivasyon anahtarını hesabına mühürle; tüm cihazlarında kod yazmadan VIP ol.</p>
                     <div class="flex gap-2 items-center pt-1">
@@ -853,7 +853,7 @@
     <script src="auth.js?v=43"></script>
     <script src="personal-bar.js?v=43"></script>
     <script src="inventory.js?v=43"></script>
-    <script src="game.js?v=47"></script>
+    <script src="game.js?v=48"></script>
     <script src="personal-ui.js?v=43"></script>
     <script src="dynamic-ui.js?v=43"></script>
     <script src="editorial-ui.js?v=43"></script>
