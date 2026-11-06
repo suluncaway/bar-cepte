@@ -114,5 +114,8 @@
   },
   "dependencies": {
     "pg": "^8.23.1"
+  },
+  "overrides": {
+    "minimatch@>=7.0.0 <11.0.1": "11.0.5"
   }
 }
