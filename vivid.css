@@ -21,7 +21,7 @@ html body {
 
 /* Header */
 .app-header { background:rgba(8,8,8,.82); border-bottom:1px solid var(--border-glass); box-shadow:var(--shadow-soft); }
-.brand-mark { background:#121f1b; border:1px solid rgba(217,183,125,.35); border-radius:14px; color:#d9b77d; box-shadow:0 6px 18px rgba(0,0,0,.4); }
+.brand-mark { background:#0b0b0b; border:1px solid rgba(217,183,125,.4); border-radius:14px; color:#d9b77d; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 .brand-mark svg { width:auto!important; height:30px!important; }
 @media (max-width:767px) { .brand-mark svg { height:26px!important; } }
 .brand-period { color:#ff9d4d; }
@@ -196,3 +196,29 @@ html body { font-family:var(--font-body); -webkit-font-smoothing:antialiased; te
   #ingredients-container.custom-scroll::-webkit-scrollbar { display:block; height:6px; }
   #ingredients-container.custom-scroll::-webkit-scrollbar-thumb { background:rgba(255,122,26,.55); border-radius:6px; }
 }
+
+/* 1. One warm palette: the third-party coffee button follows the theme instead of bright yellow */
+.app-footer .bmc-btn { background:transparent!important; border:1px solid rgba(255,122,26,.5)!important; color:#ffc48a!important; border-radius:999px!important; height:40px!important; min-width:0!important; padding:0 18px!important; font-family:var(--font-body)!important; font-size:13px!important; box-shadow:none!important; }
+.app-footer .bmc-btn:hover { background:rgba(255,122,26,.12)!important; }
+.app-footer .bmc-btn svg, .app-footer .bmc-btn img { display:none!important; }
+.app-footer .bmc-btn-text { font-family:var(--font-body)!important; font-size:13px!important; color:#ffc48a!important; margin:0!important; }
+
+/* 2. Navigation: four main tabs + "More"; the active tab always stays visible */
+.main-navigation:not(.show-more) > [data-nav-secondary]:not([aria-current="page"]) { display:none; }
+.main-navigation > .nav-more { color:var(--muted); font-weight:600; border-radius:999px!important; }
+.main-navigation.show-more > .nav-more { color:#fff; background:rgba(255,255,255,.08); }
+
+/* 3. Calmer cards: one badge in the list, the rest when the card is opened */
+.cocktail-card .flex.flex-wrap.gap-1\.5.mb-1\.5 > span:not(:first-child) { display:none; }
+.cocktail-card:has(.details-section.open) .flex.flex-wrap.gap-1\.5.mb-1\.5 > span { display:inline-flex; }
+
+/* 4. Line icons in the tool ribbon */
+.ui-icon { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+#wake-icon { display:inline-flex; }
+
+/* 5. Today's cocktail on the home page */
+.home-daily { display:grid; grid-template-columns:160px 1fr; gap:20px; align-items:center; padding:18px; margin:0 0 16px; border-radius:24px; background:rgba(255,255,255,.05); border:1px solid var(--border-glass); }
+.home-daily img { width:160px; height:160px; object-fit:cover; border-radius:18px; background:#141414; }
+.home-daily h2 { font-size:clamp(22px,3vw,30px); margin:6px 0 4px; }
+.home-daily p { color:var(--muted); font-size:13px; margin:0 0 14px; }
+@media (max-width:600px) { .home-daily { grid-template-columns:96px 1fr; gap:14px; padding:14px; } .home-daily img { width:96px; height:96px; } .home-daily .primary-action { min-height:42px; font-size:13px; padding:0 16px; } }

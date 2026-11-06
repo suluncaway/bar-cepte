@@ -68,6 +68,9 @@ const I18N = {
         ingredientsHeading: 'Senin barında ne var?',
         ingredientsAside: 'Elindekileri seç, tarifler sana göre şekillensin.',
         seeRecipes: 'Tarifleri gör',
+        dailyCocktail: 'BUGÜNÜN KOKTEYLİ',
+        openRecipe: 'Tarifi aç',
+        moreTabs: 'Daha fazla',
         heroHeading: 'Bu akşam,<br><span>barmen sensin.</span>',
         heroDesc: 'Elindeki malzemelerden yeni favorine.<br>Barını oluştur, zevkine göre keşfet ve güzel bir şeyler hazırla.',
         heroBuildBar: 'Barımı oluştur',
@@ -246,6 +249,9 @@ const I18N = {
         ingredientsHeading: "What's in your bar?",
         ingredientsAside: 'Pick what you have and recipes adapt to you.',
         seeRecipes: 'See recipes',
+        dailyCocktail: "TODAY'S COCKTAIL",
+        openRecipe: 'Open recipe',
+        moreTabs: 'More',
         heroHeading: 'Tonight,<br><span>you\'re the bartender.</span>',
         heroDesc: 'From ingredients on hand to your new favorite drink.<br>Build your bar, explore your taste, and mix something great.',
         heroBuildBar: 'Build My Bar',
@@ -1003,7 +1009,6 @@ function checkIngredientMatch(recipeIng, userIngId) {
 async function toggleWakeLock() {
     const btn = document.getElementById('btn-wake-lock');
     const statusText = document.getElementById('wake-status');
-    const icon = document.getElementById('wake-icon');
 
     if ('wakeLock' in navigator) {
         if (!wakeLock) {
@@ -1011,13 +1016,11 @@ async function toggleWakeLock() {
                 wakeLock = await navigator.wakeLock.request('screen');
                 if (btn) btn.className = "pill-btn px-3 py-1.5 rounded-xl border border-amber-500 bg-amber-500/15 text-[11px] font-bold text-amber-300 flex items-center gap-1.5 shadow-sm";
                 if (statusText) statusText.innerText = currentLang === 'en' ? "Screen On" : "Ekran Açık";
-                if (icon) icon.innerText = "⚡";
                 
                 wakeLock.addEventListener('release', () => {
                     wakeLock = null;
                     if (btn) btn.className = "pill-btn px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10";
                     if (statusText) statusText.innerText = currentLang === 'en' ? "Keep Awake" : "Ekran Koru";
-                    if (icon) icon.innerText = "💡";
                 });
             } catch (err) {
                 alert(currentLang === 'en' ? "Screen wake lock could not be initialized on this device." : "Ekran kilidi bu cihazda başlatılamadı.");
@@ -1379,6 +1382,7 @@ function switchTab(tab) {
             filterCocktails();
         }
     }
+    refreshHomeDaily();
     window.scrollTo({top: 0, behavior: 'instant'});
 }
 
@@ -3489,8 +3493,36 @@ async function importUserData() {
 function pickRandomCocktail() {
     const pool = [...customRecipes, ...allCocktails];
     if (pool.length === 0) return alert(currentLang === 'en' ? "Recipes not loaded yet, please wait." : "Tarifler henüz yüklenmedi, lütfen bekleyin.");
-    
-    const randomDrink = pool[Math.floor(Math.random() * pool.length)];
+    openCocktail(pool[Math.floor(Math.random() * pool.length)]);
+}
+
+// Same drink for everyone on a given day, from the built-in recipes that have a photo.
+function getDailyCocktail() {
+    const pool = allCocktails.filter(d => safeImageSrc(d.strDrinkThumb));
+    if (!pool.length) return null;
+    return pool[Math.floor(Date.now() / 86400000) % pool.length];
+}
+
+function renderDailyCocktail() {
+    const drink = getDailyCocktail();
+    const box = document.getElementById('home-daily');
+    if (!drink || !box) return false;
+    const t = I18N[currentLang];
+    box.querySelector('#home-daily-img').src = safeImageSrc(drink.strDrinkThumb);
+    box.querySelector('#home-daily-title').textContent = drink.strDrink;
+    box.querySelector('#home-daily-meta').textContent = [drink.strGlass, drink.strCategory].filter(Boolean).join(' · ');
+    box.querySelector('#home-daily-eyebrow').textContent = t.dailyCocktail;
+    box.querySelector('#home-daily-open').innerHTML = `${t.openRecipe} <span aria-hidden="true">→</span>`;
+    return true;
+}
+
+// Shown only on the home page (where the hero is visible) once recipes are loaded.
+function refreshHomeDaily() {
+    const onHome = !document.getElementById('editorial-hero')?.classList.contains('hidden');
+    document.getElementById('home-daily')?.classList.toggle('hidden', !onHome || !renderDailyCocktail());
+}
+
+function openCocktail(randomDrink) {
     const searchInput = document.getElementById('cocktail-search');
     
     if (searchInput) {
@@ -3502,7 +3534,7 @@ function pickRandomCocktail() {
             const displaySec = document.getElementById('recipes-display-sections');
             if (displaySec) displaySec.scrollIntoView({ behavior: 'smooth' });
             
-            const firstCard = document.querySelector('#recipes-ready > div') || document.querySelector('#recipes-missing > div');
+            const firstCard = document.querySelector('#recipes-ready > .cocktail-card') || document.querySelector('#recipes-missing > .cocktail-card');
             if (firstCard) {
                 const details = firstCard.querySelector('.details-section');
                 if (details && !details.classList.contains('open')) {
@@ -3585,6 +3617,9 @@ function applyLanguage() {
     }
     const seeRecipesBtn = document.getElementById('btn-ingredients-to-recipes');
     if (seeRecipesBtn && t.seeRecipes) seeRecipesBtn.innerHTML = `${t.seeRecipes} <span aria-hidden="true">→</span>`;
+    const moreBtn = document.getElementById('tab-more');
+    if (moreBtn) moreBtn.textContent = `${t.moreTabs} ${moreBtn.getAttribute('aria-expanded') === 'true' ? '▴' : '▾'}`;
+    refreshHomeDaily();
 
     // Hero section
     const heroEyebrow = document.querySelector('#editorial-hero .eyebrow');
@@ -4227,6 +4262,7 @@ async function fetchDataWithIndexedDB() {
                 filterCocktails();
                 
                 if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} ${I18N[currentLang].statusCount}`;
+                refreshHomeDaily();
                 updateDataInBackground();
                 return;
             }
@@ -4309,6 +4345,7 @@ async function fetchAndStoreData() {
     filterCocktails();
 
     if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} ${I18N[currentLang].statusCount}`;
+    refreshHomeDaily();
 }
 
 const SYNC_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000; // 14 günde bir otomatik kontrol
