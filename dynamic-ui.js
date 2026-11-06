@@ -45,6 +45,9 @@ document.addEventListener('click', event => {
             case 'export-story':
                 downloadCocktailStoryCard(value);
                 break;
+            case 'reset-filters':
+                resetCocktailFilters();
+                break;
             case 'clear-all-ingredients':
                 clearSelection();
                 break;
@@ -66,7 +69,7 @@ document.addEventListener('error', event => {
     const image = event.target;
     if (image.tagName !== 'IMG' || !image.hasAttribute('data-image-fallback')) return;
     const fallback = document.createElement('span');
-    fallback.textContent = '🍹';
-    fallback.className = image.className;
+    fallback.innerHTML = '<svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8-7-8ZM12 12v7M8 20h8"/></svg>';
+    fallback.className = image.className + ' image-fallback';
     image.replaceWith(fallback);
 }, true);

@@ -56,3 +56,10 @@ document.getElementById('home-daily-open')?.addEventListener('click', () => {
     const drink = typeof getDailyCocktail === 'function' && getDailyCocktail();
     if (drink) openCocktail(drink);
 });
+
+// Phones: the tool ribbon is folded behind one button (CSS hides it until opened).
+const toolsToggle = document.getElementById('btn-tools-toggle');
+toolsToggle?.addEventListener('click', () => {
+    const open = document.querySelector('.app-header').classList.toggle('tools-open');
+    toolsToggle.setAttribute('aria-expanded', String(open));
+});

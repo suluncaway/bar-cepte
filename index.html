@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=8">
+    <link rel="stylesheet" href="vivid.css?v=9">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -52,6 +52,7 @@
 
                 <!-- Sağ Üst Ana Aksiyonlar (Dil, Reserve VIP, Hesap) -->
                 <div class="topbar-primary-actions flex items-center gap-1.5 shrink-0">
+                    <button id="btn-tools-toggle" type="button" class="tools-toggle pill-btn" aria-expanded="false" aria-label="Araçlar" title="Araçlar"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button>
                     <!-- Dil Değiştirme Butonu (TR / EN - Pocket Bar) -->
                     <button id="btn-lang-toggle" data-action="toggle-language" title="Dil Değiştir / Switch Language (TR / EN)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-bold flex items-center gap-1 hover:border-amber-400 hover:bg-amber-500/20 shrink-0 whitespace-nowrap cursor-pointer">
                         <span class="text-amber-300 font-black">🇹🇷 TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">EN</span>
@@ -59,13 +60,13 @@
 
                     <!-- Bar Cepte Reserve Üyelik Butonu -->
                     <button id="btn-open-reserve" type="button" title="Bar Cepte Reserve — Reklamsız & Özel Seçkiler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all shrink-0 whitespace-nowrap">
-                        <span>👑</span>
+                        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg>
                         <span id="reserve-btn-label" class="hidden sm:inline tracking-wide">Reserve</span>
                     </button>
 
                     <!-- Barmen Kulübü / Google Hesabı Butonu -->
                     <button id="btn-auth-user" type="button" title="Barmen Kulübü & Hesabım" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
-                        <span id="auth-btn-icon">👤</span>
+                        <span id="auth-btn-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
                         <span id="auth-btn-label" class="hidden sm:inline">Giriş Yap</span>
                     </button>
                 </div>
@@ -149,16 +150,16 @@
                 <span class="photo-edition">THE HOME BAR EDITION / 01</span>
             </figure>
         </section>
+        <section id="home-daily" class="home-daily hidden" aria-labelledby="home-daily-title">
+            <img id="home-daily-img" alt="" loading="lazy">
+            <div><span class="eyebrow" id="home-daily-eyebrow">BUGÜNÜN KOKTEYLİ</span><h2 id="home-daily-title"></h2><p id="home-daily-meta"></p>
+            <button id="home-daily-open" type="button" class="primary-action">Tarifi aç <span aria-hidden="true">→</span></button></div>
+        </section>
         <section id="home-shortcuts" class="home-shortcuts" aria-label="Hızlı erişim">
             <button type="button" class="shortcut-tile" data-shortcut="ingredients"><span aria-hidden="true">🧊</span><strong>Malzemelerim</strong><small>Elindekileri seç</small></button>
             <button type="button" class="shortcut-tile" data-shortcut="alkol"><span aria-hidden="true">🍸</span><strong>Tarifler</strong><small>Ara, filtrele, keşfet</small></button>
             <button type="button" class="shortcut-tile" data-shortcut="favorites"><span aria-hidden="true">❤️</span><strong>Favoriler</strong><small>Kaydettiklerin</small></button>
             <button type="button" class="shortcut-tile" data-shortcut="ai"><span aria-hidden="true">✦</span><strong>AI Barmen</strong><small>Sana özel öneri</small></button>
-        </section>
-        <section id="home-daily" class="home-daily hidden" aria-labelledby="home-daily-title">
-            <img id="home-daily-img" alt="" loading="lazy">
-            <div><span class="eyebrow" id="home-daily-eyebrow">BUGÜNÜN KOKTEYLİ</span><h2 id="home-daily-title"></h2><p id="home-daily-meta"></p>
-            <button id="home-daily-open" type="button" class="primary-action">Tarifi aç <span aria-hidden="true">→</span></button></div>
         </section>
         <section id="discovery-controls" class="hidden discovery-controls" aria-labelledby="discovery-heading">
             <div class="section-intro">
@@ -486,8 +487,8 @@
             <p class="font-medium text-slate-400">Bar Cepte — Akıllı Bar & Kokteyl Asistanı</p>
             <div class="flex flex-wrap items-center justify-center gap-3 text-[11px]">
                 <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="suluncau" data-color="#FFDD00" data-emoji=""  data-font="Bree" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
-                <a href="https://www.amazon.com.tr/s?k=kokteyl+shaker+seti" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white flex items-center gap-1">🛒 Bar Ekipmanları</a>
-                <a href="privacy.html" class="text-slate-400 hover:text-amber-400 flex items-center gap-1">🛡️ Gizlilik & 18+ Yasal Uyarı</a>
+                <a href="https://www.amazon.com.tr/s?k=kokteyl+shaker+seti" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white flex items-center gap-1">Bar Ekipmanları</a>
+                <a href="privacy.html" class="text-slate-400 hover:text-amber-400 flex items-center gap-1">Gizlilik & 18+ Yasal Uyarı</a>
             </div>
 
             <!-- 18+ & Sorumlu Tüketim Yasal Uyarısı -->
@@ -852,7 +853,7 @@
     <script src="auth.js?v=43"></script>
     <script src="personal-bar.js?v=43"></script>
     <script src="inventory.js?v=43"></script>
-    <script src="game.js?v=46"></script>
+    <script src="game.js?v=47"></script>
     <script src="personal-ui.js?v=43"></script>
     <script src="dynamic-ui.js?v=43"></script>
     <script src="editorial-ui.js?v=43"></script>
