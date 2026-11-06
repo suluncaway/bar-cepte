@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=2">
+    <link rel="stylesheet" href="vivid.css?v=3">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
@@ -105,8 +105,10 @@
             <!-- Ana Sekmeler (Zarif Segmentasyon) -->
             <p class="mobile-nav-hint">Di&#287;er b&#246;l&#252;mler i&#231;in men&#252;y&#252; kayd&#305;r <span aria-hidden="true">&#8596;</span></p>
             <div class="main-navigation" aria-label="Uygulama bölümleri" tabindex="0">
+                <button id="tab-home" type="button" class="bg-amber-500/15 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded-xl shrink-0 transition-all font-bold" aria-current="page">Ana sayfa</button>
+                <button id="tab-ingredients" type="button" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Malzemelerim</button>
+                <button id="tab-alkol" data-ui="ui-17" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Tarifler</button>
                 <button id="tab-bar" data-ui="ui-16" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Barım</button>
-                <button id="tab-alkol" data-ui="ui-17" class="bg-amber-500/15 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded-xl shrink-0 transition-all font-bold">Kokteyl keşfet</button>
                 <button id="tab-mutfak" data-ui="ui-18" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Mutfak</button>
                 <button id="tab-favorites" data-ui="ui-19" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-rose-400">Favoriler</button>
                 <button id="tab-custom" data-ui="ui-20" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">+ Tarif ekle</button>
@@ -145,7 +147,13 @@
                 <span class="photo-edition">THE HOME BAR EDITION / 01</span>
             </figure>
         </section>
-        <section id="discovery-controls" class="discovery-controls" aria-labelledby="discovery-heading">
+        <section id="home-shortcuts" class="home-shortcuts" aria-label="Hızlı erişim">
+            <button type="button" class="shortcut-tile" data-shortcut="ingredients"><span aria-hidden="true">🧊</span><strong>Malzemelerim</strong><small>Elindekileri seç</small></button>
+            <button type="button" class="shortcut-tile" data-shortcut="alkol"><span aria-hidden="true">🍸</span><strong>Tarifler</strong><small>Ara, filtrele, keşfet</small></button>
+            <button type="button" class="shortcut-tile" data-shortcut="favorites"><span aria-hidden="true">❤️</span><strong>Favoriler</strong><small>Kaydettiklerin</small></button>
+            <button type="button" class="shortcut-tile" data-shortcut="ai"><span aria-hidden="true">✦</span><strong>AI Barmen</strong><small>Sana özel öneri</small></button>
+        </section>
+        <section id="discovery-controls" class="hidden discovery-controls" aria-labelledby="discovery-heading">
             <div class="section-intro">
                 <div><span class="eyebrow">KEŞİF TEZGÂHI</span><h2 id="discovery-heading">Senin barında ne var?</h2></div>
                 <div class="flex items-center gap-2">
@@ -157,14 +165,6 @@
             </div>
                     <!-- Arama ve Eylemler -->
         <div class="space-y-2">
-            <div class="flex gap-2">
-                <div class="relative w-full">
-                    <span class="absolute left-3.5 top-2.5 text-xs text-slate-400">🔍</span>
-                    <input type="text" id="ing-search" aria-label="Malzeme ara" data-ui="ui-12" placeholder="Malzeme ara: cin, nane, limon…" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
-                </div>
-                <button data-ui="ui-13" class="shrink-0 pill-btn bg-slate-900/80 border border-white/10 text-rose-400 px-3.5 py-2 rounded-2xl text-xs font-semibold hover:border-rose-500/40">🗑️ Temizle</button>
-            </div>
-
             <div class="flex gap-2">
                 <div class="relative w-full">
                     <span class="absolute left-3.5 top-2.5 text-xs text-slate-400">🍸</span>
@@ -256,7 +256,15 @@
         </section>
 
         <!-- 2. Malzeme Seçim Alanı -->
-        <section id="ingredients-section" class="space-y-2 relative px-2">
+        <section id="ingredients-section" class="hidden space-y-2 relative px-2">
+            <div class="section-intro page-intro"><div><span class="eyebrow">MALZEMELERİM</span><h2>Senin barında ne var?</h2></div><span class="section-aside">Elindekileri seç, tarifler sana göre şekillensin.</span></div>
+            <div class="flex gap-2">
+                <div class="relative w-full">
+                    <span class="absolute left-3.5 top-2.5 text-xs text-slate-400">🔍</span>
+                    <input type="text" id="ing-search" aria-label="Malzeme ara" data-ui="ui-12" placeholder="Malzeme ara: cin, nane, limon…" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
+                </div>
+                <button data-ui="ui-13" class="shrink-0 pill-btn bg-slate-900/80 border border-white/10 text-rose-400 px-3.5 py-2 rounded-2xl text-xs font-semibold hover:border-rose-500/40">🗑️ Temizle</button>
+            </div>
             <!-- Seçili Malzemeler Paneli (Malzeme seçildiğinde görünür) -->
             <div id="selected-ingredients-tray" class="hidden mx-1 mb-2.5 p-3 bg-black/40 border border-amber-500/25 rounded-2xl flex flex-col gap-2 animate-fade-in shadow-lg">
                 <div class="flex items-center justify-between text-xs">
@@ -296,6 +304,7 @@
                 <div id="ingredients-container" class="flex gap-3 overflow-x-auto custom-scroll px-12 py-2 scroll-smooth snap-x w-full min-h-[168px]"></div>
                 <button data-ui="ui-31" class="absolute right-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all">▶</button>
             </div>
+            <div class="ingredients-cta"><button id="btn-ingredients-to-recipes" type="button" class="primary-action">Tarifleri gör <span aria-hidden="true">→</span></button></div>
         </section>
 
         <!-- 3. Yeni Tarif Oluşturma Paneli -->
@@ -405,7 +414,7 @@
         </section>
 
         <!-- 7. Kokteyl Listeleme Alanları -->
-        <div id="recipes-display-sections" class="recipe-content">
+        <div id="recipes-display-sections" class="hidden recipe-content">
             <section id="editorial-picks" class="hidden">
                 <div class="section-intro"><div><span class="eyebrow">KLASİKLERDEN İLHAM AL</span><h2>Her güzel akşamın bir tarifi var.</h2></div><span class="section-aside">Bir tarif seç, detaylarını keşfet.</span></div>
                 <div id="editorial-picks-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-start"></div>

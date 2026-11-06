@@ -53,7 +53,9 @@ const I18N = {
         support: 'Destek Ol',
         signIn: 'Giriş Yap',
         myBar: 'Barım',
-        exploreDrinks: 'Kokteyl keşfet',
+        exploreDrinks: 'Tarifler',
+        homePage: 'Ana sayfa',
+        ingredientsPage: 'Malzemelerim',
         kitchen: 'Mutfak',
         favorites: 'Favoriler',
         addRecipe: '+ Tarif ekle',
@@ -224,7 +226,9 @@ const I18N = {
         support: 'Support',
         signIn: 'Sign In',
         myBar: 'My Bar',
-        exploreDrinks: 'Explore Drinks',
+        exploreDrinks: 'Recipes',
+        homePage: 'Home',
+        ingredientsPage: 'My Ingredients',
         kitchen: 'Kitchen',
         favorites: 'Favorites',
         addRecipe: '+ Add Recipe',
@@ -1256,8 +1260,11 @@ function scrollIngredients(amount) {
 }
 
 function switchTab(tab) {
+    // "home" and "ingredients" are pages of the cocktail explorer; data logic keeps using the "alkol" tab.
+    const page = tab;
+    if (tab === 'home' || tab === 'ingredients') tab = 'alkol';
     currentTab = tab;
-    ['tab-bar', 'tab-alkol', 'tab-mutfak', 'tab-favorites', 'tab-custom', 'tab-my-recipes', 'tab-shop', 'tab-sync', 'tab-ai'].forEach(t => {
+    ['tab-home', 'tab-ingredients', 'tab-bar', 'tab-alkol', 'tab-mutfak', 'tab-favorites', 'tab-custom', 'tab-my-recipes', 'tab-shop', 'tab-sync', 'tab-ai'].forEach(t => {
         const el = document.getElementById(t);
         if(el) {
             el.className = "text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white";
@@ -1265,14 +1272,16 @@ function switchTab(tab) {
         }
     });
     
-    const activeTab = document.getElementById(`tab-${tab}`);
+    const activeTab = document.getElementById(`tab-${page}`);
     if(activeTab) {
         activeTab.className = "bg-amber-500/15 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded-xl shrink-0 transition-all font-bold";
         activeTab.setAttribute('aria-current', 'page');
     }
-    document.getElementById('editorial-hero')?.classList.toggle('hidden', !['alkol', 'mutfak'].includes(tab));
-    document.getElementById('discovery-controls')?.classList.toggle('hidden', !['alkol', 'mutfak', 'favorites'].includes(tab));
-    if (!['alkol', 'mutfak', 'favorites'].includes(tab)) {
+    const showsRecipes = ['alkol', 'mutfak', 'favorites'].includes(page);
+    document.getElementById('editorial-hero')?.classList.toggle('hidden', page !== 'home');
+    document.getElementById('home-shortcuts')?.classList.toggle('hidden', page !== 'home');
+    document.getElementById('discovery-controls')?.classList.toggle('hidden', !showsRecipes);
+    if (!showsRecipes) {
         document.getElementById('smart-recommendation-banner')?.classList.add('hidden');
     }
 
@@ -1284,7 +1293,7 @@ function switchTab(tab) {
 
     const subcatsEl = document.getElementById('kitchen-subcategories');
     if (subcatsEl) {
-        if (tab === 'mutfak') {
+        if (page === 'mutfak') {
             subcatsEl.classList.remove('hidden');
         } else {
             subcatsEl.classList.add('hidden');
@@ -1293,7 +1302,7 @@ function switchTab(tab) {
 
     const alcSubcatsEl = document.getElementById('alcohol-subcategories');
     if (alcSubcatsEl) {
-        if (tab === 'alkol') {
+        if (page === 'alkol' || page === 'ingredients') {
             alcSubcatsEl.classList.remove('hidden');
         } else {
             alcSubcatsEl.classList.add('hidden');
@@ -1323,12 +1332,19 @@ function switchTab(tab) {
         filterCocktails();
     } else {
         onlyFavoritesFilter = false;
-        document.getElementById('ingredients-section').classList.remove('hidden');
-        document.getElementById('recipes-display-sections').classList.remove('hidden');
-        const ingSearch = document.getElementById('ing-search');
-        if (ingSearch) ingSearch.value = ""; 
-        renderIngredients();
-        filterCocktails();
+        // Ingredient shelf: "ingredients" page and kitchen tab. Recipes: "alkol" and kitchen tab.
+        if (page === 'ingredients' || page === 'mutfak') {
+            document.getElementById('ingredients-section').classList.remove('hidden');
+        }
+        if (page === 'alkol' || page === 'mutfak') {
+            document.getElementById('recipes-display-sections').classList.remove('hidden');
+        }
+        if (page !== 'home') {
+            const ingSearch = document.getElementById('ing-search');
+            if (ingSearch) ingSearch.value = ""; 
+            renderIngredients();
+            filterCocktails();
+        }
     }
     window.scrollTo({top: 0, behavior: 'instant'});
 }
@@ -3506,6 +3522,8 @@ function applyLanguage() {
 
     // Navigation Tabs
     const tabMap = {
+        'tab-home': t.homePage,
+        'tab-ingredients': t.ingredientsPage,
         'tab-bar': t.myBar,
         'tab-alkol': t.exploreDrinks,
         'tab-mutfak': t.kitchen,

@@ -146,3 +146,14 @@ dialog::backdrop,#personal-dialog::backdrop { background:rgba(0,0,0,.82); }
 @media (min-width:768px) {
   #recipes-ready,#recipes-missing,#my-recipes-container { grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); }
 }
+
+/* Pages: home shortcuts and ingredients CTA */
+.home-shortcuts { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:16px 0; }
+@media (min-width:768px) { .home-shortcuts { grid-template-columns:repeat(4,1fr); } }
+.shortcut-tile { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:18px; text-align:left; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--border-glass); border-radius:22px; cursor:pointer; transition:transform .15s,border-color .15s; }
+.shortcut-tile:hover { transform:translateY(-3px); border-color:#ff7a1a; }
+.shortcut-tile span { font-size:26px; }
+.shortcut-tile strong { font-size:16px; }
+.shortcut-tile small { color:var(--muted); font-size:12px; }
+.ingredients-cta { display:flex; justify-content:center; padding:18px 0 8px; }
+.ingredients-cta .primary-action { padding:12px 28px; font-weight:700; }
