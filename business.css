@@ -16,3 +16,19 @@ input,select,textarea{border-radius:14px;background:#000}
 input:focus,select:focus,textarea:focus{border-color:#ff7a1a}
 #business-dialog{border-radius:24px;border-color:rgba(255,122,26,.5)}
 .brand span{color:#ff7a1a}
+/* Typography polish (DM Sans, consistent scale) */
+body{font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{font-family:"DM Sans",system-ui,sans-serif;font-weight:700;letter-spacing:-.025em;line-height:1.12}
+h1{font-size:clamp(30px,4.6vw,48px);letter-spacing:-.035em}
+h2{font-size:clamp(21px,2.6vw,26px)}
+h3{font-size:19px;font-weight:600}
+p{color:#c9c2b9}
+.brand{font:700 24px/1.1 "DM Sans",system-ui,sans-serif;letter-spacing:-.03em}
+.brand span{font:600 10px/1.6 "DM Sans",system-ui,sans-serif;letter-spacing:.24em;margin-top:2px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.16em}
+button,.button{font-size:14px;font-weight:600}
+.field>span{font-size:13px;font-weight:500;color:#b4ada4}
+.metric{font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+table{font-size:14px}
+th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+@media(max-width:600px){h1{font-size:28px}h2{font-size:21px}.brand{font-size:20px}body{font-size:14px}}
