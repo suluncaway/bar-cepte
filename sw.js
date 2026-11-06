@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v51-vivid';
+const CACHE_NAME = 'bar-cepte-v52-vivid';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./business-flow.js', './landing.html', './landing.css', './business-reports.js', './business.html', './business.css', './business-rules.js', './business-ui.js', './inventory.js', './personal-bar.js', './personal-ui.js', './', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './vivid.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
