@@ -42,3 +42,17 @@ document.getElementById('tab-home')?.addEventListener('click', () => {
 document.getElementById('tab-ingredients')?.addEventListener('click', () => {
     if (typeof switchTab === 'function') switchTab('ingredients');
 });
+
+// "More" reveals the secondary tabs; the active tab stays visible either way (CSS).
+const moreTabsBtn = document.getElementById('tab-more');
+moreTabsBtn?.addEventListener('click', () => {
+    const nav = moreTabsBtn.closest('.main-navigation');
+    const open = nav.classList.toggle('show-more');
+    moreTabsBtn.setAttribute('aria-expanded', String(open));
+    moreTabsBtn.textContent = moreTabsBtn.textContent.replace(/[▾▴]$/, open ? '▴' : '▾');
+});
+
+document.getElementById('home-daily-open')?.addEventListener('click', () => {
+    const drink = typeof getDailyCocktail === 'function' && getDailyCocktail();
+    if (drink) openCocktail(drink);
+});

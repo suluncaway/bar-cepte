@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=7">
+    <link rel="stylesheet" href="vivid.css?v=8">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -80,24 +80,24 @@
 
                 <!-- Barmen Zamanlayıcısı (Sayaç) -->
                 <button id="btn-open-timer" data-ui="ui-0" title="Barmen Sayacı (Shaker / Karıştırma)" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
-                    <span>⏱️</span>
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="7"/><path d="M12 14V10M10 3h4M12 3v4"/></svg>
                     <span class="hidden sm:inline">Sayaç</span>
                 </button>
 
                 <!-- Barmen Modu (Ekran Uyanık Kalma) -->
                 <button id="btn-wake-lock" data-ui="ui-1" title="Kokteyl yaparken ekranın kapanmasını önler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 hover:border-amber-500/40 hover:bg-white/10 shrink-0 whitespace-nowrap">
-                    <span id="wake-icon">💡</span>
+                    <span id="wake-icon"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3Z"/></svg></span>
                     <span id="wake-status" class="hidden sm:inline">Ekran Koru</span>
                 </button>
 
                 <!-- PWA Yükleme Butonu -->
                 <button id="btn-pwa-install" data-ui="ui-2" class="hidden pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[11px] font-bold text-amber-400 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
-                    <span>📲</span> <span class="hidden sm:inline">Yükle</span>
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg> <span class="hidden sm:inline">Yükle</span>
                 </button>
 
                 <!-- Geliştiriciye Destek Ol (Buy Me a Coffee) -->
                 <button type="button" data-support-button title="Geliştiriciye Bir Kahve Ismarla" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] font-semibold text-amber-300 flex items-center gap-1.5 hover:bg-amber-500/20 shrink-0 whitespace-nowrap">
-                    <span>☕</span>
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9ZM16 11h1.5a2.5 2.5 0 0 1 0 5H16M8 3v3M12 3v3"/></svg>
                     <span class="hidden sm:inline">Destek Ol</span>
                 </button>
             </div>
@@ -109,15 +109,16 @@
                 <button id="tab-home" type="button" class="bg-amber-500/15 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded-xl shrink-0 transition-all font-bold" aria-current="page">Ana sayfa</button>
                 <button id="tab-ingredients" type="button" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Malzemelerim</button>
                 <button id="tab-alkol" data-ui="ui-17" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Tarifler</button>
-                <button id="tab-bar" data-ui="ui-16" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Barım</button>
-                <button id="tab-mutfak" data-ui="ui-18" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Mutfak</button>
                 <button id="tab-favorites" data-ui="ui-19" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-rose-400">Favoriler</button>
-                <button id="tab-custom" data-ui="ui-20" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">+ Tarif ekle</button>
-                <button id="tab-my-recipes" data-ui="ui-21" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Tariflerim</button>
-                <button id="tab-shop" data-ui="ui-22" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Alışveriş</button>
-                <button id="tab-sync" data-ui="ui-23" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Yedekleme</button>
-                <button id="tab-ai" type="button" class="text-amber-300 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-amber-200 font-semibold">✦ AI Barmen</button>
-                <a href="business.html" class="text-amber-300 py-1.5 px-2.5 rounded-xl shrink-0" id="business-entry">İşletme / Business ↗</a>
+                <button id="tab-more" type="button" aria-expanded="false" class="nav-more text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0">Daha fazla ▾</button>
+                <button data-nav-secondary id="tab-bar" data-ui="ui-16" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Barım</button>
+                <button data-nav-secondary id="tab-mutfak" data-ui="ui-18" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Mutfak</button>
+                <button data-nav-secondary id="tab-custom" data-ui="ui-20" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">+ Tarif ekle</button>
+                <button data-nav-secondary id="tab-my-recipes" data-ui="ui-21" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Tariflerim</button>
+                <button data-nav-secondary id="tab-shop" data-ui="ui-22" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Alışveriş</button>
+                <button data-nav-secondary id="tab-sync" data-ui="ui-23" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Yedekleme</button>
+                <button data-nav-secondary id="tab-ai" type="button" class="text-amber-300 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-amber-200 font-semibold">✦ AI Barmen</button>
+                <a data-nav-secondary href="business.html" class="text-amber-300 py-1.5 px-2.5 rounded-xl shrink-0" id="business-entry">İşletme / Business ↗</a>
             </div>
 
     </header>
@@ -153,6 +154,11 @@
             <button type="button" class="shortcut-tile" data-shortcut="alkol"><span aria-hidden="true">🍸</span><strong>Tarifler</strong><small>Ara, filtrele, keşfet</small></button>
             <button type="button" class="shortcut-tile" data-shortcut="favorites"><span aria-hidden="true">❤️</span><strong>Favoriler</strong><small>Kaydettiklerin</small></button>
             <button type="button" class="shortcut-tile" data-shortcut="ai"><span aria-hidden="true">✦</span><strong>AI Barmen</strong><small>Sana özel öneri</small></button>
+        </section>
+        <section id="home-daily" class="home-daily hidden" aria-labelledby="home-daily-title">
+            <img id="home-daily-img" alt="" loading="lazy">
+            <div><span class="eyebrow" id="home-daily-eyebrow">BUGÜNÜN KOKTEYLİ</span><h2 id="home-daily-title"></h2><p id="home-daily-meta"></p>
+            <button id="home-daily-open" type="button" class="primary-action">Tarifi aç <span aria-hidden="true">→</span></button></div>
         </section>
         <section id="discovery-controls" class="hidden discovery-controls" aria-labelledby="discovery-heading">
             <div class="section-intro">
@@ -846,7 +852,7 @@
     <script src="auth.js?v=43"></script>
     <script src="personal-bar.js?v=43"></script>
     <script src="inventory.js?v=43"></script>
-    <script src="game.js?v=45"></script>
+    <script src="game.js?v=46"></script>
     <script src="personal-ui.js?v=43"></script>
     <script src="dynamic-ui.js?v=43"></script>
     <script src="editorial-ui.js?v=43"></script>
