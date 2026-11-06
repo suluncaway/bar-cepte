@@ -137,8 +137,8 @@ const I18N = {
         affiliateDesc: 'Evde kokteyl hazırlamak için gereken tüm temel ekipmanlar',
         affiliateBtn: 'İncele',
         footerTitle: 'Bar Cepte — Akıllı Bar & Kokteyl Asistanı',
-        footerBarware: '🛒 Bar Ekipmanları',
-        footerPrivacy: '🛡️ Gizlilik & 18+ Yasal Uyarı',
+        footerBarware: 'Bar Ekipmanları',
+        footerPrivacy: 'Gizlilik & 18+ Yasal Uyarı',
         footer18Title: '18+ YASAL BİLGİLENDİRME & SORUMLU TÜKETİM',
         footer18Text: 'Bar Cepte içerisindeki tüm kokteyl tarifleri, rehberler ve yayınlanan reklamlar yalnızca <strong>18 yaş ve üzeri</strong> yetişkinler içindir. 18 yaşından küçüklerin alkol tüketimi ve satın alması yasalara aykırıdır. Sağlığınız için lütfen ölçülü ve sorumlu tüketiniz.',
         emptyBarDesc: "Henüz barına malzeme eklemedin. 'Kokteyl keşfet' veya 'Mutfak' sekmesinden malzeme seçebilirsin.",
@@ -318,8 +318,8 @@ const I18N = {
         affiliateDesc: 'Essential bar tools for crafting premium cocktails at home',
         affiliateBtn: 'View',
         footerTitle: 'Pocket Bar — Smart Home Bar & Cocktail Assistant',
-        footerBarware: '🛒 Bar Tools & Equipment',
-        footerPrivacy: '🛡️ Privacy & 21+ Notice',
+        footerBarware: 'Bar Tools & Equipment',
+        footerPrivacy: 'Privacy & 21+ Notice',
         footer18Title: '21+ LEGAL NOTICE & RESPONSIBLE DRINKING',
         footer18Text: 'All cocktail recipes and contents in Pocket Bar are strictly intended for adults of legal drinking age (21+ in the US). Please enjoy responsibly and in moderation.',
         emptyBarDesc: "No ingredients in your bar yet. Select ingredients from 'Explore Drinks' or 'Kitchen' tab.",
@@ -1634,6 +1634,15 @@ function setTasteFilter(taste, el) {
 }
 
 let currentVibeFilter = 'all';
+
+// Empty-result escape hatch: drop the search text and filters, keep the selected ingredients.
+function resetCocktailFilters() {
+    const search = document.getElementById('cocktail-search');
+    if (search) search.value = '';
+    setAlcoholFilter('all');
+    setTasteFilter('all');
+    setVibeFilter('all');
+}
 
 function setVibeFilter(vibe, btn) {
     triggerHaptic('light');
@@ -2998,7 +3007,7 @@ function createCocktailCardElement(item, isMissingList) {
         card.innerHTML = `
             ${d.strDrinkThumb && safeImageSrc(d.strDrinkThumb) 
                 ? `<img src="${escapeHTML(safeImageSrc(d.strDrinkThumb))}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" data-image-fallback>`
-                : `<div class="w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-4xl">🍹</div>`}
+                : `<div class="w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-slate-600"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8-7-8ZM12 12v7M8 20h8"/></svg></div>`}
             
             <button data-action="favorite" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50">${isFav ? '❤️' : '🤍'}</button>
             
@@ -3130,8 +3139,10 @@ const COCKTAIL_PAGE_SIZE = 24;
 
 function renderLists(items, container, isMissingList) {
     container.innerHTML = "";
+    // Recipes still loading: leave the list empty so the CSS skeleton shows instead of "nothing found".
+    if (!allCocktails.length && !customRecipes.length) return;
     if (!items || items.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">${currentLang === 'en' ? 'No cocktails found matching these criteria.' : 'Bu kriterlere uygun kokteyl bulunamadı.'}</div>`;
+        container.innerHTML = `<div class="empty-state col-span-full">${currentLang === 'en' ? 'No cocktails found matching these criteria.' : 'Bu kriterlere uygun kokteyl bulunamadı.'}<button type="button" data-action="reset-filters" class="text-action">${currentLang === 'en' ? 'Clear filters' : 'Filtreleri temizle'}</button></div>`;
         return;
     }
 

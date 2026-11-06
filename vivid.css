@@ -222,3 +222,28 @@ html body { font-family:var(--font-body); -webkit-font-smoothing:antialiased; te
 .home-daily h2 { font-size:clamp(22px,3vw,30px); margin:6px 0 4px; }
 .home-daily p { color:var(--muted); font-size:13px; margin:0 0 14px; }
 @media (max-width:600px) { .home-daily { grid-template-columns:96px 1fr; gap:14px; padding:14px; } .home-daily img { width:96px; height:96px; } .home-daily .primary-action { min-height:42px; font-size:13px; padding:0 16px; } }
+
+/* 1. Phones: tool ribbon folds behind one "⋯" button */
+.tools-toggle { display:none; }
+@media (max-width:767px) {
+  .tools-toggle { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; padding:0!important; }
+  .app-header:not(.tools-open) .topbar-tools-ribbon { display:none!important; }
+  .app-header.tools-open .tools-toggle { background:rgba(255,122,26,.18)!important; border-color:rgba(255,122,26,.5)!important; }
+}
+
+/* 2. Phones: smaller hero photo so useful content reaches the first screen */
+@media (max-width:767px) {
+  .hero-photo { display:none!important; }
+  .hero-copy .hero-note { display:none; }
+}
+
+/* 3. Icon helpers */
+.ui-icon-lg { width:40px; height:40px; stroke-width:1.4; }
+.image-fallback { display:flex!important; align-items:center; justify-content:center; color:#4a4a4a; }
+#auth-btn-icon, #btn-open-reserve .ui-icon { display:inline-flex; }
+
+/* 4. Loading skeleton (list not rendered yet) and an empty state with a way out */
+#recipes-ready:empty, #recipes-missing:empty, #editorial-picks-grid:empty { min-height:240px; border-radius:22px; background:linear-gradient(100deg,rgba(255,255,255,.03) 30%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.03) 70%) 0 0/200% 100%; animation:skeleton 1.4s linear infinite; }
+@keyframes skeleton { to { background-position:-200% 0; } }
+@media (prefers-reduced-motion:reduce) { #recipes-ready:empty, #recipes-missing:empty, #editorial-picks-grid:empty { animation:none; } }
+.empty-state { display:flex; flex-direction:column; align-items:center; gap:12px; padding:32px 16px; color:var(--muted); font-size:13px; text-align:center; border:1px dashed var(--border-glass); border-radius:22px; }

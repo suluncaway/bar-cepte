@@ -32,3 +32,9 @@ button,.button{font-size:14px;font-weight:600}
 table{font-size:14px}
 th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 @media(max-width:600px){h1{font-size:28px}h2{font-size:21px}.brand{font-size:20px}body{font-size:14px}}
+/* Logo mark next to the brand name */
+.brand{display:inline-flex;align-items:center;gap:10px}
+.brand .brand-logo{width:30px;height:40px;flex-shrink:0}
+.brand .brand-text{display:block;font:inherit;letter-spacing:inherit;color:inherit;margin:0}
+.brand .brand-text span{display:block;font:600 10px/1.6 "DM Sans",system-ui,sans-serif;letter-spacing:.24em;color:var(--gold);margin-top:2px}
+@media(max-width:600px){.brand .brand-logo{width:24px;height:32px}}
