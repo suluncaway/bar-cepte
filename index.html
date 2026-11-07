@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=10">
+    <link rel="stylesheet" href="vivid.css?v=11">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -848,6 +848,19 @@
         </div>
     </div>
 
+    <dialog id="tutorial-dialog" class="tutorial-dialog" aria-labelledby="tutorial-title">
+        <div id="tutorial-dots" class="tutorial-dots" aria-hidden="true"></div>
+        <h2 id="tutorial-title"></h2>
+        <p id="tutorial-text"></p>
+        <label class="tutorial-hide"><input type="checkbox" id="tutorial-hide"> <span id="tutorial-hide-label"></span></label>
+        <div class="tutorial-actions">
+            <button type="button" data-tour="skip" class="tutorial-skip"></button>
+            <span></span>
+            <button type="button" data-tour="back" class="text-action"></button>
+            <button type="button" data-tour="login" class="text-action"></button>
+            <button type="button" data-tour="next" class="primary-action"></button>
+        </div>
+    </dialog>
     <script src="security.js?v=43"></script>
     <script src="firebase-config.js"></script>
     <script src="auth.js?v=43"></script>
@@ -855,6 +868,7 @@
     <script src="inventory.js?v=43"></script>
     <script src="game.js?v=48"></script>
     <script src="personal-ui.js?v=43"></script>
+    <script src="tutorial.js?v=1"></script>
     <script src="dynamic-ui.js?v=43"></script>
     <script src="editorial-ui.js?v=43"></script>
     <script src="ui-bindings.js?v=43"></script>
