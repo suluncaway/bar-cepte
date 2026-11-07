@@ -334,3 +334,5 @@ html[data-theme="light"] .cocktail-card:has(.details-section.open) .toggle-icon 
 .cocktail-card:has(.details-section.open) { background:#121212!important; }
 html[data-theme="light"] .cocktail-card:has(.details-section.open) { background:#fff!important; }
 body:has(.cocktail-card .details-section.open) .app-header { z-index:0; }
+html[data-theme="light"] #reserve-modal :is([class*="bg-gradient-to"],[class*="from-slate"],[class*="from-black"]):not([class*="bg-clip-text"]) { background:#fff7ef!important; border-color:rgba(255,122,26,.35)!important; }
+html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-slate-300) { color:#1d1b18!important; }
