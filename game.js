@@ -3086,6 +3086,8 @@ function createCocktailCardElement(item, isMissingList) {
             const details = card.querySelector('.details-section');
             const icon = card.querySelector('.toggle-icon');
             const span = card.querySelector('.instruction-text span');
+            // An open card is a reading view: only its Close control closes it.
+            if (details.classList.contains('open') && !e.target.closest('.toggle-icon')) return;
             if (!details.classList.contains('open')) {
                 triggerHaptic('light');
                 const parentGrid = card.parentElement;
@@ -3568,6 +3570,9 @@ function openRecipeFromHash() {
     if (drink) openCocktail(drink);
 }
 window.addEventListener('hashchange', openRecipeFromHash);
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') document.querySelector('.cocktail-card:has(.details-section.open) .toggle-icon')?.click();
+});
 
 function openCocktail(randomDrink) {
     const searchInput = document.getElementById('cocktail-search');

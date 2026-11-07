@@ -320,3 +320,17 @@ html[data-theme="light"] :is([class*="bg-rose-950"],[class*="bg-rose-500/"]) { b
 html[data-theme="light"] :is([class*="bg-emerald-950"],[class*="bg-emerald-500/"]) { background-color:#e6f6ef!important; }
 html[data-theme="light"] :is([class*="bg-amber-950"],[class*="bg-amber-500/"]) { background-color:#fff1e3!important; }
 html[data-theme="light"] :is(.section-aside,.selection-summary) { color:#6b645b!important; }
+
+/* Recipe detail: an opened card becomes a reading window (full screen on phones, centered on desktop) */
+.cocktail-card:has(.details-section.open) {
+  position:fixed!important; z-index:70; top:12px; bottom:12px; left:0; right:0; margin:0 auto!important;
+  width:min(560px, calc(100% - 24px)); height:calc(100dvh - 24px)!important; max-height:none; overflow-y:auto!important; overscroll-behavior:contain;
+  transform:none!important; box-shadow:0 0 0 100vmax rgba(0,0,0,.72), 0 24px 60px rgba(0,0,0,.5)!important;
+}
+body:has(.cocktail-card .details-section.open) { overflow:hidden; }
+.cocktail-card:has(.details-section.open) .toggle-icon { position:sticky; top:0; z-index:2; padding:6px 12px; border-radius:999px; background:rgba(16,16,16,.9); cursor:pointer; }
+html[data-theme="light"] .cocktail-card:has(.details-section.open) .toggle-icon { background:rgba(255,255,255,.95); }
+@media (max-width:767px) { .cocktail-card:has(.details-section.open) { top:0; bottom:0; width:100%; height:100dvh!important; border-radius:0!important; } }
+.cocktail-card:has(.details-section.open) { background:#121212!important; }
+html[data-theme="light"] .cocktail-card:has(.details-section.open) { background:#fff!important; }
+body:has(.cocktail-card .details-section.open) .app-header { z-index:0; }
