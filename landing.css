@@ -9,9 +9,17 @@ body{background:#050505 radial-gradient(900px 480px at 50% -10%,rgba(255,106,0,.
 .brand-mark{width:38px;height:38px;border-radius:12px;background:#0b0b0b;border-color:rgba(217,183,125,.4)}
 .brand-mark svg{width:auto;height:24px}
 /* Light theme (choice made in the app, applied by theme.js) */
-html[data-theme=light]{color-scheme:light;--bg:#f6f3ee;--surface:#ffffff;--raised:#ffffff;--ink:#1d1b18;--muted:#6b645b;--line:rgba(0,0,0,.12);--gold:#d9620b}
+html[data-theme=light]{color-scheme:light;--bg:#f6f3ee;--surface:#ffffff;--raised:#ffffff;--ink:#1d1b18;--muted:#6b645b;--line:rgba(0,0,0,.12);--gold:#a8460a}
 html[data-theme=light] body{background:#f6f3ee radial-gradient(900px 480px at 50% -10%,rgba(255,122,26,.12),transparent 65%) no-repeat;color:#1d1b18}
 html[data-theme=light] .button{color:#fff}
 html[data-theme=light] .site-header{background:rgba(246,243,238,.94)}
 html[data-theme=light] .brand-mark{background:#121212}
-html[data-theme=light] em{color:#d9620b}
+html[data-theme=light] em{color:#a8460a}
+html[data-theme=light] .gold-card p{color:#fff}
+html[data-theme=light] .preview-top strong{color:#f7f4f0}
+html[data-theme=light] .preview-top small{color:#a8a29a}
+html[data-theme=light] small{color:#6b645b}
+/* The app preview stays a dark phone mock in the light theme */
+html[data-theme=light] .app-preview{--ink:#f7f4f0;--muted:#a8a29a;--line:rgba(255,255,255,.14);--bg:#0d0d0d;--surface:#161616;--raised:#1a1a1a;color:#f7f4f0}
+html[data-theme=light] .app-preview small{color:#a8a29a}
+html[data-theme=light] .app-preview .active{color:#fff}

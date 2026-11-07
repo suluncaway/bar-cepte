@@ -24,7 +24,7 @@ const STYLE = `body{margin:0;background:#050505;color:#f7f4f0;font:16px/1.6 syst
 main{max-width:720px;margin:0 auto;padding:24px 20px 60px}a{color:#ff9d4d}
 img{width:100%;max-width:420px;aspect-ratio:1;object-fit:cover;border-radius:20px;background:#141414;display:block;margin:20px 0}
 h1{font-size:34px;line-height:1.1;margin:8px 0}.meta{color:#a8a29a}ul{padding-left:20px}
-.cta{display:inline-block;margin-top:24px;padding:12px 22px;border-radius:999px;background:#ff7a1a;color:#fff;font-weight:700;text-decoration:none}
+.cta{display:inline-block;margin-top:24px;padding:12px 22px;border-radius:999px;background:#ff7a1a;color:#1a0f05;font-weight:700;text-decoration:none}
 .list a{display:inline-block;margin:4px 10px 4px 0}`;
 
 function page({ title, description, canonical, body, jsonLd }) {
