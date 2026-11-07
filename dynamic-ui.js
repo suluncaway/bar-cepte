@@ -45,6 +45,9 @@ document.addEventListener('click', event => {
             case 'export-story':
                 downloadCocktailStoryCard(value);
                 break;
+            case 'share-link':
+                shareRecipeLink(value);
+                break;
             case 'reset-filters':
                 resetCocktailFilters();
                 break;

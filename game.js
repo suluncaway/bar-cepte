@@ -3062,6 +3062,7 @@ function createCocktailCardElement(item, isMissingList) {
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${techniqueBadge}</span>
                     <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm">⏱️ ${currentLang === 'en' ? 'Timer' : 'Sayaç'}</button>
+                    <button data-action="share-link" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> ${currentLang === 'en' ? 'Share link' : 'Bağlantı'}</button>
                     <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm" data-stop-card>📸 ${currentLang === 'en' ? 'Story Card' : 'Story İndir'}</button>
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${glassBadge}</span>
                 </div>
@@ -3532,6 +3533,41 @@ function refreshHomeDaily() {
     const onHome = !document.getElementById('editorial-hero')?.classList.contains('hidden');
     document.getElementById('home-daily')?.classList.toggle('hidden', !onHome || !renderDailyCocktail());
 }
+
+// Shareable recipe links: barcepte.com.tr/#tarif=<idDrink> opens that recipe.
+function recipeLink(id) {
+    return `${location.origin}${location.pathname}#tarif=${encodeURIComponent(id)}`;
+}
+
+async function shareRecipeLink(id) {
+    const drink = [...customRecipes, ...allCocktails].find(d => d.idDrink === id);
+    const url = recipeLink(id);
+    try {
+        if (navigator.share) return await navigator.share({ title: drink ? drink.strDrink : 'Bar Cepte', url });
+        await navigator.clipboard.writeText(url);
+        showToast(currentLang === 'en' ? 'Link copied' : 'Bağlantı kopyalandı', 'success');
+    } catch (error) {
+        if (error?.name !== 'AbortError') showToast(url, 'info');
+    }
+}
+
+// Native type-ahead for the recipe search; filled once after recipes load.
+function fillCocktailSuggestions() {
+    const list = document.getElementById('cocktail-suggestions');
+    if (!list || list.children.length || !allCocktails.length) return;
+    const names = [...new Set([...customRecipes, ...allCocktails].map(d => d.strDrink).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    list.replaceChildren(...names.map(name => Object.assign(document.createElement('option'), { value: name })));
+}
+
+function openRecipeFromHash() {
+    const match = /^#tarif=(.+)$/.exec(location.hash);
+    if (!match) return;
+    let id;
+    try { id = decodeURIComponent(match[1]); } catch { return; }
+    const drink = [...customRecipes, ...allCocktails].find(d => d.idDrink === id);
+    if (drink) openCocktail(drink);
+}
+window.addEventListener('hashchange', openRecipeFromHash);
 
 function openCocktail(randomDrink) {
     const searchInput = document.getElementById('cocktail-search');
@@ -4277,6 +4313,8 @@ async function fetchDataWithIndexedDB() {
                 
                 if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} ${I18N[currentLang].statusCount}`;
                 refreshHomeDaily();
+                fillCocktailSuggestions();
+                openRecipeFromHash();
                 updateDataInBackground();
                 return;
             }
@@ -4360,6 +4398,8 @@ async function fetchAndStoreData() {
 
     if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} ${I18N[currentLang].statusCount}`;
     refreshHomeDaily();
+    fillCocktailSuggestions();
+    openRecipeFromHash();
 }
 
 const SYNC_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000; // 14 günde bir otomatik kontrol

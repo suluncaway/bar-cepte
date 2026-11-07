@@ -63,3 +63,22 @@ toolsToggle?.addEventListener('click', () => {
     const open = document.querySelector('.app-header').classList.toggle('tools-open');
     toolsToggle.setAttribute('aria-expanded', String(open));
 });
+
+// Light/dark switch; theme.js applies the saved choice on the next load before paint.
+const themeToggle = document.getElementById('btn-theme-toggle');
+function syncThemeToggle() {
+    const light = document.documentElement.dataset.theme === 'light';
+    const en = typeof currentLang !== 'undefined' && currentLang === 'en';
+    themeToggle?.setAttribute('aria-pressed', String(light));
+    const label = document.getElementById('theme-toggle-label');
+    if (label) label.textContent = light ? (en ? 'Dark theme' : 'Koyu tema') : (en ? 'Light theme' : 'Açık tema');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#f6f3ee' : '#050505');
+}
+themeToggle?.addEventListener('click', () => {
+    const light = document.documentElement.dataset.theme !== 'light';
+    if (light) document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem('barcepte_theme', light ? 'light' : 'dark'); } catch {}
+    syncThemeToggle();
+});
+document.getElementById('btn-lang-toggle')?.addEventListener('click', () => setTimeout(syncThemeToggle));
+syncThemeToggle();
