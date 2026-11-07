@@ -111,7 +111,7 @@ const I18N = {
         detailsClose: 'Kapat ▲',
         homeCost: 'Ev Maliyeti:',
         barSavings: 'Bar Tasarrufu:',
-        portions: '👥 Porsiyon:',
+        portions: 'Porsiyon:',
         partyPortion: '8x Parti',
         ingredientsMeasures: 'Malzemeler & Ölçüler:',
         timerBtn: '⏱️ Sayaç',
@@ -119,13 +119,13 @@ const I18N = {
         servingGarnish: 'Servis/Garnitür:',
         instructions: 'Hazırlanışı:',
         startMix: 'Adım Adım Hazırlamaya Başla',
-        missingWarn: '⚠️ Eksik:',
+        missingWarn: 'Eksik:',
         substitute: 'Muadil:',
         addToBar: 'Bara Ekle',
-        inCart: '🛒 Çıkar',
-        addToCart: '➕ Alışverişe Ekle',
-        shoppingInList: '🛒 Listede',
-        shoppingAdd: '🛒 Listeye Ekle',
+        inCart: 'Çıkar',
+        addToCart: 'Alışverişe Ekle',
+        shoppingInList: 'Listede',
+        shoppingAdd: 'Listeye Ekle',
         smartTipTitle: 'AKILLI BAR ÖNERİSİ',
         barOverview: 'Bar Durumu & Envanter',
         barFillRate: 'Bar Doluluk Oranı',
@@ -292,7 +292,7 @@ const I18N = {
         detailsClose: 'Close ▲',
         homeCost: 'Home Cost:',
         barSavings: 'Bar Savings:',
-        portions: '👥 Servings:',
+        portions: 'Servings:',
         partyPortion: '8x Party',
         ingredientsMeasures: 'Ingredients & Measures:',
         timerBtn: '⏱️ Timer',
@@ -300,13 +300,13 @@ const I18N = {
         servingGarnish: 'Garnish / Glass:',
         instructions: 'Instructions:',
         startMix: 'Start Step-by-Step Mix',
-        missingWarn: '⚠️ Missing:',
+        missingWarn: 'Missing:',
         substitute: 'Substitute:',
         addToBar: 'Add to Bar',
-        inCart: '🛒 In Cart',
-        addToCart: '➕ Add to Cart',
-        shoppingInList: '🛒 In List',
-        shoppingAdd: '🛒 Add to List',
+        inCart: 'In Cart',
+        addToCart: 'Add to Cart',
+        shoppingInList: 'In List',
+        shoppingAdd: 'Add to List',
         smartTipTitle: 'SMART BAR TIP',
         barOverview: 'Bar Inventory & Overview',
         barFillRate: 'Bar Fill Rate',
@@ -926,12 +926,11 @@ function getAbvLabel(computedABV, lang = currentLang) {
     if (!computedABV) return lang === 'en' ? 'Custom' : 'Özel';
     const abv = typeof computedABV === 'object' ? (computedABV.abv ?? 0) : (Number(computedABV) || 0);
     if (abv === 0) {
-        return lang === 'en' ? '🟢 Non-Alcoholic (0%)' : '🟢 Alkolsüz (%0)';
+        return lang === 'en' ? 'Non-Alcoholic (0%)' : 'Alkolsüz (%0)';
     }
-    const icon = abv <= 8 ? '🍃' : abv <= 18 ? '🍹' : '🔥';
     return lang === 'en' 
-        ? `${icon} ~${abv}% ABV` 
-        : `${icon} ~%${abv} ABV`;
+        ? `~${abv}% ABV` 
+        : `~%${abv} ABV`;
 }
 
 // IndexedDB Başlatma
@@ -1728,14 +1727,12 @@ function renderIngredients() {
             }
             chipsContainer.innerHTML = selectedIngredients.map(id => {
                 const item = popularIngredients.find(pi => pi.id === id);
-                const emoji = item ? item.emoji : '🥃';
                 const name = item 
                     ? (currentLang === 'en' ? (item.nameEn || item.id) : item.name)
                     : (currentLang === 'en' ? id : translateIngredientName(id));
                 const encodedId = encodeURIComponent(id);
                 return `
                     <span class="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-200 border border-amber-500/35 px-2.5 py-1 rounded-xl text-xs font-semibold shadow-sm transition-all hover:border-amber-400">
-                        <span>${emoji}</span>
                         <span>${escapeHTML(name)}</span>
                         <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/80 hover:text-rose-400 font-bold ml-1 text-xs w-4 h-4 flex items-center justify-center rounded-full hover:bg-white/10" title="${currentLang === 'en' ? 'Remove from Bar' : 'Barından Çıkar'}">✕</button>
                     </span>
@@ -2157,7 +2154,7 @@ function updateSmartAdvice(missingMatches) {
                 </div>
                 <div class="flex gap-2 shrink-0 w-full sm:w-auto justify-end pt-1 sm:pt-0">
                     <button data-action="shopping" data-value="${escapeHTML(encodedIng)}" class="pill-btn text-xs bg-white/5 text-slate-300 border border-white/10 px-3 py-1.5 rounded-xl font-medium hover:border-amber-500/40">
-                        ${inShop ? (currentLang === 'en' ? '🛒 In List' : '🛒 Listede') : (currentLang === 'en' ? '🛒 Add to List' : '🛒 Listeye Ekle')}
+                        ${inShop ? (currentLang === 'en' ? 'In List' : 'Listede') : (currentLang === 'en' ? 'Add to List' : 'Listeye Ekle')}
                     </button>
                     <button data-action="ingredient" data-value="${escapeHTML(encodedIng)}" class="pill-btn text-xs bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl hover:bg-amber-400">
                         ${currentLang === 'en' ? '+ Add to Bar' : '+ Bara Ekle'}
@@ -2959,7 +2956,7 @@ function createCocktailCardElement(item, isMissingList) {
             const subDisplayName = sub ? (currentLang === 'en' ? (sub.subEn || sub.sub) : sub.sub) : '';
             const subHTML = sub ? `
             <div class="flex items-center justify-between gap-1 text-[10px] bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-xl text-amber-300 mt-1 min-w-0" data-stop-card>
-                <span class="truncate">💡 <b>${currentLang === 'en' ? 'Substitute:' : 'Muadil:'}</b> ${escapeHTML(subDisplayName)}</span>
+                <span class="truncate"><b>${currentLang === 'en' ? 'Substitute:' : 'Muadil:'}</b> ${escapeHTML(subDisplayName)}</span>
                 <button data-action="substitute" data-ing="${escapeHTML(encodedM)}" data-sub="${escapeHTML(encodeURIComponent(subDisplayName))}" class="pill-btn font-bold text-amber-400 hover:text-white shrink-0 ml-1.5 underline">
                     ${currentLang === 'en' ? 'Add to Bar' : 'Bara Ekle'}
                 </button>
@@ -2967,9 +2964,9 @@ function createCocktailCardElement(item, isMissingList) {
             return `
             <div class="flex flex-col gap-1 mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20 min-w-0">
                 <div class="flex items-center justify-between gap-2 min-w-0">
-                    <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">⚠️ ${currentLang === 'en' ? 'Missing:' : 'Eksik:'} ${safeM}</p>
+                    <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">${currentLang === 'en' ? 'Missing:' : 'Eksik:'} ${safeM}</p>
                     <button data-action="shopping" data-value="${escapeHTML(encodedM)}" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40 shrink-0">
-                        ${inShop ? (currentLang === 'en' ? '🛒 Remove' : '🛒 Çıkar') : (currentLang === 'en' ? '➕ Add to List' : '➕ Alışverişe Ekle')}
+                        ${inShop ? (currentLang === 'en' ? 'Remove' : 'Çıkar') : (currentLang === 'en' ? 'Add to List' : 'Alışverişe Ekle')}
                     </button>
                 </div>
                 ${subHTML}
@@ -3020,9 +3017,9 @@ function createCocktailCardElement(item, isMissingList) {
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap gap-1.5 mb-1.5">
                         <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${escapeHTML(getTasteLabel(d.computedTaste))}</span>
-                        <span class="text-[10px] font-semibold bg-black/30 text-slate-400 px-2 py-0.5 rounded-lg border border-white/5 font-mono">🔥 ~${d.computedCalories} kcal</span>
+                        <span class="text-[10px] font-semibold bg-black/30 text-slate-400 px-2 py-0.5 rounded-lg border border-white/5 font-mono">~${d.computedCalories} kcal</span>
                         ${abvBadge}
-                        <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono recipe-cost-badge">${currentLang === 'en' ? `💵 ~$${d.computedCost ? (d.computedCost.cost / 30).toFixed(2) : '1.20'}` : `💵 ~${d.computedCost ? d.computedCost.cost : 35} ₺`}</span>
+                        <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono recipe-cost-badge">${currentLang === 'en' ? `~$${d.computedCost ? (d.computedCost.cost / 30).toFixed(2) : '1.20'}` : `~${d.computedCost ? d.computedCost.cost : 35} ₺`}</span>
                     </div>
                     <h3 class="font-extrabold text-white text-base leading-snug break-words hyphens-auto text-title-responsive">${safeDrinkName}</h3>
                     <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 break-words">${glassBadge}</p>
@@ -3035,13 +3032,13 @@ function createCocktailCardElement(item, isMissingList) {
             <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden">
                 <!-- Ev Maliyeti ve Bar Tasarrufu -->
                 <div class="flex flex-wrap items-center justify-between gap-2 bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-2xl text-[11px] text-emerald-300">
-                    <span class="flex items-center gap-1 font-medium">💰 <b>${currentLang === 'en' ? 'Home Cost:' : 'Ev Maliyeti:'}</b> ${currentLang === 'en' ? `~$${d.computedCost ? (d.computedCost.cost / 30).toFixed(2) : '1.20'}` : `~${d.computedCost ? d.computedCost.cost : 35} ₺`}</span>
+                    <span class="flex items-center gap-1 font-medium"><b>${currentLang === 'en' ? 'Home Cost:' : 'Ev Maliyeti:'}</b> ${currentLang === 'en' ? `~$${d.computedCost ? (d.computedCost.cost / 30).toFixed(2) : '1.20'}` : `~${d.computedCost ? d.computedCost.cost : 35} ₺`}</span>
                     <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${currentLang === 'en' ? `Bar Savings: ~${d.computedCost ? d.computedCost.savingsPercent : 90}%` : `Bar Tasarrufu: ~%${d.computedCost ? d.computedCost.savingsPercent : 90}`}</span>
                 </div>
 
                 <!-- Porsiyon Kontrolü (Taşmayan Esnek Düzen) -->
                 <div class="flex flex-wrap items-center justify-between gap-1.5 bg-black/30 p-2 rounded-2xl border border-white/5" data-stop-card>
-                    <span class="text-[11px] text-slate-400 font-medium shrink-0">${currentLang === 'en' ? '👥 Servings:' : '👥 Porsiyon:'}</span>
+                    <span class="text-[11px] text-slate-400 font-medium shrink-0">${currentLang === 'en' ? 'Servings:' : 'Porsiyon:'}</span>
                     <div class="flex flex-wrap gap-1 shrink-0">
                         <button data-action="portion" data-card="${cardId}" data-value="1" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold">1x</button>
                         <button data-action="portion" data-card="${cardId}" data-value="2" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">2x</button>
@@ -3086,6 +3083,8 @@ function createCocktailCardElement(item, isMissingList) {
             const details = card.querySelector('.details-section');
             const icon = card.querySelector('.toggle-icon');
             const span = card.querySelector('.instruction-text span');
+            // An open card is a reading view: only its Close control closes it.
+            if (details.classList.contains('open') && !e.target.closest('.toggle-icon')) return;
             if (!details.classList.contains('open')) {
                 triggerHaptic('light');
                 const parentGrid = card.parentElement;
@@ -3568,6 +3567,9 @@ function openRecipeFromHash() {
     if (drink) openCocktail(drink);
 }
 window.addEventListener('hashchange', openRecipeFromHash);
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') document.querySelector('.cocktail-card:has(.details-section.open) .toggle-icon')?.click();
+});
 
 function openCocktail(randomDrink) {
     const searchInput = document.getElementById('cocktail-search');

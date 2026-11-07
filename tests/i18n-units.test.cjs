@@ -180,14 +180,14 @@ test('Non-alcoholic labels and ABV badges are properly localized in Turkish and 
     const getAbvLabel = new Function('computedABV', 'lang', 'currentLang', getAbvLabelRegex.exec(gameJs)[1]);
 
     // Test non-alcoholic (0 ABV)
-    assert.strictEqual(getAbvLabel({ abv: 0 }, 'tr'), '🟢 Alkolsüz (%0)');
-    assert.strictEqual(getAbvLabel({ abv: 0 }, 'en'), '🟢 Non-Alcoholic (0%)');
+    assert.strictEqual(getAbvLabel({ abv: 0 }, 'tr'), 'Alkolsüz (%0)');
+    assert.strictEqual(getAbvLabel({ abv: 0 }, 'en'), 'Non-Alcoholic (0%)');
 
     // Test alcoholic
-    assert.strictEqual(getAbvLabel({ abv: 15 }, 'tr'), '🍹 ~%15 ABV');
-    assert.strictEqual(getAbvLabel({ abv: 15 }, 'en'), '🍹 ~15% ABV');
-    assert.strictEqual(getAbvLabel({ abv: 5 }, 'en'), '🍃 ~5% ABV');
-    assert.strictEqual(getAbvLabel({ abv: 25 }, 'en'), '🔥 ~25% ABV');
+    assert.strictEqual(getAbvLabel({ abv: 15 }, 'tr'), '~%15 ABV');
+    assert.strictEqual(getAbvLabel({ abv: 15 }, 'en'), '~15% ABV');
+    assert.strictEqual(getAbvLabel({ abv: 5 }, 'en'), '~5% ABV');
+    assert.strictEqual(getAbvLabel({ abv: 25 }, 'en'), '~25% ABV');
 });
 
 test('Ingredient search supports global search across kitchen and alcohol categories with normalization and subcategory toggling', () => {
@@ -273,7 +273,7 @@ test('Cocktail search allows searching by both cocktail name and kitchen/alcohol
 
     // Verify service worker cache version is updated so clients receive latest game.js and hero video
     const swContent = fs.readFileSync('sw.js', 'utf8');
-    assert.match(swContent, /const CACHE_NAME = 'bar-cepte-v60-vivid';/, 'sw.js cache name updated');
+    assert.match(swContent, /const CACHE_NAME = 'bar-cepte-v61-vivid';/, 'sw.js cache name updated');
 
     // 2. recipeMatchesSearchToken helper is defined in game.js
     assert.ok(js.includes('function recipeMatchesSearchToken('), 'recipeMatchesSearchToken exists in game.js');

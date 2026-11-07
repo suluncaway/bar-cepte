@@ -25,7 +25,8 @@
     "sign": "powershell -ExecutionPolicy Bypass -File ./scripts/sign-exe.ps1",
     "build:css": "tailwindcss -i tailwind.input.css -o tailwind.css --minify",
     "test": "node --test tests/*.test.cjs",
-    "import:licenses": "node scripts/import-licenses.js"
+    "import:licenses": "node scripts/import-licenses.js",
+    "build:recipes": "node scripts/build-recipe-pages.js"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.0",

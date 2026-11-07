@@ -309,8 +309,8 @@ html[data-theme="light"] .empty-state { border-color:rgba(0,0,0,.15); }
 html[data-theme="light"] .app-footer { border-top-color:rgba(0,0,0,.08); color:#5a544c; }
 html[data-theme="light"] .ai-message-bubble { background:#f6f3ee!important; color:#1d1b18!important; }
 html[data-theme="light"] .ai-chat-composer { background:#fff!important; border-color:rgba(0,0,0,.15)!important; }
-html[data-theme="light"] :is(.text-amber-200,.text-amber-300,.text-amber-400,[class*="text-amber-300/"],[class*="text-amber-400/"]) { color:#c2560a!important; }
-html[data-theme="light"] .eyebrow { color:#c2560a; }
+html[data-theme="light"] :is(.text-amber-200,.text-amber-300,.text-amber-400,[class*="text-amber-300/"],[class*="text-amber-400/"]) { color:#a8460a!important; }
+html[data-theme="light"] .eyebrow { color:#a8460a; }
 html[data-theme="light"] .brand-mark { background:#121212; }
 #recipes-ready:empty, #recipes-missing:empty, #editorial-picks-grid:empty { --skeleton:rgba(127,127,127,.12); }
 html[data-theme="light"] :is(.pill-btn,button)[class*="bg-amber-500"]:not([class*="bg-amber-500/"]) { background:var(--grad-hot)!important; color:#fff!important; border-color:transparent!important; }
@@ -320,3 +320,20 @@ html[data-theme="light"] :is([class*="bg-rose-950"],[class*="bg-rose-500/"]) { b
 html[data-theme="light"] :is([class*="bg-emerald-950"],[class*="bg-emerald-500/"]) { background-color:#e6f6ef!important; }
 html[data-theme="light"] :is([class*="bg-amber-950"],[class*="bg-amber-500/"]) { background-color:#fff1e3!important; }
 html[data-theme="light"] :is(.section-aside,.selection-summary) { color:#6b645b!important; }
+
+/* Recipe detail: an opened card becomes a reading window (full screen on phones, centered on desktop) */
+.cocktail-card:has(.details-section.open) {
+  position:fixed!important; z-index:70; top:12px; bottom:12px; left:0; right:0; margin:0 auto!important;
+  width:min(560px, calc(100% - 24px)); height:calc(100dvh - 24px)!important; max-height:none; overflow-y:auto!important; overscroll-behavior:contain;
+  transform:none!important; box-shadow:0 0 0 100vmax rgba(0,0,0,.72), 0 24px 60px rgba(0,0,0,.5)!important;
+}
+body:has(.cocktail-card .details-section.open) { overflow:hidden; }
+.cocktail-card:has(.details-section.open) .toggle-icon { position:sticky; top:0; z-index:2; padding:6px 12px; border-radius:999px; background:rgba(16,16,16,.9); cursor:pointer; }
+html[data-theme="light"] .cocktail-card:has(.details-section.open) .toggle-icon { background:rgba(255,255,255,.95); }
+@media (max-width:767px) { .cocktail-card:has(.details-section.open) { top:0; bottom:0; width:100%; height:100dvh!important; border-radius:0!important; } }
+.cocktail-card:has(.details-section.open) { background:#121212!important; }
+html[data-theme="light"] .cocktail-card:has(.details-section.open) { background:#fff!important; }
+body:has(.cocktail-card .details-section.open) .app-header { z-index:0; }
+html[data-theme="light"] #reserve-modal :is([class*="bg-gradient-to"],[class*="from-slate"],[class*="from-black"]):not([class*="bg-clip-text"]) { background:#fff7ef!important; border-color:rgba(255,122,26,.35)!important; }
+html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-slate-300) { color:#1d1b18!important; }
+html[data-theme="light"] .hero-business-link { color:#a8460a; }
