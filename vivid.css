@@ -277,3 +277,46 @@ html body { font-family:var(--font-body); -webkit-font-smoothing:antialiased; te
 .tutorial-actions .primary-action { background:var(--grad-hot)!important; color:#fff!important; border:0!important; }
 .tutorial-skip { background:none; border:0; color:var(--muted); font-size:13px; cursor:pointer; padding:8px 4px; }
 .tutorial-skip:hover { color:#fff; }
+
+/* ===== Light theme (opt-in via the theme button; html[data-theme=light]) ===== */
+html[data-theme="light"] {
+  --bg-main:#f6f3ee; --surface:#ffffff; --surface-raised:#ffffff; --ink:#1d1b18; --muted:#6b645b;
+  --border-glass:rgba(0,0,0,.1); --shadow-soft:0 8px 24px rgba(60,40,10,.08); color-scheme:light;
+}
+html[data-theme="light"] body { background-color:#f6f3ee!important; background-image:radial-gradient(900px 480px at 50% -10%,rgba(255,122,26,.12),transparent 65%)!important; color:var(--ink); }
+html[data-theme="light"] .app-header { background:rgba(246,243,238,.96)!important; border-bottom-color:rgba(0,0,0,.08); box-shadow:0 4px 18px rgba(60,40,10,.06); }
+html[data-theme="light"] :is(.app-main,.app-header,dialog,.app-footer) :is(h1,h2,h3,#brand-title,.text-white) { color:#1d1b18!important; }
+html[data-theme="light"] :is(.text-slate-200,.text-slate-300,.text-slate-400) { color:#4f4a43!important; }
+html[data-theme="light"] :is(.text-slate-500,.text-slate-600) { color:#6b645b!important; }
+html[data-theme="light"] :is(.pill-btn,.topbar button,.text-action,.nav-more) { background:#fff!important; border-color:rgba(0,0,0,.12)!important; color:#2b2722!important; }
+html[data-theme="light"] .topbar #btn-open-reserve { background:var(--grad-hot)!important; color:#fff!important; }
+html[data-theme="light"] .main-navigation > :is(button,a) { color:#5a544c; }
+html[data-theme="light"] .main-navigation > button[aria-current="page"] { color:#fff!important; }
+html[data-theme="light"] :is(.editorial-hero,.discovery-controls,.acrylic-card,.personal-panel,.ingredient-shelf,.home-daily,.shortcut-tile,.ai-assistant-shell,.cocktail-card,#affiliate-banner) { background:#fff!important; border-color:rgba(0,0,0,.09)!important; box-shadow:0 6px 20px rgba(60,40,10,.06)!important; }
+html[data-theme="light"] .editorial-hero { background:linear-gradient(145deg,#fff3e8,#ffffff)!important; }
+html[data-theme="light"] .hero-copy > p, html[data-theme="light"] .home-daily p, html[data-theme="light"] .shortcut-tile small { color:#5a544c; }
+html[data-theme="light"] :is(input:not([type=checkbox]):not([type=radio]),textarea,select) { background:#fff!important; color:#1d1b18!important; border-color:rgba(0,0,0,.15)!important; }
+html[data-theme="light"] #ingredients-container > div:not([aria-pressed="true"]) { background:#faf8f5!important; border-color:rgba(0,0,0,.1)!important; color:#2b2722!important; }
+html[data-theme="light"] :is([class*="bg-slate-9"],[class*="bg-black/"],.bg-black\/30,.bg-black\/40) { background-color:#f1ede7!important; }
+html[data-theme="light"] :is([class*="border-white/"]) { border-color:rgba(0,0,0,.1)!important; }
+html[data-theme="light"] .cocktail-card .instruction-text { background:#f6f3ee!important; color:#2b2722!important; }
+html[data-theme="light"] .cocktail-card > img, html[data-theme="light"] .home-daily img { background:#f1ede7; }
+@media (max-width:767px) { html[data-theme="light"] .main-navigation { background:rgba(255,255,255,.96)!important; border-color:rgba(0,0,0,.1)!important; box-shadow:0 10px 30px rgba(60,40,10,.12)!important; } }
+html[data-theme="light"] :is(dialog,#personal-dialog,.tutorial-dialog,#shaker-timer-modal > div,#update-modal > div,#reserve-modal .acrylic-card,#auth-modal .acrylic-card) { background:#fff!important; color:#1d1b18; border-color:rgba(0,0,0,.12)!important; }
+html[data-theme="light"] :is(dialog::backdrop) { background:rgba(30,20,10,.45); }
+html[data-theme="light"] .tutorial-dialog p { color:#4f4a43; }
+html[data-theme="light"] .empty-state { border-color:rgba(0,0,0,.15); }
+html[data-theme="light"] .app-footer { border-top-color:rgba(0,0,0,.08); color:#5a544c; }
+html[data-theme="light"] .ai-message-bubble { background:#f6f3ee!important; color:#1d1b18!important; }
+html[data-theme="light"] .ai-chat-composer { background:#fff!important; border-color:rgba(0,0,0,.15)!important; }
+html[data-theme="light"] :is(.text-amber-200,.text-amber-300,.text-amber-400,[class*="text-amber-300/"],[class*="text-amber-400/"]) { color:#c2560a!important; }
+html[data-theme="light"] .eyebrow { color:#c2560a; }
+html[data-theme="light"] .brand-mark { background:#121212; }
+#recipes-ready:empty, #recipes-missing:empty, #editorial-picks-grid:empty { --skeleton:rgba(127,127,127,.12); }
+html[data-theme="light"] :is(.pill-btn,button)[class*="bg-amber-500"]:not([class*="bg-amber-500/"]) { background:var(--grad-hot)!important; color:#fff!important; border-color:transparent!important; }
+html[data-theme="light"] :is(.text-rose-300,.text-rose-400,[class*="text-rose-300/"]) { color:#b4233c!important; }
+html[data-theme="light"] :is(.text-emerald-300,.text-emerald-400) { color:#0b7a52!important; }
+html[data-theme="light"] :is([class*="bg-rose-950"],[class*="bg-rose-500/"]) { background-color:#fdecef!important; }
+html[data-theme="light"] :is([class*="bg-emerald-950"],[class*="bg-emerald-500/"]) { background-color:#e6f6ef!important; }
+html[data-theme="light"] :is([class*="bg-amber-950"],[class*="bg-amber-500/"]) { background-color:#fff1e3!important; }
+html[data-theme="light"] :is(.section-aside,.selection-summary) { color:#6b645b!important; }

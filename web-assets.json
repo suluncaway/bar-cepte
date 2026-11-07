@@ -35,6 +35,7 @@
   "personal-bar.js",
   "personal-ui.js",
   "tutorial.js",
+  "theme.js",
   "inventory.js",
   "business.html", "business.css", "business-rules.js", "business-flow.js", "business-reports.js", "business-ui.js"
 ]

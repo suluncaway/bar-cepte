@@ -38,3 +38,15 @@ th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
 .brand .brand-text{display:block;font:inherit;letter-spacing:inherit;color:inherit;margin:0}
 .brand .brand-text span{display:block;font:600 10px/1.6 "DM Sans",system-ui,sans-serif;letter-spacing:.24em;color:var(--gold);margin-top:2px}
 @media(max-width:600px){.brand .brand-logo{width:24px;height:32px}}
+/* Phones: report tables become one card per row, each value with its column label */
+@media(max-width:600px){
+.table-scroll{overflow:visible;border:0;border-radius:0}
+.table-scroll-hint{display:none}
+.report-table{min-width:0}
+.report-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.report-table,.report-table tbody,.report-table tr,.report-table td{display:block;width:100%}
+.report-table tr{border:1px solid var(--line);border-radius:16px;padding:6px 14px;margin-bottom:10px;background:rgba(255,255,255,.03)}
+.report-table td{display:flex;justify-content:space-between;gap:12px;min-width:0;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);text-align:right}
+.report-table td:last-child{border-bottom:0}
+.report-table td::before{content:attr(data-label);color:var(--muted);text-align:left;font-size:12px;flex-shrink:0;max-width:50%}
+}
