@@ -34,6 +34,7 @@
   "storage-migration.js",
   "personal-bar.js",
   "personal-ui.js",
+  "tutorial.js",
   "inventory.js",
   "business.html", "business.css", "business-rules.js", "business-flow.js", "business-reports.js", "business-ui.js"
 ]

@@ -260,3 +260,20 @@ html body { font-family:var(--font-body); -webkit-font-smoothing:antialiased; te
 .text-\[10px\] { font-size:11px!important; }
 .text-\[9px\] { font-size:10px!important; }
 .app-footer, .section-aside, .selection-summary { color:#b3ada5; }
+
+/* How-to tour for signed-out visitors */
+.tutorial-dialog { width:min(440px,calc(100% - 32px)); padding:26px 24px 20px; border-radius:24px; border:1px solid rgba(255,122,26,.35); background:#101010; color:var(--ink); }
+.tutorial-dialog::backdrop { background:rgba(0,0,0,.78); }
+.tutorial-dialog h2 { font-size:22px; font-weight:700; letter-spacing:-.02em; margin:14px 0 8px; }
+.tutorial-dialog p { color:#c9c2b9; font-size:14px; line-height:1.6; margin:0 0 16px; }
+.tutorial-dots { display:flex; gap:6px; }
+.tutorial-dots i { width:22px; height:4px; border-radius:4px; background:rgba(255,255,255,.15); }
+.tutorial-dots i.on { background:#ff7a1a; }
+.tutorial-hide { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-bottom:16px; }
+.tutorial-hide input { accent-color:#ff7a1a; }
+.tutorial-actions { display:flex; align-items:center; gap:8px; }
+.tutorial-actions > span { flex:1; }
+.tutorial-actions .primary-action, .tutorial-actions .text-action { min-height:42px; padding:0 18px; font-size:14px; }
+.tutorial-actions .primary-action { background:var(--grad-hot)!important; color:#fff!important; border:0!important; }
+.tutorial-skip { background:none; border:0; color:var(--muted); font-size:13px; cursor:pointer; padding:8px 4px; }
+.tutorial-skip:hover { color:#fff; }
