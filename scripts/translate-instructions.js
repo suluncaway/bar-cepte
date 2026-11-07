@@ -18,7 +18,11 @@ const grab = name => {
 const { translateToTurkish } = new Function(
     [grab('cleanInstructionText'), grab('convertOzToCl'), grab('translateToTurkish'), 'return { translateToTurkish };'].join('\n'))();
 
-const looksTurkish = text => /[çğıöşüÇĞİÖŞÜ]|\b(ve|ile|bir|bardağa|karıştırın|ekleyin|servis)\b/i.test(text);
+// translateToTurkish falls back to the (cleaned) English text when the service fails,
+// so "translated" means the result differs from the English original.
+const plain = text => String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+let source = '';
+const looksTurkish = text => !!text && (/[çğıöşüÇĞİÖŞÜ]/.test(text) || plain(text) !== plain(source));
 
 async function main() {
     const file = path.join(root, 'cocktails.json');
@@ -27,12 +31,13 @@ async function main() {
     for (const drink of drinks) {
         if (drink.strInstructionsTR || !drink.strInstructions) continue;
         let tr = '';
+        source = drink.strInstructions;
         for (let attempt = 0; attempt < 3 && !looksTurkish(tr); attempt++) {
             tr = await translateToTurkish(drink.strInstructions);
             if (!looksTurkish(tr)) await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
         }
         if (looksTurkish(tr)) { drink.strInstructionsTR = tr; done++; } else failed.push(drink.strDrink);
-        if (done % 25 === 0) fs.writeFileSync(file, JSON.stringify(drinks));
+        if (done % 10 === 0) { fs.writeFileSync(file, JSON.stringify(drinks)); console.log(`progress ${done}`); }
         await new Promise(r => setTimeout(r, 250));
     }
     fs.writeFileSync(file, JSON.stringify(drinks));
