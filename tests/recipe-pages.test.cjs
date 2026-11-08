@@ -20,7 +20,13 @@ test('recipe pages are escaped, uniquely named and listed in the sitemap', () =>
     assert.match(html, /href="\/#tarif=1"/);
     const sitemap = fs.readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
     assert.match(sitemap, /<loc>https:\/\/barcepte.com.tr\/<\/loc>/, 'existing entries are kept');
-    assert.equal((sitemap.match(/\/tarif\//g) || []).length, 4);
+    assert.equal((sitemap.match(/\/tarif\//g) || []).length, 5, 'index, 3 recipes and the rum category');
+    assert.match(sitemap, /\/rehber\/evde-bar-kurmak\.html/);
+    assert.match(sitemap, /\/hakkimizda\.html/);
+    assert.ok(fs.existsSync(path.join(root, 'tarif', 'kategori', 'rom.html')));
+    assert.ok(fs.existsSync(path.join(root, 'iletisim.html')));
+    assert.match(html, /Bu tarif hakkında/);
+    assert.match(html, /\/kullanim-kosullari\.html/, 'footer links the terms page');
     assert.equal(slugify('Mojito'), 'mojito');
     fs.rmSync(root, { recursive: true, force: true });
 });
