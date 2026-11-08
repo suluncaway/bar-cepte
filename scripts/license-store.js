@@ -95,6 +95,14 @@ function createFileStore(directory) {
             });store.pending=task.catch(()=>{});return task;
         },
         exportBackup: async () => ({version: 1, sold: read(soldFile, []), claimed: read(claimedFile, {})}),
+        // Anonymous usage counters: {day: {event: count}}
+        bumpMetrics: async (day, counts) => {
+            const file = path.join(directory, 'metrics.json'); const all = read(file, {});
+            const row = all[day] = all[day] || {};
+            for (const [name, n] of Object.entries(counts)) row[name] = (row[name] || 0) + n;
+            write(file, all);
+        },
+        getMetrics: async sinceDay => Object.fromEntries(Object.entries(read(path.join(directory, 'metrics.json'), {})).filter(([day]) => day >= sinceDay)),
         pending: Promise.resolve()
     };
     return Object.assign(store,createBusinessStore({read,write,file:path.join(directory,'businesses.json')}));
@@ -134,6 +142,8 @@ function createPostgresStore(connectionString) {
                             business_id TEXT NOT NULL REFERENCES barcepte_businesses(id), event_id TEXT NOT NULL,
                             seq BIGINT NOT NULL, payload JSONB NOT NULL, PRIMARY KEY(business_id,event_id), UNIQUE(business_id,seq));
                         CREATE INDEX IF NOT EXISTS barcepte_business_events_time ON barcepte_business_events (business_id, ((payload->>'createdAt')::bigint));
+                        CREATE TABLE IF NOT EXISTS barcepte_metrics (
+                            day TEXT NOT NULL, name TEXT NOT NULL, count BIGINT NOT NULL, PRIMARY KEY(day, name));
                     `);
                     await client.query('COMMIT');
                 } catch (error) {
@@ -191,6 +201,21 @@ function createPostgresStore(connectionString) {
                 AND COALESCE(payload->>'needsReview','false')<>'true'
                 AND ((payload->>'plan'='lifetime' AND (payload->>'expiresAt')::bigint=0) OR (payload->>'expiresAt')::bigint>$2)
                 ORDER BY (payload->>'claimedAt')::bigint DESC NULLS LAST LIMIT 1`,[uid,now])).rows[0]?.payload || null;
+        },
+        async bumpMetrics(day, counts) {
+            await store.ready();
+            for (const [name, n] of Object.entries(counts)) {
+                await pool.query(`INSERT INTO barcepte_metrics(day,name,count) VALUES($1,$2,$3)
+                    ON CONFLICT(day,name) DO UPDATE SET count=barcepte_metrics.count+EXCLUDED.count`, [day, name, n]);
+            }
+        },
+        async getMetrics(sinceDay) {
+            await store.ready();
+            const out = {};
+            for (const r of (await pool.query('SELECT day,name,count FROM barcepte_metrics WHERE day>=$1 ORDER BY day', [sinceDay])).rows) {
+                (out[r.day] = out[r.day] || {})[r.name] = Number(r.count);
+            }
+            return out;
         },
         async getBackup(uid) {
             await store.ready();const row=(await pool.query('SELECT payload,revision,updated_at FROM barcepte_backups WHERE uid=$1',[uid])).rows[0];

@@ -1475,6 +1475,7 @@ enableIngredientWheelScroll();
 function switchTab(tab) {
     // "home" and "ingredients" are pages of the cocktail explorer; data logic keeps using the "alkol" tab.
     const page = tab;
+    track('tab', page);
     if (tab === 'home' || tab === 'ingredients') tab = 'alkol';
     currentTab = tab;
     ['tab-home', 'tab-ingredients', 'tab-bar', 'tab-alkol', 'tab-mutfak', 'tab-favorites', 'tab-custom', 'tab-my-recipes', 'tab-shop', 'tab-sync', 'tab-ai'].forEach(t => {
@@ -2335,6 +2336,28 @@ function enrichDrink(d) {
     d.computedCost = calculateRecipeCost(d);
 }
 
+// Up to `size` ingredients that, bought together, complete the most recipes.
+// Greedy: each step adds the ingredient that completes the most recipes with the ones already picked.
+function bestShoppingSet(missingMatches, size = 3) {
+    const lists = missingMatches.map(m => m.missingList).filter(list => list.length && list.length <= size);
+    const picked = [];
+    const done = () => lists.filter(list => list.every(i => picked.includes(i))).length;
+    for (let step = 0; step < size; step++) {
+        let best = null, bestScore = -1;
+        for (const ing of new Set(lists.flat())) {
+            if (picked.includes(ing)) continue;
+            picked.push(ing);
+            // completed recipes first, then how many recipes the ingredient helps at all (tie-break)
+            const score = done() * 1000 + lists.filter(list => list.includes(ing)).length;
+            picked.pop();
+            if (score > bestScore) { bestScore = score; best = ing; }
+        }
+        if (!best) break;
+        picked.push(best);
+    }
+    return { items: picked, unlocked: done() };
+}
+
 // Akıllı Tavsiye Motoru: "Bunu Alırsan +X Tarif Açılır"
 function updateSmartAdvice(missingMatches) {
     const banner = document.getElementById('smart-recommendation-banner');
@@ -2376,9 +2399,21 @@ function updateSmartAdvice(missingMatches) {
         const tipBody = currentLang === 'en'
             ? `Add just <b class="text-amber-400 font-bold">${safeBestIng}</b> to your bar to unlock <b class="text-emerald-400 font-bold">+${maxVotes} new cocktails</b> right away!`
             : `Barına sadece <b class="text-amber-400 font-bold">${safeBestIng}</b> eklersen hemen <b class="text-emerald-400 font-bold">+${maxVotes} yeni kokteyl</b> yapabileceksin!`;
+        // Shopping trio: shown only when buying a few bottles together beats the single pick.
+        const trio = bestShoppingSet(missingMatches);
+        const trioNames = trio.items.map(i => escapeHTML(currentLang === 'en' ? i : translateIngredientName(i))).join(' + ');
+        const trioHtml = trio.items.length > 1 && trio.unlocked > maxVotes ? `
+                <div class="smart-trio flex flex-wrap items-center justify-between gap-2 pt-3 mt-1 border-t border-white/10 w-full">
+                    <p class="text-xs text-slate-200 min-w-0">${currentLang === 'en'
+                        ? `Shopping tip: <b class="text-amber-400">${trioNames}</b> unlocks <b class="text-emerald-400">+${trio.unlocked} cocktails</b>`
+                        : `Alışveriş önerisi: <b class="text-amber-400">${trioNames}</b> alırsan <b class="text-emerald-400">+${trio.unlocked} kokteyl</b> açılır`}</p>
+                    <button data-action="shopping-set" data-value="${escapeHTML(trio.items.map(encodeURIComponent).join('|'))}" class="pill-btn text-xs bg-white/5 text-slate-300 border border-white/10 px-3 py-1.5 rounded-xl font-medium hover:border-amber-500/40">
+                        ${currentLang === 'en' ? 'Add all to list' : 'Hepsini listeye ekle'}
+                    </button>
+                </div>` : '';
 
         const html = `
-            <div class="acrylic-card border-amber-500/30 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl min-w-0 overflow-hidden">
+            <div class="acrylic-card border-amber-500/30 p-4 rounded-3xl flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3 shadow-xl min-w-0 overflow-hidden">
                 <div class="flex items-center gap-3.5 min-w-0">
                     <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl shrink-0">
                         💡
@@ -2395,7 +2430,7 @@ function updateSmartAdvice(missingMatches) {
                     <button data-action="ingredient" data-value="${escapeHTML(encodedIng)}" class="pill-btn text-xs bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl hover:bg-amber-400">
                         ${currentLang === 'en' ? '+ Add to Bar' : '+ Bara Ekle'}
                     </button>
-                </div>
+                </div>${trioHtml}
             </div>
         `;
 
@@ -2729,41 +2764,53 @@ function downloadCocktailStoryCard(drinkId) {
 
     // Arka Plan Gradyanı
     const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
-    bgGrad.addColorStop(0, '#0a1210');
-    bgGrad.addColorStop(0.5, '#121f1b');
-    bgGrad.addColorStop(1, '#1b2f29');
+    bgGrad.addColorStop(0, '#0b0907');
+    bgGrad.addColorStop(0.5, '#070707');
+    bgGrad.addColorStop(1, '#050505');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, 1080, 1920);
 
     // Üst Merkez Altın Işıma
     const radialGrad = ctx.createRadialGradient(540, 420, 50, 540, 420, 500);
-    radialGrad.addColorStop(0, 'rgba(213, 180, 123, 0.12)');
+    radialGrad.addColorStop(0, 'rgba(255, 122, 26, 0.18)');
     radialGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = radialGrad;
     ctx.fillRect(0, 0, 1080, 950);
 
     // Dış Dekoratif Çerçeve
-    ctx.strokeStyle = 'rgba(213, 180, 123, 0.35)';
+    ctx.strokeStyle = 'rgba(255, 122, 26, 0.35)';
     ctx.lineWidth = 3;
     ctx.strokeRect(50, 50, 980, 1820);
 
     // İç İnce Çerçeve
-    ctx.strokeStyle = 'rgba(213, 180, 123, 0.15)';
+    ctx.strokeStyle = 'rgba(255, 122, 26, 0.12)';
     ctx.lineWidth = 1;
     ctx.strokeRect(65, 65, 950, 1790);
 
-    // Başlık
-    ctx.fillStyle = '#d5b47b';
+    // Başlık: cep logosu + marka
+    ctx.save();
+    ctx.translate(408, 96);
+    ctx.scale(0.42, 0.42);
+    ctx.translate(-10, 2);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#a5c6b3'; ctx.lineWidth = 4;
+    ctx.stroke(new Path2D('M66 26 L80 4'));
+    ctx.fillStyle = '#a5c6b3'; ctx.beginPath(); ctx.arc(66, 27, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#d9b77d'; ctx.lineWidth = 8;
+    ctx.stroke(new Path2D('M55 44 L30 14 H90 L65 44'));
+    ctx.stroke(new Path2D('M18 44 H102 V86 Q102 112 60 124 Q18 112 18 86 Z'));
+    ctx.restore();
+    ctx.fillStyle = '#ff9d4d';
     ctx.font = 'bold 26px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(currentLang === 'en' ? '🍸   P O C K E T   B A R' : '🍸   B A R   C E P T E', 540, 140);
+    ctx.fillText(currentLang === 'en' ? 'P O C K E T   B A R' : 'B A R   C E P T E', 570, 140);
 
-    ctx.fillStyle = '#8a9b93';
+    ctx.fillStyle = '#a8a29a';
     ctx.font = '500 18px sans-serif';
     ctx.fillText(currentLang === 'en' ? 'THE HOME BAR COLLECTION • ISSUE #01' : 'THE HOME BAR COLLECTION • SEÇKİ #01', 540, 180);
 
     // Çizgi
-    ctx.strokeStyle = 'rgba(213, 180, 123, 0.4)';
+    ctx.strokeStyle = 'rgba(255, 122, 26, 0.45)';
     ctx.beginPath();
     ctx.moveTo(340, 220);
     ctx.lineTo(740, 220);
@@ -2776,17 +2823,17 @@ function downloadCocktailStoryCard(drinkId) {
     ctx.fillText(drinkName, 540, 320);
 
     // Rozetler
-    const glass = currentLang === 'en' ? (d.strGlass || 'Cocktail Glass') : (glassTranslations[(d.strGlass || '').toLowerCase()] || d.strGlass || 'Kokteyl Bardağı');
+    const glass = (currentLang === 'en' ? (d.strGlass || 'Cocktail Glass') : (glassTranslations[(d.strGlass || '').toLowerCase()] || d.strGlass || 'Kokteyl Bardağı')).replace(/^[^\p{L}\p{N}(]+/u, '');
     const taste = getTasteLabel(d.computedTaste || 'Klasik');
     const abv = getAbvLabel(d.computedABV, currentLang);
     const cost = formatRecipeCost(d);
 
     ctx.font = '600 24px sans-serif';
-    ctx.fillStyle = '#d5b47b';
+    ctx.fillStyle = '#ff9d4d';
     ctx.fillText(`${glass}  •  ${taste}  •  ${abv}`, 540, 380);
 
     // Kutu 1: Malzemeler
-    ctx.fillStyle = 'rgba(10, 18, 16, 0.7)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -2794,7 +2841,7 @@ function downloadCocktailStoryCard(drinkId) {
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#d5b47b';
+    ctx.fillStyle = '#ff9d4d';
     ctx.font = 'bold 28px sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(currentLang === 'en' ? 'INGREDIENTS & MEASURES' : 'MALZEMELER & ÖLÇÜLER', 150, 500);
@@ -2816,19 +2863,19 @@ function downloadCocktailStoryCard(drinkId) {
 
     let yPos = 560;
     rawIngs.slice(0, 8).forEach((item) => {
-        ctx.fillStyle = '#d5b47b';
+        ctx.fillStyle = '#ff7a1a';
         ctx.beginPath();
         ctx.arc(160, yPos - 8, 5, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#eeeae0';
+        ctx.fillStyle = '#f7f4f0';
         ctx.font = '500 28px sans-serif';
         ctx.fillText(item, 185, yPos);
         yPos += 58;
     });
 
     // Kutu 2: Hazırlanışı
-    ctx.fillStyle = 'rgba(10, 18, 16, 0.7)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -2836,14 +2883,14 @@ function downloadCocktailStoryCard(drinkId) {
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#d5b47b';
+    ctx.fillStyle = '#ff9d4d';
     ctx.font = 'bold 28px sans-serif';
     ctx.fillText(currentLang === 'en' ? 'INSTRUCTIONS' : 'HAZIRLANIŞI', 150, 1220);
 
     const instr = currentLang === 'en' 
         ? (d.strInstructions || d.strInstructionsTR || 'Stir with ice and serve.') 
         : (d.strInstructionsTR || d.strInstructions || 'Buzla karıştırın ve servis edin.');
-    ctx.fillStyle = '#c5d2cb';
+    ctx.fillStyle = '#d6d0c8';
     ctx.font = '400 24px sans-serif';
     const words = instr.split(' ');
     let line = '';
@@ -2865,24 +2912,28 @@ function downloadCocktailStoryCard(drinkId) {
     }
 
     // Kutu 3: Maliyet
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+    ctx.fillStyle = 'rgba(255, 122, 26, 0.12)';
+    ctx.strokeStyle = 'rgba(255, 122, 26, 0.45)';
     ctx.beginPath();
     ctx.roundRect(110, 1680, 860, 90, 20);
     ctx.fill();
     ctx.stroke();
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#34d399';
+    ctx.fillStyle = '#ffc48a';
     ctx.font = 'bold 24px sans-serif';
-    ctx.fillText(currentLang === 'en' 
-        ? `💰 Home Cost: ${cost}   |   Bar Savings: ~85%+` 
-        : `💰 Ev Yapımı Maliyet: ${cost}   |   Bar Tasarrufu: ~%85+`, 540, 1735);
+    const savings = d.computedCost ? d.computedCost.savingsPercent : 0;
+    ctx.fillText(currentLang === 'en'
+        ? `Home Cost: ${cost}   |   Bar Savings: ~${savings}%`
+        : `Ev Yapımı Maliyet: ${cost}   |   Bar Tasarrufu: ~%${savings}`, 540, 1735);
 
     // Alt Filigran
-    ctx.fillStyle = '#6a7d74';
+    ctx.fillStyle = '#8a847c';
     ctx.font = '500 18px sans-serif';
-    ctx.fillText(currentLang === 'en' ? 'Pocket Bar — Smart Home Bar & Cocktail Assistant' : 'Bar Cepte — Akıllı Ev Barı & Kokteyl Asistanı', 540, 1820);
+    ctx.fillText(currentLang === 'en' ? 'Pocket Bar — Smart Home Bar & Cocktail Assistant' : 'Bar Cepte — Akıllı Ev Barı & Kokteyl Asistanı', 540, 1810);
+    ctx.fillStyle = '#ff9d4d';
+    ctx.font = '600 20px sans-serif';
+    ctx.fillText('barcepte.com.tr', 540, 1842);
 
     // İndirme Tetikle
     const link = document.createElement('a');
@@ -3335,6 +3386,7 @@ function createCocktailCardElement(item, isMissingList) {
                     });
                 }
                 details.classList.add('open');
+                track('recipe', d.isCustom ? 'custom' : d.idDrink);
                 icon.innerText = currentLang === 'en' ? "Close ▲" : "Kapat ▲";
 
                 // Android uygulaması için akıllı reklam tetikleyicisi
@@ -3767,12 +3819,27 @@ function refreshHomeDaily() {
     document.getElementById('home-daily')?.classList.toggle('hidden', !onHome || !renderDailyCocktail());
 }
 
+// Anonymous usage counters (no ids, no search text): batched and sent once when the page is hidden.
+const pendingMetrics = {};
+function track(kind, name) {
+    const key = `${kind}:${String(name).toLowerCase().replace(/[^a-z0-9_-]+/g, '_').slice(0, 40)}`;
+    pendingMetrics[key] = (pendingMetrics[key] || 0) + 1;
+}
+function flushMetrics() {
+    if (location.protocol !== 'https:' || !Object.keys(pendingMetrics).length) return;
+    const body = new Blob([JSON.stringify({ events: pendingMetrics })], { type: 'text/plain' });
+    try { if (navigator.sendBeacon('https://bar-cepte-webhook.onrender.com/api/metrics', body)) for (const k in pendingMetrics) delete pendingMetrics[k]; } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushMetrics(); });
+window.addEventListener('pagehide', flushMetrics);
+
 // Shareable recipe links: barcepte.com.tr/#tarif=<idDrink> opens that recipe.
 function recipeLink(id) {
     return `${location.origin}${location.pathname}#tarif=${encodeURIComponent(id)}`;
 }
 
 async function shareRecipeLink(id) {
+    track('action', 'share_link');
     const drink = [...customRecipes, ...allCocktails].find(d => d.idDrink === id);
     const url = recipeLink(id);
     try {

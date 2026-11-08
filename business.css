@@ -63,3 +63,5 @@ html[data-theme=light] .field>span{color:#5a544c}
 html[data-theme=light] .report-table tr{background:#fff}
 html[data-theme=light] #business-dialog{background:#fff;color:#1d1b18}
 html[data-theme=light] :is(button[aria-current=page],.primary){background:linear-gradient(135deg,#ff9a2e,#ff6a00);border-color:transparent;color:#fff}
+:is(button[aria-current=page],.primary){color:#1a0f05}
+html[data-theme=light] :is(button[aria-current=page],.primary){color:#1a0f05}

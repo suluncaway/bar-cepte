@@ -58,19 +58,22 @@ const businesses=require('./business-service').createBusinessService({store:lice
 const { createAIAssistant } = require('./ai-assistant');
 const aiAssistant = createAIAssistant();
 const aiRateLimits = new Map();
-function allowAIRequest(ip) {
+const metricsRateLimits = new Map();
+// Hourly per-address limit kept in memory only (addresses are never stored elsewhere).
+function allowRequest(limits, ip, max) {
     const now = Date.now();
     const windowMs = 60 * 60 * 1000;
-    const row = aiRateLimits.get(ip) || { startedAt: now, count: 0 };
+    const row = limits.get(ip) || { startedAt: now, count: 0 };
     if (now - row.startedAt >= windowMs) { row.startedAt = now; row.count = 0; }
-    if (row.count >= 12) return false;
+    if (row.count >= max) return false;
     row.count++;
-    aiRateLimits.set(ip, row);
-    if (aiRateLimits.size > 5000) {
-        for (const [key, value] of aiRateLimits) if (now - value.startedAt >= windowMs) aiRateLimits.delete(key);
+    limits.set(ip, row);
+    if (limits.size > 5000) {
+        for (const [key, value] of limits) if (now - value.startedAt >= windowMs) limits.delete(key);
     }
     return true;
 }
+const allowAIRequest = ip => allowRequest(aiRateLimits, ip, 12);
 const inFlightOrders = new Set();
 const getSoldLicenses = () => licenseStore.getSold();
 const getClaimedLicenses = () => licenseStore.getClaimed();
@@ -308,7 +311,7 @@ async function handleRequest(req, res) {
     const requestPath = new URL(req.url, 'http://localhost').pathname;
     if(await accounts.handle(req,res,requestPath,readJsonBody)) return;
     if(await businesses.handle(req,res,requestPath,readJsonBody)) return;
-    const adminPaths = ['/licenses', '/dashboard', '/api/resend-license', '/resend', '/api/export-licenses'];
+    const adminPaths = ['/licenses', '/dashboard', '/api/resend-license', '/resend', '/api/export-licenses', '/api/metrics/summary'];
     if (adminPaths.includes(requestPath) && !authorizeAdmin(req)) {
         res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Bar Cepte Admin", charset="UTF-8"' });
         return res.end('Unauthorized');
@@ -330,6 +333,33 @@ async function handleRequest(req, res) {
             'Content-Disposition': 'attachment; filename=bar-cepte-licenses.json'});
         res.end(JSON.stringify(backup));
         return;
+    }
+
+    // Anonymous usage counters: only allow-listed event names and counts, nothing that identifies a person.
+    if (req.method === 'POST' && requestPath === '/api/metrics') {
+        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
+        if (!allowRequest(metricsRateLimits, forwarded || req.socket?.remoteAddress || 'unknown', 60)) {
+            res.writeHead(429); return res.end();
+        }
+        try {
+            const body = await readJsonBody(req, 4 * 1024);
+            const counts = {};
+            for (const [name, n] of Object.entries(body.events || {}).slice(0, 40)) {
+                if (/^(tab|recipe|action):[a-z0-9_-]{1,40}$/.test(name) && Number.isInteger(n) && n > 0) counts[name] = Math.min(n, 50);
+            }
+            if (Object.keys(counts).length) await licenseStore.bumpMetrics(new Date().toISOString().slice(0, 10), counts);
+            res.writeHead(204); return res.end();
+        } catch {
+            res.writeHead(400); return res.end();
+        }
+    }
+    if (req.method === 'GET' && requestPath === '/api/metrics/summary') {
+        const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+        const days = await licenseStore.getMetrics(since);
+        const totals = {};
+        for (const row of Object.values(days)) for (const [name, n] of Object.entries(row)) totals[name] = (totals[name] || 0) + n;
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ since, totals: Object.fromEntries(Object.entries(totals).sort((a, b) => b[1] - a[1])), days }));
     }
 
     // AI kokteyl asistanı: anahtar yalnızca sunucuda tutulur; istekler IP başına sınırlandırılır.

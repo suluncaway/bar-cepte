@@ -45,6 +45,13 @@ document.addEventListener('click', event => {
             case 'export-story':
                 downloadCocktailStoryCard(value);
                 break;
+            case 'shopping-set':
+                track('action', 'shopping_set');
+                // Adds every item of the suggested set that is not on the list yet.
+                (button.dataset.value || '').split('|').map(decodeURIComponent)
+                    .filter(item => item && !shoppingList.includes(item))
+                    .forEach(item => toggleShoppingList(item, event));
+                break;
             case 'share-link':
                 shareRecipeLink(value);
                 break;
