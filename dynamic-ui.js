@@ -1,5 +1,6 @@
 // Event handlers receive strings as data, never interpolated JavaScript.
 document.addEventListener('click', event => {
+    if (typeof track === 'function' && event.target.closest('a[rel~="sponsored"]')) track('action', 'affiliate');
     const button = event.target.closest('[data-action]');
     if (button) {
         event.stopPropagation();

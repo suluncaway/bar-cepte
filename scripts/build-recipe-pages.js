@@ -2,7 +2,7 @@
 // Builds one static, crawlable page per recipe (tarif/<slug>.html), an index page,
 // and the recipe URLs in sitemap.xml. Run: npm run build:recipes
 const fs = require('node:fs');
-const { INFO_PAGES, CATEGORIES, GUIDES, TIPS } = require('./site-content');
+const { INFO_PAGES, CATEGORIES, GUIDES, TIPS, PRODUCTS } = require('./site-content');
 const path = require('node:path');
 
 const SITE = 'https://barcepte.com.tr';
@@ -54,7 +54,7 @@ h1{font-size:34px;line-height:1.1;margin:8px 0}.meta{color:#a8a29a}ul{padding-le
 .site{max-width:720px;margin:0 auto;padding:14px 20px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between}
 header.site{border-bottom:1px solid #222}header.site nav{display:flex;flex-wrap:wrap;gap:6px 16px}.brand{font-weight:800;color:#f7f4f0;text-decoration:none}
 footer.site{display:block;border-top:1px solid #222;color:#a8a29a;font-size:13px;padding:24px 20px 40px}
-.about{background:#121212;border:1px solid #222;border-radius:16px;padding:4px 18px;margin:24px 0}dt{font-weight:700;margin-top:14px}dd{margin:4px 0 0}`;
+.about,.gear{background:#121212;border:1px solid #222;border-radius:16px;padding:4px 18px;margin:24px 0}.gear li{margin:8px 0}.small{font-size:13px;color:#a8a29a}dt{font-weight:700;margin-top:14px}dd{margin:4px 0 0}`;
 
 // AdSense runs only on content pages (recipes, categories, guides), never on the app's empty/gate screens.
 const AD_CLIENT = 'ca-pub-1804104950968329', AD_SLOT = '9651225274';
@@ -64,6 +64,7 @@ const CSP = "default-src 'self'; img-src 'self' https://www.thecocktaildb.com; s
 const AD_CSP = "default-src 'self'; img-src 'self' data: https:; style-src 'unsafe-inline'; script-src 'self' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.adtrafficquality.google https://*.google.com https://*.gstatic.com; frame-src https:; connect-src https:; base-uri 'none'; form-action 'none'";
 const NAV = `<header class="site"><a class="brand" href="/">🍸 Bar Cepte</a><nav><a href="/tarif/">Tarifler</a><a href="/rehber/">Rehberler</a><a href="/hakkimizda.html">Hakkımızda</a><a href="/">Uygulamayı aç</a></nav></header>`;
 const FOOTER = `<footer class="site"><p>Bu sitedeki alkollü içecek tarifleri yalnızca 18 yaş ve üzeri yetişkinler içindir. Bar Cepte alkollü içki satışı yapmaz. Alkolü ölçülü tüketin; alkol aldıysanız araç kullanmayın.</p>
+<p>Ekipman önerilerindeki bazı bağlantılar ortaklık bağlantısıdır; bu bağlantılardan yapılan alışverişlerden Bar Cepte komisyon kazanabilir.</p>
 <p><a href="/hakkimizda.html">Hakkımızda</a> · <a href="/iletisim.html">İletişim</a> · <a href="/privacy.html">Gizlilik Politikası</a> · <a href="/kullanim-kosullari.html">Kullanım Koşulları</a> · <a href="/rehber/sorumlu-tuketim.html">Sorumlu Tüketim</a></p><p>© 2026 Bar Cepte</p></footer>`;
 
 function page({ title, description, canonical, body, jsonLd, image, ads }) {
@@ -106,6 +107,23 @@ function aboutRecipe(drink, rows, cats) {
     return `<section class="about"><h2>Bu tarif hakkında</h2>${parts.join('\n')}</section>`;
 }
 
+// Equipment box with affiliate links (rel=sponsored).
+const gearBox = (keys, heading = 'Önerilen ekipmanlar') => {
+    const items = [...new Set(keys)].map(k => PRODUCTS[k]).filter(Boolean);
+    return items.length ? `<section class="gear"><h2>${esc(heading)}</h2><ul>${items.map(p => `<li><a href="${esc(p.url)}" target="_blank" rel="sponsored noopener noreferrer">${esc(p.name)}</a> — ${esc(p.note)}</li>`).join('')}</ul><p class="small">Ortaklık bağlantısı: alışveriş yaparsan Bar Cepte komisyon kazanabilir, fiyat değişmez.</p></section>` : '';
+};
+// Equipment a recipe needs, from its technique and glass.
+function recipeGear(drink) {
+    const en = (drink.strInstructions || '').toLowerCase(), glass = (drink.strGlass || '').toLowerCase(), keys = [];
+    if (/shake|shaker/.test(en)) keys.push('shaker');
+    if (/muddle|crush/.test(en)) keys.push('muddler');
+    if (/lemon|lime/.test(ingredientText(drink))) keys.push('squeezer');
+    if (/cocktail|martini|coupe|margarita|nick/.test(glass)) keys.push('coupe');
+    if (/highball|collins/.test(glass)) keys.push('highball');
+    if (/old-fashioned|whiskey/.test(glass)) keys.push('ice');
+    return keys.slice(0, 3);
+}
+
 const listItems = (items, slugs) => `<div class="list">${items.map(d => `<a href="/tarif/${slugs.get(d)}.html">${esc(d.strDrink)}</a>`).join('')}</div>`;
 
 function build({ root = path.join(__dirname, '..'), drinks } = {}) {
@@ -139,6 +157,7 @@ ${image ? `<img src="${esc(image)}" alt="${esc(drink.strDrink)}" loading="lazy">
 <h2>Malzemeler</h2><ul>${rows.map(r => `<li>${esc(rowText(r))}</li>`).join('')}</ul>
 <h2>Yapılışı</h2><p>${esc(instructions)}</p>
 ${aboutRecipe(drink, rows, catsOf.get(drink))}
+${gearBox(recipeGear(drink), 'Bu tarif için ekipman')}
 ${AD_UNIT}
 ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h2>${listItems(related, slugs)}` : ''}
 <a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır →</a>`;
@@ -183,7 +202,7 @@ ${AD_UNIT}
         fs.writeFileSync(path.join(guideDir, `${guide.slug}.html`), page({
             title: `${guide.title} | Bar Cepte`, description: guide.description, canonical: url, ads: true,
             jsonLd: { '@context': 'https://schema.org', '@type': 'Article', headline: guide.title, description: guide.description, inLanguage: 'tr', url },
-            body: `<p><a href="/rehber/">← Rehberler</a></p><h1>${esc(guide.title)}</h1>${guide.html}\n${AD_UNIT}\n<h2>Diğer rehberler</h2><ul>${guideLinks}</ul>`
+            body: `<p><a href="/rehber/">← Rehberler</a></p><h1>${esc(guide.title)}</h1>${guide.html}\n${gearBox(guide.products || [])}\n${AD_UNIT}\n<h2>Diğer rehberler</h2><ul>${guideLinks}</ul>`
         }));
     }
     for (const info of INFO_PAGES) {
