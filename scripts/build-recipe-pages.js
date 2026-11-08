@@ -10,6 +10,8 @@ const TR_CHARS = { ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' };
 const slugify = name => String(name).toLowerCase().replace(/[çğıöşü]/g, ch => TR_CHARS[ch])
     .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'tarif';
 const safeImage = src => /^https:\/\/www\.thecocktaildb\.com\/images\//.test(src || '') ? src : '';
+// Prefer our mirrored copy (img/drinks/, see scripts/mirror-drink-images.js) when it exists.
+const ownImage = src => { const name = src.split('/').pop(); return name && fs.existsSync(path.join(__dirname, '..', 'img', 'drinks', name)) ? `${SITE}/img/drinks/${name}` : src; };
 
 // Turkish names come from the app's own tables in game.js, so pages and app agree.
 const game = fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8');
@@ -69,7 +71,7 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
         let slug = slugify(drink.strDrink);
         if (used.has(slug)) slug = `${slug}-${slugify(drink.idDrink)}`;
         used.add(slug);
-        const url = `${SITE}/tarif/${slug}.html`, image = safeImage(drink.strDrinkThumb), rows = ingredients(drink);
+        const url = `${SITE}/tarif/${slug}.html`, image = ownImage(safeImage(drink.strDrinkThumb)), rows = ingredients(drink);
         const title = `${drink.strDrink} Tarifi — Malzemeler ve Yapılışı | Bar Cepte`;
         const description = `${drink.strDrink} nasıl yapılır? ${rows.length} malzeme: ${rows.map(r => r.name).join(', ')}.`;
         const category = CATEGORY_TR[drink.strCategory] || drink.strCategory;

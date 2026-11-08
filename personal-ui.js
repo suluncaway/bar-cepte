@@ -178,7 +178,7 @@
         return `<p>${result.ready.length ? t('Malzemelerin var; miktarı belirtilmeyenleri elle kontrol et.', 'You have the ingredients; check unspecified quantities manually.') :
             t('Henüz hazır tarif yok. Bunlar için eksik malzemeler:', 'No recipes are ready yet. Missing ingredients for these recipes:')}</p>
             <div class="personal-grid">${rows.map(row=>`<article class="personal-mini">
-                ${BarSecurity.safeImage(row.drink.strDrinkThumb) ? `<img class="personal-photo" src="${e(BarSecurity.safeImage(row.drink.strDrinkThumb))}" alt="${e(row.drink.strDrink)}" loading="lazy" data-image-fallback>` : '<span class="personal-photo personal-photo-fallback" aria-hidden="true">🍹</span>'}
+                ${BarSecurity.safeImage(row.drink.strDrinkThumb) ? `<img class="personal-photo" src="${e(BarSecurity.displayImage(row.drink.strDrinkThumb))}" alt="${e(row.drink.strDrink)}" loading="lazy" data-image-fallback>` : '<span class="personal-photo personal-photo-fallback" aria-hidden="true">🍹</span>'}
                 <h4>${e(row.drink.strDrink)}</h4>
                 <p>${row.missing.length ? `${t('Eksik / stok yetersiz', 'Missing / insufficient stock')}: ${row.missing.map(name=>e(en()?name:translateIngredientName(name))).join(', ')}` :
                     row.explicit ? t(`${tasteName(row.taste)} tatları sevdiğin ve malzemelerin hazır olduğu için.`, `Because you like ${tasteName(row.taste)} flavours and have the ingredients.`) :

@@ -80,6 +80,9 @@ document.addEventListener('click', event => {
 }, true);
 document.addEventListener('error', event => {
     const image = event.target;
+    // Our mirrored photo is missing (new drink, or desktop/mobile app): use the original once.
+    const mirrored = image.tagName === 'IMG' && !image.dataset.mirrorTried && /(?:^|\/)img\/drinks\/([\w.-]+)$/.exec(image.getAttribute('src') || '');
+    if (mirrored) { image.dataset.mirrorTried = '1'; image.src = `https://www.thecocktaildb.com/images/media/drink/${mirrored[1]}`; return; }
     if (image.tagName !== 'IMG' || !image.hasAttribute('data-image-fallback')) return;
     const fallback = document.createElement('span');
     fallback.innerHTML = '<svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8-7-8ZM12 12v7M8 20h8"/></svg>';
