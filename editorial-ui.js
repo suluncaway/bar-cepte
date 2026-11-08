@@ -78,6 +78,7 @@ themeToggle?.addEventListener('click', () => {
     const light = document.documentElement.dataset.theme !== 'light';
     if (light) document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
     try { localStorage.setItem('barcepte_theme', light ? 'light' : 'dark'); } catch {}
+    if (typeof track === 'function') track('action', light ? 'theme_light' : 'theme_dark');
     syncThemeToggle();
 });
 document.getElementById('btn-lang-toggle')?.addEventListener('click', () => setTimeout(syncThemeToggle));

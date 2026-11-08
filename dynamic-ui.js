@@ -46,6 +46,7 @@ document.addEventListener('click', event => {
                 downloadCocktailStoryCard(value);
                 break;
             case 'shopping-set':
+                track('action', 'shopping_set');
                 // Adds every item of the suggested set that is not on the list yet.
                 (button.dataset.value || '').split('|').map(decodeURIComponent)
                     .filter(item => item && !shoppingList.includes(item))

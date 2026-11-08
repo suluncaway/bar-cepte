@@ -1475,6 +1475,7 @@ enableIngredientWheelScroll();
 function switchTab(tab) {
     // "home" and "ingredients" are pages of the cocktail explorer; data logic keeps using the "alkol" tab.
     const page = tab;
+    track('tab', page);
     if (tab === 'home' || tab === 'ingredients') tab = 'alkol';
     currentTab = tab;
     ['tab-home', 'tab-ingredients', 'tab-bar', 'tab-alkol', 'tab-mutfak', 'tab-favorites', 'tab-custom', 'tab-my-recipes', 'tab-shop', 'tab-sync', 'tab-ai'].forEach(t => {
@@ -3369,6 +3370,7 @@ function createCocktailCardElement(item, isMissingList) {
                     });
                 }
                 details.classList.add('open');
+                track('recipe', d.isCustom ? 'custom' : d.idDrink);
                 icon.innerText = currentLang === 'en' ? "Close ▲" : "Kapat ▲";
 
                 // Android uygulaması için akıllı reklam tetikleyicisi
@@ -3801,12 +3803,27 @@ function refreshHomeDaily() {
     document.getElementById('home-daily')?.classList.toggle('hidden', !onHome || !renderDailyCocktail());
 }
 
+// Anonymous usage counters (no ids, no search text): batched and sent once when the page is hidden.
+const pendingMetrics = {};
+function track(kind, name) {
+    const key = `${kind}:${String(name).toLowerCase().replace(/[^a-z0-9_-]+/g, '_').slice(0, 40)}`;
+    pendingMetrics[key] = (pendingMetrics[key] || 0) + 1;
+}
+function flushMetrics() {
+    if (location.protocol !== 'https:' || !Object.keys(pendingMetrics).length) return;
+    const body = new Blob([JSON.stringify({ events: pendingMetrics })], { type: 'text/plain' });
+    try { if (navigator.sendBeacon('https://bar-cepte-webhook.onrender.com/api/metrics', body)) for (const k in pendingMetrics) delete pendingMetrics[k]; } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushMetrics(); });
+window.addEventListener('pagehide', flushMetrics);
+
 // Shareable recipe links: barcepte.com.tr/#tarif=<idDrink> opens that recipe.
 function recipeLink(id) {
     return `${location.origin}${location.pathname}#tarif=${encodeURIComponent(id)}`;
 }
 
 async function shareRecipeLink(id) {
+    track('action', 'share_link');
     const drink = [...customRecipes, ...allCocktails].find(d => d.idDrink === id);
     const url = recipeLink(id);
     try {
