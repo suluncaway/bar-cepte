@@ -13,15 +13,16 @@ const INFO_PAGES = [
             'Sitedeki 440’tan fazla tarif, dünyada yaygın olarak bilinen klasik ve modern kokteyllerden oluşur. Malzeme adlarını, ölçüleri (oz yerine cl) ve bardak adlarını Türkçeye uyarlıyoruz; yapılış adımlarını da Türkçe olarak sunuyoruz. Tariflerin yanında evde bar kurmak, ekipman seçmek ve temel teknikler hakkında <a href="/rehber/">rehber yazıları</a> da yayınlıyoruz.',
             'Uygulama içinde kişisel barını kaydedebilir, favori tariflerini işaretleyebilir, porsiyonu çoğaltabilir, alışveriş listesi oluşturabilir ve kendi tariflerini ekleyebilirsin. AI Barmen özelliği, elindeki malzemelere göre öneri yapar; bu öneriler otomatik üretildiği için servis etmeden önce ölçüleri kontrol etmeni öneririz.',
             'Bar Cepte hiçbir şekilde alkollü içki satmaz. İçerikler yalnızca 18 yaş ve üzeri yetişkinler içindir; alkolü ölçülü ve sorumlu tüketmeni, alkol aldıysan araç kullanmamanı rica ederiz. Alkolsüz seçenekler için <a href="/tarif/kategori/alkolsuz.html">alkolsüz tarifler</a> sayfasına bakabilirsin.',
-            'Proje bağımsız olarak geliştiriliyor. Görüş, öneri ve hata bildirimleri için <a href="/iletisim.html">iletişim sayfasını</a> kullanabilirsin.'
+            'Proje bağımsız olarak geliştiriliyor. Görüş, öneri ve hata bildirimleri için <a href="mailto:barcepte@gmail.com">barcepte@gmail.com</a> adresine yazabilir ya da <a href="/iletisim.html">iletişim sayfasını</a> kullanabilirsin.'
         )
     },
     {
         slug: 'iletisim', title: 'İletişim',
         description: 'Bar Cepte ile iletişime geç: öneri, hata bildirimi ve telif talepleri.',
         html: p(
-            'Bar Cepte hakkında soru, öneri, hata bildirimi veya telif hakkı talebin varsa bize GitHub üzerinden ulaşabilirsin. Yeni bir kayıt (issue) açman yeterli; mesajlar düzenli olarak okunur ve yanıtlanır.',
-            '<a href="https://github.com/suluncaway/bar-cepte/issues" rel="noopener">github.com/suluncaway/bar-cepte/issues</a>',
+            'Bar Cepte hakkında soru, öneri, hata bildirimi veya telif hakkı talebin varsa bize e-posta ile ulaşabilirsin. Mesajlar düzenli olarak okunur ve yanıtlanır.',
+            '<strong>E-posta:</strong> <a href="mailto:barcepte@gmail.com">barcepte@gmail.com</a>',
+            'Hata bildirimleri için GitHub üzerinden kayıt (issue) da açabilirsin: <a href="https://github.com/suluncaway/bar-cepte/issues" rel="noopener">github.com/suluncaway/bar-cepte/issues</a>',
             'Abonelik (Reserve) ve ödeme konularında, satın alma sırasında Shopier’den gelen sipariş bilgilerini mesajına eklersen daha hızlı yardımcı olabiliriz. Lütfen mesajlarında şifre, kart bilgisi gibi hassas bilgiler paylaşma.',
             'Kişisel verilerin nasıl işlendiğini <a href="/privacy.html">Gizlilik Politikası</a> sayfasında, kullanım şartlarını <a href="/kullanim-kosullari.html">Kullanım Koşulları</a> sayfasında bulabilirsin.'
         )
