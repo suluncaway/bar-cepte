@@ -17,7 +17,7 @@
             sec3Title: "<span>🔒</span> Veri Gizliliği ve Yerel Depolama (LocalStorage)",
             sec3P: "Barınız, favorileriniz, özel tarifleriniz, tat tercihleriniz ve son 100 hazırlamanıza ait değerlendirme ve notlar cihazınızda (LocalStorage) saklanır. Bu alan şifreli bir kasa değildir; hassas bilgi yazmayın. Hazırlama geçmişini Barım bölümünden silebilirsiniz. Manuel yedek kodu bu verileri içerir. Google ile giriş ve bulut yedekleme kullanıldığında veriler hesabınıza bağlı sunucu yedeğine de aktarılır. Yerel silmelerin bulut yedeğine yansıması için yeniden yedekleyin.",
             sec4Title: "<span>✉️</span> İletişim & Hak Talepleri",
-            sec4P: "Gizlilik politikamız, içeriklerimiz veya telif hakları ile ilgili her türlü soru ve geri bildiriminiz için GitHub profilimiz üzerinden veya proje sayfamızdan bizimle iletişime geçebilirsiniz:",
+            sec4P: "Gizlilik politikamız, içeriklerimiz veya telif hakları ile ilgili her türlü soru ve geri bildiriminiz için bize e-posta ile ya da GitHub proje sayfamızdan ulaşabilirsiniz:",
             footer: "&copy; 2026 Bar Cepte — Tüm hakları saklıdır."
         },
         en: {
@@ -36,7 +36,7 @@
             sec3Title: "<span>🔒</span> Data Privacy & Local Storage",
             sec3P: "Your bar, favourites, custom recipes, taste preferences and the ratings and notes for your last 100 preparations are stored on your device (LocalStorage). This is not an encrypted vault; avoid sensitive information. You can delete preparation history in My Bar. Manual backup codes include this data. When you sign in with Google and use cloud backup, data is also sent to your account's server backup. Back up again to reflect local deletions in your cloud backup.",
             sec4Title: "<span>✉️</span> Contact & Legal Inquiries",
-            sec4P: "For any questions, suggestions, or copyright inquiries regarding our privacy policy or content, please feel free to reach out via our GitHub repository:",
+            sec4P: "For any questions, suggestions, or copyright inquiries regarding our privacy policy or content, reach us by email or via our GitHub repository:",
             footer: "&copy; 2026 Pocket Bar — All rights reserved."
         }
     };
@@ -96,7 +96,7 @@
         const sec4Title = document.getElementById('privacy-sec4-title');
         if (sec4Title) sec4Title.innerHTML = t.sec4Title;
 
-        const sec4P = document.getElementById('privacy-sec4-p');
+        const sec4P = document.getElementById('privacy-sec4-text'); // text only, keeps the links
         if (sec4P) sec4P.textContent = t.sec4P;
 
         const footer = document.getElementById('privacy-footer');
