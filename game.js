@@ -2335,6 +2335,28 @@ function enrichDrink(d) {
     d.computedCost = calculateRecipeCost(d);
 }
 
+// Up to `size` ingredients that, bought together, complete the most recipes.
+// Greedy: each step adds the ingredient that completes the most recipes with the ones already picked.
+function bestShoppingSet(missingMatches, size = 3) {
+    const lists = missingMatches.map(m => m.missingList).filter(list => list.length && list.length <= size);
+    const picked = [];
+    const done = () => lists.filter(list => list.every(i => picked.includes(i))).length;
+    for (let step = 0; step < size; step++) {
+        let best = null, bestScore = -1;
+        for (const ing of new Set(lists.flat())) {
+            if (picked.includes(ing)) continue;
+            picked.push(ing);
+            // completed recipes first, then how many recipes the ingredient helps at all (tie-break)
+            const score = done() * 1000 + lists.filter(list => list.includes(ing)).length;
+            picked.pop();
+            if (score > bestScore) { bestScore = score; best = ing; }
+        }
+        if (!best) break;
+        picked.push(best);
+    }
+    return { items: picked, unlocked: done() };
+}
+
 // Akıllı Tavsiye Motoru: "Bunu Alırsan +X Tarif Açılır"
 function updateSmartAdvice(missingMatches) {
     const banner = document.getElementById('smart-recommendation-banner');
@@ -2376,9 +2398,21 @@ function updateSmartAdvice(missingMatches) {
         const tipBody = currentLang === 'en'
             ? `Add just <b class="text-amber-400 font-bold">${safeBestIng}</b> to your bar to unlock <b class="text-emerald-400 font-bold">+${maxVotes} new cocktails</b> right away!`
             : `Barına sadece <b class="text-amber-400 font-bold">${safeBestIng}</b> eklersen hemen <b class="text-emerald-400 font-bold">+${maxVotes} yeni kokteyl</b> yapabileceksin!`;
+        // Shopping trio: shown only when buying a few bottles together beats the single pick.
+        const trio = bestShoppingSet(missingMatches);
+        const trioNames = trio.items.map(i => escapeHTML(currentLang === 'en' ? i : translateIngredientName(i))).join(' + ');
+        const trioHtml = trio.items.length > 1 && trio.unlocked > maxVotes ? `
+                <div class="smart-trio flex flex-wrap items-center justify-between gap-2 pt-3 mt-1 border-t border-white/10 w-full">
+                    <p class="text-xs text-slate-200 min-w-0">${currentLang === 'en'
+                        ? `Shopping tip: <b class="text-amber-400">${trioNames}</b> unlocks <b class="text-emerald-400">+${trio.unlocked} cocktails</b>`
+                        : `Alışveriş önerisi: <b class="text-amber-400">${trioNames}</b> alırsan <b class="text-emerald-400">+${trio.unlocked} kokteyl</b> açılır`}</p>
+                    <button data-action="shopping-set" data-value="${escapeHTML(trio.items.map(encodeURIComponent).join('|'))}" class="pill-btn text-xs bg-white/5 text-slate-300 border border-white/10 px-3 py-1.5 rounded-xl font-medium hover:border-amber-500/40">
+                        ${currentLang === 'en' ? 'Add all to list' : 'Hepsini listeye ekle'}
+                    </button>
+                </div>` : '';
 
         const html = `
-            <div class="acrylic-card border-amber-500/30 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl min-w-0 overflow-hidden">
+            <div class="acrylic-card border-amber-500/30 p-4 rounded-3xl flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3 shadow-xl min-w-0 overflow-hidden">
                 <div class="flex items-center gap-3.5 min-w-0">
                     <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl shrink-0">
                         💡
@@ -2395,7 +2429,7 @@ function updateSmartAdvice(missingMatches) {
                     <button data-action="ingredient" data-value="${escapeHTML(encodedIng)}" class="pill-btn text-xs bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl hover:bg-amber-400">
                         ${currentLang === 'en' ? '+ Add to Bar' : '+ Bara Ekle'}
                     </button>
-                </div>
+                </div>${trioHtml}
             </div>
         `;
 
