@@ -47,10 +47,17 @@ h1{font-size:34px;line-height:1.1;margin:8px 0}.meta{color:#a8a29a}ul{padding-le
 .cta{display:inline-block;margin-top:24px;padding:12px 22px;border-radius:999px;background:#ff7a1a;color:#1a0f05;font-weight:700;text-decoration:none}
 .list a{display:inline-block;margin:4px 10px 4px 0}`;
 
-function page({ title, description, canonical, body, jsonLd, image }) {
+// AdSense runs only on recipe pages (real content), never on the app's empty/gate screens.
+const AD_CLIENT = 'ca-pub-1804104950968329', AD_SLOT = '9651225274';
+const AD_HEAD = `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}" crossorigin="anonymous"></script>`;
+const AD_UNIT = `<ins class="adsbygoogle" style="display:block;margin:24px 0" data-ad-client="${AD_CLIENT}" data-ad-slot="${AD_SLOT}" data-ad-format="auto" data-full-width-responsive="true"></ins><script src="/ads.js"></script>`;
+const CSP = "default-src 'self'; img-src 'self' https://www.thecocktaildb.com; style-src 'unsafe-inline'; script-src 'none'; base-uri 'none'; form-action 'none'";
+const AD_CSP = "default-src 'self'; img-src 'self' data: https:; style-src 'unsafe-inline'; script-src 'self' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.adtrafficquality.google https://*.google.com https://*.gstatic.com; frame-src https:; connect-src https:; base-uri 'none'; form-action 'none'";
+
+function page({ title, description, canonical, body, jsonLd, image, ads }) {
     return `<!DOCTYPE html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://www.thecocktaildb.com; style-src 'unsafe-inline'; script-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="${ads ? AD_CSP : CSP}">${ads ? AD_HEAD : ''}
 <title>${esc(title)}</title><meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonical)}"><link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}">
@@ -65,12 +72,19 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
     const outDir = path.join(root, 'tarif');
     fs.rmSync(outDir, { recursive: true, force: true });
     fs.mkdirSync(outDir, { recursive: true });
-    const used = new Set(), entries = [];
+    const used = new Set(), entries = [], slugs = new Map();
+    drinks = drinks.filter(drink => drink && drink.idDrink && drink.strDrink);
     for (const drink of drinks) {
-        if (!drink || !drink.idDrink || !drink.strDrink) continue;
         let slug = slugify(drink.strDrink);
         if (used.has(slug)) slug = `${slug}-${slugify(drink.idDrink)}`;
         used.add(slug);
+        slugs.set(drink, slug);
+    }
+    // Related recipes share the same first (base) ingredient.
+    const base = drink => (drink.strIngredient1 || '').trim().toLowerCase();
+    for (const drink of drinks) {
+        const slug = slugs.get(drink);
+        const related = drinks.filter(other => other !== drink && base(other) && base(other) === base(drink)).slice(0, 6);
         const url = `${SITE}/tarif/${slug}.html`, image = ownImage(safeImage(drink.strDrinkThumb)), rows = ingredients(drink);
         const title = `${drink.strDrink} Tarifi — Malzemeler ve Yapılışı | Bar Cepte`;
         const description = `${drink.strDrink} nasıl yapılır? ${rows.length} malzeme: ${rows.map(r => r.name).join(', ')}.`;
@@ -82,12 +96,14 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
 ${image ? `<img src="${esc(image)}" alt="${esc(drink.strDrink)}" loading="lazy">` : ''}
 <h2>Malzemeler</h2><ul>${rows.map(r => `<li>${esc(r.measure ? `${r.measure} ${r.name}` : r.name)}</li>`).join('')}</ul>
 <h2>Yapılışı</h2><p>${esc(instructions)}</p>
+${AD_UNIT}
+${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h2><div class="list">${related.map(o => `<a href="/tarif/${slugs.get(o)}.html">${esc(o.strDrink)}</a>`).join('')}</div>` : ''}
 <a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır →</a>
 <p class="meta"><a href="/tarif/">Tüm tarifler</a></p>`;
         const jsonLd = { '@context': 'https://schema.org', '@type': 'Recipe', name: drink.strDrink, image: image ? [image] : undefined,
             recipeCategory: category || 'Kokteyl', recipeIngredient: rows.map(r => (r.measure ? `${r.measure} ${r.name}` : r.name)),
             recipeInstructions: instructions, inLanguage: 'tr', url };
-        fs.writeFileSync(path.join(outDir, `${slug}.html`), page({ title, description, canonical: url, body, jsonLd, image }));
+        fs.writeFileSync(path.join(outDir, `${slug}.html`), page({ title, description, canonical: url, body, jsonLd, image, ads: true }));
         entries.push({ slug, name: drink.strDrink, url });
     }
     entries.sort((a, b) => a.name.localeCompare(b.name));
