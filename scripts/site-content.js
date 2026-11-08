@@ -32,7 +32,7 @@ const INFO_PAGES = [
         description: 'Bar Cepte web sitesi ve uygulamasının kullanım koşulları.',
         html: p(
             '<strong>Yaş sınırı.</strong> Bar Cepte’deki alkollü içecek tarifleri ve ilgili içerikler yalnızca 18 yaş ve üzeri kişiler içindir. 18 yaşından küçüksen alkollü tarifleri kullanmamalısın; alkolsüz tarifler herkese açıktır.',
-            '<strong>Satış yapılmaz.</strong> Bar Cepte bir tarif ve bilgi hizmetidir; alkollü içki satışı, aracılığı veya teslimatı yapmaz. Sitede gösterilen reklamlar ve öneriler üçüncü taraflara aittir.',
+            '<strong>Satış yapılmaz.</strong> Bar Cepte bir tarif ve bilgi hizmetidir; alkollü içki satışı, aracılığı veya teslimatı yapmaz. Sitede gösterilen reklamlar ve öneriler üçüncü taraflara aittir. Bar ekipmanı önerilerindeki bazı bağlantılar ortaklık (affiliate) bağlantısıdır; bu bağlantılardan yapılan alışverişlerden Bar Cepte, sana ek bir maliyet olmadan komisyon kazanabilir.',
             '<strong>Sorumlu tüketim.</strong> Tarifler bilgilendirme amaçlıdır. Alkolü ölçülü tüketmek, alkol aldıktan sonra araç kullanmamak, hamilelik ve ilaç kullanımı gibi durumlarda alkolden kaçınmak kullanıcının sorumluluğundadır.',
             '<strong>İçeriğin doğruluğu.</strong> Tarifleri, ölçüleri ve çevirileri özenle hazırlıyoruz; yine de hata olabilir. Alerjen içeren malzemeleri (yumurta, süt, kuruyemiş vb.) servis etmeden önce kontrol et. AI Barmen’in ürettiği öneriler otomatiktir ve doğrulanmadan uygulanmamalıdır.',
             '<strong>Hesap ve veriler.</strong> Uygulamadaki barın, favorilerin ve notların cihazında saklanır; bulut yedeklemeyi açarsan Google hesabına bağlı olarak yedeklenir. Ayrıntılar <a href="/privacy.html">Gizlilik Politikası</a>’ndadır.',
@@ -72,7 +72,7 @@ const CATEGORIES = [
 
 const GUIDES = [
     {
-        slug: 'evde-bar-kurmak', title: 'Evde Bar Kurmak: Başlangıç Rehberi',
+        slug: 'evde-bar-kurmak', products: ['shaker', 'squeezer', 'ice', 'highball', 'coupe'], title: 'Evde Bar Kurmak: Başlangıç Rehberi',
         description: 'Evde kokteyl yapmaya başlamak için hangi şişeler, malzemeler ve ekipmanlar gerekir? Adım adım başlangıç rehberi.',
         html: `<p>Evde kokteyl hazırlamak için onlarca şişeye ya da pahalı ekipmana ihtiyacın yok. İyi bir ev barı, birkaç doğru seçimle başlar ve zamanla senin damak zevkine göre büyür. Bu rehberde ilk alışverişte nelere öncelik vermen gerektiğini ve bütçeni nasıl verimli kullanabileceğini anlatıyoruz.</p>
 <h2>1. Önce ne içmeyi sevdiğine karar ver</h2>
@@ -92,7 +92,7 @@ const GUIDES = [
 <p>İlk ay birkaç tarifi tekrar tekrar yapmak, ölçüleri kendi damak zevkine göre ayarlamayı öğretir. Sonra her yeni şişeyi, en az üç yeni tarif açacak şekilde seç. Bu yöntemle hem bütçeni korursun hem de barındaki her şişe gerçekten kullanılır. Ve unutma: kokteyller paylaşmak içindir; misafirlerine alkolsüz seçenekler sunmayı ve alkolü ölçülü tüketmeyi ihmal etme.</p>`
     },
     {
-        slug: 'bar-ekipmanlari', title: 'Temel Bar Ekipmanları',
+        slug: 'bar-ekipmanlari', products: ['shaker', 'jigger', 'strainer', 'muddler', 'squeezer'], title: 'Temel Bar Ekipmanları',
         description: 'Shaker, jigger, süzgeç, bar kaşığı ve diğer bar ekipmanları ne işe yarar? Evde kokteyl için gerçekten gerekenler.',
         html: `<p>Profesyonel barlarda onlarca alet görebilirsin, ancak evde kokteyl hazırlamak için birkaç temel ekipman yeterlidir. Bu rehberde her aletin ne işe yaradığını, hangisinin gerçekten gerekli olduğunu ve yokluğunda neyi kullanabileceğini anlatıyoruz.</p>
 <h2>Shaker (çalkalayıcı)</h2>
@@ -113,7 +113,7 @@ const GUIDES = [
 <p>Özetle başlangıç için: bir shaker, bir jigger, bir Hawthorne süzgeç, bir bar kaşığı ve bir narenciye sıkacağı. Bunlarla Bar Cepte’deki tariflerin neredeyse tamamını hazırlayabilirsin. Diğer aletleri, sevdiğin tarifler gerektirdikçe zamanla ekleyebilirsin.</p>`
     },
     {
-        slug: 'kokteyl-bardaklari', title: 'Kokteyl Bardakları Rehberi',
+        slug: 'kokteyl-bardaklari', products: ['coupe', 'highball', 'ice'], title: 'Kokteyl Bardakları Rehberi',
         description: 'Kısa bardak, uzun bardak, martini kadehi, coupe, şampanya kadehi: hangi kokteyl hangi bardakta servis edilir ve neden?',
         html: `<p>Bardak seçimi sadece görünüş meselesi değildir. Bardağın şekli içeceğin ne kadar soğuk kalacağını, kokusunun nasıl hissedileceğini ve içerken ne kadar buz kullanılacağını belirler. Bu rehberde Bar Cepte tariflerinde en sık geçen bardakları ve hangi içecekler için uygun olduklarını anlatıyoruz.</p>
 <h2>Kısa bardak (old fashioned / rocks)</h2>
@@ -138,7 +138,7 @@ const GUIDES = [
 <p>Doğru bardak keyfi artırır ama şart değildir. Önemli olan sıcaklık ve buz mantığıdır: buzlu tarifler için kalın, geniş bir bardak; buzsuz ve soğuk servis edilenler için sapı olan bir kadeh; gazlı içecekler için uzun ve dar bir bardak kullanmak yeterlidir. Kadehleri servis öncesi birkaç dakika dondurucuda ya da buzlu suyla soğutmak, her kokteyli daha iyi yapar.</p>`
     },
     {
-        slug: 'calkalama-mi-karistirma-mi', title: 'Çalkalama mı Karıştırma mı?',
+        slug: 'calkalama-mi-karistirma-mi', products: ['shaker', 'strainer', 'muddler'], title: 'Çalkalama mı Karıştırma mı?',
         description: 'Hangi kokteyl çalkalanır, hangisi karıştırılır, hangisi doğrudan bardakta hazırlanır? Temel kokteyl teknikleri.',
         html: `<p>Kokteyl tariflerinde en sık geçen iki fiil “çalkalayın” ve “karıştırın”dır. İkisi de içeceği soğutur ve bir miktar sulandırır, ancak sonuçları farklıdır. Hangi tekniğin ne zaman kullanılacağını bilmek, tarifi doğru uygulamanın en önemli adımıdır.</p>
 <h2>Çalkalama (shake)</h2>
@@ -264,4 +264,16 @@ const TIPS = {
     Sangria: 'Meyveleri şarapla birlikte birkaç saat buzdolabında bekletmek tatların kaynaşmasını sağlar. Servis etmeden hemen önce soda ekle.'
 };
 
-module.exports = { INFO_PAGES, CATEGORIES, GUIDES, TIPS };
+// Hepsiburada Link Gelir (affiliate) links for bar equipment. Never alcohol.
+const PRODUCTS = {
+    shaker: { name: 'Kokteyl shaker seti', note: 'shaker, jigger, süzgeç ve bar kaşığı bir arada', url: 'https://app.hb.biz/pu55BjQkc01T' },
+    jigger: { name: 'Jigger (ölçü kabı)', note: 'tariflerdeki cl ölçüleri için', url: 'https://app.hb.biz/cQUXZIsIYemc' },
+    strainer: { name: 'Bar süzgeci', note: 'buzu ve posayı tutar', url: 'https://app.hb.biz/zTQVVXKGb751' },
+    muddler: { name: 'Kokteyl havanı', note: 'nane ve meyve ezmek için', url: 'https://app.hb.biz/T7S1StY9wne0' },
+    squeezer: { name: 'Narenciye sıkacağı', note: 'taze limon ve misket limonu suyu için', url: 'https://app.hb.biz/bUJEH4IQuYKw' },
+    ice: { name: 'Büyük küp buz kalıbı', note: 'yavaş eriyen buz için', url: 'https://app.hb.biz/RecTgZ11YuX3' },
+    coupe: { name: 'Kokteyl kadehi seti', note: 'buzsuz servis edilen kokteyller için', url: 'https://app.hb.biz/kLR9mzfUqj9G' },
+    highball: { name: 'Highball bardak seti', note: 'uzun, gazlı içecekler için', url: 'https://app.hb.biz/NlgGHRo3MiDJ' }
+};
+
+module.exports = { INFO_PAGES, CATEGORIES, GUIDES, TIPS, PRODUCTS };
