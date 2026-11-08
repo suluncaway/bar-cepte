@@ -2033,6 +2033,68 @@ function calculateRecipeABV(drink) {
 }
 
 // Ev Kokteyl Maliyeti Hesaplama Motoru
+// Prices in TL, mid-range market bottles (late 2026). Update here when prices move.
+const BAR_COCKTAIL_PRICE = 500;      // typical bar cocktail
+const BAR_MOCKTAIL_PRICE = 300;      // typical alcohol-free drink at a bar
+const TRY_PER_USD = 45;              // shown in English mode; update with the exchange rate
+const INGREDIENT_PRICES = [
+    // [pattern, TL per cl] — first match wins, so specific names come before generic ones
+    [/absinthe|absinth/, 2000 / 70],
+    [/(apricot|cherry|peach|blackberry|apple) brandy/, 1100 / 70],
+    [/whisk|bourbon|scotch|rye|cognac|brandy|armagnac|calvados/, 1800 / 70],
+    [/tequila|mezcal/, 1500 / 70],
+    [/vodka|gin\b|rum\b|rakı|raki|cachaca|cachaça|pisco|ouzo|aquavit|absolut|smirnoff|stoli|bacardi|everclear|151|tanqueray|bombay|beefeater|captain morgan|jack daniel|jim beam|jameson|johnnie walker|crown royal/, 1300 / 70],
+    [/liqueur|likör|firewater|goldschlager|southern comfort|malibu|grand marnier|tia maria|blue curacao|peppermint schnapps|triple sec|cointreau|curacao|kahlua|amaretto|campari|aperol|baileys|schnapps|sambuca|chartreuse|benedictine|drambuie|frangelico|galliano|midori|chambord|jägermeister|jagermeister|maraschino|creme de|crème de|advocaat|cherry heering|irish cream|cream liqueur/, 1100 / 70],
+    [/vermouth|vermut|lillet|dubonnet|port\b|sherry|madeira/, 700 / 75],
+    [/champagne|şampanya|prosecco|cava|sparkling wine/, 900 / 75],
+    [/wine|şarap/, 400 / 75],
+    [/bitters/, 900 / 20],
+    [/grenadine|syrup|şurup|orgeat|falernum|honey|bal\b|agave|maple/, 300 / 70],
+    [/lemon juice|lime juice|limon suyu/, 3],
+    [/juice|suyu|nectar|puree/, 80 / 100],
+    [/tonic|ginger ale|ginger beer|bitter lemon/, 120 / 100],
+    [/beer|bira|ale\b|lager|stout|cider/, 80 / 50],
+    [/soda|cola|sprite|7-up|lemonade|club soda|carbonated|gazoz/, 50 / 100],
+    [/cream|krema|milk|süt|yoghurt|yogurt/, 120 / 100],
+    [/coffee|espresso|kahve|tea\b|çay/, 2],
+    [/water|su\b|ice|buz/, 0]
+];
+const UNIT_PRICES = [
+    // whole items: [pattern, TL per piece]
+    [/ice|buz|water|su\b/, 0],
+    [/egg|yumurta/, 6],
+    [/lemon|lime|limon|orange|portakal|grapefruit/, 8],
+    [/mint|nane|basil|fesleğen|rosemary|biberiye/, 3],
+    [/cherry|kiraz|olive|zeytin|strawberr|çilek|berr|pineapple|ananas|banana|muz|apple|elma|peach|şeftali/, 6],
+    [/sugar|şeker|salt|tuz|pepper|biber|nutmeg|cinnamon|tarçın|clove/, 1]
+];
+const priceOf = (table, name, fallback) => (table.find(([re]) => re.test(name)) || [null, fallback])[1];
+
+// Reads a measure into centilitres, or null for countable/garnish amounts.
+function measureToCl(measure) {
+    // Ranges like "2-3 oz" use the lower amount.
+    const m = (measure || '').toLowerCase().trim().replace(/(\d+(?:[.,]\d+)?)\s*-\s*\d+(?:[.,]\d+)?/g, '$1');
+    if (!m) return null;
+    const NUM = '(\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:[.,]\\d+)?)';
+    const parse = s => s.includes('/')
+        ? s.trim().split(/\s+/).reduce((sum, part) => sum + (part.includes('/') ? part.split('/')[0] / part.split('/')[1] : +part), 0)
+        : parseFloat(s.replace(',', '.'));
+    // The number written right before the unit ("70ml/2fl oz" reads 70 ml, not 70 oz).
+    const amount = unit => {
+        const x = new RegExp(NUM + '\\s*(?:' + unit + ')').exec(m);
+        if (x) return parse(x[1]);
+        return new RegExp('(?:^|\\s)(?:' + unit + ')').test(m) ? 1 : null;   // "dash", "splash" with no number
+    };
+    const lead = () => { const x = new RegExp(NUM).exec(m); return x ? parse(x[1]) : 1; };
+    if (/juice of/.test(m)) return lead() * 3;
+    if (/fill|top|to taste|full glass/.test(m)) return 10;
+    const UNITS = [['cl\\b', 1], ['ml\\b', 0.1], ['(?:fl\\s*)?oz\\b|ounces?', 3], ['shots?|jiggers?', 4], ['cups?', 24],
+        ['tblsp|tbsp|tablespoons?', 1.5], ['tsp|teaspoons?', 0.5], ['dash(?:es)?|drops?', 0.1], ['splash(?:es)?', 1], ['parts?', 1],
+        ['l\\b|lit(?:er|re)s?', 100], ['gal(?:lon)?s?', 378.5], ['qt|quarts?', 94.6], ['pints?|pt\\b', 47.3], ['fifths?', 75], ['dl\\b', 10], ['cans?', 33], ['bottles?', 70]];
+    for (const [unit, cl] of UNITS) { const x = amount(unit); if (x !== null) return x * cl; }
+    return null;
+}
+
 function calculateRecipeCost(d) {
     let reqs = [];
     if (d.isCustom && Array.isArray(d.customIngredients)) {
@@ -2044,49 +2106,45 @@ function calculateRecipeCost(d) {
             if (ing && ing.trim()) reqs.push({ name: ing.trim(), measure: m });
         }
     }
+    const alcoholFree = /non/i.test(d.strAlcoholic || '');
+    const barPrice = alcoholFree ? BAR_MOCKTAIL_PRICE : BAR_COCKTAIL_PRICE;
+    if (reqs.length === 0) return { cost: 0, barEst: barPrice, savingsPercent: 0 };
 
-    if (reqs.length === 0) return { cost: 35, barEst: 350, savingsPercent: 90 };
+    // "Parts" are ratios: scale them so the parts add up to a 10 cl drink.
+    const partsTotal = reqs.reduce((sum, r) => sum + (/part/i.test(r.measure) ? (measureToCl(r.measure) || 0) : 0), 0);
+    const partScale = partsTotal > 0 ? 10 / partsTotal : 1;
 
-    let totalCost = 0;
-    reqs.forEach(({ name, measure }) => {
-        let cl = 4.0;
-        if (measure) {
-            const converted = convertOzToCl(measure);
-            const numMatch = converted.match(/(\d+(\.\d+)?)\s*cl/i);
-            if (numMatch) cl = parseFloat(numMatch[1]);
-            else if (/dash|damla/i.test(measure)) cl = 0.2;
-            else if (/tsp|çay kaşığı/i.test(measure)) cl = 0.5;
-            else if (/tbsp|yemek kaşığı/i.test(measure)) cl = 1.5;
-            else if (/cup|bardak/i.test(measure)) cl = 20.0;
-        }
-
+    let totalCost = 0, totalCl = 0, strongCl = 0;
+    for (const { name, measure } of reqs) {
         const lower = name.toLowerCase();
-        let unitCostPerCl = 2.0;
+        const raw = measureToCl(measure);
+        const cl = raw !== null && /part/i.test(measure) ? raw * partScale : raw;
+        const perCl = priceOf(INGREDIENT_PRICES, lower, null);
+        if (cl !== null && !/\bice\b|\bbuz\b/.test(lower)) totalCl += cl;
+        if (cl !== null && perCl >= 15) strongCl += cl;                  // spirits and liqueurs
+        if (cl !== null && perCl !== null) totalCost += cl * perCl;
+        else if (cl !== null) totalCost += cl * 3;                       // unknown liquid
+        else if (perCl !== null) { totalCost += 4 * perCl; totalCl += 4; } // liquid without a usable amount ("Chilled"): a standard pour
+        else totalCost += priceOf(UNIT_PRICES, lower, 3) * Math.max(1, Math.min(4, Math.round(parseFloat(measure) || 1)));
+    }
 
-        if (/(vodka|gin|rum|tequila|whiskey|bourbon|scotch|brandy|cognac|raki|rakı|absinthe)/i.test(lower)) {
-            unitCostPerCl = 12.0;
-        } else if (/(triple sec|cointreau|kahlua|amaretto|campari|aperol|baileys|curacao|schnapps|liqueur|likör)/i.test(lower)) {
-            unitCostPerCl = 9.5;
-        } else if (/(vermouth|vermut|wine|şarap|champagne|şampanya|prosecco)/i.test(lower)) {
-            unitCostPerCl = 5.0;
-        } else if (/(juice|meyve|limon|lemon|lime)/i.test(lower)) {
-            unitCostPerCl = 1.8;
-        } else if (/(soda|tonic|water|su|gazoz|cola)/i.test(lower)) {
-            unitCostPerCl = 1.0;
-        }
-
-        totalCost += (cl * unitCostPerCl);
-    });
-
-    const roundedCost = Math.max(15, Math.round(totalCost));
-    const estimatedBarPrice = Math.max(250, Math.round(roundedCost * 7.5));
-    const savings = Math.round(((estimatedBarPrice - roundedCost) / estimatedBarPrice) * 100);
-
+    // Punch/pitcher recipes (litres, bottles, 200 ml of rum…) are priced per serving:
+    // about 20 cl of drink with at most ~8 cl of spirits.
+    totalCost *= Math.min(1, totalCl > 40 ? 20 / totalCl : 1, strongCl > 15 ? 8 / strongCl : 1);
+    const cost = Math.max(5, Math.round(totalCost));
+    // A bar never charges less than a typical drink; very rich recipes cost more there too.
+    const barEst = Math.max(barPrice, Math.round(cost * 2.5 / 10) * 10);
     return {
-        cost: roundedCost,
-        barEst: estimatedBarPrice,
-        savingsPercent: savings
+        cost,
+        barEst,
+        savingsPercent: Math.max(0, Math.round((barEst - cost) / barEst * 100))
     };
+}
+
+// One place to format the home cost for cards and the story image.
+function formatRecipeCost(d) {
+    const cost = d.computedCost ? d.computedCost.cost : 0;
+    return currentLang === 'en' ? `~$${(cost / TRY_PER_USD).toFixed(2)}` : `~${cost} ₺`;
 }
 
 // Kokteyl Verilerini Bir Defa Önbelleğe Alarak Arama Hızını Uçurur
@@ -2543,9 +2601,7 @@ function downloadCocktailStoryCard(drinkId) {
     const glass = currentLang === 'en' ? (d.strGlass || 'Cocktail Glass') : (glassTranslations[(d.strGlass || '').toLowerCase()] || d.strGlass || 'Kokteyl Bardağı');
     const taste = getTasteLabel(d.computedTaste || 'Klasik');
     const abv = getAbvLabel(d.computedABV, currentLang);
-    const cost = currentLang === 'en' 
-        ? (d.computedCostUsd ? `~$${d.computedCostUsd.cost}` : '~$1.85') 
-        : (d.computedCost ? `~${d.computedCost.cost} ₺` : '~45 ₺');
+    const cost = formatRecipeCost(d);
 
     ctx.font = '600 24px sans-serif';
     ctx.fillStyle = '#d5b47b';
@@ -3019,7 +3075,7 @@ function createCocktailCardElement(item, isMissingList) {
                         <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${escapeHTML(getTasteLabel(d.computedTaste))}</span>
                         <span class="text-[10px] font-semibold bg-black/30 text-slate-400 px-2 py-0.5 rounded-lg border border-white/5 font-mono">~${d.computedCalories} kcal</span>
                         ${abvBadge}
-                        <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono recipe-cost-badge">${currentLang === 'en' ? `~$${d.computedCost ? (d.computedCost.cost / 30).toFixed(2) : '1.20'}` : `~${d.computedCost ? d.computedCost.cost : 35} ₺`}</span>
+                        <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono recipe-cost-badge">${formatRecipeCost(d)}</span>
                     </div>
                     <h3 class="font-extrabold text-white text-base leading-snug break-words hyphens-auto text-title-responsive">${safeDrinkName}</h3>
                     <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 break-words">${glassBadge}</p>
@@ -3032,7 +3088,7 @@ function createCocktailCardElement(item, isMissingList) {
             <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden">
                 <!-- Ev Maliyeti ve Bar Tasarrufu -->
                 <div class="flex flex-wrap items-center justify-between gap-2 bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-2xl text-[11px] text-emerald-300">
-                    <span class="flex items-center gap-1 font-medium"><b>${currentLang === 'en' ? 'Home Cost:' : 'Ev Maliyeti:'}</b> ${currentLang === 'en' ? `~$${d.computedCost ? (d.computedCost.cost / 30).toFixed(2) : '1.20'}` : `~${d.computedCost ? d.computedCost.cost : 35} ₺`}</span>
+                    <span class="flex items-center gap-1 font-medium"><b>${currentLang === 'en' ? 'Home Cost:' : 'Ev Maliyeti:'}</b> ${formatRecipeCost(d)}</span>
                     <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${currentLang === 'en' ? `Bar Savings: ~${d.computedCost ? d.computedCost.savingsPercent : 90}%` : `Bar Tasarrufu: ~%${d.computedCost ? d.computedCost.savingsPercent : 90}`}</span>
                 </div>
 

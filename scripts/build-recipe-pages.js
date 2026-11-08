@@ -11,11 +11,29 @@ const slugify = name => String(name).toLowerCase().replace(/[çğıöşü]/g, ch
     .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'tarif';
 const safeImage = src => /^https:\/\/www\.thecocktaildb\.com\/images\//.test(src || '') ? src : '';
 
+// Turkish names come from the app's own tables in game.js, so pages and app agree.
+const game = fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8');
+const literal = name => { const start = game.indexOf(`const ${name} = `) + `const ${name} = `.length; return new Function(`return ${game.slice(start, game.indexOf('\n};', start) + 2).replace(/\n\];$/, ']')}`)(); };
+const arrayLiteral = name => { const start = game.indexOf(`const ${name} = [`) + `const ${name} = `.length; return new Function(`return ${game.slice(start, game.indexOf('\n];', start) + 2)}`)(); };
+const ING_TR = literal('ingredientTranslations');
+const GLASS_TR = literal('glassTranslations');
+const BASE = arrayLiteral('baseIngredients');
+const noEmoji = text => String(text).replace(/^[^\p{L}\p{N}(]+/u, '').trim();
+const ingredientTr = name => ING_TR[name.toLowerCase()] || BASE.find(b => b.id.toLowerCase() === name.toLowerCase())?.name || name;
+const glassTr = glass => glass ? noEmoji(GLASS_TR[glass.toLowerCase()] || glass) : '';
+const CATEGORY_TR = { 'Ordinary Drink': 'Klasik kokteyl', Cocktail: 'Kokteyl', Shot: 'Shot', 'Punch / Party Drink': 'Parti içkisi', 'Other / Unknown': 'Diğer',
+    'Coffee / Tea': 'Kahve / çay', Shake: 'Shake', Beer: 'Bira', 'Soft Drink': 'Alkolsüz içecek', 'Homemade Liqueur': 'Ev yapımı likör', Cocoa: 'Kakao' };
+// oz → cl, the way the app shows measures (1 oz ≈ 3 cl)
+const measureTr = measure => measure.replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*(?:fl\s*)?(?:oz|ounces?)\b/gi, (m, n) => {
+    const v = n.includes('/') ? n.trim().split(/\s+/).reduce((s, p) => s + (p.includes('/') ? p.split('/')[0] / p.split('/')[1] : +p), 0) : +n;
+    return `${Math.round(v * 3 * 10) / 10} cl`;
+});
+
 function ingredients(drink) {
     const rows = [];
     for (let i = 1; i <= 15; i++) {
         const name = (drink[`strIngredient${i}`] || '').trim();
-        if (name) rows.push({ name, measure: (drink[`strMeasure${i}`] || '').trim() });
+        if (name) rows.push({ name: ingredientTr(name), measure: measureTr((drink[`strMeasure${i}`] || '').trim()) });
     }
     return rows;
 }
@@ -54,16 +72,19 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
         const url = `${SITE}/tarif/${slug}.html`, image = safeImage(drink.strDrinkThumb), rows = ingredients(drink);
         const title = `${drink.strDrink} Tarifi — Malzemeler ve Yapılışı | Bar Cepte`;
         const description = `${drink.strDrink} nasıl yapılır? ${rows.length} malzeme: ${rows.map(r => r.name).join(', ')}.`;
+        const category = CATEGORY_TR[drink.strCategory] || drink.strCategory;
+        const alcohol = /non/i.test(drink.strAlcoholic || '') ? 'Alkolsüz' : drink.strAlcoholic ? 'Alkollü' : '';
+        const instructions = drink.strInstructionsTR || drink.strInstructions || '';
         const body = `<p><a href="/">← Bar Cepte</a></p>
-<h1>${esc(drink.strDrink)}</h1><p class="meta">${esc([drink.strCategory, drink.strAlcoholic, drink.strGlass].filter(Boolean).join(' · '))}</p>
+<h1>${esc(drink.strDrink)}</h1><p class="meta">${esc([category, alcohol, glassTr(drink.strGlass)].filter(Boolean).join(' · '))}</p>
 ${image ? `<img src="${esc(image)}" alt="${esc(drink.strDrink)}" loading="lazy">` : ''}
 <h2>Malzemeler</h2><ul>${rows.map(r => `<li>${esc(r.measure ? `${r.measure} ${r.name}` : r.name)}</li>`).join('')}</ul>
-<h2>Yapılışı</h2><p>${esc(drink.strInstructions || '')}</p>
+<h2>Yapılışı</h2><p>${esc(instructions)}</p>
 <a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır →</a>
 <p class="meta"><a href="/tarif/">Tüm tarifler</a></p>`;
         const jsonLd = { '@context': 'https://schema.org', '@type': 'Recipe', name: drink.strDrink, image: image ? [image] : undefined,
-            recipeCategory: drink.strCategory || 'Cocktail', recipeIngredient: rows.map(r => (r.measure ? `${r.measure} ${r.name}` : r.name)),
-            recipeInstructions: drink.strInstructions || '', url };
+            recipeCategory: category || 'Kokteyl', recipeIngredient: rows.map(r => (r.measure ? `${r.measure} ${r.name}` : r.name)),
+            recipeInstructions: instructions, inLanguage: 'tr', url };
         fs.writeFileSync(path.join(outDir, `${slug}.html`), page({ title, description, canonical: url, body, jsonLd }));
         entries.push({ slug, name: drink.strDrink, url });
     }
