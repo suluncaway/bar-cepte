@@ -3,7 +3,7 @@ name: mirror-drink-images
 on:
   workflow_dispatch:
   push:
-    branches: [claude/drink-images]
+    branches: [claude/drink-images, claude/site-polish-8]
     paths: [scripts/mirror-drink-images.js, .github/workflows/mirror-drink-images.yml]
 
 permissions:
@@ -23,6 +23,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add img/drinks tarif
+          git add img tarif
           git diff --cached --quiet || git commit -m "Mirror drink photos into img/drinks"
           git push

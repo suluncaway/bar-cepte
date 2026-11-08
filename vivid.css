@@ -328,6 +328,8 @@ html[data-theme="light"] :is(.section-aside,.selection-summary) { color:#6b645b!
   transform:none!important; box-shadow:0 0 0 100vmax rgba(0,0,0,.72), 0 24px 60px rgba(0,0,0,.5)!important;
 }
 body:has(.cocktail-card .details-section.open) { overflow:hidden; }
+/* The open card scrolls; its sections must not shrink (and clip) to fit the screen. */
+.cocktail-card:has(.details-section.open) > * { flex-shrink:0; }
 .cocktail-card:has(.details-section.open) .toggle-icon { position:sticky; top:0; z-index:2; padding:6px 12px; border-radius:999px; background:rgba(16,16,16,.9); cursor:pointer; }
 html[data-theme="light"] .cocktail-card:has(.details-section.open) .toggle-icon { background:rgba(255,255,255,.95); }
 @media (max-width:767px) { .cocktail-card:has(.details-section.open) { top:0; bottom:0; width:100%; height:100dvh!important; border-radius:0!important; } }
@@ -346,3 +348,5 @@ html[data-theme="light"] .hero-business-link { color:#a8460a; }
 html[data-theme="light"] :is(.pill-btn,button)[class*="bg-amber-500"]:not([class*="bg-amber-500/"]),
 html[data-theme="light"] .main-navigation > button[aria-current="page"],
 .tutorial-actions .primary-action { color:#1a0f05!important; }
+/* Step-by-step mix button: its Tailwind gradient classes are not in the build, so set the orange fill here. */
+[data-action="open-mix-mode"] { background:linear-gradient(90deg,#ff9d4d,#ff7a1a)!important; color:#1a0f05!important; border:0!important; }
