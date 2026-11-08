@@ -45,14 +45,14 @@ h1{font-size:34px;line-height:1.1;margin:8px 0}.meta{color:#a8a29a}ul{padding-le
 .cta{display:inline-block;margin-top:24px;padding:12px 22px;border-radius:999px;background:#ff7a1a;color:#1a0f05;font-weight:700;text-decoration:none}
 .list a{display:inline-block;margin:4px 10px 4px 0}`;
 
-function page({ title, description, canonical, body, jsonLd }) {
+function page({ title, description, canonical, body, jsonLd, image }) {
     return `<!DOCTYPE html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://www.thecocktaildb.com; style-src 'unsafe-inline'; script-src 'none'; base-uri 'none'; form-action 'none'">
 <title>${esc(title)}</title><meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonical)}"><link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}">
-<meta property="og:image" content="${SITE}/og-image.jpg"><meta property="og:url" content="${esc(canonical)}"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="${esc(image || `${SITE}/og-image.jpg`)}"><meta property="og:url" content="${esc(canonical)}"><meta name="twitter:card" content="summary_large_image">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
 <style>${STYLE}</style></head><body><main>${body}</main></body></html>
 `;
@@ -85,7 +85,7 @@ ${image ? `<img src="${esc(image)}" alt="${esc(drink.strDrink)}" loading="lazy">
         const jsonLd = { '@context': 'https://schema.org', '@type': 'Recipe', name: drink.strDrink, image: image ? [image] : undefined,
             recipeCategory: category || 'Kokteyl', recipeIngredient: rows.map(r => (r.measure ? `${r.measure} ${r.name}` : r.name)),
             recipeInstructions: instructions, inLanguage: 'tr', url };
-        fs.writeFileSync(path.join(outDir, `${slug}.html`), page({ title, description, canonical: url, body, jsonLd }));
+        fs.writeFileSync(path.join(outDir, `${slug}.html`), page({ title, description, canonical: url, body, jsonLd, image }));
         entries.push({ slug, name: drink.strDrink, url });
     }
     entries.sort((a, b) => a.name.localeCompare(b.name));
