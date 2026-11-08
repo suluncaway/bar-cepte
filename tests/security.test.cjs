@@ -137,7 +137,7 @@ test('Reserve subscription plans and dynamic elements are present in index.html 
 
     assert.match(html, /data-plan="monthly"/);
     assert.match(html, /data-plan="annual"/);
-    assert.match(html, /data-plan="lifetime"/);
+    assert.doesNotMatch(html, /data-plan="lifetime"/, "lifetime plan is no longer sold");
     assert.match(html, /id="reserve-plan-title"/);
     assert.match(html, /id="reserve-plan-price"/);
     assert.match(html, /id="reserve-active-plan-badge"/);
@@ -145,7 +145,7 @@ test('Reserve subscription plans and dynamic elements are present in index.html 
 
     assert.ok(reserve.PLANS_CONFIG.monthly);
     assert.ok(reserve.PLANS_CONFIG.annual);
-    assert.ok(reserve.PLANS_CONFIG.lifetime);
+    assert.equal(reserve.PLANS_CONFIG.lifetime, undefined);
     assert.equal(reserve.PLANS_CONFIG.monthly.shopierUrl, 'https://www.shopier.com/Anawin/51736039');
     assert.equal(reserve.PLANS_CONFIG.annual.shopierUrl, 'https://www.shopier.com/Anawin/51735632');
     assert.equal(reserve.getPlanDisplayName('monthly'), 'Aylık Abonelik (Monthly Pass)');

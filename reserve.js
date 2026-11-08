@@ -34,16 +34,6 @@
             desc: 'Aylık sadece 33,33 ₺! 1 tam yıl boyunca kesintisiz reklamsız deneyim ve altın rozet.',
             checkoutLabel: 'Shopier ile Yıllık Abone Ol',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
-        },
-        lifetime: {
-            title: 'Ömür Boyu VIP (Lifetime Pass)',
-            price: '499 ₺',
-            period: 'tek seferlik',
-            badge: 'ÖMÜR BOYU VIP',
-            subtitle: 'Sonsuza Kadar Senin',
-            desc: 'Bir kere öde, sonsuza kadar reklamsız kullan. Bir daha asla ödeme yapma.',
-            checkoutLabel: 'Shopier ile Ömür Boyu Satın Al',
-            shopierUrl: 'https://www.shopier.com/Anawin'
         }
     };
 
@@ -67,16 +57,6 @@
             desc: 'Only $1.25/mo! 1 full year of uninterrupted ad-free VIP cocktail experience and gold badge.',
             checkoutLabel: 'Secure Checkout via Shopier ($14.99)',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
-        },
-        lifetime: {
-            title: 'Lifetime VIP Pass',
-            price: '$29.99',
-            period: 'one-time',
-            badge: 'LIFETIME VIP',
-            subtitle: 'Yours Forever',
-            desc: 'Pay once, enjoy ad-free forever. Never pay again for future upgrades.',
-            checkoutLabel: 'Secure Checkout via Shopier ($29.99)',
-            shopierUrl: 'https://www.shopier.com/Anawin'
         }
     };
 
@@ -100,16 +80,6 @@
             desc: 'Only €1.16/mo! 1 full year of uninterrupted ad-free VIP cocktail experience and gold badge.',
             checkoutLabel: 'Secure Checkout via Shopier (€13.99)',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
-        },
-        lifetime: {
-            title: 'Lifetime VIP Pass',
-            price: '€27.99',
-            period: 'one-time',
-            badge: 'LIFETIME VIP',
-            subtitle: 'Yours Forever',
-            desc: 'Pay once, enjoy ad-free forever. Never pay again for future upgrades.',
-            checkoutLabel: 'Secure Checkout via Shopier (€27.99)',
-            shopierUrl: 'https://www.shopier.com/Anawin'
         }
     };
 
@@ -404,8 +374,6 @@
         if (planMonthly) planMonthly.innerText = isEn ? 'Monthly' : 'Aylık';
         const planAnnual = document.querySelector('[data-plan="annual"]');
         if (planAnnual) planAnnual.innerText = isEn ? '⭐ Annual' : '⭐ Yıllık';
-        const planLifetime = document.querySelector('[data-plan="lifetime"]');
-        if (planLifetime) planLifetime.innerText = isEn ? 'Lifetime' : 'Ömür Boyu';
 
         const titleEl = document.getElementById('reserve-plan-title');
         const badgeEl = document.getElementById('reserve-plan-badge');
@@ -512,8 +480,6 @@
         if (planMonthly) planMonthly.innerText = isEn ? 'Monthly' : 'Aylık';
         const planAnnual = document.querySelector('[data-plan="annual"]');
         if (planAnnual) planAnnual.innerText = isEn ? '⭐ Annual' : '⭐ Yıllık';
-        const planLifetime = document.querySelector('[data-plan="lifetime"]');
-        if (planLifetime) planLifetime.innerText = isEn ? 'Lifetime' : 'Ömür Boyu';
 
         // Para birimi seçici çubuğu (Currency Bar - USD $ / EUR €)
         const currencyBar = document.getElementById('reserve-currency-bar');

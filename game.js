@@ -4317,8 +4317,6 @@ function applyLanguage() {
     if (planMonthly) planMonthly.innerText = currentLang === 'en' ? 'Monthly' : 'Aylık';
     const planAnnual = document.querySelector('[data-plan="annual"]');
     if (planAnnual) planAnnual.innerText = currentLang === 'en' ? '⭐ Annual' : '⭐ Yıllık';
-    const planLifetime = document.querySelector('[data-plan="lifetime"]');
-    if (planLifetime) planLifetime.innerText = currentLang === 'en' ? 'Lifetime' : 'Ömür Boyu';
     const reserveBullets = document.querySelectorAll('#reserve-status-inactive .bg-black\\/40 > div span:last-child');
     if (reserveBullets.length >= 4) {
         reserveBullets[0].innerHTML = t.reserveBullet1;
