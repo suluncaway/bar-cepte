@@ -23,3 +23,4 @@ html[data-theme=light] small{color:#6b645b}
 html[data-theme=light] .app-preview{--ink:#f7f4f0;--muted:#a8a29a;--line:rgba(255,255,255,.14);--bg:#0d0d0d;--surface:#161616;--raised:#1a1a1a;color:#f7f4f0}
 html[data-theme=light] .app-preview small{color:#a8a29a}
 html[data-theme=light] .app-preview .active{color:#fff}
+.button,html[data-theme=light] .button{color:#1a0f05}
