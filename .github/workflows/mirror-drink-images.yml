@@ -1,0 +1,28 @@
+name: mirror-drink-images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/drink-images]
+    paths: [scripts/mirror-drink-images.js, .github/workflows/mirror-drink-images.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/mirror-drink-images.js
+      - run: node scripts/build-recipe-pages.js
+      - name: Commit photos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add img/drinks tarif
+          git diff --cached --quiet || git commit -m "Mirror drink photos into img/drinks"
+          git push

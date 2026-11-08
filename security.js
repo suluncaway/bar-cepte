@@ -122,7 +122,13 @@
                 ? url.href : 'https://github.com/suluncaway/bar-cepte/releases/latest';
         } catch { return 'https://github.com/suluncaway/bar-cepte/releases/latest'; }
     }
-    const api = { MAX_BACKUP_LENGTH, stringList, recipe, recipes, backup, readStored, safeImage, releaseURL, preferences, history, inventory };
+    // On the website, show our mirrored copy of a TheCocktailDB photo; dynamic-ui.js falls back to the original.
+    function displayImage(src) {
+        const safe = safeImage(src);
+        const match = /^https:\/\/www\.thecocktaildb\.com\/images\/media\/drink\/([\w.-]+\.(?:jpe?g|png))$/i.exec(safe);
+        return match && typeof location !== 'undefined' && location.protocol === 'https:' ? `img/drinks/${match[1]}` : safe;
+    }
+    const api = { MAX_BACKUP_LENGTH, stringList, recipe, recipes, backup, readStored, safeImage, displayImage, releaseURL, preferences, history, inventory };
     root.BarSecurity = api;
     if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
