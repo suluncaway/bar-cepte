@@ -24,6 +24,46 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://barcepte.com.tr/tarif/kategori/cin.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/tarif/kategori/votka.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/tarif/kategori/rom.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/tarif/kategori/tekila.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/tarif/kategori/viski.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/tarif/kategori/brendi.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/tarif/kategori/sarap-sampanya.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/tarif/kategori/alkolsuz.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://barcepte.com.tr/tarif/110-in-the-shade.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -2225,6 +2265,61 @@
   </url>
   <url>
     <loc>https://barcepte.com.tr/tarif/zorro.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/rehber/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/rehber/evde-bar-kurmak.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/rehber/bar-ekipmanlari.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/rehber/kokteyl-bardaklari.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/rehber/calkalama-mi-karistirma-mi.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/rehber/ev-yapimi-surup.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/rehber/kokteyl-terimleri.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/rehber/sorumlu-tuketim.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/hakkimizda.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/iletisim.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://barcepte.com.tr/kullanim-kosullari.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
