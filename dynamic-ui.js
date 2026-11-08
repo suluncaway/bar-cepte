@@ -52,6 +52,9 @@ document.addEventListener('click', event => {
                     .filter(item => item && !shoppingList.includes(item))
                     .forEach(item => toggleShoppingList(item, event));
                 break;
+            case 'starter-bar':
+                addStarterBar();
+                break;
             case 'share-link':
                 shareRecipeLink(value);
                 break;
