@@ -17,7 +17,7 @@
     const PLANS_CONFIG = {
         monthly: {
             title: 'Aylık Abonelik (Monthly Pass)',
-            price: '39 ₺',
+            price: '40 ₺',
             period: '/ ay',
             badge: 'AYLIK PLAN',
             subtitle: '30 Gün Kesintisiz',
@@ -27,11 +27,11 @@
         },
         annual: {
             title: 'Yıllık Abonelik (Annual Pass)',
-            price: '299 ₺',
-            period: '/ yıl (24,90 ₺/ay)',
-            badge: '⭐ %36 TASARRUF — POPÜLER',
+            price: '400 ₺',
+            period: '/ yıl (33,33 ₺/ay)',
+            badge: '⭐ %17 TASARRUF — POPÜLER',
             subtitle: '365 Gün VIP Erişim',
-            desc: 'Aylık sadece 24,90 ₺! 1 tam yıl boyunca kesintisiz reklamsız deneyim ve altın rozet.',
+            desc: 'Aylık sadece 33,33 ₺! 1 tam yıl boyunca kesintisiz reklamsız deneyim ve altın rozet.',
             checkoutLabel: 'Shopier ile Yıllık Abone Ol',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
         },
