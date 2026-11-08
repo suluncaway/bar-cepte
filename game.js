@@ -1719,7 +1719,7 @@ function renderDashboard() {
     const topContainer = document.getElementById('top-ingredients');
     if(topContainer) {
         if (selectedIngredients.length === 0) {
-            topContainer.innerHTML = `<span class="text-slate-500 text-xs">${I18N[currentLang].emptyBarDesc}</span>`;
+            topContainer.innerHTML = `<span class="text-slate-500 text-xs">${I18N[currentLang].emptyBarDesc}</span>${starterBarButton()}`;
         } else {
             const selectedItems = selectedIngredients.map(id => popularIngredients.find(pi => pi.id === id) || { id, name: id, emoji: '🥃', cat: 'alkol' });
             const selectedAlcohols = selectedItems.filter(i => i.cat === 'alkol');
@@ -2954,6 +2954,20 @@ function resolveIngredientName(name) {
     return found ? found.id : String(name || '').trim();
 }
 
+// Boş bar için tek tıkla başlangıç seti (temel malzemelerden en çok tarifi hazır eden 8 tanesi).
+const STARTER_BAR = ['Rum', 'Orange Juice', 'Vodka', 'Tonic Water', 'Gin', 'Sweet Vermouth', 'Triple Sec', 'Pineapple Juice'];
+function starterBarButton() {
+    return `<button type="button" data-action="starter-bar" class="primary-action mt-3 px-4 py-2 rounded-xl text-xs font-bold">${currentLang === 'en' ? 'Start with 8 popular ingredients' : 'Popüler 8 malzemeyle başla'}</button>`;
+}
+function addStarterBar() {
+    STARTER_BAR.forEach(id => { if (!selectedIngredients.includes(id)) selectedIngredients.push(id); });
+    try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
+    track('action', 'starter_bar');
+    renderIngredients();
+    filterCocktails();
+    renderDashboard();
+}
+
 function quickAddIngredientToBar(ingName, event) {
     if (event) event.stopPropagation();
     triggerHaptic('success');
@@ -3032,6 +3046,7 @@ function filterCocktails() {
             }).slice(0, 3);
         const picksGrid = document.getElementById('editorial-picks-grid');
         if (picksGrid) renderLists(picks, picksGrid, false);
+        picksGrid?.insertAdjacentHTML('beforeend', `<div class="col-span-full text-center">${starterBarButton()}</div>`);
         readyContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">${I18N[currentLang].emptyDiscovery}</div>`;
         missingContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">${I18N[currentLang].noSelectedIng}</div>`;
         const countReadyEl = document.getElementById('count-ready');
