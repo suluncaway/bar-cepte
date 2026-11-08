@@ -3402,7 +3402,7 @@ function createCocktailCardElement(item, isMissingList) {
                 }
                 details.classList.add('open');
                 track('recipe', d.isCustom ? 'custom' : d.idDrink);
-                icon.innerText = currentLang === 'en' ? "Close ▲" : "Kapat ▲";
+                icon.innerText = '✕'; icon.setAttribute('aria-label', currentLang === 'en' ? 'Close' : 'Kapat');
 
                 // Android uygulaması için akıllı reklam tetikleyicisi
                 if (window.AndroidBridge && typeof window.AndroidBridge.onRecipeOpened === 'function') {
@@ -3430,7 +3430,7 @@ function createCocktailCardElement(item, isMissingList) {
                 }
             } else {
                 details.classList.remove('open');
-                icon.innerText = currentLang === 'en' ? "Details ▼" : "Detay ▼";
+                icon.innerText = currentLang === 'en' ? "Details ▼" : "Detay ▼"; icon.removeAttribute('aria-label');
             }
         };
         return card;
