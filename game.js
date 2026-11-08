@@ -2033,7 +2033,7 @@ function renderIngredients() {
 
         card.innerHTML = `
             <div class="h-14 sm:h-16 w-full flex items-center justify-center mb-1 shrink-0">
-                <img src="https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(ing.id)}-Small.png" 
+                <img src="${escapeHTML(BarSecurity.ingredientImage(ing.id))}" 
                      alt="${escapeHTML(displayName)}" 
                      class="max-h-full max-w-full object-contain drop-shadow-md"
                      loading="lazy" data-image-fallback>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bar-cepte-v68-vivid';
+const CACHE_NAME = 'bar-cepte-v70-vivid';
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./business-flow.js', './landing.html', './landing.css', './business-reports.js', './business.html', './business.css', './business-rules.js', './business-ui.js', './inventory.js', './personal-bar.js', './personal-ui.js', './', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './vivid.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
@@ -33,8 +33,8 @@ self.addEventListener('fetch', event => {
                     new Response('Çevrimdışı: Bu dosya henüz önbellekte değil.', { status: 503 });
             }
         })());
-    } else if (url.protocol === 'https:' && url.hostname === 'www.thecocktaildb.com' &&
-        url.pathname.startsWith('/images/')) {
+    } else if (url.protocol === 'https:' && ((url.hostname === 'www.thecocktaildb.com' && url.pathname.startsWith('/images/')) ||
+        (url.hostname === 'barcepte.com.tr' && url.pathname.startsWith('/img/')))) {
         event.respondWith((async () => {
             const cache = await caches.open(IMAGE_CACHE);
             const saved = await cache.match(event.request);

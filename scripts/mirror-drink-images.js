@@ -1,5 +1,6 @@
-// Downloads every TheCocktailDB drink photo (350px "medium" size) into img/drinks/
-// so the site keeps working if that host disappears. Skips files already present.
+// Downloads every TheCocktailDB drink photo (350px "medium" size) into img/drinks/ and every
+// ingredient icon into img/ingredients/, so the app keeps working if that host disappears.
+// Skips files already present.
 const fs = require('fs');
 const path = require('path');
 
@@ -28,6 +29,25 @@ async function main() {
         }
     }
     console.log(`${names.length} photos, ${saved} downloaded, ${failed} failed`);
+
+    // Ingredient icons: the app's base list (game.js) plus every ingredient used in a recipe.
+    const iconDir = path.join(root, 'img', 'ingredients');
+    fs.mkdirSync(iconDir, { recursive: true });
+    const base = [...fs.readFileSync(path.join(root, 'game.js'), 'utf8').matchAll(/\{ id: "([^"]+)"/g)].map(m => m[1]);
+    const used = list.flatMap(d => Array.from({ length: 15 }, (_, i) => (d[`strIngredient${i + 1}`] || '').trim()));
+    const ids = [...new Set([...base, ...used])].filter(id => id && !/[\/\\]/.test(id));
+    let icons = 0, missing = 0;
+    for (const id of ids) {
+        const file = path.join(iconDir, `${id}-Small.png`);
+        if (fs.existsSync(file)) continue;
+        try {
+            const res = await fetch(`https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(id)}-Small.png`);
+            if (!res.ok) throw new Error(res.status);
+            fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+            icons++;
+        } catch { missing++; }
+    }
+    console.log(`${ids.length} ingredient icons, ${icons} downloaded, ${missing} missing`);
 }
 
 main();
