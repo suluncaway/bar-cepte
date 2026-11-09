@@ -2813,7 +2813,20 @@ function toggleMixTimer() {
 }
 
 // --- INSTAGRAM STORY KART OLUŞTURMA & İNDİRME MOTORU (HTML5 CANVAS) ---
-function downloadCocktailStoryCard(drinkId) {
+// Loads an image for canvas use (CORS-enabled so the canvas can still be exported); null on failure.
+function loadStoryImage(src) {
+    return new Promise(resolve => {
+        if (!src) return resolve(null);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const timer = setTimeout(() => resolve(null), 5000);
+        img.onload = () => { clearTimeout(timer); resolve(img); };
+        img.onerror = () => { clearTimeout(timer); resolve(null); };
+        img.src = src;
+    });
+}
+
+async function downloadCocktailStoryCard(drinkId) {
     const targetId = String(drinkId || '').trim();
     const d = allCocktails.find(c => c.idDrink === targetId) || customRecipes.find(c => c.idDrink === targetId);
     if (!d) return;
@@ -2821,102 +2834,30 @@ function downloadCocktailStoryCard(drinkId) {
     triggerHaptic('medium');
     showToast(currentLang === 'en' ? '📸 Preparing story card...' : '📸 Hikaye kartı hazırlanıyor...', 'info');
 
+    // Our mirrored photo first, then the original, then none.
+    const photo = await loadStoryImage(BarSecurity.displayImage(d.strDrinkThumb)) || await loadStoryImage(safeImageSrc(d.strDrinkThumb));
+    const drinkName = d.strDrink || (currentLang === 'en' ? 'Cocktail' : 'Kokteyl');
+    let dataUrl;
+    try { dataUrl = drawStoryCard(d, drinkName, photo).toDataURL('image/png'); }
+    catch { dataUrl = drawStoryCard(d, drinkName, null).toDataURL('image/png'); } // tainted canvas: export without the photo
+
+    const link = document.createElement('a');
+    link.download = `${currentLang === 'en' ? 'PocketBar' : 'BarCepte'}-${drinkName.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+    link.href = dataUrl;
+    link.click();
+
+    showToast(currentLang === 'en' ? `📸 ${drinkName} story card downloaded!` : `📸 ${drinkName} Story kartı hazırlandı!`, 'success');
+}
+
+function drawStoryCard(d, drinkName, photo) {
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
     canvas.height = 1920;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (typeof ctx.roundRect !== 'function') ctx.roundRect = (x, y, w, h) => ctx.rect(x, y, w, h);
+    const box = (x, y, w, h, r, fill, stroke) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); } };
 
-    if (typeof ctx.roundRect !== 'function') {
-        ctx.roundRect = function(x, y, w, h, r) {
-            ctx.rect(x, y, w, h);
-        };
-    }
-
-    // Arka Plan Gradyanı
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
-    bgGrad.addColorStop(0, '#0b0907');
-    bgGrad.addColorStop(0.5, '#070707');
-    bgGrad.addColorStop(1, '#050505');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 1080, 1920);
-
-    // Üst Merkez Altın Işıma
-    const radialGrad = ctx.createRadialGradient(540, 420, 50, 540, 420, 500);
-    radialGrad.addColorStop(0, 'rgba(255, 122, 26, 0.18)');
-    radialGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = radialGrad;
-    ctx.fillRect(0, 0, 1080, 950);
-
-    // Dış Dekoratif Çerçeve
-    ctx.strokeStyle = 'rgba(255, 122, 26, 0.35)';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(50, 50, 980, 1820);
-
-    // İç İnce Çerçeve
-    ctx.strokeStyle = 'rgba(255, 122, 26, 0.12)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(65, 65, 950, 1790);
-
-    // Başlık: cep logosu + marka
-    ctx.save();
-    ctx.translate(408, 96);
-    ctx.scale(0.42, 0.42);
-    ctx.translate(-10, 2);
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#a5c6b3'; ctx.lineWidth = 4;
-    ctx.stroke(new Path2D('M66 26 L80 4'));
-    ctx.fillStyle = '#a5c6b3'; ctx.beginPath(); ctx.arc(66, 27, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#d9b77d'; ctx.lineWidth = 8;
-    ctx.stroke(new Path2D('M55 44 L30 14 H90 L65 44'));
-    ctx.stroke(new Path2D('M18 44 H102 V86 Q102 112 60 124 Q18 112 18 86 Z'));
-    ctx.restore();
-    ctx.fillStyle = '#ff9d4d';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(currentLang === 'en' ? 'P O C K E T   B A R' : 'B A R   C E P T E', 570, 140);
-
-    ctx.fillStyle = '#a8a29a';
-    ctx.font = '500 18px sans-serif';
-    ctx.fillText(currentLang === 'en' ? 'THE HOME BAR COLLECTION • ISSUE #01' : 'THE HOME BAR COLLECTION • SEÇKİ #01', 540, 180);
-
-    // Çizgi
-    ctx.strokeStyle = 'rgba(255, 122, 26, 0.45)';
-    ctx.beginPath();
-    ctx.moveTo(340, 220);
-    ctx.lineTo(740, 220);
-    ctx.stroke();
-
-    // Kokteyl Adı
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 70px serif';
-    const drinkName = d.strDrink || (currentLang === 'en' ? 'Cocktail' : 'Kokteyl');
-    ctx.fillText(drinkName, 540, 320);
-
-    // Rozetler
-    const glass = (currentLang === 'en' ? (d.strGlass || 'Cocktail Glass') : (glassTranslations[(d.strGlass || '').toLowerCase()] || d.strGlass || 'Kokteyl Bardağı')).replace(/^[^\p{L}\p{N}(]+/u, '');
-    const taste = getTasteLabel(d.computedTaste || 'Klasik');
-    const abv = getAbvLabel(d.computedABV, currentLang);
-    const cost = formatRecipeCost(d);
-
-    ctx.font = '600 24px sans-serif';
-    ctx.fillStyle = '#ff9d4d';
-    ctx.fillText(`${glass}  •  ${taste}  •  ${abv}`, 540, 380);
-
-    // Kutu 1: Malzemeler
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(110, 440, 860, 680, 24);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = '#ff9d4d';
-    ctx.font = 'bold 28px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(currentLang === 'en' ? 'INGREDIENTS & MEASURES' : 'MALZEMELER & ÖLÇÜLER', 150, 500);
-
+    // Malzemeler (kutu yüksekliği içeriğe göre)
     let rawIngs = [];
     if (d.isCustom && Array.isArray(d.customIngredients)) {
         rawIngs = d.customIngredients;
@@ -2931,88 +2872,112 @@ function downloadCocktailStoryCard(drinkId) {
             }
         }
     }
+    const ings = rawIngs.slice(0, 8);
+    // Hazırlanışı: satırlara böl, kalan alana sığdır
+    const instr = currentLang === 'en'
+        ? (d.strInstructions || d.strInstructionsTR || 'Stir with ice and serve.')
+        : (d.strInstructionsTR || d.strInstructions || 'Buzla karıştırın ve servis edin.');
+    ctx.font = '400 25px sans-serif';
+    const lines = [];
+    let line = '';
+    for (const word of instr.split(/\s+/)) {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > 780 && line) { lines.push(line); line = word; } else line = test;
+    }
+    if (line) lines.push(line);
+    // Short recipes: shift the photo-to-steps block down so it sits centred above the cost box.
+    const ingH0 = 90 + ings.length * 50, linesFit = Math.min(lines.length, Math.max(1, Math.floor((1650 - (1000 + ingH0 + 30) - 90) / 38)));
+    const shift = Math.max(0, Math.floor((1650 - (1000 + ingH0 + 30 + 90 + linesFit * 38)) / 2));
+    // Arka plan, ışıma ve çerçeve
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+    bgGrad.addColorStop(0, '#0b0907'); bgGrad.addColorStop(0.5, '#070707'); bgGrad.addColorStop(1, '#050505');
+    ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, 1080, 1920);
+    const radialGrad = ctx.createRadialGradient(540, 520, 60, 540, 520, 560);
+    radialGrad.addColorStop(0, 'rgba(255, 122, 26, 0.2)'); radialGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = radialGrad; ctx.fillRect(0, 0, 1080, 1100);
+    ctx.strokeStyle = 'rgba(255, 122, 26, 0.35)'; ctx.lineWidth = 3; ctx.strokeRect(50, 50, 980, 1820);
+    ctx.strokeStyle = 'rgba(255, 122, 26, 0.12)'; ctx.lineWidth = 1; ctx.strokeRect(65, 65, 950, 1790);
 
-    let yPos = 560;
-    rawIngs.slice(0, 8).forEach((item) => {
-        ctx.fillStyle = '#ff7a1a';
-        ctx.beginPath();
-        ctx.arc(160, yPos - 8, 5, 0, Math.PI * 2);
-        ctx.fill();
+    // Başlık: cep logosu + marka
+    ctx.save();
+    ctx.translate(408, 96); ctx.scale(0.42, 0.42); ctx.translate(-10, 2);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#a5c6b3'; ctx.lineWidth = 4; ctx.stroke(new Path2D('M66 26 L80 4'));
+    ctx.fillStyle = '#a5c6b3'; ctx.beginPath(); ctx.arc(66, 27, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#d9b77d'; ctx.lineWidth = 8;
+    ctx.stroke(new Path2D('M55 44 L30 14 H90 L65 44'));
+    ctx.stroke(new Path2D('M18 44 H102 V86 Q102 112 60 124 Q18 112 18 86 Z'));
+    ctx.restore();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff9d4d'; ctx.font = 'bold 26px sans-serif';
+    ctx.fillText(currentLang === 'en' ? 'P O C K E T   B A R' : 'B A R   C E P T E', 570, 140);
+    ctx.fillStyle = '#a8a29a'; ctx.font = '500 18px sans-serif';
+    ctx.fillText(currentLang === 'en' ? 'THE HOME BAR COLLECTION • ISSUE #01' : 'THE HOME BAR COLLECTION • SEÇKİ #01', 540, 180);
 
-        ctx.fillStyle = '#f7f4f0';
-        ctx.font = '500 28px sans-serif';
+    // Kokteyl fotoğrafı (kare, kırpılarak) ya da yer tutucu
+    const px = 250, py = 220 + shift, ps = 580;
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(px, py, ps, ps, 36); ctx.clip();
+    if (photo) {
+        const side = Math.min(photo.naturalWidth || photo.width, photo.naturalHeight || photo.height);
+        const sx = ((photo.naturalWidth || photo.width) - side) / 2, sy = ((photo.naturalHeight || photo.height) - side) / 2;
+        ctx.drawImage(photo, sx, sy, side, side, px, py, ps, ps);
+    } else {
+        const g = ctx.createRadialGradient(540, py + 250, 40, 540, py + 250, 340);
+        g.addColorStop(0, '#3a2412'); g.addColorStop(1, '#141414');
+        ctx.fillStyle = g; ctx.fillRect(px, py, ps, ps);
+        ctx.font = '180px serif'; ctx.fillStyle = '#ffffff'; ctx.fillText('🍸', 540, py + 350);
+    }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255, 122, 26, 0.5)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(px, py, ps, ps, 36); ctx.stroke();
+
+    // Kokteyl adı ve rozetler
+    ctx.fillStyle = '#ffffff';
+    let nameSize = 72;
+    do { ctx.font = `bold ${nameSize}px serif`; nameSize -= 4; } while (ctx.measureText(drinkName).width > 900 && nameSize > 36);
+    ctx.fillText(drinkName, 540, 900 + shift);
+    const glass = (currentLang === 'en' ? (d.strGlass || 'Cocktail Glass') : (glassTranslations[(d.strGlass || '').toLowerCase()] || d.strGlass || 'Kokteyl Bardağı')).replace(/^[^\p{L}\p{N}(]+/u, '');
+    const taste = getTasteLabel(d.computedTaste || 'Klasik');
+    const abv = getAbvLabel(d.computedABV, currentLang);
+    const cost = formatRecipeCost(d);
+    ctx.font = '600 26px sans-serif'; ctx.fillStyle = '#ff9d4d';
+    ctx.fillText(`${glass}  •  ${taste}  •  ${abv}`, 540, 955 + shift);
+
+    const ingTop = 1000 + shift, ingH = ingH0;
+    box(110, ingTop, 860, ingH, 24, 'rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.1)');
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#ff9d4d'; ctx.font = 'bold 26px sans-serif';
+    ctx.fillText(currentLang === 'en' ? 'INGREDIENTS & MEASURES' : 'MALZEMELER & ÖLÇÜLER', 150, ingTop + 52);
+    let yPos = ingTop + 104;
+    ings.forEach(item => {
+        ctx.fillStyle = '#ff7a1a'; ctx.beginPath(); ctx.arc(160, yPos - 8, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#f7f4f0'; ctx.font = '500 28px sans-serif';
         ctx.fillText(item, 185, yPos);
-        yPos += 58;
+        yPos += 50;
     });
 
-    // Kutu 2: Hazırlanışı
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(110, 1160, 860, 480, 24);
-    ctx.fill();
-    ctx.stroke();
+    const stepTop = ingTop + ingH + 30, maxLines = Math.max(1, Math.floor((1650 - stepTop - 90) / 38));
+    if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, '') + '…'; }
+    box(110, stepTop, 860, 90 + lines.length * 38, 24, 'rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.1)');
+    ctx.fillStyle = '#ff9d4d'; ctx.font = 'bold 26px sans-serif';
+    ctx.fillText(currentLang === 'en' ? 'INSTRUCTIONS' : 'HAZIRLANIŞI', 150, stepTop + 52);
+    ctx.fillStyle = '#d6d0c8'; ctx.font = '400 25px sans-serif';
+    lines.forEach((l, i) => ctx.fillText(l, 150, stepTop + 98 + i * 38));
 
-    ctx.fillStyle = '#ff9d4d';
-    ctx.font = 'bold 28px sans-serif';
-    ctx.fillText(currentLang === 'en' ? 'INSTRUCTIONS' : 'HAZIRLANIŞI', 150, 1220);
-
-    const instr = currentLang === 'en' 
-        ? (d.strInstructions || d.strInstructionsTR || 'Stir with ice and serve.') 
-        : (d.strInstructionsTR || d.strInstructions || 'Buzla karıştırın ve servis edin.');
-    ctx.fillStyle = '#d6d0c8';
-    ctx.font = '400 24px sans-serif';
-    const words = instr.split(' ');
-    let line = '';
-    let instrY = 1275;
-    for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > 760 && n > 0) {
-            ctx.fillText(line, 150, instrY);
-            line = words[n] + ' ';
-            instrY += 38;
-            if (instrY > 1580) break;
-        } else {
-            line = testLine;
-        }
-    }
-    if (line && instrY <= 1580) {
-        ctx.fillText(line, 150, instrY);
-    }
-
-    // Kutu 3: Maliyet
-    ctx.fillStyle = 'rgba(255, 122, 26, 0.12)';
-    ctx.strokeStyle = 'rgba(255, 122, 26, 0.45)';
-    ctx.beginPath();
-    ctx.roundRect(110, 1680, 860, 90, 20);
-    ctx.fill();
-    ctx.stroke();
-
+    // Maliyet ve alt bilgi
+    box(110, 1690, 860, 86, 20, 'rgba(255, 122, 26, 0.12)', 'rgba(255, 122, 26, 0.45)');
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#ffc48a';
-    ctx.font = 'bold 24px sans-serif';
+    ctx.fillStyle = '#ffc48a'; ctx.font = 'bold 24px sans-serif';
     const savings = d.computedCost ? d.computedCost.savingsPercent : 0;
     ctx.fillText(currentLang === 'en'
         ? `Home Cost: ${cost}   |   Bar Savings: ~${savings}%`
-        : `Ev Yapımı Maliyet: ${cost}   |   Bar Tasarrufu: ~%${savings}`, 540, 1735);
-
-    // Alt Filigran
-    ctx.fillStyle = '#8a847c';
-    ctx.font = '500 18px sans-serif';
-    ctx.fillText(currentLang === 'en' ? 'Pocket Bar — Smart Home Bar & Cocktail Assistant' : 'Bar Cepte — Akıllı Ev Barı & Kokteyl Asistanı', 540, 1810);
-    ctx.fillStyle = '#ff9d4d';
-    ctx.font = '600 20px sans-serif';
-    ctx.fillText('barcepte.com.tr', 540, 1842);
-
-    // İndirme Tetikle
-    const link = document.createElement('a');
-    link.download = `${currentLang === 'en' ? 'PocketBar' : 'BarCepte'}-${drinkName.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-
-    showToast(currentLang === 'en' ? `📸 ${drinkName} story card downloaded!` : `📸 ${drinkName} Story kartı hazırlandı!`, 'success');
+        : `Ev Yapımı Maliyet: ${cost}   |   Bar Tasarrufu: ~%${savings}`, 540, 1742);
+    ctx.fillStyle = '#8a847c'; ctx.font = '500 18px sans-serif';
+    ctx.fillText(currentLang === 'en' ? 'Pocket Bar — Smart Home Bar & Cocktail Assistant' : 'Bar Cepte — Akıllı Ev Barı & Kokteyl Asistanı', 540, 1812);
+    ctx.fillStyle = '#ff9d4d'; ctx.font = '600 20px sans-serif';
+    ctx.fillText('barcepte.com.tr', 540, 1844);
+    return canvas;
 }
 
 function resolveIngredientName(name) {
