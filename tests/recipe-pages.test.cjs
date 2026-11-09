@@ -25,7 +25,10 @@ test('recipe pages are escaped, uniquely named and listed in the sitemap', () =>
     assert.match(sitemap, /\/hakkimizda\.html/);
     assert.ok(fs.existsSync(path.join(root, 'tarif', 'kategori', 'rom.html')));
     assert.ok(fs.existsSync(path.join(root, 'iletisim.html')));
-    assert.match(html, /Bu tarif hakkında/);
+    assert.match(html, /hakkında<\/h2>/);
+    assert.match(html, /"@type":"HowToStep"/);
+    assert.match(html, /"@type":"BreadcrumbList"/);
+    assert.ok(fs.existsSync(path.join(root, '404.html')));
     assert.match(html, /\/kullanim-kosullari\.html/, 'footer links the terms page');
     assert.equal(slugify('Mojito'), 'mojito');
     fs.rmSync(root, { recursive: true, force: true });

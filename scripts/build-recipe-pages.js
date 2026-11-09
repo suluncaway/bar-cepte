@@ -29,12 +29,14 @@ const glassTr = glass => glass ? noEmoji(GLASS_TR[glass.toLowerCase()] || glass)
 const CATEGORY_TR = { 'Ordinary Drink': 'Klasik kokteyl', Cocktail: 'Kokteyl', Shot: 'Shot', 'Punch / Party Drink': 'Parti içkisi', 'Other / Unknown': 'Diğer',
     'Coffee / Tea': 'Kahve / çay', Shake: 'Shake', Beer: 'Bira', 'Soft Drink': 'Alkolsüz içecek', 'Homemade Liqueur': 'Ev yapımı likör', Cocoa: 'Kakao' };
 // oz → cl, the way the app shows measures (1 oz ≈ 3 cl)
-const measureTr = measure => measure.replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*(?:fl\s*)?(?:oz|ounces?)\b/gi, (m, n) => {
+const measureTr = measure => measure.replace(/(\d+\/\d+|\d+(?:\.\d+)?)\s*-\s*(?=(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*(?:fl\s*)?(?:oz|ounces?)\b)/gi, '$1 oz-').replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*(?:fl\s*)?(?:oz|ounces?)\b/gi, (m, n) => {
     const v = n.includes('/') ? n.trim().split(/\s+/).reduce((s, p) => s + (p.includes('/') ? p.split('/')[0] / p.split('/')[1] : +p), 0) : +n;
     return `${Math.round(v * 3 * 10) / 10} cl`;
-}).replace(new RegExp(`\\b(${MEASURE_KEYS.join('|')})\\b`, 'gi'), word => MEASURE_TR[word.toLowerCase()] ?? word);
+}).replace(/(\d+(?:\.\d+)?) cl-(\d+(?:\.\d+)?) cl/g, '$1-$2 cl').replace(new RegExp(`\\b(${MEASURE_KEYS.join('|')})\\b`, 'gi'), word => MEASURE_TR[word.toLowerCase()] ?? word);
 // "6 cl Viski", but "Limon suyu: 1/2" when the measure starts with a word.
-const rowText = r => !r.measure ? r.name : /^[\d½¼¾]/.test(r.measure) ? `${r.measure} ${r.name}` : `${r.name} ${r.measure}`;
+// [name, amount] for the ingredient card; "suyu: 1/2" becomes ["Limon suyu", "1/2 adet"].
+const ingParts = r => { const juice = /^suyu:\s*(.+)$/.exec(r.measure || ''); return juice ? [`${r.name} suyu`, `${juice[1]} adet`] : /^[\d½¼¾]/.test(r.measure || '') || !r.measure ? [r.name, r.measure || ''] : [r.name, r.measure]; };
+const rowText = r => { const [n, a] = ingParts(r); return a ? (/^[\d½¼¾]/.test(a) ? `${a} ${n}` : `${n} ${a}`) : n; };
 
 function ingredients(drink) {
     const rows = [];
@@ -66,6 +68,13 @@ footer.site-wrap{border-top:1px solid var(--line);margin-top:20px;background:#08
 .about,.gear,.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:6px 22px 14px;margin:28px 0}.gear li{margin:10px 0}.small{font-size:13px;color:var(--muted)}
 .guides{list-style:none;padding:0;display:grid;gap:12px}.guides li{margin:0}.guides a{display:block;padding:18px 20px;border:1px solid var(--line)!important;border-radius:18px;background:var(--surface);color:var(--ink)}.guides a b{display:block;color:#fff;font-size:18px;margin-bottom:4px}.guides a span{color:var(--muted);font-size:14px}
 dl{margin:0}dt{font-weight:800;color:#fff;margin-top:18px}dd{margin:4px 0 0}
+.crumbs{font-size:14px;color:var(--muted);margin-bottom:6px}.crumbs a{display:inline-block;padding:10px 2px;border:0!important}.crumbs span{color:#d6d6d6}
+.hero{max-width:none;aspect-ratio:4/3;max-height:300px;height:auto;color:transparent;background:radial-gradient(circle at 50% 30%,rgba(255,122,26,.18),transparent 60%),var(--surface)}
+.cta-sm{margin:6px 0 4px;padding:10px 18px;font-size:14px}
+.count{display:inline-block;vertical-align:middle;margin-left:8px;padding:3px 10px;border-radius:999px;background:rgba(255,122,26,.14);color:var(--accent-soft);font-size:12px;font-weight:700;letter-spacing:0}
+.ing{list-style:none;padding:0;margin:6px 0 4px}.ing li{display:flex;justify-content:space-between;gap:12px;padding:11px 0;margin:0;border-bottom:1px solid var(--line)}.ing li:last-child{border:0}.ing b{color:var(--accent-soft);white-space:nowrap;text-align:right}
+.steps{list-style:none;padding:0;counter-reset:s}.steps li{counter-increment:s;position:relative;padding:4px 0 10px 44px;margin:0 0 6px}.steps li:before{content:counter(s);position:absolute;left:0;top:2px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#1a0f05;font-weight:800;font-size:14px;display:grid;place-items:center}
+footer a{display:inline-block;padding:10px 2px}
 @media (max-width:520px){.site{padding:10px 16px;gap:6px}header nav{gap:2px;flex-wrap:nowrap}header nav a{padding:6px 10px;font-size:13px}header nav a.about-link{display:none}.brand{font-size:17px}.brand svg{width:30px;height:30px}main{padding:22px 16px 56px}}`;
 
 // AdSense runs only on content pages (recipes, categories, guides), never on the app's empty/gate screens.
@@ -80,16 +89,16 @@ const FOOTER = `<footer class="site-wrap"><div class="site"><p>Bu sitedeki alkol
 <p>Ekipman önerilerindeki bazı bağlantılar ortaklık bağlantısıdır; bu bağlantılardan yapılan alışverişlerden Bar Cepte komisyon kazanabilir.</p>
 <p><a href="/hakkimizda.html">Hakkımızda</a> · <a href="/iletisim.html">İletişim</a> · <a href="/privacy.html">Gizlilik Politikası</a> · <a href="/kullanim-kosullari.html">Kullanım Koşulları</a> · <a href="/rehber/sorumlu-tuketim.html">Sorumlu Tüketim</a></p><p>© 2026 Bar Cepte</p></div></footer>`;
 
-function page({ title, description, canonical, body, jsonLd, image, ads }) {
+function page({ title, description, canonical, body, jsonLd, image, ads, robots }) {
     return `<!DOCTYPE html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="${ads ? AD_CSP : CSP}">${ads ? AD_HEAD : ''}
-<title>${esc(title)}</title><meta name="description" content="${esc(description)}">
+${robots ? `<meta name="robots" content="${robots}">` : ''}<title>${esc(title)}</title><meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonical)}"><link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}">
 <meta property="og:image" content="${esc(image || `${SITE}/og-image.jpg`)}"><meta property="og:url" content="${esc(canonical)}"><meta name="twitter:card" content="summary_large_image">
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap">
 <style>${STYLE}</style></head><body>${NAV}<main>${body}</main>${FOOTER}</body></html>
 `;
 }
@@ -97,28 +106,83 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
 const ingredientText = drink => Array.from({ length: 15 }, (_, i) => drink[`strIngredient${i + 1}`] || '').join(' ').toLowerCase();
 const isAlcoholFree = drink => /non/i.test(drink.strAlcoholic || '');
 
-// A short, data-driven "about this recipe" section so every page says something of its own.
-function aboutRecipe(drink, rows, cats) {
+// Deterministic variety: the same recipe always gets the same phrasing, different recipes differ.
+const hash = text => [...String(text)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+const pick = (list, seed) => list[seed % list.length];
+const SMALL_WORDS = new Set(['of', 'and', 'the', 'in', 'a', 'on', 'with', 'de', 'la', 'le', 'y', 'n']);
+const titleCase = name => String(name).split(' ').map((w, i) => (i && SMALL_WORDS.has(w.toLowerCase())) ? w.toLowerCase() : w.charAt(0).toLocaleUpperCase('en') + w.slice(1)).join(' ');
+const techniqueOf = drink => {
     const en = (drink.strInstructions || '').toLowerCase();
-    const technique = /blend/.test(en) ? 'blend' : /shake|shaker/.test(en) ? 'shake' : /\bstir/.test(en) ? 'stir' : /muddle|crush/.test(en) ? 'muddle' : 'build';
+    return /blend/.test(en) ? 'blend' : /shake|shaker/.test(en) ? 'shake' : /\bstir/.test(en) ? 'stir' : /muddle|crush/.test(en) ? 'muddle' : 'build';
+};
+const SPIRIT = /\b(gin|vodka|rum|tequila|mezcal|whisk(?:e)?y|bourbon|scotch|rye|brandy|cognac|absinthe|pisco|cachaca|everclear|151)\b/;
+const MIXER = /juice|soda|tonic|cola|coke|ginger|lemonade|milk|cream|water|coffee|tea|7-up|sprite|beer|cider/;
+// Flavour notes and strength from the ingredient list.
+function profileOf(drink) {
+    const text = ingredientText(drink);
+    const notes = [
+        /lemon|lime|grapefruit|sour mix/.test(text) && 'ekşi',
+        /syrup|sugar|grenadine|honey|liqueur|schnapps|amaretto|kahlua|triple sec|cointreau|creme de|chocolate/.test(text) && 'tatlı',
+        /campari|aperol|bitters|vermouth|angostura|fernet/.test(text) && 'acımsı',
+        /mint|soda|tonic|ginger|cucumber|basil/.test(text) && 'ferah',
+        /cream|milk|egg|coconut|yoghurt|ice-cream/.test(text) && 'kremamsı',
+        /pineapple|orange juice|cranberry|strawberr|peach|mango|banana|berry|apple|passion|cherry|melon|grape/.test(text) && 'meyveli'
+    ].filter(Boolean);
+    const rows = Array.from({ length: 15 }, (_, i) => (drink[`strIngredient${i + 1}`] || '').toLowerCase()).filter(Boolean);
+    const spirits = rows.filter(r => SPIRIT.test(r)).length, mixers = rows.filter(r => MIXER.test(r)).length;
+    const strength = isAlcoholFree(drink) ? 'alkolsüz' : spirits >= 3 ? 'oldukça sert' : spirits && !mixers ? 'sert, içki ağırlıklı' : mixers >= 2 || /soda|tonic|cola|ginger ale|lemonade/.test(text) ? 'hafif ve uzun içimli' : 'orta sertlikte';
+    return { notes, strength, text };
+}
+const joinTr = list => list.length < 2 ? list.join('') : `${list.slice(0, -1).join(', ')} ve ${list[list.length - 1]}`;
+
+// A data-driven "about this recipe" section so every page says something of its own.
+function aboutRecipe(drink, rows, cats) {
+    const seed = hash(drink.idDrink), name = esc(titleCase(drink.strDrink));
+    const technique = techniqueOf(drink), { notes, strength, text } = profileOf(drink);
     const level = rows.length <= 3 ? 'kolay' : rows.length <= 5 ? 'orta zorlukta' : 'biraz daha emek isteyen';
-    const kind = isAlcoholFree(drink) ? 'alkolsüz bir içecek' : (CATEGORY_TR[drink.strCategory] || 'kokteyl').toLocaleLowerCase('tr');
+    const kind = esc(isAlcoholFree(drink) ? 'alkolsüz içecek' : (CATEGORY_TR[drink.strCategory] || 'kokteyl').toLocaleLowerCase('tr'));
+    const intro = pick([
+        `${name}, ${rows.length} malzemeyle hazırlanan ${level} bir ${kind} tarifidir.`,
+        `${rows.length} malzemeli ${name}, ${level} bir ${kind} tarifi.`,
+        `${name} için ${rows.length} malzeme yeterli; ${level} bir ${kind} tarifi.`
+    ], seed);
+    const taste = notes.length ? pick([
+        ` Tadında ${joinTr(notes)} notalar öne çıkar`,
+        ` ${joinTr(notes).replace(/^./, c => c.toLocaleUpperCase('tr'))} bir tat profiline sahiptir`,
+        ` Karakteri ${joinTr(notes)} tatlar üzerine kuruludur`
+    ], seed >> 3) + (strength === 'alkolsüz' ? '.' : `; ${strength} bir içimdir.`) : (strength === 'alkolsüz' ? '' : ` ${strength.replace(/^./, c => c.toLocaleUpperCase('tr'))} bir içimdir.`);
     const howTo = {
-        shake: 'Malzemeler buzla birlikte shaker’da çalkalanarak hazırlanır; çalkalama içeceği hızla soğutur ve hafif köpüklü bir doku verir.',
-        stir: 'Malzemeler buzla karıştırılarak hazırlanır; bu yöntem içeceği berrak ve ipeksi tutar.',
-        blend: 'Malzemeler buzla birlikte blender’da çekilerek hazırlanan, buzlu ve yoğun kıvamlı bir içecektir.',
-        muddle: 'Malzemelerin bir kısmı bardağın dibinde ezilerek aroması çıkarılır, ardından diğer malzemeler eklenir.',
-        build: 'Malzemeler doğrudan servis bardağına, buz üzerine dökülerek hazırlanır; ek ekipman gerektirmez.'
+        shake: ['Malzemeler buzla birlikte shaker’da kuvvetlice çalkalanır; bu sayede içecek hızla soğur ve hafif köpüklü bir doku kazanır.', 'Shaker’da buzla 10–15 saniye çalkalanarak hazırlanır; çalkalama, farklı yoğunluktaki malzemeleri tamamen birleştirir.', 'Hazırlanışının temeli çalkalamadır: buzla dolu shaker içeceği hem soğutur hem havalandırır.'],
+        stir: ['Malzemeler buzla yavaşça karıştırılır; bu yöntem içeceği berrak ve ipeksi tutar.', 'Çalkalanmak yerine buzla karıştırılarak hazırlanır, böylece içine hava girmez ve dokusu pürüzsüz kalır.', 'Bar kaşığıyla buz üzerinde karıştırmak, bu tarifin dengeli sulanmasını sağlar.'],
+        blend: ['Malzemeler buzla birlikte blender’da çekilerek yoğun, buzlu bir kıvam elde edilir.', 'Blender’da hazırlanan buzlu bir içecektir; fazla buz yerine az buzla başlayıp kıvamı ayarlamak iyi sonuç verir.'],
+        muddle: ['Malzemelerin bir kısmı bardağın dibinde ezilerek aroması çıkarılır, ardından diğer malzemeler eklenir.', 'Hazırlanırken önce aromalı malzemeler havanla hafifçe ezilir; fazla bastırmak acılık verebilir.'],
+        build: ['Malzemeler doğrudan servis bardağına, buz üzerine dökülerek hazırlanır; shaker gerektirmez.', 'Ek ekipman gerektirmeyen, doğrudan bardakta hazırlanan pratik bir tariftir.', 'Buzla doldurulmuş bardağa sırayla dökülerek kolayca hazırlanır.']
     }[technique];
+    const techniqueLink = seed % 2 ? ' ' + pick([`Tekniğin ayrıntıları için <a href="/rehber/calkalama-mi-karistirma-mi.html">çalkalama ve karıştırma rehberine</a> bakabilirsin.`, `Hangi tarifin neden çalkalandığını <a href="/rehber/calkalama-mi-karistirma-mi.html">bu rehberde</a> anlattık.`, `Teknik konusunda emin değilsen <a href="/rehber/calkalama-mi-karistirma-mi.html">Çalkalama mı Karıştırma mı?</a> yazısı yardımcı olur.`], seed >> 13) : '';
     const glass = glassTr(drink.strGlass);
+    const glassText = glass ? pick([
+        `Geleneksel olarak <strong>${esc(glass)}</strong> içinde servis edilir.`,
+        `Servis için en uygun bardak <strong>${esc(glass)}</strong>.`,
+        `<strong>${esc(glass)}</strong> içinde sunulduğunda en iyi görünür ve en uzun süre soğuk kalır.`
+    ], seed >> 5) + (seed % 3 === 0 ? ' ' + pick([`Bardak seçimini <a href="/rehber/kokteyl-bardaklari.html">Kokteyl Bardakları</a> rehberinde anlattık.`, `Elinde bu bardak yoksa <a href="/rehber/kokteyl-bardaklari.html">bardak rehberindeki</a> alternatiflere bakabilirsin.`], seed >> 15) : '') : '';
+    const occasion = notes.includes('acımsı') ? 'Yemek öncesinde aperatif olarak iyi gider.' : notes.includes('kremamsı') ? 'Yemek sonrasında tatlı yerine tercih edilebilir.' : notes.includes('ferah') ? 'Sıcak havalarda ve uzun sohbetlerde keyifle içilir.' : notes.includes('meyveli') ? 'Kalabalık buluşmalarda ve yaz davetlerinde sık tercih edilir.' : '';
+    const homeTips = [
+        /lemon|lime/.test(text) && pick(['Limon ya da misket limonu suyunu taze sık; hazır şişelenmiş meyve suları tadı belirgin şekilde düşürür.', 'Narenciye suyunu servis etmeden hemen önce sık; bekleyen meyve suyu aromasını kaybeder.', 'Limonların ekşiliği değişebilir; tadına bakıp şeker veya şurup miktarını biraz ayarlayabilirsin.'], seed >> 17),
+        /soda|tonic|cola|ginger ale|champagne|prosecco|lemonade/.test(text) && 'Gazlı malzemeyi en son ve yavaşça ekle ki gazı kaçmasın.',
+        /egg/.test(text) && 'Yumurta akı kullanıyorsan önce buzsuz çalkala; daha yoğun bir köpük elde edersin.',
+        /mint/.test(text) && 'Naneyi ezmek yerine hafifçe bastır; fazla ezilen nane acılaşır.',
+        /sugar syrup|simple syrup/.test(text) && 'Şeker şurubunu evde kolayca hazırlayabilirsin, tarifi <a href="/rehber/ev-yapimi-surup.html">şurup rehberinde</a>.'
+    ].filter(Boolean).slice(0, 2);
+    const catText = cats.length ? pick([`Bu tarif ${cats.map(c => `<a href="/tarif/kategori/${c.slug}.html">${esc(c.title)}</a>`).join(', ')} arasında yer alır.`, `Benzer tarifler için ${cats.map(c => `<a href="/tarif/kategori/${c.slug}.html">${esc(c.title)}</a>`).join(', ')} sayfasına göz at.`], seed >> 7) : '';
+    const legal = isAlcoholFree(drink) ? 'Alkol içermediği için her yaştan misafire sunulabilir.' : pick(['Alkollü bir içecektir; yalnızca 18 yaş ve üzeri içindir.', 'Yetişkinler içindir (18+); ölçülü tüketmeyi unutma.', 'Alkol içerir: 18 yaş altına sunulmaz, alkol aldıysan araç kullanma.'], seed >> 9);
     const parts = [
-        `<p>${esc(drink.strDrink)}, ${rows.length} malzemeyle hazırlanan ${level} bir ${esc(kind)} tarifidir. ${howTo} Teknikler hakkında daha fazlası için <a href="/rehber/calkalama-mi-karistirma-mi.html">Çalkalama mı Karıştırma mı?</a> rehberine göz atabilirsin.</p>`,
-        glass ? `<p>Geleneksel olarak <strong>${esc(glass)}</strong> içinde servis edilir. Bardak seçiminin içeceğe etkisini <a href="/rehber/kokteyl-bardaklari.html">Kokteyl Bardakları</a> rehberinde anlattık.</p>` : '',
-        cats.length ? `<p>Bu tarif ${cats.map(c => `<a href="/tarif/kategori/${c.slug}.html">${esc(c.title)}</a>`).join(', ')} arasında yer alır.</p>` : '',
-        isAlcoholFree(drink) ? '<p>Alkol içermediği için her yaştan misafire sunulabilir.</p>' : '<p>Alkollü bir içecektir; yalnızca 18 yaş ve üzeri içindir. Ölçülü tüketmeyi unutma.</p>',
-        TIPS[drink.strDrink] ? `<h3>Barmen ipucu</h3><p>${esc(TIPS[drink.strDrink])}</p>` : ''
+        `<p>${intro}${taste} ${occasion}</p>`,
+        `<p>${pick(howTo, seed >> 11)}${techniqueLink} ${glassText}</p>`,
+        homeTips.length ? `<h3>Evde hazırlarken</h3><ul>${homeTips.map(t => `<li>${t}</li>`).join('')}</ul>` : '',
+        TIPS[drink.strDrink] ? `<h3>Barmen ipucu</h3><p>${esc(TIPS[drink.strDrink])}</p>` : '',
+        `<p>${catText} ${legal}</p>`
     ];
-    return `<section class="about"><h2>Bu tarif hakkında</h2>${parts.join('\n')}</section>`;
+    return `<section class="about"><h2>${name} hakkında</h2>${parts.join('\n')}</section>`;
 }
 
 // Equipment box with affiliate links (rel=sponsored).
@@ -160,26 +224,44 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
         const slug = slugs.get(drink);
         const related = drinks.filter(other => other !== drink && base(other) && base(other) === base(drink)).slice(0, 6);
         const url = `${SITE}/tarif/${slug}.html`, image = ownImage(safeImage(drink.strDrinkThumb)), rows = ingredients(drink);
-        const title = `${drink.strDrink} Tarifi — Malzemeler ve Yapılışı | Bar Cepte`;
-        const description = `${drink.strDrink} nasıl yapılır? ${rows.length} malzeme: ${rows.map(r => r.name).join(', ')}.`;
+        const displayName = titleCase(drink.strDrink), cats = catsOf.get(drink), technique = techniqueOf(drink), { strength } = profileOf(drink);
+        const free = isAlcoholFree(drink);
+        const title = free ? `${displayName} Nasıl Yapılır? Alkolsüz Tarif ve Malzemeler | Bar Cepte` : `${displayName} Kokteyli Nasıl Yapılır? Malzemeler ve Tarif | Bar Cepte`;
+        const verb = { shake: 'çalkalanarak', stir: 'karıştırılarak', blend: 'blender’da', muddle: 'ezilerek', build: 'bardakta' }[technique];
+        const names = rows.map(r => r.name);
+        const description = `${displayName} tarifi: ${names.slice(0, 4).join(', ')}${names.length > 4 ? ' ve diğerleriyle' : ' ile'} ${verb} hazırlanan ${strength} bir ${free ? 'içecek' : 'kokteyl'}. Ölçüler, adım adım yapılış ve ipuçları.`;
         const category = CATEGORY_TR[drink.strCategory] || drink.strCategory;
-        const alcohol = isAlcoholFree(drink) ? 'Alkolsüz' : drink.strAlcoholic ? 'Alkollü' : '';
+        const alcohol = free ? 'Alkolsüz' : drink.strAlcoholic ? 'Alkollü' : '';
         const instructions = drink.strInstructionsTR || drink.strInstructions || '';
-        const body = `<p><a href="/tarif/">← Tüm tarifler</a></p>
-<span class="eyebrow">Tarif</span><h1>${esc(drink.strDrink)}</h1><p class="meta">${esc([category, alcohol, glassTr(drink.strGlass)].filter(Boolean).join(' · '))}</p>
-${image ? `<img src="${esc(image)}" alt="${esc(drink.strDrink)}" loading="lazy">` : ''}
-<h2>Malzemeler</h2><ul>${rows.map(r => `<li>${esc(rowText(r))}</li>`).join('')}</ul>
-<h2>Yapılışı</h2><p>${esc(instructions)}</p>
-${aboutRecipe(drink, rows, catsOf.get(drink))}
+        const steps = instructions.split(/(?<=[.!?])\s+(?=[A-ZÇĞİÖŞÜ0-9"“(])/).map(s => s.trim()).filter(Boolean);
+        const imgSrc = image && image.startsWith(SITE) ? image.slice(SITE.length) : image;
+        const crumbCat = cats[0];
+        const about = aboutRecipe(drink, rows, cats);
+        const textWords = (instructions + ' ' + about.replace(/<[^>]+>/g, ' ')).split(/\s+/).filter(Boolean).length;
+        // Ads only where the page has real substance (AdSense "low value content").
+        const ads = Boolean(TIPS[drink.strDrink]) || textWords >= 200;
+        const body = `<nav class="crumbs" aria-label="Sayfa yolu"><a href="/tarif/">Tarifler</a> › ${crumbCat ? `<a href="/tarif/kategori/${crumbCat.slug}.html">${esc(crumbCat.title)}</a> › ` : ''}<span>${esc(displayName)}</span></nav>
+<span class="eyebrow">Tarif</span><h1>${esc(displayName)}</h1><p class="meta">${esc([category, alcohol, glassTr(drink.strGlass)].filter(Boolean).join(' · '))}</p>
+<a class="cta cta-sm" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç →</a>
+${imgSrc ? `<img class="hero" src="${esc(imgSrc)}" alt="${esc(displayName)} kokteyli" width="350" height="263" fetchpriority="high">` : ''}
+<section class="card"><h2>Malzemeler <span class="count">${rows.length} malzeme</span></h2><ul class="ing">${rows.map(r => { const [n, a] = ingParts(r); return `<li><span>${esc(n)}</span><b>${esc(a)}</b></li>`; }).join('')}</ul></section>
+<h2>Yapılışı</h2><ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+${about}
+${ads ? AD_UNIT : ''}
 ${gearBox(recipeGear(drink), 'Bu tarif için ekipman')}
-${AD_UNIT}
 ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h2>${listItems(related, slugs)}` : ''}
 <a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır →</a>`;
-        const jsonLd = { '@context': 'https://schema.org', '@type': 'Recipe', name: drink.strDrink, image: image ? [image] : undefined,
-            recipeCategory: category || 'Kokteyl', recipeIngredient: rows.map(rowText),
-            recipeInstructions: instructions, inLanguage: 'tr', url };
-        fs.writeFileSync(path.join(outDir, `${slug}.html`), page({ title, description, canonical: url, body, jsonLd, image, ads: true }));
-        entries.push({ slug, name: drink.strDrink, url });
+        const prep = technique === 'build' ? 'PT3M' : technique === 'blend' ? 'PT5M' : 'PT4M';
+        const jsonLd = [{ '@context': 'https://schema.org', '@type': 'Recipe', name: displayName, image: image ? [image] : undefined, description,
+            author: { '@type': 'Organization', name: 'Bar Cepte', url: SITE }, recipeCategory: category || 'Kokteyl', recipeYield: '1 porsiyon',
+            prepTime: prep, totalTime: prep, keywords: [displayName, free ? 'alkolsüz' : 'kokteyl', ...cats.map(c => c.name)].join(', '),
+            recipeIngredient: rows.map(rowText), recipeInstructions: steps.map(text => ({ '@type': 'HowToStep', text })), inLanguage: 'tr', url },
+        { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Tarifler', item: `${SITE}/tarif/` },
+            ...(crumbCat ? [{ '@type': 'ListItem', position: 2, name: crumbCat.title, item: `${SITE}/tarif/kategori/${crumbCat.slug}.html` }] : []),
+            { '@type': 'ListItem', position: crumbCat ? 3 : 2, name: displayName, item: url }] }];
+        fs.writeFileSync(path.join(outDir, `${slug}.html`), page({ title, description, canonical: url, body, jsonLd, image, ads }));
+        entries.push({ slug, name: drink.strDrink, url, ads });
     }
     entries.sort((a, b) => a.name.localeCompare(b.name));
     const urls = [`${SITE}/tarif/`];
@@ -226,6 +308,11 @@ ${AD_UNIT}
             title: `${info.title} | Bar Cepte`, description: info.description, canonical: url, body: `<span class="eyebrow">Bar Cepte</span><h1>${esc(info.title)}</h1><div class="card">${info.html}</div>`
         }));
     }
+    fs.writeFileSync(path.join(root, '404.html'), page({
+        title: 'Sayfa bulunamadı | Bar Cepte', description: 'Aradığın sayfa bulunamadı.', canonical: `${SITE}/404.html`, robots: 'noindex',
+        body: `<span class="eyebrow">404</span><h1>Bu sayfa bulunamadı</h1><p>Aradığın sayfa taşınmış ya da hiç var olmamış olabilir. Şunlardan biriyle devam edebilirsin:</p>
+<div class="list"><a href="/">Uygulamayı aç</a><a href="/tarif/">Tüm tarifler</a><a href="/rehber/">Rehberler</a>${CATEGORIES.slice(0, 4).map(c => `<a href="/tarif/kategori/${c.slug}.html">${esc(c.title)}</a>`).join('')}</div>`
+    }));
     // sitemap: keep entries this script does not own, then list the generated pages
     const sitemapPath = path.join(root, 'sitemap.xml');
     const owned = new Set(urls);
