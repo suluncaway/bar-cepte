@@ -75,6 +75,12 @@ dl{margin:0}dt{font-weight:800;color:#fff;margin-top:18px}dd{margin:4px 0 0}
 .ing{list-style:none;padding:0;margin:6px 0 4px}.ing li{display:flex;justify-content:space-between;gap:12px;padding:11px 0;margin:0;border-bottom:1px solid var(--line)}.ing li:last-child{border:0}.ing b{color:var(--accent-soft);white-space:nowrap;text-align:right}
 .steps{list-style:none;padding:0;counter-reset:s}.steps li{counter-increment:s;position:relative;padding:4px 0 10px 44px;margin:0 0 6px}.steps li:before{content:counter(s);position:absolute;left:0;top:2px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#1a0f05;font-weight:800;font-size:14px;display:grid;place-items:center}
 footer a{display:inline-block;padding:10px 2px}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:8px 0 18px}@media (min-width:640px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tile{display:block;border:1px solid var(--line)!important;border-radius:16px;overflow:hidden;background:var(--surface);color:var(--ink)}.tile:hover{border-color:var(--accent)!important}
+.tile img,.tile i{display:block;width:100%;height:auto;aspect-ratio:1;margin:0;border:0;border-radius:0;object-fit:cover;color:transparent;background:radial-gradient(circle at 50% 35%,rgba(255,122,26,.16),transparent 65%),#141414}
+.tile span{display:block;padding:9px 11px;font-size:14px;font-weight:600;line-height:1.3}
+.az{position:sticky;top:58px;z-index:5;display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px;padding:8px 0;background:rgba(5,5,5,.92)}.az::-webkit-scrollbar{display:none}.az a{flex:0 0 auto}.az a{min-width:30px;padding:6px 8px;text-align:center;border:1px solid var(--line)!important;border-radius:8px;font-size:13px;font-weight:700;color:var(--ink)}
+.letter{scroll-margin-top:120px;color:var(--accent);font-size:22px}.toc ol{margin:4px 0 8px;padding-left:20px}.toc li{margin:4px 0}h2[id]{scroll-margin-top:80px}
 @media (max-width:520px){.site{padding:10px 16px;gap:6px}header nav{gap:2px;flex-wrap:nowrap}header nav a{padding:6px 10px;font-size:13px}header nav a.about-link{display:none}.brand{font-size:17px}.brand svg{width:30px;height:30px}main{padding:22px 16px 56px}}`;
 
 // AdSense runs only on content pages (recipes, categories, guides), never on the app's empty/gate screens.
@@ -203,6 +209,18 @@ function recipeGear(drink) {
 }
 
 const listItems = (items, slugs) => `<div class="list">${items.map(d => `<a href="/tarif/${slugs.get(d)}.html">${esc(d.strDrink)}</a>`).join('')}</div>`;
+// Photo cards for recipe lists (thumbnails are lazy: lists can hold hundreds of recipes).
+const thumbOf = drink => { const image = ownImage(safeImage(drink.strDrinkThumb)); return image && image.startsWith(SITE) ? image.slice(SITE.length) : image; };
+const card = (href, name, thumb) => `<a class="tile" href="${href}">${thumb ? `<img src="${esc(thumb)}" alt="" width="160" height="160" loading="lazy">` : '<i></i>'}<span>${esc(name)}</span></a>`;
+const listCards = (items, slugs) => `<div class="tiles">${items.map(d => card(`/tarif/${slugs.get(d)}.html`, titleCase(d.strDrink), thumbOf(d))).join('')}</div>`;
+// Rough reading time and a table of contents from the guide's <h2>s (ids added to the headings).
+function withToc(html) {
+    const heads = [];
+    const body = html.replace(/<h2>([^<]+)<\/h2>/g, (m, text) => { const id = slugify(text); heads.push([id, text]); return `<h2 id="${id}">${text}</h2>`; });
+    const minutes = Math.max(1, Math.round(html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length / 200));
+    const toc = heads.length > 2 ? `<nav class="card toc" aria-label="İçindekiler"><h2>Bu yazıda</h2><ol>${heads.map(([id, text]) => `<li><a href="#${id}">${text}</a></li>`).join('')}</ol></nav>` : '';
+    return { body, toc, minutes };
+}
 
 function build({ root = path.join(__dirname, '..'), drinks } = {}) {
     drinks = drinks || JSON.parse(fs.readFileSync(path.join(root, 'cocktails.json'), 'utf8'));
@@ -249,7 +267,7 @@ ${imgSrc ? `<img class="hero" src="${esc(imgSrc)}" alt="${esc(displayName)} kokt
 ${about}
 ${ads ? AD_UNIT : ''}
 ${gearBox(recipeGear(drink), 'Bu tarif için ekipman')}
-${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h2>${listItems(related, slugs)}` : ''}
+${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h2>${listCards(related, slugs)}` : ''}
 <a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır →</a>`;
         const prep = technique === 'build' ? 'PT3M' : technique === 'blend' ? 'PT5M' : 'PT4M';
         const jsonLd = [{ '@context': 'https://schema.org', '@type': 'Recipe', name: displayName, image: image ? [image] : undefined, description,
@@ -261,16 +279,24 @@ ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h
             ...(crumbCat ? [{ '@type': 'ListItem', position: 2, name: crumbCat.title, item: `${SITE}/tarif/kategori/${crumbCat.slug}.html` }] : []),
             { '@type': 'ListItem', position: crumbCat ? 3 : 2, name: displayName, item: url }] }];
         fs.writeFileSync(path.join(outDir, `${slug}.html`), page({ title, description, canonical: url, body, jsonLd, image, ads }));
-        entries.push({ slug, name: drink.strDrink, url, ads });
+        entries.push({ slug, name: drink.strDrink, url, ads, thumb: imgSrc });
     }
     entries.sort((a, b) => a.name.localeCompare(b.name));
+    // A–Z jump bar and photo cards grouped by first letter.
+    const alphaIndex = list => {
+        const groups = new Map();
+        for (const e of list) { const k = /^[a-z]/i.test(e.name) ? e.name[0].toUpperCase() : '#'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(e); }
+        const keys = [...groups.keys()];
+        return `<nav class="az" aria-label="Harf">${keys.map(k => `<a href="#harf-${k === '#' ? 'sayi' : k}">${k}</a>`).join('')}</nav>` +
+            keys.map(k => `<h3 id="harf-${k === '#' ? 'sayi' : k}" class="letter">${k}</h3><div class="tiles">${groups.get(k).map(e => card(`/tarif/${e.slug}.html`, titleCase(e.name), e.thumb)).join('')}</div>`).join('');
+    };
     const urls = [`${SITE}/tarif/`];
     const catLinks = CATEGORIES.map(c => `<a href="/tarif/kategori/${c.slug}.html">${esc(c.title)}</a>`).join('');
     fs.writeFileSync(path.join(outDir, 'index.html'), page({
         title: 'Kokteyl Tarifleri — Tüm Liste | Bar Cepte', description: `${entries.length} kokteyl tarifi: malzemeler ve yapılış.`,
         canonical: `${SITE}/tarif/`, body: `<span class="eyebrow">Tarifler</span><h1>Kokteyl Tarifleri</h1><p class="meta">${entries.length} tarif</p>
 <h2>Kategoriler</h2><div class="list">${catLinks}</div>
-<h2>Tüm tarifler</h2><div class="list">${entries.map(e => `<a href="/tarif/${e.slug}.html">${esc(e.name)}</a>`).join('')}</div>`
+<h2>Tüm tarifler</h2>${alphaIndex(entries)}`
     }));
     for (const cat of CATEGORIES) {
         const members = drinks.filter(d => catsOf.get(d).includes(cat)).sort((a, b) => a.strDrink.localeCompare(b.strDrink));
@@ -282,7 +308,7 @@ ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h
             canonical: url, ads: true, body: `<p><a href="/tarif/">← Tüm tarifler</a></p><span class="eyebrow">Kategori</span><h1>${esc(cat.title)}</h1><p class="meta">${members.length} tarif</p>
 ${cat.intro}
 ${AD_UNIT}
-<h2>Tarifler</h2>${listItems(members, slugs)}
+<h2>Tarifler</h2>${listCards(members, slugs)}
 <h2>Diğer kategoriler</h2><div class="list">${catLinks}</div>`
         }));
     }
@@ -298,7 +324,7 @@ ${AD_UNIT}
         fs.writeFileSync(path.join(guideDir, `${guide.slug}.html`), page({
             title: `${guide.title} | Bar Cepte`, description: guide.description, canonical: url, ads: true,
             jsonLd: { '@context': 'https://schema.org', '@type': 'Article', headline: guide.title, description: guide.description, inLanguage: 'tr', url },
-            body: `<p><a href="/rehber/">← Rehberler</a></p><span class="eyebrow">Rehber</span><h1>${esc(guide.title)}</h1>${guide.html}\n${gearBox(guide.products || [])}\n${AD_UNIT}\n<h2>Diğer rehberler</h2><ul class="guides">${guideLinks}</ul>`
+            body: `<p><a href="/rehber/">← Rehberler</a></p><span class="eyebrow">Rehber · ~${withToc(guide.html).minutes} dk okuma</span><h1>${esc(guide.title)}</h1>${withToc(guide.html).toc}${withToc(guide.html).body}\n${gearBox(guide.products || [])}\n${AD_UNIT}\n<h2>Diğer rehberler</h2><ul class="guides">${guideLinks}</ul>`
         }));
     }
     for (const info of INFO_PAGES) {
