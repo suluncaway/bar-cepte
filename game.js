@@ -1097,6 +1097,7 @@ function translateIngredientName(ingName) {
 
 function convertOzToCl(text) {
     if (!text) return text;
+    text = text.replace(/(\d+\/\d+|\d+(?:\.\d+)?)\s*-\s*(?=(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*(?:fl\s*)?(?:oz|ounces?)\b)/gi, '$1 oz-'); // "2-3 oz" → both ends
     return text.replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d+(\.\d+)?)\s*(oz|ounces?)\b/gi, (match, numStr, _, unit) => {
         let val = 0;
         if (numStr.includes(' ') && numStr.includes('/')) {
@@ -1112,7 +1113,7 @@ function convertOzToCl(text) {
         const scaledVal = Math.round(val * 3 * 10) / 10;
         const finalNum = scaledVal % 1 === 0 ? scaledVal.toFixed(0) : scaledVal.toFixed(1);
         return `${finalNum} cl`;
-    }).replace(/\b(oz|ounces?)\b/gi, 'cl');
+    }).replace(/\b(oz|ounces?)\b/gi, 'cl').replace(/(\d+(?:\.\d+)?) cl-(\d+(?:\.\d+)?) cl/g, '$1-$2 cl');
 }
 
 function convertClToOz(text) {
