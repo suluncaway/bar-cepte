@@ -4,38 +4,38 @@
         tr: {
             title: "Gizlilik Politikası & 18+ Yasal Uyarı — Bar Cepte",
             back: "← Bar Cepte'ye Dön",
-            h1: "<span>🛡️</span> Gizlilik Politikası & 18+ Yasal Uyarı",
+            h1: "<i class='bci bci-shield' aria-hidden='true'></i> Gizlilik Politikası & 18+ Yasal Uyarı",
             updated: "Son güncelleme: Ekim 2026",
             sec1Title: "Yetişkinlere Yönelik İçerik & Reklam Politikası",
             sec1P1: "Bar Cepte (<strong>barcepte.com.tr</strong>) platformunda sunulan kokteyl tarifleri, miksoloji kılavuzları, içerikler ve yayınlanan tüm reklamlar <strong>yalnızca 18 yaş ve üzeri yetişkin kullanıcılar</strong> içindir.",
             sec1P2: "Sitemiz hiçbir şekilde alkollü içki satışı yapmamaktadır ve reşit olmayan bireylerin alkol tüketimini kesinlikle teşvik etmemektedir. Türkiye Cumhuriyeti kanunları ve uluslararası yasal düzenlemeler uyarınca 18 yaşın altındaki kişilerin alkol tüketmesi, temin etmesi yasaktır. Sağlığınız için lütfen ölçülü ve sorumlu tüketiniz.",
-            sec2Title: "<span>🍪</span> Google AdSense ve Çerez (Cookie) Kullanımı",
+            sec2Title: "<i class='bci bci-cookie' aria-hidden='true'></i> Google AdSense ve Çerez (Cookie) Kullanımı",
             sec2P: "Bar Cepte, hizmetlerini ücretsiz olarak sürdürebilmek amacıyla Google AdSense gibi üçüncü taraf reklam ağlarını kullanmaktadır. Google dahil olmak üzere üçüncü taraf sağlayıcılar, sitemizde veya diğer web sitelerinde yapılan önceki ziyaretlere dayalı olarak reklam yayınlamak için çerezleri (cookies) kullanır.",
             sec2L1: "Google'ın reklam çerezlerini kullanması, Google ve iş ortaklarının kullanıcılarımıza Bar Cepte ve/veya internetteki diğer sitelere yaptıkları ziyaretlere dayalı olarak reklam sunmasını sağlar.",
             sec2L2: "Kullanıcılar, <a href=\"https://adssettings.google.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-amber-400 hover:underline\">Google Reklam Ayarları</a> sayfasını ziyaret ederek kişiselleştirilmiş reklamcılığı devre dışı bırakabilirler.",
             sec2L3: "Tarayıcı ayarlarınız üzerinden çerez kullanımını istediğiniz zaman engelleyebilir veya temizleyebilirsiniz.",
-            sec3Title: "<span>🔒</span> Veri Gizliliği ve Yerel Depolama (LocalStorage)",
+            sec3Title: "<i class='bci bci-lock' aria-hidden='true'></i> Veri Gizliliği ve Yerel Depolama (LocalStorage)",
             sec3P: "Barınız, favorileriniz, özel tarifleriniz, tat tercihleriniz ve son 100 hazırlamanıza ait değerlendirme ve notlar cihazınızda (LocalStorage) saklanır. Bu alan şifreli bir kasa değildir; hassas bilgi yazmayın. Hazırlama geçmişini Barım bölümünden silebilirsiniz. Manuel yedek kodu bu verileri içerir. Google ile giriş ve bulut yedekleme kullanıldığında veriler hesabınıza bağlı sunucu yedeğine de aktarılır. Yerel silmelerin bulut yedeğine yansıması için yeniden yedekleyin.",
-            sec4Title: "<span>✉️</span> İletişim & Hak Talepleri",
+            sec4Title: "<i class='bci bci-mail' aria-hidden='true'></i> İletişim & Hak Talepleri",
             sec4P: "Gizlilik politikamız, içeriklerimiz veya telif hakları ile ilgili her türlü soru ve geri bildiriminiz için bize e-posta ile ya da GitHub proje sayfamızdan ulaşabilirsiniz:",
             footer: "&copy; 2026 Bar Cepte — Tüm hakları saklıdır."
         },
         en: {
             title: "Privacy Policy & 18+ Legal Notice — Pocket Bar",
             back: "← Back to Pocket Bar",
-            h1: "<span>🛡️</span> Privacy Policy & 18+ Legal Notice",
+            h1: "<i class='bci bci-shield' aria-hidden='true'></i> Privacy Policy & 18+ Legal Notice",
             updated: "Last updated: October 2026",
             sec1Title: "Adult Content & Advertising Policy",
             sec1P1: "Cocktail recipes, mixology guides, editorial content, and all advertisements displayed on Pocket Bar (<strong>barcepte.com.tr</strong>) are intended exclusively for <strong>adult users aged 18 and older</strong>.",
             sec1P2: "Our platform does not sell alcoholic beverages under any circumstances and strictly discourages underage drinking. Under applicable laws, purchasing or consuming alcohol under the legal drinking age (18+) is prohibited. Please drink responsibly and in moderation.",
-            sec2Title: "<span>🍪</span> Google AdSense & Cookie Usage",
+            sec2Title: "<i class='bci bci-cookie' aria-hidden='true'></i> Google AdSense & Cookie Usage",
             sec2P: "Pocket Bar uses third-party advertising networks like Google AdSense to sustain its free service. Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this website or other sites.",
             sec2L1: "Google's use of advertising cookies enables it and its partners to serve relevant ads based on users' visits to Pocket Bar and/or other sites on the Internet.",
             sec2L2: "Users may opt out of personalized advertising by visiting the <a href=\"https://adssettings.google.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-amber-400 hover:underline\">Google Ad Settings</a> page.",
             sec2L3: "You can block or delete cookies anytime through your web browser preferences.",
-            sec3Title: "<span>🔒</span> Data Privacy & Local Storage",
+            sec3Title: "<i class='bci bci-lock' aria-hidden='true'></i> Data Privacy & Local Storage",
             sec3P: "Your bar, favourites, custom recipes, taste preferences and the ratings and notes for your last 100 preparations are stored on your device (LocalStorage). This is not an encrypted vault; avoid sensitive information. You can delete preparation history in My Bar. Manual backup codes include this data. When you sign in with Google and use cloud backup, data is also sent to your account's server backup. Back up again to reflect local deletions in your cloud backup.",
-            sec4Title: "<span>✉️</span> Contact & Legal Inquiries",
+            sec4Title: "<i class='bci bci-mail' aria-hidden='true'></i> Contact & Legal Inquiries",
             sec4P: "For any questions, suggestions, or copyright inquiries regarding our privacy policy or content, reach us by email or via our GitHub repository:",
             footer: "&copy; 2026 Pocket Bar — All rights reserved."
         }
@@ -105,8 +105,8 @@
         const langBtn = document.getElementById('privacy-lang-toggle');
         if (langBtn) {
             langBtn.innerHTML = lang === 'en'
-                ? '<span class="text-slate-400 font-medium">TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-amber-300 font-black">EN 🇺🇸</span>'
-                : '<span class="text-amber-300 font-black">🇹🇷 TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">EN</span>';
+                ? '<span class="text-slate-400 font-medium">TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-amber-300 font-black">EN</span>'
+                : '<span class="text-amber-300 font-black">TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">EN</span>';
         }
     }
 

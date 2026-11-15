@@ -2,25 +2,55 @@
 @media(max-width:900px){.site-header nav{display:none}.hero{grid-template-columns:1fr;gap:42px}.hero-visual{height:500px}.section-heading.split,.showcase,.faq{grid-template-columns:1fr;gap:50px}.bento{grid-template-columns:1fr 1fr}.feature-wide{grid-column:span 2}.platforms{grid-template-columns:1fr 1fr}.showcase-copy{order:-1}.stats div{flex-direction:column;align-items:center;gap:0;text-align:center}}
 @media(max-width:620px){.shell{width:min(100% - 28px,var(--max))}.site-header{padding:13px 14px}.header-actions .text-link{display:none}.hero{padding-block:48px 70px}.hero-visual{height:390px;border-radius:120px 120px 12px 12px}.hero-visual strong{font-size:26px}.stats{grid-template-columns:1fr}.stats div{border-right:0;border-bottom:1px solid var(--line);padding:22px}.section{padding-block:80px}.steps,.bento,.platforms{grid-template-columns:1fr}.steps article,.steps article+article{padding:28px 0;border-right:0;border-bottom:1px solid var(--line)}.feature-wide{grid-column:auto}.showcase{padding-block:60px 90px}.app-preview{padding:14px}.drink-list{grid-template-columns:1fr}.drink-list article{display:grid;grid-template-columns:110px 1fr}.drink-list img{height:92px}.quote{padding:70px 22px}.contact{margin-bottom:70px;padding:70px 20px}.site-footer{grid-template-columns:1fr}.site-footer nav{flex-wrap:wrap;gap:16px}.actions{align-items:flex-start;flex-direction:column}.centered-actions{align-items:center}.edition{display:none}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button{transition:none}}
-/* Vivid theme: black + orange */
-body{background:#050505 radial-gradient(900px 480px at 50% -10%,rgba(255,106,0,.14),transparent 65%) no-repeat}
-.button{border-radius:999px;background:linear-gradient(135deg,#ff9a2e,#ff6a00);border-color:transparent;box-shadow:0 8px 22px rgba(255,106,0,.3)}
-/* Pocket logo in the same black tile as the app header */
-.brand-mark{width:38px;height:38px;border-radius:12px;background:#0b0b0b;border-color:rgba(217,183,125,.4)}
+/* Matchbox & coaster: two-colour print on deep ink; citrus = action, each section its own coaster hue */
+:root{--bg:#0e131d;--surface:#161d2a;--raised:#1e2738;--gold:#f4c430;--ink:#f3ead8;--muted:#aeb4c2;--line:rgba(243,234,216,.28);--mint:#52c495;--cherry:#e0505c;--night:#6f9be8;--clay:#e8834e;--display:"Big Shoulders Display","Onest",sans-serif}
+body{background:var(--bg);font-family:"Onest",system-ui,sans-serif}
+::selection{background:var(--gold);color:#1b1503}
+h1,h2,.hero-visual strong,.steps h3,.feature h3,.platforms h3,.stats strong,.drink-list h3,.quote blockquote,summary{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.005em;line-height:.98;text-wrap:balance}
+h1{font-size:clamp(60px,7.4vw,112px)}h2{font-size:clamp(44px,5.4vw,76px)}
+.quote blockquote{text-transform:none;font-weight:700;line-height:1.08}
+summary{text-transform:none;font-weight:700;font-size:22px}
+em{color:var(--gold);font-style:normal}
+.eyebrow,.hero .eyebrow,.hero .eyebrow span,.tag{display:none!important}
+.site-header{background:var(--bg);border-bottom:2px solid var(--line);backdrop-filter:none}
+.brand{font-family:var(--display);font-weight:800;font-size:24px;text-transform:uppercase}
+.brand-mark{width:42px;height:42px;border:2px solid var(--gold);border-radius:50%;background:#0a0e16}
 .brand-mark svg{width:auto;height:24px}
-/* Light theme (choice made in the app, applied by theme.js) */
-html[data-theme=light]{color-scheme:light;--bg:#f6f3ee;--surface:#ffffff;--raised:#ffffff;--ink:#1d1b18;--muted:#6b645b;--line:rgba(0,0,0,.12);--gold:#a8460a}
-html[data-theme=light] body{background:#f6f3ee radial-gradient(900px 480px at 50% -10%,rgba(255,122,26,.12),transparent 65%) no-repeat;color:#1d1b18}
-html[data-theme=light] .button{color:#fff}
-html[data-theme=light] .site-header{background:rgba(246,243,238,.94)}
-html[data-theme=light] .brand-mark{background:#121212}
-html[data-theme=light] em{color:#a8460a}
-html[data-theme=light] .gold-card p{color:#fff}
-html[data-theme=light] .preview-top strong{color:#f7f4f0}
-html[data-theme=light] .preview-top small{color:#a8a29a}
-html[data-theme=light] small{color:#6b645b}
-/* The app preview stays a dark phone mock in the light theme */
-html[data-theme=light] .app-preview{--ink:#f7f4f0;--muted:#a8a29a;--line:rgba(255,255,255,.14);--bg:#0d0d0d;--surface:#161616;--raised:#1a1a1a;color:#f7f4f0}
-html[data-theme=light] .app-preview small{color:#a8a29a}
-html[data-theme=light] .app-preview .active{color:#fff}
-.button,html[data-theme=light] .button{color:#1a0f05}
+.button{border:0;border-radius:8px;background:var(--gold);color:#1b1503;box-shadow:none}
+.button:hover{background:#ffd54d}
+.underlined{border-bottom:2px solid var(--gold)}
+.hero-visual{height:auto;aspect-ratio:1;border:0;border-radius:50%;box-shadow:0 0 0 12px var(--bg),0 0 0 15px var(--gold)}
+.hero-visual:after,.hero-visual figcaption,.edition{display:none}
+.trust i{background:var(--mint)}
+.stats{background:var(--surface);border-block:2px solid var(--line)}
+.stats strong span{color:var(--gold)}
+.stats div:nth-child(2) strong span{color:var(--mint)}.stats div:nth-child(3) strong span{color:var(--clay)}
+.steps{border-top:2px solid var(--line)}
+.steps>article>span{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--gold);color:#1b1503;font-weight:700;top:30px}
+.steps article:nth-child(2)>span{background:var(--mint)}.steps article:nth-child(3)>span{background:var(--night)}
+.line-icon,.feature-icon,.platforms article>span{color:var(--gold)}
+.feature{border:2px solid var(--line);border-radius:14px}
+.feature:nth-child(2){border-color:color-mix(in srgb,var(--mint) 55%,transparent)}
+.feature:nth-child(3){border-color:color-mix(in srgb,var(--night) 55%,transparent)}
+.feature-icon,.platforms article>span{border:0;background:var(--raised)}
+.gold-card{border:0;background:var(--gold);color:#1b1503}.gold-card p{color:#3a2e08}.gold-card h3 em{color:#1b1503}
+.reserve{background:var(--clay);border:0;color:#200d03}.reserve p,.reserve h3 em{color:#3a1806}.reserve .feature-icon{background:rgba(32,13,3,.15);color:#200d03}
+.app-preview{background:var(--surface);border:2px solid var(--line);border-radius:14px;box-shadow:0 24px 60px rgba(3,6,12,.5)}
+.chips .active{background:var(--mint);color:#06241a}
+.drink-list article{border:2px solid var(--line);border-radius:14px}
+.drink-list img{border-radius:50%;width:110px;height:110px;margin:12px auto 0}
+.platforms article{border:2px solid var(--line);border-radius:14px;background:var(--surface)}
+.quote{border:2px solid var(--line);border-radius:14px;background:var(--surface)}
+.quote>span{color:var(--cherry)}
+summary span{color:var(--gold)}
+details{border-bottom:2px solid var(--line)}
+.contact{border-radius:14px;background:var(--gold);color:#1b1503}
+.dark-button{background:#0e131d;color:var(--ink)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+/* Light theme: the same print on cream board */
+html[data-theme=light]{color-scheme:light;--bg:#efe6d2;--surface:#f8f2e4;--raised:#fffaf0;--ink:#16120c;--muted:#5b5446;--line:rgba(22,18,12,.16);--gold:#e8b310}
+html[data-theme=light] body{background:var(--bg);color:var(--ink)}
+html[data-theme=light] em{color:#8a5a00}
+html[data-theme=light] .site-header{background:var(--bg)}
+html[data-theme=light] .app-preview{--ink:#f3ead8;--muted:#aeb4c2;--line:rgba(243,234,216,.28);--bg:#0e131d;--surface:#161d2a;--raised:#1e2738;color:#f3ead8}
+.button,html[data-theme=light] .button{color:#1b1503}

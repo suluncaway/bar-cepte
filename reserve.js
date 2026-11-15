@@ -29,7 +29,7 @@
             title: 'Yıllık Abonelik (Annual Pass)',
             price: '400 ₺',
             period: '/ yıl (33,33 ₺/ay)',
-            badge: '⭐ %17 TASARRUF — POPÜLER',
+            badge: '%17 TASARRUF — POPÜLER',
             subtitle: '365 Gün VIP Erişim',
             desc: 'Aylık sadece 33,33 ₺! 1 tam yıl boyunca kesintisiz reklamsız deneyim ve altın rozet.',
             checkoutLabel: 'Shopier ile Yıllık Abone Ol',
@@ -52,7 +52,7 @@
             title: 'Annual Pass (Best Value)',
             price: '$14.99',
             period: '/ year ($1.25/mo)',
-            badge: '⭐ SAVE 58% — POPULAR',
+            badge: 'SAVE 58% — POPULAR',
             subtitle: '365 Days VIP Access',
             desc: 'Only $1.25/mo! 1 full year of uninterrupted ad-free VIP cocktail experience and gold badge.',
             checkoutLabel: 'Secure Checkout via Shopier ($14.99)',
@@ -75,7 +75,7 @@
             title: 'Annual Pass (Best Value)',
             price: '€13.99',
             period: '/ year (€1.16/mo)',
-            badge: '⭐ SAVE 60% — POPULAR',
+            badge: 'SAVE 60% — POPULAR',
             subtitle: '365 Days VIP Access',
             desc: 'Only €1.16/mo! 1 full year of uninterrupted ad-free VIP cocktail experience and gold badge.',
             checkoutLabel: 'Secure Checkout via Shopier (€13.99)',
@@ -260,7 +260,7 @@
 
         // 1. Format ve sağlama toplamı kontrolü
         if (!validateLicenseKey(cleanKey)) {
-            return { success: false, reason: isEn ? '❌ Invalid activation key. Please check again.' : '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
+            return { success: false, reason: isEn ? 'Invalid activation key. Please check again.' : 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
         }
 
         // 4. Merkezi Sunucu (Render Webhook) Doğrulaması
@@ -291,8 +291,8 @@
                 return {
                     success: false,
                     reason: data.reason || (isEn
-                        ? '❌ This license key was already claimed by another user or device! Licenses are single-use.'
-                        : '❌ Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.')
+                        ? 'This license key was already claimed by another user or device! Licenses are single-use.'
+                        : 'Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.')
                 };
             }
 
@@ -373,7 +373,7 @@
         const planMonthly = document.querySelector('[data-plan="monthly"]');
         if (planMonthly) planMonthly.innerText = isEn ? 'Monthly' : 'Aylık';
         const planAnnual = document.querySelector('[data-plan="annual"]');
-        if (planAnnual) planAnnual.innerText = isEn ? '⭐ Annual' : '⭐ Yıllık';
+        if (planAnnual) planAnnual.innerText = isEn ? 'Annual' : 'Yıllık';
 
         const titleEl = document.getElementById('reserve-plan-title');
         const badgeEl = document.getElementById('reserve-plan-badge');
@@ -395,6 +395,9 @@
     }
 
     function applyReserveUI() {
+        if (root.AndroidBridge && typeof root.AndroidBridge.setReserveActive === 'function') {
+            try { root.AndroidBridge.setReserveActive(isReserveActive()); } catch {}
+        }
         if (typeof document === 'undefined') return;
         const active = isReserveActive();
         const isEn = getCurrentLang() === 'en';
@@ -443,7 +446,7 @@
         // Modal başlık & üst rozet
         const reserveClubBadge = document.querySelector('#reserve-modal .inline-flex');
         if (reserveClubBadge) {
-            reserveClubBadge.innerHTML = isEn ? '<span>👑</span> EXCLUSIVE CURATION CLUB' : '<span>👑</span> ÖZEL SEÇKİ KULÜBÜ';
+            reserveClubBadge.innerHTML = isEn ? '<span><i class="bci bci-crown" aria-hidden="true"></i></span> EXCLUSIVE CURATION CLUB' : '<span><i class="bci bci-crown" aria-hidden="true"></i></span> ÖZEL SEÇKİ KULÜBÜ';
         }
         const reserveHeading = document.querySelector('#reserve-modal h3');
         if (reserveHeading) {
@@ -479,7 +482,7 @@
         const planMonthly = document.querySelector('[data-plan="monthly"]');
         if (planMonthly) planMonthly.innerText = isEn ? 'Monthly' : 'Aylık';
         const planAnnual = document.querySelector('[data-plan="annual"]');
-        if (planAnnual) planAnnual.innerText = isEn ? '⭐ Annual' : '⭐ Yıllık';
+        if (planAnnual) planAnnual.innerText = isEn ? 'Annual' : 'Yıllık';
 
         // Para birimi seçici çubuğu (Currency Bar - USD $ / EUR €)
         const currencyBar = document.getElementById('reserve-currency-bar');
@@ -531,8 +534,8 @@
                 const activeNote = document.querySelector('#reserve-status-active .bg-white\\/5');
                 if (activeNote) {
                     activeNote.innerText = isEn
-                        ? 'Enjoy your evening. You run the bar tonight! 🍸'
-                        : 'Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde! 🍸';
+                        ? 'Enjoy your evening. You run the bar tonight!'
+                        : 'Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde!';
                 }
                 const deactivateBtn = document.getElementById('btn-deactivate-reserve');
                 if (deactivateBtn) {
@@ -544,7 +547,7 @@
                 }
                 if (durationEl) {
                     if (subInfo.plan === 'lifetime') {
-                        durationEl.textContent = isEn ? '♾️ Lifetime VIP (Unlimited)' : '♾️ Ömür Boyu (Sınırsız)';
+                        durationEl.textContent = isEn ? 'Lifetime VIP (Unlimited)' : 'Ömür Boyu (Sınırsız)';
                     } else if (subInfo.daysLeft !== null) {
                         durationEl.textContent = isEn ? `⏳ ${subInfo.daysLeft} Days Left` : `⏳ ${subInfo.daysLeft} Gün Kaldı`;
                     }
@@ -661,8 +664,8 @@
                         const planName = getPlanDisplayName(subInfo.plan);
                         if (msgEl) {
                             msgEl.textContent = isEn
-                                ? `🎉 Congratulations! ${planName} successfully activated.`
-                                : `🎉 Tebrikler! ${planName} başarıyla aktif edildi.`;
+                                ? `Congratulations! ${planName} successfully activated.`
+                                : `Tebrikler! ${planName} başarıyla aktif edildi.`;
                             msgEl.className = 'text-xs text-emerald-400 font-bold';
                         }
                         setTimeout(() => {
@@ -672,8 +675,8 @@
                     } else {
                         if (msgEl) {
                             msgEl.textContent = result.reason || (isEn
-                                ? '❌ Invalid activation key. Please check again.'
-                                : '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.');
+                                ? 'Invalid activation key. Please check again.'
+                                : 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.');
                             msgEl.className = 'text-xs text-rose-400 font-semibold';
                         }
                     }

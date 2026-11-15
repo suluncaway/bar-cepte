@@ -12,7 +12,7 @@
         row.className = 'ai-message ' + (role === 'user' ? 'ai-message-user' : 'ai-message-assistant');
         const avatar = document.createElement('span');
         avatar.className = 'ai-message-avatar';
-        avatar.textContent = role === 'user' ? '●' : '✦';
+        avatar.innerHTML = role === 'user' ? '●' : '<i class="bci bci-sparkle" aria-hidden="true"></i>';
         const bubble = document.createElement('div');
         bubble.className = 'ai-message-bubble' + (typing ? ' ai-typing' : '');
         bubble.textContent = text;
@@ -42,7 +42,7 @@
             const missing = [];
             (recipe.ingredients || []).forEach(item => {
                 const li = document.createElement('li');
-                li.textContent = (item.amount ? item.amount + ' ' : '') + item.name + (item.available ? ' ✓' : ' · Eksik');
+                li.textContent = (item.amount ? item.amount + ' ' : '') + item.name + (item.available ? '' : ' · Eksik');
                 if (!item.available) {
                     li.className = 'ai-missing';
                     missing.push(item.name);
@@ -65,7 +65,7 @@
             save.textContent = '＋ Tariflerime kaydet';
             save.addEventListener('click', () => {
                 const ok = window.BarAIAddRecipe?.(recipe);
-                save.textContent = ok ? '✓ Tariflerime eklendi' : 'Kaydedilemedi';
+                save.textContent = ok ? 'Tariflerime eklendi' : 'Kaydedilemedi';
                 save.disabled = true;
             });
             actions.appendChild(save);
@@ -75,7 +75,7 @@
                 shop.textContent = 'Eksikleri alışverişe ekle';
                 shop.addEventListener('click', () => {
                     const ok = window.BarAIAddMissingToShopping?.(missing);
-                    shop.textContent = ok ? '✓ Listeye eklendi' : 'Eklenemedi';
+                    shop.textContent = ok ? 'Listeye eklendi' : 'Eklenemedi';
                     shop.disabled = true;
                 });
                 actions.appendChild(shop);

@@ -197,7 +197,7 @@
             if (existingClaim.expiresAt > 0 && Date.now() > existingClaim.expiresAt) {
                 return {
                     allowed: false,
-                    reason: '❌ Bu lisans anahtarının kullanım süresi dolmuştur! Lisanslar tek kullanımlıktır.'
+                    reason: 'Bu lisans anahtarının kullanım süresi dolmuştur! Lisanslar tek kullanımlıktır.'
                 };
             }
 
@@ -220,7 +220,7 @@
             } else {
                 return {
                     allowed: false,
-                    reason: '❌ Bu lisans anahtarı daha önce başka bir hesap tarafından kullanılmış! Lisanslar tek kullanımlıktır.'
+                    reason: 'Bu lisans anahtarı daha önce başka bir hesap tarafından kullanılmış! Lisanslar tek kullanımlıktır.'
                 };
             }
         }
@@ -466,7 +466,7 @@
                 } else if (user.picture) {
                     authBtnIcon.innerHTML = `<img src="${user.picture}" alt="" class="w-4 h-4 rounded-full object-cover">`;
                 } else {
-                    authBtnIcon.textContent = '🍸';
+                    authBtnIcon.innerHTML = '<i class="bci bci-martini" aria-hidden="true"></i>';
                 }
             }
             authBtn.className = user.isReserve
@@ -516,10 +516,10 @@
                         : (user.plan === 'lifetime'
                             ? (getCurrentLang() === 'en' ? 'LIFETIME' : 'ÖMÜR BOYU')
                             : (getCurrentLang() === 'en' ? 'ANNUAL' : 'YILLIK'));
-                    tierBadgeEl.textContent = (getCurrentLang() === 'en' ? '👑 RESERVE VIP MEMBER (' : '👑 RESERVE VIP ÜYE (') + planText + ')';
+                    tierBadgeEl.textContent = (getCurrentLang() === 'en' ? 'RESERVE VIP MEMBER (' : 'RESERVE VIP ÜYE (') + planText + ')';
                     tierBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950';
                 } else {
-                    tierBadgeEl.textContent = getCurrentLang() === 'en' ? '🍸 BARTENDER CLUB MEMBER (FREE)' : '🍸 BARMEN KULÜBÜ ÜYESİ (ÜCRETSİZ)';
+                    tierBadgeEl.textContent = getCurrentLang() === 'en' ? 'BARTENDER CLUB MEMBER (FREE)' : 'BARMEN KULÜBÜ ÜYESİ (ÜCRETSİZ)';
                     tierBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-slate-300 border border-white/10';
                 }
             }
@@ -669,7 +669,7 @@
                     if (root.BarReserve && typeof root.BarReserve.verifyAndActivateLicense === 'function') {
                         const result = await root.BarReserve.verifyAndActivateLicense(rawKey);
                         if (result.success) {
-                            alert(getCurrentLang() === 'en' ? '🎉 Your license key was successfully linked to your account!' : '🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
+                            alert(getCurrentLang() === 'en' ? 'Your license key was successfully linked to your account!' : 'Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
                             if (input) input.value = '';
                             renderAuthModalState();
                             updateAuthUI();
@@ -686,7 +686,7 @@
                         if (root.BarReserve && typeof root.BarReserve.activateReserve === 'function') {
                             const activated = root.BarReserve.activateReserve(rawKey);
                             if (activated) {
-                                alert(getCurrentLang() === 'en' ? '🎉 Your license key was successfully linked to your account!' : '🎉 Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
+                                alert(getCurrentLang() === 'en' ? 'Your license key was successfully linked to your account!' : 'Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
                                 if (input) input.value = '';
                                 renderAuthModalState();
                                 updateAuthUI();

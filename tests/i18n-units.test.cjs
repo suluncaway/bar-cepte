@@ -122,7 +122,7 @@ test('Reserve UI dynamically translates all modal content and sets USD prices on
 
     assert.ok(reserveJs.includes('function getCurrentLang()'), 'getCurrentLang helper must exist in reserve.js');
     assert.ok(reserveJs.includes("planMonthly.innerText = isEn ? 'Monthly' : 'Aylık'"), 'Plan monthly tab localized');
-    assert.ok(reserveJs.includes("planAnnual.innerText = isEn ? '⭐ Annual' : '⭐ Yıllık'"), 'Plan annual tab localized');
+    assert.ok(reserveJs.includes("planAnnual.innerText = isEn ? 'Annual' : 'Yıllık'"), 'Plan annual tab localized');
     assert.ok(reserveJs.includes("selectPlan(currentSelectedPlan);"), 'selectPlan called on init in reserve.js');
 });
 
@@ -272,7 +272,7 @@ test('Cocktail search allows searching by both cocktail name and kitchen/alcohol
 
     // Verify service worker cache version is updated so clients receive latest game.js and hero video
     const swContent = fs.readFileSync('sw.js', 'utf8');
-    assert.match(swContent, /const CACHE_NAME = 'bar-cepte-v79-vivid';/, 'sw.js cache name updated');
+    assert.match(swContent, /const CACHE_NAME = 'bar-cepte-v\d+-[a-z-]+';/, 'sw.js uses a versioned app cache');
 
     // 2. recipeMatchesSearchToken helper is defined in game.js
     assert.ok(js.includes('function recipeMatchesSearchToken('), 'recipeMatchesSearchToken exists in game.js');

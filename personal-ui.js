@@ -73,7 +73,7 @@
         article.querySelectorAll('[data-personal="add-missing"]').forEach(control=>{
             const missing=missingFor(drink,count);
             control.hidden=!missing.length;
-            control.textContent=pendingFor(drink,count).length?t('Eksikleri listeye ekle','Add missing to shopping list'):t('✓ Eksikler listede','✓ Missing items are listed');
+            control.textContent=pendingFor(drink,count).length?t('Eksikleri listeye ekle','Add missing to shopping list'):t('Eksikler listede','Missing items are listed');
         });
     }
     function preparationStockMarkup(row) {
@@ -132,7 +132,7 @@
     const pendingFor = (drink,count=1) => missingFor(drink,count).filter(name=>!shoppingList.some(item=>shoppingKey(item)===shoppingKey(name)));
     function shoppingButton(drink,always=false) {
         if (!always && !missingFor(drink).length) return '';
-        return button('add-missing', pendingFor(drink).length ? t('Eksikleri listeye ekle','Add missing to shopping list') : t('✓ Eksikler listede','✓ Missing items are listed'),drink.idDrink,missingFor(drink).length?'':'hidden');
+        return button('add-missing', pendingFor(drink).length ? t('Eksikleri listeye ekle','Add missing to shopping list') : t('Eksikler listede','Missing items are listed'),drink.idDrink,missingFor(drink).length?'':'hidden');
     }
     function addMissing(target, id) {
         const drink=find(id); if(!drink)return;
@@ -146,7 +146,7 @@
         document.querySelectorAll('[data-personal="add-missing"]').forEach(control=>{
             const recipe=find(control.dataset.id);if(!recipe)return;
             const size=Number(control.closest('.personal-mini')?.querySelector('.personal-inline')?.dataset.servings)||1;
-            control.textContent=pendingFor(recipe,size).length?t('Eksikleri listeye ekle','Add missing to shopping list'):t('✓ Eksikler listede','✓ Missing items are listed');
+            control.textContent=pendingFor(recipe,size).length?t('Eksikleri listeye ekle','Add missing to shopping list'):t('Eksikler listede','Missing items are listed');
         });
         const article=target.closest('.personal-mini');
         let status=article?.querySelector('.personal-shopping-status');
@@ -178,7 +178,7 @@
         return `<p>${result.ready.length ? t('Malzemelerin var; miktarı belirtilmeyenleri elle kontrol et.', 'You have the ingredients; check unspecified quantities manually.') :
             t('Henüz hazır tarif yok. Bunlar için eksik malzemeler:', 'No recipes are ready yet. Missing ingredients for these recipes:')}</p>
             <div class="personal-grid">${rows.map(row=>`<article class="personal-mini">
-                ${BarSecurity.safeImage(row.drink.strDrinkThumb) ? `<img class="personal-photo" src="${e(BarSecurity.displayImage(row.drink.strDrinkThumb))}" alt="${e(row.drink.strDrink)}" loading="lazy" data-image-fallback>` : '<span class="personal-photo personal-photo-fallback" aria-hidden="true">🍹</span>'}
+                ${BarSecurity.safeImage(row.drink.strDrinkThumb) ? `<img class="personal-photo" src="${e(BarSecurity.displayImage(row.drink.strDrinkThumb))}" alt="${e(row.drink.strDrink)}" loading="lazy" data-image-fallback>` : '<span class="personal-photo personal-photo-fallback" aria-hidden="true"><i class="bci bci-martini" aria-hidden="true"></i></span>'}
                 <h4>${e(row.drink.strDrink)}</h4>
                 <p>${row.missing.length ? `${t('Eksik / stok yetersiz', 'Missing / insufficient stock')}: ${row.missing.map(name=>e(en()?name:translateIngredientName(name))).join(', ')}` :
                     row.explicit ? t(`${tasteName(row.taste)} tatları sevdiğin ve malzemelerin hazır olduğu için.`, `Because you like ${tasteName(row.taste)} flavours and have the ingredients.`) :

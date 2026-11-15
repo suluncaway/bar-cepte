@@ -2,33 +2,33 @@
 
 // Temel Malzemeler Kataloğu
 const baseIngredients = [
-    { id: "Vodka", name: "Votka", nameEn: "Vodka", emoji: "🍸", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Gin", name: "Cin", nameEn: "Gin", emoji: "🌲", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Rum", name: "Rom", nameEn: "Rum", emoji: "🏴‍☠️", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Tequila", name: "Tekila", nameEn: "Tequila", emoji: "🌵", cat: "alkol", taste: "Sert", cal: 64 },
-    { id: "Triple Sec", name: "Portakal Likörü", nameEn: "Triple Sec", emoji: "🍊", cat: "alkol", taste: "Tatlı", cal: 100 },
-    { id: "Whiskey", name: "Viski", nameEn: "Whiskey", emoji: "🥃", cat: "alkol", taste: "Sert", cal: 70 },
-    { id: "Bourbon", name: "Burbon Viski", nameEn: "Bourbon", emoji: "🪵", cat: "alkol", taste: "Sert", cal: 70 },
-    { id: "Amaretto", name: "Amaretto", nameEn: "Amaretto", emoji: "🌰", cat: "alkol", taste: "Tatlı", cal: 110 },
-    { id: "Campari", name: "Campari", nameEn: "Campari", emoji: "❤️", cat: "alkol", taste: "Ekşi", cal: 80 },
-    { id: "Sweet Vermouth", name: "Tatlı Vermut", nameEn: "Sweet Vermouth", emoji: "🍷", cat: "alkol", taste: "Tatlı", cal: 45 },
-    { id: "Dry Vermouth", name: "Sek Vermut", nameEn: "Dry Vermouth", emoji: "🍸", cat: "alkol", taste: "Ekşi", cal: 45 },
-    { id: "Lime Juice", name: "Misket Limonu Suyu", nameEn: "Lime Juice", emoji: "🟢", cat: "mutfak", taste: "Ekşi", cal: 8 },
-    { id: "Lemon Juice", name: "Limon Suyu", nameEn: "Lemon Juice", emoji: "🟡", cat: "mutfak", taste: "Ekşi", cal: 7 },
-    { id: "Orange Juice", name: "Portakal Suyu", nameEn: "Orange Juice", emoji: "🍹", cat: "mutfak", taste: "Tatlı", cal: 45 },
-    { id: "Cranberry Juice", name: "Kızılcık Suyu", nameEn: "Cranberry Juice", emoji: "🍒", cat: "mutfak", taste: "Ekşi", cal: 46 },
-    { id: "Pineapple Juice", name: "Ananas Suyu", nameEn: "Pineapple Juice", emoji: "🍍", cat: "mutfak", taste: "Tatlı", cal: 50 },
-    { id: "Grenadine", name: "Nar Şurubu", nameEn: "Grenadine", emoji: "🩸", cat: "mutfak", taste: "Tatlı", cal: 54 },
-    { id: "Coca-Cola", name: "Kola", nameEn: "Cola", emoji: "🥤", cat: "mutfak", taste: "Tatlı", cal: 42 },
-    { id: "Tonic Water", name: "Tonik", nameEn: "Tonic Water", emoji: "🫧", cat: "mutfak", taste: "Ekşi", cal: 34 },
-    { id: "Soda Water", name: "Maden Suyu", nameEn: "Club Soda", emoji: "💦", cat: "mutfak", taste: "Ferah", cal: 0 },
-    { id: "Egg White", name: "Yumurta Akı", nameEn: "Egg White", emoji: "🥚", cat: "mutfak", taste: "Ferah", cal: 15 },
-    { id: "Salt", name: "Tuz", nameEn: "Salt", emoji: "🧂", cat: "mutfak", taste: "Sert", cal: 0 },
-    { id: "Sugar", name: "Şeker", nameEn: "Sugar", emoji: "🍬", cat: "mutfak", taste: "Tatlı", cal: 30 },
-    { id: "Milk", name: "Süt", nameEn: "Milk", emoji: "🥛", cat: "mutfak", taste: "Tatlı", cal: 42 },
-    { id: "Coffee", name: "Kahve", nameEn: "Coffee", emoji: "☕", cat: "mutfak", taste: "Sert", cal: 2 },
-    { id: "Mint", name: "Nane", nameEn: "Mint", emoji: "🍃", cat: "mutfak", taste: "Ferah", cal: 1 },
-    { id: "Ice", name: "Buz", nameEn: "Ice", emoji: "🧊", cat: "mutfak", taste: "Ferah", cal: 0 }
+    { id: "Vodka", name: "Votka", nameEn: "Vodka", emoji: "", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Gin", name: "Cin", nameEn: "Gin", emoji: "", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Rum", name: "Rom", nameEn: "Rum", emoji: "", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Tequila", name: "Tekila", nameEn: "Tequila", emoji: "", cat: "alkol", taste: "Sert", cal: 64 },
+    { id: "Triple Sec", name: "Portakal Likörü", nameEn: "Triple Sec", emoji: "", cat: "alkol", taste: "Tatlı", cal: 100 },
+    { id: "Whiskey", name: "Viski", nameEn: "Whiskey", emoji: "", cat: "alkol", taste: "Sert", cal: 70 },
+    { id: "Bourbon", name: "Burbon Viski", nameEn: "Bourbon", emoji: "", cat: "alkol", taste: "Sert", cal: 70 },
+    { id: "Amaretto", name: "Amaretto", nameEn: "Amaretto", emoji: "", cat: "alkol", taste: "Tatlı", cal: 110 },
+    { id: "Campari", name: "Campari", nameEn: "Campari", emoji: "", cat: "alkol", taste: "Ekşi", cal: 80 },
+    { id: "Sweet Vermouth", name: "Tatlı Vermut", nameEn: "Sweet Vermouth", emoji: "", cat: "alkol", taste: "Tatlı", cal: 45 },
+    { id: "Dry Vermouth", name: "Sek Vermut", nameEn: "Dry Vermouth", emoji: "", cat: "alkol", taste: "Ekşi", cal: 45 },
+    { id: "Lime Juice", name: "Misket Limonu Suyu", nameEn: "Lime Juice", emoji: "", cat: "mutfak", taste: "Ekşi", cal: 8 },
+    { id: "Lemon Juice", name: "Limon Suyu", nameEn: "Lemon Juice", emoji: "", cat: "mutfak", taste: "Ekşi", cal: 7 },
+    { id: "Orange Juice", name: "Portakal Suyu", nameEn: "Orange Juice", emoji: "", cat: "mutfak", taste: "Tatlı", cal: 45 },
+    { id: "Cranberry Juice", name: "Kızılcık Suyu", nameEn: "Cranberry Juice", emoji: "", cat: "mutfak", taste: "Ekşi", cal: 46 },
+    { id: "Pineapple Juice", name: "Ananas Suyu", nameEn: "Pineapple Juice", emoji: "", cat: "mutfak", taste: "Tatlı", cal: 50 },
+    { id: "Grenadine", name: "Nar Şurubu", nameEn: "Grenadine", emoji: "", cat: "mutfak", taste: "Tatlı", cal: 54 },
+    { id: "Coca-Cola", name: "Kola", nameEn: "Cola", emoji: "", cat: "mutfak", taste: "Tatlı", cal: 42 },
+    { id: "Tonic Water", name: "Tonik", nameEn: "Tonic Water", emoji: "", cat: "mutfak", taste: "Ekşi", cal: 34 },
+    { id: "Soda Water", name: "Maden Suyu", nameEn: "Club Soda", emoji: "", cat: "mutfak", taste: "Ferah", cal: 0 },
+    { id: "Egg White", name: "Yumurta Akı", nameEn: "Egg White", emoji: "", cat: "mutfak", taste: "Ferah", cal: 15 },
+    { id: "Salt", name: "Tuz", nameEn: "Salt", emoji: "", cat: "mutfak", taste: "Sert", cal: 0 },
+    { id: "Sugar", name: "Şeker", nameEn: "Sugar", emoji: "", cat: "mutfak", taste: "Tatlı", cal: 30 },
+    { id: "Milk", name: "Süt", nameEn: "Milk", emoji: "", cat: "mutfak", taste: "Tatlı", cal: 42 },
+    { id: "Coffee", name: "Kahve", nameEn: "Coffee", emoji: "", cat: "mutfak", taste: "Sert", cal: 2 },
+    { id: "Mint", name: "Nane", nameEn: "Mint", emoji: "", cat: "mutfak", taste: "Ferah", cal: 1 },
+    { id: "Ice", name: "Buz", nameEn: "Ice", emoji: "", cat: "mutfak", taste: "Ferah", cal: 0 }
 ];
 
 let currentLang = 'tr';
@@ -81,10 +81,10 @@ const I18N = {
         discoveryEyebrow: 'KEŞİF TEZGÂHI',
         discoveryHeading: 'Senin barında ne var?',
         startChoosing: 'Malzemelerini seçerek başla',
-        clear: '🗑️ Temizle',
+        clear: 'Temizle',
         searchIngPlaceholder: 'Malzeme ara: cin, nane, limon…',
         searchCocktailPlaceholder: 'Kokteyl veya malzeme yaz: \'rom nane\', \'Margarita\'…',
-        random: '🎲 Rastgele',
+        random: 'Rastgele',
         filterByProfile: 'Zevkine göre daralt',
         all: 'Hepsi',
         alcoholic: 'Alkollü',
@@ -115,7 +115,7 @@ const I18N = {
         partyPortion: '8x Parti',
         ingredientsMeasures: 'Malzemeler & Ölçüler:',
         timerBtn: '⏱️ Sayaç',
-        storyBtn: '📸 Story İndir',
+        storyBtn: 'Story İndir',
         servingGarnish: 'Servis/Garnitür:',
         instructions: 'Hazırlanışı:',
         startMix: 'Adım Adım Hazırlamaya Başla',
@@ -131,7 +131,7 @@ const I18N = {
         barFillRate: 'Bar Doluluk Oranı',
         availableCocktails: 'Yapılabilen Kokteyl',
         ingredientsInBar: 'Barındaki Malzemeler:',
-        emptyBarBtn: '🗑️ Barı Boşalt',
+        emptyBarBtn: 'Barı Boşalt',
         affiliateLabel: 'ÖNERİ',
         affiliateTitle: 'Paslanmaz Shaker & Bar Seti',
         affiliateDesc: 'Evde kokteyl hazırlamak için gereken tüm temel ekipmanlar',
@@ -145,14 +145,14 @@ const I18N = {
         alcoholsLiquors: "Alkoller & Likörler",
         kitchenMixers: "Mutfak & Mikserler",
         emptyShoppingList: "Alışveriş listeniz boş. Eksik malzemelerden 'Alışverişe Ekle' butonuna basarak liste oluşturabilirsiniz.",
-        bought: "✓ Aldım",
+        bought: "Aldım",
         remove: "Sil",
-        noCustomRecipes: "Henüz kendi özel tarifini eklemedin. '✨ Tarif Ekle' sekmesinden ekleyebilirsin.",
-        customTitle: "✨ Yeni Kokteyl Tarifi Ekle",
-        myRecipesTitle: "📜 Kendi Eklediğim Özel Tarifler",
-        shoppingTitle: "🛒 Eksik Malzeme Alışveriş Listesi",
+        noCustomRecipes: "Henüz kendi özel tarifini eklemedin. 'Tarif Ekle' sekmesinden ekleyebilirsin.",
+        customTitle: "Yeni Kokteyl Tarifi Ekle",
+        myRecipesTitle: "Kendi Eklediğim Özel Tarifler",
+        shoppingTitle: "Eksik Malzeme Alışveriş Listesi",
         clearAll: "Hepsini Sil",
-        syncTitle: "⚙️ Veri Yedekleme & Aktarım",
+        syncTitle: "Veri Yedekleme & Aktarım",
         syncDesc: "Favori kokteyllerinizi ve kendi tariflerinizi başka bir cihaza taşımak için kodu kopyalayın veya yapıştırın.",
         copyBackup: "Yedekleme Kodunu Kopyala",
         pasteBackupPlaceholder: "Başka cihazdan aldığınız yedekleme kodunu buraya yapıştırın...",
@@ -166,13 +166,13 @@ const I18N = {
         smartAdviceTitle: "Akıllı Bar Önerisi",
         optAlcoholic: "Alkollü Kokteyl",
         optMocktail: "Alkolsüz (Mocktail)",
-        optMartini: "🍸 Martini / Kadeh",
-        optHighball: "🥤 Uzun Bardak (Highball)",
-        optRocks: "🥃 Kısa Bardak (On the Rocks)",
-        optShot: "🥃 Shot Bardağı",
-        optFlute: "🥂 Şampanya Kadehi",
-        optCopper: "🪣 Bakır Kupa (Mule)",
-        photoLabel: "📷 Kokteyl Fotoğrafı:",
+        optMartini: "Martini / Kadeh",
+        optHighball: "Uzun Bardak (Highball)",
+        optRocks: "Kısa Bardak (On the Rocks)",
+        optShot: "Shot Bardağı",
+        optFlute: "Şampanya Kadehi",
+        optCopper: "Bakır Kupa (Mule)",
+        photoLabel: "Kokteyl Fotoğrafı:",
         saveRecipeBtn: "Tarifi Kaydet",
         syncOnlineDbNote: "Çevrimiçi veritabanından yeni kokteylleri kontrol et:",
         updateTitle: "YENİ SÜRÜM MEVCUT!",
@@ -187,11 +187,11 @@ const I18N = {
         timerPreset45: "45s Soğut",
         timerStart: "▶ Başlat",
         timerPause: "⏸ Duraklat",
-        timerReset: "🔄 Sıfırla",
-        mixEyebrow: "🍸 BARMEN MODU",
+        timerReset: "Sıfırla",
+        mixEyebrow: "BARMEN MODU",
         mixPrev: "← Önceki",
         mixNext: "Sonraki Adım →",
-        mixFinish: "Tamamla & Kapat ✓",
+        mixFinish: "Tamamla & Kapat",
         reserveExclusiveClub: "ÖZEL SEÇKİ KULÜBÜ",
         reserveBullet1: "<strong>%100 Reklamsız Deneyim:</strong> Sıfır reklam, kesintisiz hız.",
         reserveBullet2: "<strong>Gizli Speakeasy Seçkisi:</strong> Usta barmenlerin imza kokteylleri ve şurup rehberleri.",
@@ -201,14 +201,14 @@ const I18N = {
         reserveActivateBtn: "Aktive Et",
         reserveActiveHeading: "Reserve Üyeliğiniz Aktif!",
         reserveActiveDesc: "Tüm ayrıcalıklar, gizli kokteyller ve reklamsız deneyim bu cihazda devrede.",
-        reserveActiveNote: "Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde! 🍸",
+        reserveActiveNote: "Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde!",
         reserveDeactivateBtn: "Bu cihazdan üyeliği kaldır",
         authH3: "BARMEN KULÜBÜ",
         authDesc: "Google hesabınla bağlan, bar dolabını ve VIP ayrıcalıklarını tüm cihazlarına eşitle.",
         authBullet1: "<strong class=\"text-white\">Bulut Senkronizasyonu:</strong> Favori kokteyllerin, bar dolabın ve tariflerin asla silinmez.",
         authBullet2: "<strong class=\"text-white\">Çoklu Cihaz:</strong> Telefondan veya bilgisayardan açtığında tüm seçimlerin anında karşında.",
         authBullet3: "<strong class=\"text-white\">Tek Kullanımlık Lisans Koruma:</strong> Satın aldığın Shopier kodun hesabına mühürlenir.",
-        authGuestBtn: "⚡ Veya Misafir Barmen Olarak Devam Et",
+        authGuestBtn: "Veya Misafir Barmen Olarak Devam Et",
         authSyncTitle: "Bulut Senkronizasyonu",
         authSyncActive: "● Devrede",
         authSyncDesc: "Favorileriniz, bar dolabınız ve özel tarifleriniz Google hesabınızla güvenle eşitleniyor.",
@@ -262,10 +262,10 @@ const I18N = {
         discoveryEyebrow: 'DISCOVERY COUNTER',
         discoveryHeading: 'What\'s in your bar?',
         startChoosing: 'Start by choosing your ingredients',
-        clear: '🗑️ Clear',
+        clear: 'Clear',
         searchIngPlaceholder: 'Search ingredients: gin, mint, lime…',
         searchCocktailPlaceholder: 'Search cocktail or ingredient: \'rum mint\', \'Margarita\'…',
-        random: '🎲 Random',
+        random: 'Random',
         filterByProfile: 'Filter by taste profile',
         all: 'All',
         alcoholic: 'Alcoholic',
@@ -296,7 +296,7 @@ const I18N = {
         partyPortion: '8x Party',
         ingredientsMeasures: 'Ingredients & Measures:',
         timerBtn: '⏱️ Timer',
-        storyBtn: '📸 Story Card',
+        storyBtn: 'Story Card',
         servingGarnish: 'Garnish / Glass:',
         instructions: 'Instructions:',
         startMix: 'Start Step-by-Step Mix',
@@ -312,7 +312,7 @@ const I18N = {
         barFillRate: 'Bar Fill Rate',
         availableCocktails: 'Available Cocktails',
         ingredientsInBar: 'Ingredients in Your Bar:',
-        emptyBarBtn: '🗑️ Empty Bar',
+        emptyBarBtn: 'Empty Bar',
         affiliateLabel: 'STAFF PICK',
         affiliateTitle: 'Stainless Steel Cocktail Shaker Set',
         affiliateDesc: 'Essential bar tools for crafting premium cocktails at home',
@@ -326,14 +326,14 @@ const I18N = {
         alcoholsLiquors: "Spirits & Liqueurs",
         kitchenMixers: "Kitchen & Mixers",
         emptyShoppingList: "Your shopping list is empty. Add missing items from recipe cards.",
-        bought: "✓ Got It",
+        bought: "Got It",
         remove: "Delete",
         noCustomRecipes: "No custom recipes added yet. Tap '+ Add Recipe' to create one.",
-        customTitle: "✨ Add Custom Cocktail Recipe",
-        myRecipesTitle: "📜 My Custom Recipes",
-        shoppingTitle: "🛒 Shopping List",
+        customTitle: "Add Custom Cocktail Recipe",
+        myRecipesTitle: "My Custom Recipes",
+        shoppingTitle: "Shopping List",
         clearAll: "Clear All",
-        syncTitle: "⚙️ Backup & Device Sync",
+        syncTitle: "Backup & Device Sync",
         syncDesc: "Copy or paste your backup code to transfer your bar, favorites, and recipes between devices.",
         copyBackup: "Copy Backup Code",
         pasteBackupPlaceholder: "Paste your backup code here...",
@@ -347,13 +347,13 @@ const I18N = {
         smartAdviceTitle: "Smart Bar Tip",
         optAlcoholic: "Alcoholic Cocktail",
         optMocktail: "Non-Alcoholic (Mocktail)",
-        optMartini: "🍸 Martini / Cocktail Glass",
-        optHighball: "🥤 Tall Glass (Highball)",
-        optRocks: "🥃 Short Glass (On the Rocks)",
-        optShot: "🥃 Shot Glass",
-        optFlute: "🥂 Champagne Flute",
-        optCopper: "🪣 Copper Mug (Mule)",
-        photoLabel: "📷 Cocktail Photo:",
+        optMartini: "Martini / Cocktail Glass",
+        optHighball: "Tall Glass (Highball)",
+        optRocks: "Short Glass (On the Rocks)",
+        optShot: "Shot Glass",
+        optFlute: "Champagne Flute",
+        optCopper: "Copper Mug (Mule)",
+        photoLabel: "Cocktail Photo:",
         saveRecipeBtn: "Save Recipe",
         syncOnlineDbNote: "Check for new cocktails from online database:",
         updateTitle: "NEW VERSION AVAILABLE!",
@@ -368,11 +368,11 @@ const I18N = {
         timerPreset45: "45s Chill",
         timerStart: "▶ Start",
         timerPause: "⏸ Pause",
-        timerReset: "🔄 Reset",
-        mixEyebrow: "🍸 BARTENDER MODE",
+        timerReset: "Reset",
+        mixEyebrow: "BARTENDER MODE",
         mixPrev: "← Previous",
         mixNext: "Next Step →",
-        mixFinish: "Finish ✓",
+        mixFinish: "Finish",
         reserveExclusiveClub: "EXCLUSIVE CURATION CLUB",
         reserveBullet1: "<strong>100% Ad-Free Experience:</strong> Zero ads, pure speed.",
         reserveBullet2: "<strong>Secret Speakeasy Curation:</strong> Master bartenders' signature cocktails & syrup guides.",
@@ -382,14 +382,14 @@ const I18N = {
         reserveActivateBtn: "Activate",
         reserveActiveHeading: "Your Reserve Membership is Active!",
         reserveActiveDesc: "All privileges, secret cocktails, and ad-free experience are active on this device.",
-        reserveActiveNote: "Enjoy your evening. You run the bar tonight! 🍸",
+        reserveActiveNote: "Enjoy your evening. You run the bar tonight!",
         reserveDeactivateBtn: "Remove membership from this device",
         authH3: "BARTENDER CLUB",
         authDesc: "Connect with your Google account to sync your bar cabinet and VIP privileges across all devices.",
         authBullet1: "<strong class=\"text-white\">Cloud Sync:</strong> Your favorite cocktails, home bar cabinet, and recipes are safely stored.",
         authBullet2: "<strong class=\"text-white\">Multi-Device:</strong> Instantly access all your ingredients and drinks on phone, tablet, or PC.",
         authBullet3: "<strong class=\"text-white\">Protected VIP License:</strong> Your purchased VIP code is permanently sealed to your account.",
-        authGuestBtn: "⚡ Or Continue as Guest Bartender",
+        authGuestBtn: "Or Continue as Guest Bartender",
         authSyncTitle: "Cloud Sync",
         authSyncActive: "● Active",
         authSyncDesc: "Your favorites, bar cabinet, and custom recipes are securely synced with your Google account.",
@@ -690,37 +690,37 @@ function safeImageSrc(src) {
 
 // Bardak Tipi Sözlüğü
 const glassTranslations = {
-    "highball glass": "🥤 Uzun Bardak (Highball)",
-    "cocktail glass": "🍸 Martini Kadehi",
-    "old-fashioned glass": "🥃 Kısa Bardak",
-    "whiskey glass": "🥃 Viski Bardağı",
-    "collins glass": "🥤 Collins Bardağı",
-    "shot glass": "🥃 Shot",
-    "champagne flute": "🥂 Şampanya Kadehi",
-    "hurricane glass": "🍹 Tropikal Bardak",
-    "copper mug": "🪣 Bakır Kupa (Mule)",
-    "margarita glass": "🍸 Margarita Kadehi",
-    "punch bowl": "🥣 Panç Kasesi",
-    "coffee mug": "☕ Sıcak Kupa",
-    "irish coffee cup": "☕ İrlanda Kadehi",
-    "white wine glass": "🍷 Şarap Kadehi",
-    "beer mug": "🍺 Bira Bardağı",
-    "whiskey sour glass": "🥃 Sour Bardağı",
-    "martini glass": "🍸 Martini Kadehi",
-    "coupe glass": "🍸 Coupe Kadeh",
-    "margarita/coupette glass": "🍸 Margarita Kadehi",
-    "nick and nora glass": "🍸 Nick & Nora Kadehi",
-    "beer pilsner": "🍺 Pilsner Bardağı",
-    "beer glass": "🍺 Bira Bardağı",
-    "pint glass": "🍺 Pint Bardağı",
-    "pitcher": "🫗 Sürahi",
-    "mason jar": "🫙 Kavanoz Bardak",
-    "jar": "🫙 Kavanoz",
-    "balloon glass": "🍷 Balon Kadeh",
-    "wine glass": "🍷 Şarap Kadehi",
-    "cordial glass": "🥃 Likör Kadehi",
-    "brandy snifter": "🥃 Konyak Kadehi",
-    "pousse cafe glass": "🥃 Pousse Café Kadehi"
+    "highball glass": "Uzun Bardak (Highball)",
+    "cocktail glass": "Martini Kadehi",
+    "old-fashioned glass": "Kısa Bardak",
+    "whiskey glass": "Viski Bardağı",
+    "collins glass": "Collins Bardağı",
+    "shot glass": "Shot",
+    "champagne flute": "Şampanya Kadehi",
+    "hurricane glass": "Tropikal Bardak",
+    "copper mug": "Bakır Kupa (Mule)",
+    "margarita glass": "Margarita Kadehi",
+    "punch bowl": "Panç Kasesi",
+    "coffee mug": "Sıcak Kupa",
+    "irish coffee cup": "İrlanda Kadehi",
+    "white wine glass": "Şarap Kadehi",
+    "beer mug": "Bira Bardağı",
+    "whiskey sour glass": "Sour Bardağı",
+    "martini glass": "Martini Kadehi",
+    "coupe glass": "Coupe Kadeh",
+    "margarita/coupette glass": "Margarita Kadehi",
+    "nick and nora glass": "Nick & Nora Kadehi",
+    "beer pilsner": "Pilsner Bardağı",
+    "beer glass": "Bira Bardağı",
+    "pint glass": "Pint Bardağı",
+    "pitcher": "Sürahi",
+    "mason jar": "Kavanoz Bardak",
+    "jar": "Kavanoz",
+    "balloon glass": "Balon Kadeh",
+    "wine glass": "Şarap Kadehi",
+    "cordial glass": "Likör Kadehi",
+    "brandy snifter": "Konyak Kadehi",
+    "pousse cafe glass": "Pousse Café Kadehi"
 };
 
 const measureTranslations = {
@@ -1202,6 +1202,18 @@ function initDB() {
     });
 }
 
+// Dış kaynaklı kokteyl nesnesini doğrulayan basit şema kontrolü.
+// Bozuk / eksik alanlar sessizce atlanır; uygulama asla çökmez.
+function isValidCocktailObject(drink) {
+    if (!drink || typeof drink !== 'object' || Array.isArray(drink)) return false;
+    if (typeof drink.idDrink !== 'string' || !drink.idDrink.trim()) return false;
+    if (typeof drink.strDrink !== 'string' || !drink.strDrink.trim()) return false;
+    // idDrink yalnızca rakamlardan oluşmalı (TheCocktailDB standardı) veya "custom_" ile başlamalı
+    if (!/^\d+$/.test(drink.idDrink) && !/^custom_[a-zA-Z0-9_-]+$/.test(drink.idDrink)) return false;
+    return true;
+}
+
+
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -1333,31 +1345,28 @@ function changePortion(cardId, multiplier, btnEl) {
 }
 
 function getTechniqueBadge(instructions) {
-    if (!instructions) return currentLang === 'en' ? "🥄 Stir Gently" : "🥄 Karıştır";
+    if (!instructions) return currentLang === 'en' ? "Stir Gently" : "Karıştır";
     const inst = instructions.toLowerCase();
-    if (/shake|çalkala/i.test(inst)) return currentLang === 'en' ? "🧊 Shake with Ice" : "🧊 Shaker ile Çalkala";
-    if (/blend|blender/i.test(inst)) return currentLang === 'en' ? "🌪️ Blend with Ice" : "🌪️ Blender ile Çek";
-    if (/layer|float|katman/i.test(inst)) return currentLang === 'en' ? "🍷 Layer Gently" : "🍷 Katmanlayarak Dök";
-    if (/stir|karıştır/i.test(inst)) return currentLang === 'en' ? "🥄 Stir Well" : "🥄 Kaşıkla Karıştır";
-    return currentLang === 'en' ? "🍸 Build in Glass" : "🍸 Bardağa Direkt Dök";
+    if (/shake|çalkala/i.test(inst)) return currentLang === 'en' ? "Shake with Ice" : "Shaker ile Çalkala";
+    if (/blend|blender/i.test(inst)) return currentLang === 'en' ? "Blend with Ice" : "Blender ile Çek";
+    if (/layer|float|katman/i.test(inst)) return currentLang === 'en' ? "Layer Gently" : "Katmanlayarak Dök";
+    if (/stir|karıştır/i.test(inst)) return currentLang === 'en' ? "Stir Well" : "Kaşıkla Karıştır";
+    return currentLang === 'en' ? "Build in Glass" : "Bardağa Direkt Dök";
 }
 
 function getGlassBadge(glassStr) {
-    if (!glassStr) return currentLang === 'en' ? "🍸 Cocktail Glass" : "🍸 Kokteyl Kadehi";
-    if (currentLang === 'en') {
-        const lower = glassStr.trim().toLowerCase();
-        if (lower.includes('martini') || lower.includes('cocktail glass')) return `🍸 ${escapeHTML(glassStr)}`;
-        if (lower.includes('highball') || lower.includes('collins')) return `🥤 ${escapeHTML(glassStr)}`;
-        if (lower.includes('old-fashioned') || lower.includes('rocks') || lower.includes('whiskey')) return `🥃 ${escapeHTML(glassStr)}`;
-        if (lower.includes('shot')) return `🥃 ${escapeHTML(glassStr)}`;
-        if (lower.includes('champagne') || lower.includes('flute')) return `🥂 ${escapeHTML(glassStr)}`;
-        if (lower.includes('copper') || lower.includes('mug')) return `🪣 ${escapeHTML(glassStr)}`;
-        if (lower.includes('wine')) return `🍷 ${escapeHTML(glassStr)}`;
-        if (lower.includes('beer') || lower.includes('pint')) return `🍺 ${escapeHTML(glassStr)}`;
-        return `🍸 ${escapeHTML(glassStr)}`;
-    }
+    const glassIcon = (name) => `<i class="bci bci-${name}" aria-hidden="true"></i> `;
+    if (!glassStr) return glassIcon('martini') + (currentLang === 'en' ? "Cocktail Glass" : "Kokteyl Kadehi");
     const lower = glassStr.trim().toLowerCase();
-    return glassTranslations[lower] || `🍸 ${escapeHTML(glassStr)}`;
+    let icon = 'martini';
+    if (lower.includes('highball') || lower.includes('collins') || lower.includes('hurricane')) icon = 'highball';
+    else if (lower.includes('old-fashioned') || lower.includes('rocks') || lower.includes('whiskey') || lower.includes('shot') || lower.includes('cordial') || lower.includes('snifter') || lower.includes('pousse')) icon = 'tumbler';
+    else if (lower.includes('champagne') || lower.includes('flute')) icon = 'flute';
+    else if (lower.includes('copper') || lower.includes('mug') || lower.includes('cup') || lower.includes('jar') || lower.includes('pitcher') || lower.includes('bowl')) icon = 'mug';
+    else if (lower.includes('wine') || lower.includes('balloon')) icon = 'wine';
+    else if (lower.includes('beer') || lower.includes('pint')) icon = 'beer';
+    if (currentLang === 'en') return glassIcon(icon) + escapeHTML(glassStr);
+    return glassIcon(icon) + (glassTranslations[lower] || escapeHTML(glassStr));
 }
 
 // Türkçe Çeviri (Google Translate API + Cache)
@@ -1473,27 +1482,27 @@ function autoExtractAllIngredients() {
 
                     let cal = isAlcohol ? 80 : (isSweet ? 45 : 10);
                     
-                    let emoji = "🫙";
+                    let emoji = "";
                     if (isAlcohol) {
-                        if (/(beer|ale|stout|bira)/i.test(lowerIng)) emoji = "🍺";
-                        else if (/(wine|champagne|şarap)/i.test(lowerIng)) emoji = "🍾";
-                        else if (/(brandy|cognac|whiskey|bourbon|scotch|viski)/i.test(lowerIng)) emoji = "🥃";
-                        else if (/(liqueur|amaretto|aperol|campari|vermouth|likör)/i.test(lowerIng)) emoji = "🍷";
-                        else emoji = "🍶";
+                        if (/(beer|ale|stout|bira)/i.test(lowerIng)) emoji = "";
+                        else if (/(wine|champagne|şarap)/i.test(lowerIng)) emoji = "";
+                        else if (/(brandy|cognac|whiskey|bourbon|scotch|viski)/i.test(lowerIng)) emoji = "";
+                        else if (/(liqueur|amaretto|aperol|campari|vermouth|likör)/i.test(lowerIng)) emoji = "";
+                        else emoji = "";
                     } else {
-                        if (/(lemon|lime|limon)/i.test(lowerIng)) emoji = "🍋";
-                        else if (/(orange|grapefruit|portakal)/i.test(lowerIng)) emoji = "🍊";
-                        else if (/(apple|elma)/i.test(lowerIng)) emoji = "🍎";
-                        else if (/(berry|cherry|strawberry|raspberry|çilek|vişne)/i.test(lowerIng)) emoji = "🍓";
-                        else if (/(peach|apricot|şeftali|kayısı)/i.test(lowerIng)) emoji = "🍑";
-                        else if (/(syrup|honey|nectar|şurup|bal)/i.test(lowerIng)) emoji = "🍯";
-                        else if (/(sugar|şeker)/i.test(lowerIng)) emoji = "🍬";
-                        else if (/(milk|cream|süt|krema)/i.test(lowerIng)) emoji = "🥛";
-                        else if (/(coffee|espresso|kahve)/i.test(lowerIng)) emoji = "☕";
-                        else if (/(tea|çay)/i.test(lowerIng)) emoji = "🍵";
-                        else if (/(water|soda|su|maden)/i.test(lowerIng)) emoji = "💦";
-                        else if (/(mint|leaves|nane)/i.test(lowerIng)) emoji = "🌿";
-                        else if (/(juice|meyve suyu)/i.test(lowerIng)) emoji = "🧃";
+                        if (/(lemon|lime|limon)/i.test(lowerIng)) emoji = "";
+                        else if (/(orange|grapefruit|portakal)/i.test(lowerIng)) emoji = "";
+                        else if (/(apple|elma)/i.test(lowerIng)) emoji = "";
+                        else if (/(berry|cherry|strawberry|raspberry|çilek|vişne)/i.test(lowerIng)) emoji = "";
+                        else if (/(peach|apricot|şeftali|kayısı)/i.test(lowerIng)) emoji = "";
+                        else if (/(syrup|honey|nectar|şurup|bal)/i.test(lowerIng)) emoji = "";
+                        else if (/(sugar|şeker)/i.test(lowerIng)) emoji = "";
+                        else if (/(milk|cream|süt|krema)/i.test(lowerIng)) emoji = "";
+                        else if (/(coffee|espresso|kahve)/i.test(lowerIng)) emoji = "";
+                        else if (/(tea|çay)/i.test(lowerIng)) emoji = "";
+                        else if (/(water|soda|su|maden)/i.test(lowerIng)) emoji = "";
+                        else if (/(mint|leaves|nane)/i.test(lowerIng)) emoji = "";
+                        else if (/(juice|meyve suyu)/i.test(lowerIng)) emoji = "";
                     }
 
                     newIngredientsMap.set(lowerIng, {
@@ -1784,7 +1793,7 @@ function renderDashboard() {
     const dashClearBtn = document.getElementById('btn-dashboard-clear-bar');
     if (dashClearBtn) {
         dashClearBtn.classList.toggle('hidden', selectedIngredients.length === 0);
-        dashClearBtn.innerHTML = currentLang === 'en' ? '<span>🗑️</span> Empty Bar' : '<span>🗑️</span> Barı Boşalt';
+        dashClearBtn.innerHTML = currentLang === 'en' ? '<span><i class="bci bci-trash" aria-hidden="true"></i></span> Empty Bar' : '<span><i class="bci bci-trash" aria-hidden="true"></i></span> Barı Boşalt';
     }
 
     const topContainer = document.getElementById('top-ingredients');
@@ -1792,7 +1801,7 @@ function renderDashboard() {
         if (selectedIngredients.length === 0) {
             topContainer.innerHTML = `<span class="text-slate-500 text-xs">${I18N[currentLang].emptyBarDesc}</span>${starterBarButton()}`;
         } else {
-            const selectedItems = selectedIngredients.map(id => popularIngredients.find(pi => pi.id === id) || { id, name: id, emoji: '🥃', cat: 'alkol' });
+            const selectedItems = selectedIngredients.map(id => popularIngredients.find(pi => pi.id === id) || { id, name: id, emoji: '', cat: 'alkol' });
             const selectedAlcohols = selectedItems.filter(i => i.cat === 'alkol');
             const selectedKitchen = selectedItems.filter(i => i.cat !== 'alkol');
 
@@ -1801,7 +1810,7 @@ function renderDashboard() {
                 html += `
                     <div class="w-full mb-3">
                         <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                            <span>🍸</span> ${I18N[currentLang].alcoholsLiquors} (${selectedAlcohols.length})
+                            <span><i class="bci bci-martini" aria-hidden="true"></i></span> ${I18N[currentLang].alcoholsLiquors} (${selectedAlcohols.length})
                         </div>
                         <div class="flex flex-wrap gap-2 text-xs">
                             ${selectedAlcohols.map(item => {
@@ -1811,8 +1820,8 @@ function renderDashboard() {
                                 const ingDisplayName = currentLang === 'en' ? (item.nameEn || item.id) : translateIngredientName(item.name || item.id);
                                 return `
                                     <span class="bg-slate-900/90 text-amber-300 border border-amber-500/20 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
-                                        <span>${item.emoji || '🥃'} ${escapeHTML(ingDisplayName)} <span class="text-[10px] text-amber-400/70 font-semibold">(${escapeHTML(grpLabel)})</span></span>
-                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="${titleLabel}">✕</button>
+                                        <span><i class="bci bci-bottle" aria-hidden="true"></i> ${escapeHTML(ingDisplayName)} <span class="text-[10px] text-amber-400/70 font-semibold">(${escapeHTML(grpLabel)})</span></span>
+                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="${titleLabel}"><i class="bci bci-x" aria-hidden="true"></i></button>
                                     </span>
                                 `;
                             }).join('')}
@@ -1824,7 +1833,7 @@ function renderDashboard() {
                 html += `
                     <div class="w-full">
                         <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                            <span>🍊</span> ${I18N[currentLang].kitchenMixers} (${selectedKitchen.length})
+                            <span><i class="bci bci-citrus" aria-hidden="true"></i></span> ${I18N[currentLang].kitchenMixers} (${selectedKitchen.length})
                         </div>
                         <div class="flex flex-wrap gap-2 text-xs">
                             ${selectedKitchen.map(item => {
@@ -1833,8 +1842,8 @@ function renderDashboard() {
                                 const ingDisplayName = currentLang === 'en' ? (item.nameEn || item.id) : translateIngredientName(item.name || item.id);
                                 return `
                                     <span class="bg-slate-900/90 text-emerald-300 border border-emerald-500/20 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-2 font-medium break-words text-xs">
-                                        <span>${item.emoji || '🍊'} ${escapeHTML(ingDisplayName)}</span>
-                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-emerald-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="${titleLabel}">✕</button>
+                                        <span><i class="bci bci-citrus" aria-hidden="true"></i> ${escapeHTML(ingDisplayName)}</span>
+                                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-emerald-400/60 hover:text-rose-400 font-bold text-xs ml-0.5 hover:scale-110 transition-transform" title="${titleLabel}"><i class="bci bci-x" aria-hidden="true"></i></button>
                                     </span>
                                 `;
                             }).join('')}
@@ -1949,13 +1958,13 @@ function renderIngredients() {
     const headerClearBtn = document.getElementById('btn-clear-selection-header');
     if (headerClearBtn) {
         headerClearBtn.classList.toggle('hidden', selectedIngredients.length === 0);
-        headerClearBtn.textContent = currentLang === 'en' ? '🗑️ Clear' : '🗑️ Temizle';
+        headerClearBtn.textContent = currentLang === 'en' ? 'Clear' : 'Temizle';
     }
 
     // Arama yanındaki temizle butonu (Dinamik adet göstergesi)
     const searchClearBtn = document.querySelector('[data-ui="ui-13"]');
     if (searchClearBtn) {
-        const clearText = currentLang === 'en' ? '🗑️ Clear' : '🗑️ Temizle';
+        const clearText = currentLang === 'en' ? 'Clear' : 'Temizle';
         searchClearBtn.textContent = selectedIngredients.length ? `${clearText} (${selectedIngredients.length})` : clearText;
     }
 
@@ -1969,11 +1978,11 @@ function renderIngredients() {
             badgeCount.textContent = selectedIngredients.length;
             const trayLabel = tray.querySelector('.text-amber-400.font-bold');
             if (trayLabel) {
-                trayLabel.innerHTML = `<span>🍸</span> ${currentLang === 'en' ? 'Ingredients in Your Bar' : 'Barındaki Malzemeler'} (<span id="selected-badge-count">${selectedIngredients.length}</span>)`;
+                trayLabel.innerHTML = `<span><i class="bci bci-martini" aria-hidden="true"></i></span> ${currentLang === 'en' ? 'Ingredients in Your Bar' : 'Barındaki Malzemeler'} (<span id="selected-badge-count">${selectedIngredients.length}</span>)`;
             }
             const clearAllBtn = tray.querySelector('[data-action="clear-all-ingredients"]');
             if (clearAllBtn) {
-                clearAllBtn.innerHTML = `<span>🗑️</span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
+                clearAllBtn.innerHTML = `<span><i class="bci bci-trash" aria-hidden="true"></i></span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
             }
             chipsContainer.innerHTML = selectedIngredients.map(id => {
                 const item = popularIngredients.find(pi => pi.id === id);
@@ -1984,7 +1993,7 @@ function renderIngredients() {
                 return `
                     <span class="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-200 border border-amber-500/35 px-2.5 py-1 rounded-xl text-xs font-semibold shadow-sm transition-all hover:border-amber-400">
                         <span>${escapeHTML(name)}</span>
-                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/80 hover:text-rose-400 font-bold ml-1 text-xs w-4 h-4 flex items-center justify-center rounded-full hover:bg-white/10" title="${currentLang === 'en' ? 'Remove from Bar' : 'Barından Çıkar'}">✕</button>
+                        <button data-action="remove-ingredient" data-value="${escapeHTML(encodedId)}" class="text-amber-400/80 hover:text-rose-400 font-bold ml-1 text-xs w-4 h-4 flex items-center justify-center rounded-full hover:bg-white/10" title="${currentLang === 'en' ? 'Remove from Bar' : 'Barından Çıkar'}"><i class="bci bci-x" aria-hidden="true"></i></button>
                     </span>
                 `;
             }).join('');
@@ -2072,13 +2081,13 @@ function renderIngredients() {
         noResult.className = "w-full py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2";
         if (searchVal) {
             noResult.innerHTML = `
-                <span class="text-2xl">🔍</span>
+                <span class="text-2xl"><i class="bci bci-search" aria-hidden="true"></i></span>
                 <p class="font-medium text-slate-300">"${escapeHTML(searchVal)}" ${currentLang === 'en' ? 'no matching ingredients found.' : 'ile eşleşen malzeme bulunamadı.'}</p>
                 <p class="text-[11px] text-slate-500">${currentLang === 'en' ? 'Try searching in Turkish or English (e.g. mint, limon, rom)' : 'Türkçe veya İngilizce isim deneyebilirsiniz (örn: nane, limon, rom)'}</p>
             `;
         } else {
             noResult.innerHTML = `
-                <span class="text-2xl">🍃</span>
+                <span class="text-2xl"><i class="bci bci-leaf" aria-hidden="true"></i></span>
                 <p class="font-medium text-slate-300">${currentLang === 'en' ? 'No ingredients found in this category.' : 'Bu kategoride malzeme bulunamadı.'}</p>
             `;
         }
@@ -2487,7 +2496,7 @@ function updateSmartAdvice(missingMatches) {
             <div class="acrylic-card border-amber-500/30 p-4 rounded-3xl flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3 shadow-xl min-w-0 overflow-hidden">
                 <div class="flex items-center gap-3.5 min-w-0">
                     <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl shrink-0">
-                        💡
+                        <i class="bci bci-bulb" aria-hidden="true"></i>
                     </div>
                     <div class="min-w-0">
                         <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">${tipTitle}</p>
@@ -2588,7 +2597,7 @@ function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     const borderColor = type === 'success' ? 'border-emerald-500/40 text-emerald-300' : 'border-amber-500/40 text-amber-300';
     toast.className = `acrylic-card px-4 py-2.5 rounded-2xl border ${borderColor} text-xs font-semibold shadow-2xl flex items-center gap-2 animate-fade-in transition-all pointer-events-auto`;
-    toast.innerHTML = `<span>🍸</span><span>${escapeHTML(message)}</span>`;
+    toast.innerHTML = `<span><i class="bci bci-martini" aria-hidden="true"></i></span><span>${escapeHTML(message)}</span>`;
     container.appendChild(toast);
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -2642,7 +2651,7 @@ function openMixMode(drinkId, servings = 1) {
             },
             {
                 heading: '2. Measure & Add Ingredients',
-                body: `<p class="font-semibold text-amber-300 mb-2">Measured Ingredients:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span>🥃</span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
+                body: `<p class="font-semibold text-amber-300 mb-2">Measured Ingredients:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span><i class="bci bci-tumbler" aria-hidden="true"></i></span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
                 hasTimer: false
             },
             {
@@ -2656,7 +2665,7 @@ function openMixMode(drinkId, servings = 1) {
             },
             {
                 heading: '4. Strain & Serve',
-                body: `<p>• Strain the chilled cocktail into the ${escapeHTML(glass)}.</p><p class="mt-2">• ${d.strServing ? `<b>Garnish:</b> ${escapeHTML(d.strServing)}` : 'Add garnish and serve fresh.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm">🎉 Your cocktail is ready, cheers!</div>`,
+                body: `<p>• Strain the chilled cocktail into the ${escapeHTML(glass)}.</p><p class="mt-2">• ${d.strServing ? `<b>Garnish:</b> ${escapeHTML(d.strServing)}` : 'Add garnish and serve fresh.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm"><i class="bci bci-party" aria-hidden="true"></i> Your cocktail is ready, cheers!</div>`,
                 hasTimer: false
             }
         ];
@@ -2669,7 +2678,7 @@ function openMixMode(drinkId, servings = 1) {
             },
             {
                 heading: '2. Malzemeleri Ekle',
-                body: `<p class="font-semibold text-amber-300 mb-2">Ölçülü Malzeme Listesi:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span>🥃</span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
+                body: `<p class="font-semibold text-amber-300 mb-2">Ölçülü Malzeme Listesi:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span><i class="bci bci-tumbler" aria-hidden="true"></i></span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
                 hasTimer: false
             },
             {
@@ -2683,7 +2692,7 @@ function openMixMode(drinkId, servings = 1) {
             },
             {
                 heading: '4. Süzme & Servis',
-                body: `<p>• Soğuyan kokteyli süzerek ${escapeHTML(glass)} içine aktar.</p><p class="mt-2">• ${d.strServing ? `<b>Garnitür:</b> ${escapeHTML(d.strServing)}` : 'Garnitürünü ekle ve taze servis et.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm">🎉 Kokteylin hazır, afiyet olsun!</div>`,
+                body: `<p>• Soğuyan kokteyli süzerek ${escapeHTML(glass)} içine aktar.</p><p class="mt-2">• ${d.strServing ? `<b>Garnitür:</b> ${escapeHTML(d.strServing)}` : 'Garnitürünü ekle ve taze servis et.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm"><i class="bci bci-party" aria-hidden="true"></i> Kokteylin hazır, afiyet olsun!</div>`,
                 hasTimer: false
             }
         ];
@@ -2713,6 +2722,8 @@ function renderMixStep() {
 
     if (counter) counter.textContent = currentLang === 'en' ? `Step ${currentMixStep + 1} / ${mixSteps.length}` : `Adım ${currentMixStep + 1} / ${mixSteps.length}`;
     if (heading) heading.textContent = step.heading;
+    // step.body yalnızca openMixMode() içinde escapeHTML() uygulanmış sabit
+    // şablonlardan üretilir; harici kullanıcı girdisi veya API verisi içermez.
     if (body) body.innerHTML = step.body;
 
     const prevBtn = document.getElementById('btn-mix-prev');
@@ -2724,7 +2735,7 @@ function renderMixStep() {
     if (nextBtn) {
         const isLast = currentMixStep === mixSteps.length - 1;
         nextBtn.innerHTML = isLast 
-            ? `<span>${currentLang === 'en' ? 'Finish ✓' : 'Tamamla & Kapat ✓'}</span>`
+            ? `<span>${currentLang === 'en' ? 'Finish' : 'Tamamla & Kapat'}</span>`
             : `<span>${currentLang === 'en' ? 'Next Step →' : 'Sonraki Adım →'}</span>`;
     }
 
@@ -2765,7 +2776,7 @@ function nextMixStep() {
         personalMixCompleted = true;
         closeMixMode();
         if (window.BarPersonalUI && !window.BarPersonalUI.record(currentMixDrink, personalMixEventId, personalMixServings)) personalMixCompleted = false;
-        showToast(currentLang === 'en' ? 'Cheers! You crafted the cocktail like a pro 🍸' : 'Tebrikler! Kokteylini başarıyla hazırladın 🍸', 'success');
+        showToast(currentLang === 'en' ? 'Cheers! You crafted the cocktail like a pro' : 'Tebrikler! Kokteylini başarıyla hazırladın', 'success');
     }
 }
 
@@ -2832,7 +2843,7 @@ async function downloadCocktailStoryCard(drinkId) {
     if (!d) return;
 
     triggerHaptic('medium');
-    showToast(currentLang === 'en' ? '📸 Preparing story card...' : '📸 Hikaye kartı hazırlanıyor...', 'info');
+    showToast(currentLang === 'en' ? 'Preparing story card...' : 'Hikaye kartı hazırlanıyor...', 'info');
 
     // Our mirrored photo first, then the original, then none.
     const photo = await loadStoryImage(BarSecurity.displayImage(d.strDrinkThumb)) || await loadStoryImage(safeImageSrc(d.strDrinkThumb));
@@ -2846,7 +2857,7 @@ async function downloadCocktailStoryCard(drinkId) {
     link.href = dataUrl;
     link.click();
 
-    showToast(currentLang === 'en' ? `📸 ${drinkName} story card downloaded!` : `📸 ${drinkName} Story kartı hazırlandı!`, 'success');
+    showToast(currentLang === 'en' ? `${drinkName} story card downloaded!` : `${drinkName} Story kartı hazırlandı!`, 'success');
 }
 
 function drawStoryCard(d, drinkName, photo) {
@@ -2926,7 +2937,7 @@ function drawStoryCard(d, drinkName, photo) {
         const g = ctx.createRadialGradient(540, py + 250, 40, 540, py + 250, 340);
         g.addColorStop(0, '#3a2412'); g.addColorStop(1, '#141414');
         ctx.fillStyle = g; ctx.fillRect(px, py, ps, ps);
-        ctx.font = '180px serif'; ctx.fillStyle = '#ffffff'; ctx.fillText('🍸', 540, py + 350);
+        ctx.font = '180px serif'; ctx.fillStyle = '#ffffff'; ctx.fillText('', 540, py + 350);
     }
     ctx.restore();
     ctx.strokeStyle = 'rgba(255, 122, 26, 0.5)'; ctx.lineWidth = 3;
@@ -3189,18 +3200,18 @@ function filterCocktails() {
             titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> ${I18N[currentLang].missingFavTitle} <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">${missingMatches.length}</span>`;
         } else if (currentVibeFilter !== 'all') {
             const vibeNamesTr = {
-                summer: '☀️ Yaz & Havuz',
-                romantic: '🕯️ Romantik Akşam',
-                chill: '🍿 Dizi & Film',
-                winter: '❄️ Kış & Şömine',
-                party: '🎉 Parti & Shot'
+                summer: 'Yaz & Havuz',
+                romantic: 'Romantik Akşam',
+                chill: 'Dizi & Film',
+                winter: 'Kış & Şömine',
+                party: 'Parti & Shot'
             };
             const vibeNamesEn = {
-                summer: '☀️ Summer & Pool',
-                romantic: '🕯️ Romantic Night',
-                chill: '🍿 Movie & Chill',
-                winter: '❄️ Cozy Winter',
-                party: '🎉 Party & Shots'
+                summer: 'Summer & Pool',
+                romantic: 'Romantic Night',
+                chill: 'Movie & Chill',
+                winter: 'Cozy Winter',
+                party: 'Party & Shots'
             };
             const label = currentLang === 'en' ? (vibeNamesEn[currentVibeFilter] || 'Vibe') : (vibeNamesTr[currentVibeFilter] || 'Ortam');
             const suffix = currentLang === 'en' ? 'Selection' : 'Seçkisi';
@@ -3342,11 +3353,11 @@ function createCocktailCardElement(item, isMissingList) {
                 ? `<img src="${escapeHTML(BarSecurity.displayImage(d.strDrinkThumb))}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" data-image-fallback>`
                 : `<div class="w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-slate-600"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8-7-8ZM12 12v7M8 20h8"/></svg></div>`}
             
-            <button data-action="favorite" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50">${isFav ? '❤️' : '🤍'}</button>
+            <button data-action="favorite" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50" aria-pressed="${isFav ? 'true' : 'false'}">${isFav ? '<i class="bci bci-heart-fill" aria-hidden="true"></i>' : '<i class="bci bci-heart" aria-hidden="true"></i>'}</button>
             
             ${d.isCustom ? `
-            <button data-action="share" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-amber-500">📤</button>
-            <button data-action="delete" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10 shadow-lg">🗑️</button>
+            <button data-action="share" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-amber-500"><i class="bci bci-share" aria-hidden="true"></i></button>
+            <button data-action="delete" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10 shadow-lg"><i class="bci bci-trash" aria-hidden="true"></i></button>
             ` : ''}
             
             <div class="flex justify-between items-start mt-2 min-w-0 gap-2">
@@ -3396,11 +3407,11 @@ function createCocktailCardElement(item, isMissingList) {
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${techniqueBadge}</span>
                     <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm">⏱️ ${currentLang === 'en' ? 'Timer' : 'Sayaç'}</button>
                     <button data-action="share-link" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> ${currentLang === 'en' ? 'Share link' : 'Bağlantı'}</button>
-                    <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm" data-stop-card>📸 ${currentLang === 'en' ? 'Story Card' : 'Story İndir'}</button>
+                    <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm" data-stop-card><i class="bci bci-camera" aria-hidden="true"></i> ${currentLang === 'en' ? 'Story Card' : 'Story İndir'}</button>
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${glassBadge}</span>
                 </div>
 
-                ${d.strServing ? `<div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-[11px] text-amber-300 italic break-words">💡 <b>${currentLang === 'en' ? 'Serving/Garnish:' : 'Servis/Garnitür:'}</b> ${safeServing}</div>` : ''}
+                ${d.strServing ? `<div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-[11px] text-amber-300 italic break-words"><i class="bci bci-bulb" aria-hidden="true"></i> <b>${currentLang === 'en' ? 'Serving/Garnish:' : 'Servis/Garnitür:'}</b> ${safeServing}</div>` : ''}
                 
                 <p class="text-xs text-slate-300 instruction-text bg-black/30 p-3 rounded-2xl border border-white/5 leading-relaxed break-words">
                     <b class="text-slate-400 text-[11px] block mb-1 uppercase tracking-wider font-semibold">${currentLang === 'en' ? 'Instructions:' : 'Hazırlanışı:'}</b>
@@ -3409,7 +3420,7 @@ function createCocktailCardElement(item, isMissingList) {
 
                 <button type="button" data-personal="prepared" data-id="${escapeHTML(d.idDrink)}" class="personal-prepared">${currentLang === 'en' ? 'I made this' : 'Hazırladım'}</button>
                 <button data-action="open-mix-mode" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs transition-all mt-2" data-stop-card>
-                    <span>🚀</span><span>${currentLang === 'en' ? 'Start Step-by-Step Mix' : 'Adım Adım Hazırlamaya Başla'}</span>
+                    <span><i class="bci bci-rocket" aria-hidden="true"></i></span><span>${currentLang === 'en' ? 'Start Step-by-Step Mix' : 'Adım Adım Hazırlamaya Başla'}</span>
                 </button>
             </div>
         `;
@@ -3438,7 +3449,7 @@ function createCocktailCardElement(item, isMissingList) {
                 }
                 details.classList.add('open');
                 track('recipe', d.isCustom ? 'custom' : d.idDrink);
-                icon.innerText = '✕'; icon.setAttribute('aria-label', currentLang === 'en' ? 'Close' : 'Kapat');
+                icon.innerHTML = '<i class="bci bci-x" aria-hidden="true"></i>'; icon.setAttribute('aria-label', currentLang === 'en' ? 'Close' : 'Kapat');
 
                 // Android uygulaması için akıllı reklam tetikleyicisi
                 if (window.AndroidBridge && typeof window.AndroidBridge.onRecipeOpened === 'function') {
@@ -3541,8 +3552,8 @@ async function shareCustomRecipe(id, event) {
     const reqs = Array.isArray(recipe.customIngredients) ? recipe.customIngredients : [];
     const ingredientsText = reqs.map(i => `- ${i}`).join('\n');
     const shareText = currentLang === 'en'
-        ? `🍹 *${recipe.strDrink}* (Custom Recipe)\n\n🔹 *Ingredients:*\n${ingredientsText}\n\n🔸 *Instructions:*\n${recipe.strInstructions}\n\n_Crafted with Pocket Bar!_`
-        : `🍹 *${recipe.strDrink}* (Özel Tarif)\n\n🔹 *Malzemeler:*\n${ingredientsText}\n\n🔸 *Hazırlanışı:*\n${recipe.strInstructions}\n\n_Bar Cepte ile hazırlandı!_`;
+        ? `*${recipe.strDrink}* (Custom Recipe)\n\n*Ingredients:*\n${ingredientsText}\n\n*Instructions:*\n${recipe.strInstructions}\n\n_Crafted with Pocket Bar!_`
+        : `*${recipe.strDrink}* (Özel Tarif)\n\n*Malzemeler:*\n${ingredientsText}\n\n*Hazırlanışı:*\n${recipe.strInstructions}\n\n_Bar Cepte ile hazırlandı!_`;
 
     if (navigator.share) {
         navigator.share({
@@ -3625,11 +3636,11 @@ function renderShoppingList() {
         const encodedItem = encodeURIComponent(item);
         const translatedName = translateIngredientName(item);
         const safeItem = escapeHTML(translatedName || item);
-        const boughtText = I18N[currentLang].bought || (currentLang === 'en' ? '✓ Got It' : '✓ Aldım');
+        const boughtText = I18N[currentLang].bought || (currentLang === 'en' ? 'Got It' : 'Aldım');
         const removeText = I18N[currentLang].remove || (currentLang === 'en' ? 'Delete' : 'Sil');
         row.innerHTML = `
             <div class="flex items-center gap-2 min-w-0">
-                <span class="text-amber-400 shrink-0">🛒</span>
+                <span class="text-amber-400 shrink-0"><i class="bci bci-cart" aria-hidden="true"></i></span>
                 <span class="capitalize text-slate-200 font-semibold text-xs break-words min-w-0">${safeItem}</span>
             </div>
             <div class="flex gap-2 shrink-0">
@@ -3968,10 +3979,10 @@ function applyLanguage() {
     const langBtn = document.getElementById('btn-lang-toggle');
     if (langBtn) {
         if (currentLang === 'en') {
-            langBtn.innerHTML = '<span class="text-slate-400 font-medium">TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-amber-300 font-black">EN 🇺🇸</span>';
+            langBtn.innerHTML = '<span class="text-slate-400 font-medium">TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-amber-300 font-black">EN</span>';
             langBtn.title = 'Switch to Turkish / Türkçeye Geç';
         } else {
-            langBtn.innerHTML = '<span class="text-amber-300 font-black">🇹🇷 TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">EN</span>';
+            langBtn.innerHTML = '<span class="text-amber-300 font-black"> TR</span><span class="text-slate-500 text-[10px]">/</span><span class="text-slate-400 font-medium">EN</span>';
             langBtn.title = 'Switch to English / İngilizceye Geç';
         }
     }
@@ -4142,13 +4153,13 @@ function applyLanguage() {
         const video = document.getElementById('hero-cocktail-video');
         const isPlaying = video && !video.paused && video.classList.contains('video-active');
         heroVidText.innerText = isPlaying 
-            ? (currentLang === 'en' ? '🎬 Live' : '🎬 Canlı')
-            : (currentLang === 'en' ? '🖼️ Photo' : '🖼️ Foto');
+            ? (currentLang === 'en' ? 'Live' : 'Canlı')
+            : (currentLang === 'en' ? 'Photo' : 'Foto');
     }
 
     // Bar Dashboard
     const dashH2 = document.querySelector('#bar-dashboard h2');
-    if (dashH2) dashH2.innerHTML = `<span>📊</span> ${t.barOverview}`;
+    if (dashH2) dashH2.innerHTML = `<span><i class="bci bci-chart" aria-hidden="true"></i></span> ${t.barOverview}`;
     const dashOverview = document.querySelector('#bar-dashboard .border-b span.font-mono');
     if (dashOverview) dashOverview.innerText = t.overviewBadge;
     const dashFillRateLabel = document.querySelector('#bar-dashboard .grid > div:nth-child(1) p.text-slate-400');
@@ -4156,20 +4167,20 @@ function applyLanguage() {
     const dashReadyCountLabel = document.querySelector('#bar-dashboard .grid > div:nth-child(2) p.text-slate-400');
     if (dashReadyCountLabel) dashReadyCountLabel.innerText = t.availableCocktails;
     const dashAdviceTitle = document.querySelector('#bar-advice-box p:first-child');
-    if (dashAdviceTitle) dashAdviceTitle.innerHTML = `<span>💡</span> ${t.smartAdviceTitle}`;
+    if (dashAdviceTitle) dashAdviceTitle.innerHTML = `<span><i class="bci bci-bulb" aria-hidden="true"></i></span> ${t.smartAdviceTitle}`;
     const dashIngsLabel = document.querySelector('#bar-dashboard .flex.justify-between p.font-semibold');
     if (dashIngsLabel) dashIngsLabel.innerText = t.ingredientsInBar;
     const btnClearBar = document.getElementById('btn-dashboard-clear-bar');
     if (btnClearBar) {
-        btnClearBar.innerHTML = `<span>🗑️</span> ${t.emptyBarBtn}`;
+        btnClearBar.innerHTML = `<span><i class="bci bci-trash" aria-hidden="true"></i></span> ${t.emptyBarBtn}`;
     }
     const trayClearBtn = document.querySelector('#selected-ingredients-tray [data-action="clear-all-ingredients"]');
     if (trayClearBtn) {
-        trayClearBtn.innerHTML = `<span>🗑️</span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
+        trayClearBtn.innerHTML = `<span><i class="bci bci-trash" aria-hidden="true"></i></span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
     }
     const trayLabel = document.querySelector('#selected-ingredients-tray span.text-amber-400');
     if (trayLabel) {
-        trayLabel.innerHTML = `<span>🍸</span> ${currentLang === 'en' ? 'Ingredients in Your Bar' : 'Barındaki Malzemeler'} (<span id="selected-badge-count">${selectedIngredients.length}</span>)`;
+        trayLabel.innerHTML = `<span><i class="bci bci-martini" aria-hidden="true"></i></span> ${currentLang === 'en' ? 'Ingredients in Your Bar' : 'Barındaki Malzemeler'} (<span id="selected-badge-count">${selectedIngredients.length}</span>)`;
     }
 
     // Panels
@@ -4223,9 +4234,9 @@ function applyLanguage() {
     const syncCheckNote = document.querySelector('#sync-panel .border-t p');
     if (syncCheckNote) syncCheckNote.innerText = t.syncOnlineDbNote;
     const btnForceSync = document.getElementById('btn-force-sync');
-    if (btnForceSync) btnForceSync.innerHTML = `<span>🔄</span> ${t.updateDb}`;
+    if (btnForceSync) btnForceSync.innerHTML = `<span><i class="bci bci-refresh" aria-hidden="true"></i></span> ${t.updateDb}`;
     const btnCheckUpdate = document.querySelector('[data-ui="ui-37"]');
-    if (btnCheckUpdate) btnCheckUpdate.innerHTML = `<span>🚀</span> ${t.checkUpdates} (v1.1.0)`;
+    if (btnCheckUpdate) btnCheckUpdate.innerHTML = `<span><i class="bci bci-rocket" aria-hidden="true"></i></span> ${t.checkUpdates} (v1.1.0)`;
 
     // Affiliate Card
     const affLabel = document.querySelector('#affiliate-banner span.tracking-wider');
@@ -4348,11 +4359,11 @@ function applyLanguage() {
 
     // Reserve Modal
     const reserveClubBadge = document.querySelector('#reserve-modal .inline-flex');
-    if (reserveClubBadge) reserveClubBadge.innerHTML = `<span>👑</span> ${t.reserveExclusiveClub}`;
+    if (reserveClubBadge) reserveClubBadge.innerHTML = `<span><i class="bci bci-crown" aria-hidden="true"></i></span> ${t.reserveExclusiveClub}`;
     const planMonthly = document.querySelector('[data-plan="monthly"]');
     if (planMonthly) planMonthly.innerText = currentLang === 'en' ? 'Monthly' : 'Aylık';
     const planAnnual = document.querySelector('[data-plan="annual"]');
-    if (planAnnual) planAnnual.innerText = currentLang === 'en' ? '⭐ Annual' : '⭐ Yıllık';
+    if (planAnnual) planAnnual.innerText = currentLang === 'en' ? 'Annual' : 'Yıllık';
     const reserveBullets = document.querySelectorAll('#reserve-status-inactive .bg-black\\/40 > div span:last-child');
     if (reserveBullets.length >= 4) {
         reserveBullets[0].innerHTML = t.reserveBullet1;
@@ -4399,7 +4410,7 @@ function applyLanguage() {
     const demoLoginBtn = document.getElementById('btn-demo-login');
     if (demoLoginBtn) demoLoginBtn.innerText = t.authGuestBtn;
     const authSyncCardTitle = document.querySelector('#auth-view-logged-in .bg-white\\/5 .font-bold span:first-child');
-    if (authSyncCardTitle) authSyncCardTitle.innerHTML = `<span>☁️</span> ${t.authSyncTitle}`;
+    if (authSyncCardTitle) authSyncCardTitle.innerHTML = `<span><i class="bci bci-cloud" aria-hidden="true"></i></span> ${t.authSyncTitle}`;
     const authSyncCardActive = document.querySelector('#auth-view-logged-in .bg-white\\/5 .font-bold span:last-child');
     if (authSyncCardActive) authSyncCardActive.innerHTML = t.authSyncActive;
     const authSyncCardDesc = document.querySelector('#auth-view-logged-in .bg-white\\/5 > p');
@@ -4415,7 +4426,7 @@ function applyLanguage() {
     if (authRestoreBtn) authRestoreBtn.innerText = currentLang === 'en' ? 'Restore cloud backup' : 'Buluttan geri yükle';
     if (window.BarAuth) window.BarAuth.renderAuthModalState();
     const authBindTitle = document.querySelector('#auth-license-bind-section .font-bold');
-    if (authBindTitle) authBindTitle.innerHTML = `<span>👑</span> ${t.authLinkTitle}`;
+    if (authBindTitle) authBindTitle.innerHTML = `<span><i class="bci bci-crown" aria-hidden="true"></i></span> ${t.authLinkTitle}`;
     const authBindDesc = document.querySelector('#auth-license-bind-section > p');
     if (authBindDesc) authBindDesc.innerText = t.authLinkDesc;
     const bindLicenseBtn = document.getElementById('btn-bind-account-license');
@@ -4542,13 +4553,13 @@ function initHeroVideo() {
             video.classList.add('video-active');
             video.play().then(() => {
                 if (pulseDot) pulseDot.style.background = '#10b981';
-                if (toggleText) toggleText.innerText = currentLang === 'en' ? '🎬 Live' : '🎬 Canlı';
+                if (toggleText) toggleText.innerText = currentLang === 'en' ? 'Live' : 'Canlı';
             }).catch(() => {});
         } else {
             video.pause();
             video.classList.remove('video-active');
             if (pulseDot) pulseDot.style.background = '#64748b';
-            if (toggleText) toggleText.innerText = currentLang === 'en' ? '🖼️ Photo' : '🖼️ Foto';
+            if (toggleText) toggleText.innerText = currentLang === 'en' ? 'Photo' : 'Foto';
         }
     });
 }
@@ -4744,17 +4755,21 @@ async function fetchAndStoreData() {
 
     const uniqueDrinks = new Map();
     loadedDrinks.forEach(drink => {
-        if (drink && drink.idDrink) uniqueDrinks.set(drink.idDrink, drink);
+        if (drink && drink.idDrink && isValidCocktailObject(drink)) uniqueDrinks.set(drink.idDrink, drink);
     });
     allCocktails = Array.from(uniqueDrinks.values());
     allCocktails.forEach(enrichDrink);
 
     if (allCocktails.length > 0 && db) {
         try {
-            const writeTx = db.transaction("cocktails", "readwrite");
-            const writeStore = writeTx.objectStore("cocktails");
-            allCocktails.forEach(drink => writeStore.put(drink));
-        } catch(e) {}
+            await new Promise((resolve, reject) => {
+                const writeTx = db.transaction("cocktails", "readwrite");
+                writeTx.oncomplete = resolve;
+                writeTx.onerror = writeTx.onabort = () => reject(writeTx.error);
+                const writeStore = writeTx.objectStore("cocktails");
+                allCocktails.forEach(drink => writeStore.put(drink));
+            });
+        } catch(e) { console.warn('IDB cocktail yazma hatası (fetchAndStore):', e); }
     }
 
     try {
@@ -4802,7 +4817,7 @@ async function updateDataInBackground(force = false) {
 
         const uniqueDrinks = new Map();
         apiDrinks.forEach(drink => {
-            if (drink && drink.idDrink) uniqueDrinks.set(drink.idDrink, drink);
+            if (drink && drink.idDrink && isValidCocktailObject(drink)) uniqueDrinks.set(drink.idDrink, drink);
         });
         const newCocktails = Array.from(uniqueDrinks.values());
 
@@ -4815,9 +4830,15 @@ async function updateDataInBackground(force = false) {
         if (newCocktails.length > allCocktails.length || force) {
             newCocktails.forEach(enrichDrink);
             if (db) {
-                const writeTx = db.transaction("cocktails", "readwrite");
-                const writeStore = writeTx.objectStore("cocktails");
-                newCocktails.forEach(drink => writeStore.put(drink));
+                try {
+                    await new Promise((resolve, reject) => {
+                        const writeTx = db.transaction("cocktails", "readwrite");
+                        writeTx.oncomplete = resolve;
+                        writeTx.onerror = writeTx.onabort = () => reject(writeTx.error);
+                        const writeStore = writeTx.objectStore("cocktails");
+                        newCocktails.forEach(drink => writeStore.put(drink));
+                    });
+                } catch(e) { console.warn('IDB cocktail yazma hatası (updateInBackground):', e); }
             }
             
             allCocktails = newCocktails;
