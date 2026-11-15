@@ -881,6 +881,8 @@ const ingredientTranslations = {
     "stout": "Stout Bira",
     "cider": "Elma Şarabı",
     "bitters": "Bitters",
+    "proof rum": "Yüksek Dereceli Rom",
+    "godiva liqueur": "Godiva Çikolata Likörü",
     "angostura bitters": "Angostura Bitters",
     "orange bitters": "Portakal Bitters",
     "lemon": "Limon",
@@ -1471,7 +1473,7 @@ function autoExtractAllIngredients() {
                 const lowerIng = cleanIng.toLowerCase();
                 
                 if (!existingIds.includes(lowerIng) && !newIngredientsMap.has(lowerIng)) {
-                    let isAlcohol = /(vodka|rum|gin|tequila|whiskey|liqueur|beer|wine|brandy|cognac|champagne|ale|stout|bourbon|scotch|amaretto|aperol|campari|vermouth|sec|schnapps|cider|rakı|raki|votka|viski|rom|cin|likör|bira|şarap)/i.test(lowerIng);
+                    let isAlcohol = isAlcoholicIngredientName(lowerIng);
                     let isSweet = /(syrup|sugar|sweet|juice|cola|soda|grenadine|cream|honey|nectar|fruit|şeker|şurup|bal)/i.test(lowerIng);
                     let isSour = /(lemon|lime|sour|bitter|grapefruit|limon|ekşi)/i.test(lowerIng);
 
@@ -1694,25 +1696,29 @@ function setAlcoholSubCategory(subCat, btnEl) {
     renderIngredients();
 }
 
+// Whole-word match: "gin" must not match "ginger", "cin" not "cinnamon", "ale" not "pale".
+function wordPattern(words) {
+    return new RegExp(`(?<![a-zçğıöşü])(${words})(?![a-zçğıöşü])`, 'i');
+}
+const ALCOHOL_WORDS = wordPattern('vodka|rum|gin|tequila|mezcal|pisco|whiske?y|whisky|bourbon|scotch|brandy|cognac|liqueur|schnapps|amaretto|aperol|campari|vermouth|triple sec|sambuca|absinthe|wine|champagne|prosecco|beer|ale|stout|cider|sherry|port|sake|everclear|firewater|rumple minze|jägermeister|jagermeister|goldschlager|apfelkorn|advocaat|southern comfort|yukon jack|rakı|raki|votka|cin|rom|viski|konyak|likör|bira|şarap|şampanya');
+const NON_ALCOHOLIC = /ginger (ale|beer)|root beer|alkolsüz|non-alcoholic|syrup|şurup/i;
+function isAlcoholicIngredientName(name) {
+    const lower = String(name || '').toLowerCase();
+    return !NON_ALCOHOLIC.test(lower) && ALCOHOL_WORDS.test(lower);
+}
+const ALC_GROUPS = [
+    // Flavoured brandies (peach, apricot, blackberry, cherry…) are liqueurs, so liqueurs are checked first.
+    ['likor-aperitif', wordPattern('liqueur|likör|likörü|schnapps|triple sec|cointreau|curacao|curaçao|amaretto|campari|aperol|kahlua|baileys|sambuca|ouzo|absinthe|chartreuse|drambuie|frangelico|galliano|midori|malibu|passoa|(?:apricot|peach|blackberry|cherry|coffee|apple) brandy')],
+    ['votka-cin', wordPattern('vodka|votka|gin|cin')],
+    ['viski-konyak', wordPattern('whiske?y|whisky|bourbon|scotch|rye|viski|viskisi|brandy|cognac|konyak|brendi|pisco')],
+    ['tekila-rom', wordPattern('tequila|tekila|mezcal|rum|rom|cachaca|cachaça')],
+    ['sarap-bira', wordPattern('wine|şarap|vermouth|vermut|champagne|prosecco|şampanya|beer|bira|ale|stout|cider')]
+];
 function getAlcoholGroup(ing) {
     if (ing.cat === 'mutfak') return 'mutfak';
     const lower = ((ing.id || '') + ' ' + (ing.name || '')).toLowerCase();
-    if (/(vodka|votka|gin|cin)/i.test(lower)) {
-        return 'votka-cin';
-    }
-    if (/(whiskey|whisky|bourbon|scotch|rye|viski|brandy|cognac|konyak|brendi|pisco)/i.test(lower)) {
-        return 'viski-konyak';
-    }
-    if (/(tequila|tekila|mezcal|rum|rom|cachaca|cachaça)/i.test(lower)) {
-        return 'tekila-rom';
-    }
-    if (/(liqueur|likör|triple sec|cointreau|curacao|curaçao|amaretto|campari|aperol|kahlua|baileys|sambuca|schnapps|ouzo|absinthe|chartreuse|drambuie|frangelico|galliano|midori|malibu|passoa)/i.test(lower)) {
-        return 'likor-aperitif';
-    }
-    if (/(wine|şarap|vermouth|vermut|champagne|prosecco|şampanya|beer|bira|ale|stout|cider)/i.test(lower)) {
-        return 'sarap-bira';
-    }
-    return 'diger-alkol';
+    const hit = ALC_GROUPS.find(([, pattern]) => pattern.test(lower));
+    return hit ? hit[0] : 'diger-alkol';
 }
 
 function getAlcoholGroupLabel(groupId) {
