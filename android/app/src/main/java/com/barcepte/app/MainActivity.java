@@ -119,6 +119,7 @@ public class MainActivity extends Activity {
         settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);

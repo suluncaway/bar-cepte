@@ -171,8 +171,6 @@ dialog::backdrop { background:rgba(0,0,0,.7); }
 .pill-btn:active { transform:scale(.98); }
 .animate-fade-in { animation:fadeIn .24s ease both; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)} }
-.timer-finish-anim { animation:timerPulse .6s ease-in-out infinite; color:var(--accent-gold)!important; }
-@keyframes timerPulse { 50%{transform:scale(1.04)} }
 
 @media (max-width:900px) {
     .topbar,.main-navigation { padding-left:24px; padding-right:24px; }

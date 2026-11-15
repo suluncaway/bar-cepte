@@ -185,8 +185,8 @@ const I18N = {
         timerPreset15: "15s Shaker",
         timerPreset30: "30s Karıştır",
         timerPreset45: "45s Soğut",
-        timerStart: "▶ Başlat",
-        timerPause: "⏸ Duraklat",
+        timerStart: "Başlat",
+        timerPause: "Duraklat",
         timerReset: "Sıfırla",
         mixEyebrow: "BARMEN MODU",
         mixPrev: "← Önceki",
@@ -196,7 +196,7 @@ const I18N = {
         reserveBullet1: "<strong>%100 Reklamsız Deneyim:</strong> Sıfır reklam, kesintisiz hız.",
         reserveBullet2: "<strong>Gizli Speakeasy Seçkisi:</strong> Usta barmenlerin imza kokteylleri ve şurup rehberleri.",
         reserveBullet3: "<strong>Parti & Porsiyon Modu:</strong> 10-50 kişilik davetler için tam malzeme hesabı.",
-        reserveBullet4: "<strong>Reserve Altın Rozeti:</strong> Hesabında parıldayan statü ve öncelikli destek.",
+        reserveBullet4: "<strong>Reserve rozeti:</strong> Hesabında görünür, öncelikli destek dahil.",
         reserveHaveKey: "Zaten bir aktivasyon kodun var mı?",
         reserveActivateBtn: "Aktive Et",
         reserveActiveHeading: "Reserve Üyeliğiniz Aktif!",
@@ -366,8 +366,8 @@ const I18N = {
         timerPreset15: "15s Shake",
         timerPreset30: "30s Stir",
         timerPreset45: "45s Chill",
-        timerStart: "▶ Start",
-        timerPause: "⏸ Pause",
+        timerStart: "Start",
+        timerPause: "Pause",
         timerReset: "Reset",
         mixEyebrow: "BARTENDER MODE",
         mixPrev: "← Previous",
@@ -377,7 +377,7 @@ const I18N = {
         reserveBullet1: "<strong>100% Ad-Free Experience:</strong> Zero ads, pure speed.",
         reserveBullet2: "<strong>Secret Speakeasy Curation:</strong> Master bartenders' signature cocktails & syrup guides.",
         reserveBullet3: "<strong>Party & Batch Calculator:</strong> Exact ingredient scaling for 10-50 guests.",
-        reserveBullet4: "<strong>Reserve Gold Badge:</strong> Shining status on your account & priority support.",
+        reserveBullet4: "<strong>Reserve badge:</strong> Shown on your account, with priority support.",
         reserveHaveKey: "Already have an activation code?",
         reserveActivateBtn: "Activate",
         reserveActiveHeading: "Your Reserve Membership is Active!",
@@ -499,14 +499,7 @@ function getTimerPresetLabel(seconds) {
 
 function openTimerModal(duration = 15, label = '') {
     triggerHaptic('light');
-    let finalLabel = label;
-    if (!finalLabel ||
-        finalLabel === 'Buzla kuvvetlice çalkala (Shaker)' || finalLabel === 'Shake vigorously with ice (Shaker)' ||
-        finalLabel === 'Buzla nazikçe karıştır (Stir)' || finalLabel === 'Stir gently with ice (Stir)' ||
-        finalLabel === 'İyice soğut ve harmanla' || finalLabel === 'Chill thoroughly & blend') {
-        finalLabel = getTimerPresetLabel(duration);
-    }
-    setTimerDuration(duration, finalLabel);
+    setTimerDuration(duration, label);
     const modal = document.getElementById('shaker-timer-modal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -527,6 +520,7 @@ function setTimerDuration(seconds, label = '') {
     pauseTimer();
     timerDefault = seconds;
     timerRemaining = seconds;
+    setTimerServed(false);
     updateTimerDisplay();
     let finalLabel = label;
     if (!finalLabel ||
@@ -538,11 +532,9 @@ function setTimerDuration(seconds, label = '') {
     const labelEl = document.getElementById('timer-label');
     if (labelEl) labelEl.innerText = finalLabel;
     document.querySelectorAll('.timer-preset-btn').forEach(btn => {
-        if (btn.innerText.includes(`${seconds}s`)) {
-            btn.className = "timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px]";
-        } else {
-            btn.className = "timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-black/40 text-slate-300 border border-white/10 text-[11px]";
-        }
+        const on = btn.innerText.includes(`${seconds}s`);
+        btn.classList.toggle('is-selected', on);
+        btn.setAttribute('aria-pressed', String(on));
     });
 }
 
@@ -552,6 +544,17 @@ function updateTimerDisplay() {
     const mins = Math.floor(timerRemaining / 60);
     const secs = timerRemaining % 60;
     display.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    const coaster = document.getElementById('timer-coaster');
+    if (coaster) coaster.style.setProperty('--p', timerDefault > 0 ? String(1 - timerRemaining / timerDefault) : '0');
+}
+
+function setTimerServed(served) {
+    const coaster = document.getElementById('timer-coaster');
+    if (!coaster) return;
+    coaster.classList.toggle('is-served', served);
+    const text = coaster.querySelector('.timer-stamp-text');
+    // Uppercase in JS with the right locale: CSS text-transform under lang="tr" turns "it" into "İT".
+    if (text) text.innerText = served ? (currentLang === 'en' ? 'SERVE IT' : 'Servis et'.toLocaleUpperCase('tr')) : '';
 }
 
 function toggleTimer() {
@@ -567,12 +570,11 @@ function startTimer() {
     timerRunning = true;
     triggerHaptic('light');
     const toggleBtn = document.getElementById('btn-timer-toggle');
-    const display = document.getElementById('timer-display');
     if (toggleBtn) {
-        toggleBtn.innerText = currentLang === 'en' ? "⏸ Pause" : "⏸ Duraklat";
-        toggleBtn.className = "flex-1 bg-amber-600/80 text-white font-black py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs";
+        toggleBtn.innerHTML = '<i class="bci bci-pause" aria-hidden="true"></i> ' + (currentLang === 'en' ? 'Pause' : 'Duraklat');
+        toggleBtn.classList.add('is-running');
     }
-    if (display) display.classList.remove('timer-finish-anim');
+    setTimerServed(false);
 
     timerInterval = setInterval(() => {
         timerRemaining--;
@@ -589,8 +591,8 @@ function pauseTimer() {
     timerInterval = null;
     const toggleBtn = document.getElementById('btn-timer-toggle');
     if (toggleBtn) {
-        toggleBtn.innerText = currentLang === 'en' ? "▶ Start" : "▶ Başlat";
-        toggleBtn.className = "flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs hover:from-amber-400 hover:to-amber-500";
+        toggleBtn.innerHTML = '<i class="bci bci-play" aria-hidden="true"></i> ' + (currentLang === 'en' ? 'Start' : 'Başlat');
+        toggleBtn.classList.remove('is-running');
     }
 }
 
@@ -598,16 +600,14 @@ function resetTimer() {
     pauseTimer();
     timerRemaining = timerDefault;
     updateTimerDisplay();
-    const display = document.getElementById('timer-display');
-    if (display) display.classList.remove('timer-finish-anim');
+    setTimerServed(false);
 }
 
 function finishTimer() {
     pauseTimer();
     triggerHaptic('timer');
     playChimeSound();
-    const display = document.getElementById('timer-display');
-    if (display) display.classList.add('timer-finish-anim');
+    setTimerServed(true);
 }
 
 function openTimerForTechnique(instructions, drinkName, event) {
@@ -1982,7 +1982,7 @@ function renderIngredients() {
             }
             const clearAllBtn = tray.querySelector('[data-action="clear-all-ingredients"]');
             if (clearAllBtn) {
-                clearAllBtn.innerHTML = `<span><i class="bci bci-trash" aria-hidden="true"></i></span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
+                clearAllBtn.innerHTML = `<span><i class="bci bci-trash" aria-hidden="true"></i></span> ${currentLang === 'en' ? 'Empty bar' : 'Barı boşalt'}`;
             }
             chipsContainer.innerHTML = selectedIngredients.map(id => {
                 const item = popularIngredients.find(pi => pi.id === id);
@@ -2151,15 +2151,24 @@ function clearSelection() {
         return;
     }
     triggerHaptic('medium');
-    const count = selectedIngredients.length;
+    const previous = selectedIngredients.slice();
+    const count = previous.length;
+    const persist = () => { try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {} };
+    const refresh = () => { renderIngredients(); filterCocktails(); renderDashboard(); };
     selectedIngredients = [];
-    try { localStorage.setItem('selectedIngredients', JSON.stringify(selectedIngredients)); } catch(e) {}
+    persist();
     if (searchInput) searchInput.value = '';
-    renderIngredients();
-    filterCocktails();
-    renderDashboard();
+    refresh();
     if (count > 0) {
-        showToast(currentLang === 'en' ? `Cleared ${count} ingredients from your bar.` : `${count} malzeme barından temizlendi.`, 'info');
+        showToast(currentLang === 'en' ? `${count} ingredients removed from your bar.` : `${count} malzeme barından çıkarıldı.`, 'info', {
+            label: currentLang === 'en' ? 'Undo' : 'Geri al',
+            onClick: () => {
+                selectedIngredients = Array.from(new Set([...previous, ...selectedIngredients]));
+                persist();
+                refresh();
+                showToast(currentLang === 'en' ? 'Your bar is back.' : 'Barın geri geldi.', 'success');
+            }
+        });
     }
 }
 
@@ -2586,24 +2595,35 @@ function getIngredientSubstitute(name) {
     return null;
 }
 
-function showToast(message, type = 'info') {
+function showToast(message, type = 'info', action = null) {
     let container = document.getElementById('bar-toast-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'bar-toast-container';
+        container.setAttribute('role', 'status');
+        container.setAttribute('aria-live', 'polite');
         container.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none px-4 w-full max-w-sm';
         document.body.appendChild(container);
     }
     const toast = document.createElement('div');
     const borderColor = type === 'success' ? 'border-emerald-500/40 text-emerald-300' : 'border-amber-500/40 text-amber-300';
     toast.className = `acrylic-card px-4 py-2.5 rounded-2xl border ${borderColor} text-xs font-semibold shadow-2xl flex items-center gap-2 animate-fade-in transition-all pointer-events-auto`;
-    toast.innerHTML = `<span><i class="bci bci-martini" aria-hidden="true"></i></span><span>${escapeHTML(message)}</span>`;
-    container.appendChild(toast);
-    setTimeout(() => {
+    toast.innerHTML = `<span><i class="bci bci-martini" aria-hidden="true"></i></span><span class="toast-message">${escapeHTML(message)}</span>`;
+    const dismiss = () => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-10px)';
         setTimeout(() => toast.remove(), 300);
-    }, 2800);
+    };
+    if (action && typeof action.onClick === 'function') {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'toast-action';
+        btn.textContent = action.label;
+        btn.addEventListener('click', () => { clearTimeout(timer); toast.remove(); action.onClick(); });
+        toast.appendChild(btn);
+    }
+    container.appendChild(toast);
+    const timer = setTimeout(dismiss, action ? 7000 : 2800);
 }
 
 function applySubstituteToBar(ingEncoded, subEncoded, event) {
@@ -2815,7 +2835,7 @@ function toggleMixTimer() {
                 if (display) display.textContent = '00:00';
                 if (runBtn) runBtn.textContent = currentLang === 'en' ? 'Done!' : 'Bitti!';
                 triggerHaptic('success');
-                showToast(currentLang === 'en' ? "⏱️ Time's up! Great shake." : '⏱️ Süre doldu! Harika bir çalkalama.', 'success');
+                showToast(currentLang === 'en' ? "Time's up! Great shake." : 'Süre doldu! Harika bir çalkalama.', 'success');
             } else {
                 if (display) display.textContent = `00:${String(mixTimerRemaining).padStart(2, '0')}`;
             }
@@ -3405,7 +3425,7 @@ function createCocktailCardElement(item, isMissingList) {
                 <!-- Bardak & Teknik & Sayaç -->
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${techniqueBadge}</span>
-                    <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm">⏱️ ${currentLang === 'en' ? 'Timer' : 'Sayaç'}</button>
+                    <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm"><i class="bci bci-timer" aria-hidden="true"></i> ${currentLang === 'en' ? 'Timer' : 'Sayaç'}</button>
                     <button data-action="share-link" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> ${currentLang === 'en' ? 'Share link' : 'Bağlantı'}</button>
                     <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm" data-stop-card><i class="bci bci-camera" aria-hidden="true"></i> ${currentLang === 'en' ? 'Story Card' : 'Story İndir'}</button>
                     <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${glassBadge}</span>
@@ -4176,7 +4196,7 @@ function applyLanguage() {
     }
     const trayClearBtn = document.querySelector('#selected-ingredients-tray [data-action="clear-all-ingredients"]');
     if (trayClearBtn) {
-        trayClearBtn.innerHTML = `<span><i class="bci bci-trash" aria-hidden="true"></i></span> ${currentLang === 'en' ? 'Clear All' : 'Tümünü Temizle'}`;
+        trayClearBtn.innerHTML = `<span><i class="bci bci-trash" aria-hidden="true"></i></span> ${currentLang === 'en' ? 'Empty bar' : 'Barı boşalt'}`;
     }
     const trayLabel = document.querySelector('#selected-ingredients-tray span.text-amber-400');
     if (trayLabel) {
@@ -4308,14 +4328,11 @@ function applyLanguage() {
     if (preset45) preset45.innerText = t.timerPreset45;
     const timerToggleBtn = document.getElementById('btn-timer-toggle');
     if (timerToggleBtn) {
-        if (typeof timerRunning !== 'undefined' && timerRunning) {
-            timerToggleBtn.innerText = t.timerPause;
-        } else {
-            timerToggleBtn.innerText = t.timerStart;
-        }
+        const running = typeof timerRunning !== 'undefined' && timerRunning;
+        timerToggleBtn.innerHTML = `<i class="bci bci-${running ? 'pause' : 'play'}" aria-hidden="true"></i> ${escapeHTML(running ? t.timerPause : t.timerStart)}`;
     }
     const timerResetBtn = document.querySelector('[data-ui="ui-43"]');
-    if (timerResetBtn) timerResetBtn.innerText = t.timerReset;
+    if (timerResetBtn) timerResetBtn.innerHTML = `<i class="bci bci-refresh" aria-hidden="true"></i> ${escapeHTML(t.timerReset)}`;
     const timerLabelEl = document.getElementById('timer-label');
     if (timerLabelEl) {
         timerLabelEl.innerText = getTimerPresetLabel(timerDefault || 15);

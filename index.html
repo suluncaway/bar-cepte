@@ -141,7 +141,6 @@
                     <button id="hero-build-bar" class="primary-action">Barımı oluştur <span aria-hidden="true">↗</span></button>
                     <button id="hero-surprise" class="text-action">Bana bir tarif öner <span aria-hidden="true">→</span></button>
                 </div>
-                <a id="hero-business-entry" class="hero-business-link" href="business.html">Bir bar mı yönetiyorsun? İşletme panelini aç →</a>
                 <div class="hero-note"><span class="status-dot"></span> Alkollü & alkolsüz tarifler <span class="note-divider"></span> Tamamen senin zevkin</div>
             </div>
             <figure class="hero-photo">
@@ -160,13 +159,7 @@
         <section id="home-daily" class="home-daily hidden" aria-labelledby="home-daily-title">
             <img id="home-daily-img" alt="" loading="lazy">
             <div><span class="eyebrow" id="home-daily-eyebrow">BUGÜNÜN KOKTEYLİ</span><h2 id="home-daily-title"></h2><p id="home-daily-meta"></p>
-            <button id="home-daily-open" type="button" class="primary-action">Tarifi aç <span aria-hidden="true">→</span></button></div>
-        </section>
-        <section id="home-shortcuts" class="home-shortcuts" aria-label="Hızlı erişim">
-            <button type="button" class="shortcut-tile" data-shortcut="ingredients"><span aria-hidden="true"><i class="bci bci-ice" aria-hidden="true"></i></span><strong>Malzemelerim</strong><small>Elindekileri seç</small></button>
-            <button type="button" class="shortcut-tile" data-shortcut="alkol"><span aria-hidden="true"><i class="bci bci-martini" aria-hidden="true"></i></span><strong>Tarifler</strong><small>Ara, filtrele, keşfet</small></button>
-            <button type="button" class="shortcut-tile" data-shortcut="favorites"><span aria-hidden="true"><i class="bci bci-heart" aria-hidden="true"></i></span><strong>Favoriler</strong><small>Kaydettiklerin</small></button>
-            <button type="button" class="shortcut-tile" data-shortcut="ai"><span aria-hidden="true"><i class="bci bci-sparkle" aria-hidden="true"></i></span><strong>AI Barmen</strong><small>Sana özel öneri</small></button>
+            <button id="home-daily-open" type="button" class="text-action">Tarifi aç <span aria-hidden="true">→</span></button></div>
         </section>
         <section id="discovery-controls" class="hidden discovery-controls" aria-labelledby="discovery-heading">
             <div class="section-intro">
@@ -183,7 +176,7 @@
             <div class="flex gap-2">
                 <div class="relative w-full">
                     <span class="absolute left-3.5 top-2.5 text-xs text-slate-400"><i class="bci bci-martini" aria-hidden="true"></i></span>
-                    <input type="text" id="cocktail-search" list="cocktail-suggestions" autocomplete="off" aria-label="Kokteyl ara" data-ui="ui-14" placeholder="Kokteyl veya malzeme yaz: 'rom nane', 'Margarita'…" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
+                    <input type="search" id="cocktail-search" list="cocktail-suggestions" autocomplete="off" aria-label="Kokteyl ara" data-ui="ui-14" placeholder="Kokteyl veya malzeme yaz: 'rom nane', 'Margarita'…" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
                 </div>
                 <button data-ui="ui-15" class="shrink-0 pill-btn bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 px-3.5 py-2 rounded-2xl text-xs font-bold hover:border-amber-400"><i class="bci bci-dice" aria-hidden="true"></i> Rastgele</button>
             </div>
@@ -276,7 +269,7 @@
             <div class="flex gap-2">
                 <div class="relative w-full">
                     <span class="absolute left-3.5 top-2.5 text-xs text-slate-400"><i class="bci bci-search" aria-hidden="true"></i></span>
-                    <input type="text" id="ing-search" aria-label="Malzeme ara" data-ui="ui-12" placeholder="Malzeme ara: cin, nane, limon…" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
+                    <input type="search" id="ing-search" aria-label="Malzeme ara" data-ui="ui-12" placeholder="Malzeme ara: cin, nane, limon…" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
                 </div>
                 <button data-ui="ui-13" class="shrink-0 pill-btn bg-slate-900/80 border border-white/10 text-rose-400 px-3.5 py-2 rounded-2xl text-xs font-semibold hover:border-rose-500/40"><i class="bci bci-trash" aria-hidden="true"></i> Temizle</button>
             </div>
@@ -287,7 +280,7 @@
                         <span><i class="bci bci-martini" aria-hidden="true"></i></span> Barındaki Malzemeler (<span id="selected-badge-count">0</span>)
                     </span>
                     <button data-action="clear-all-ingredients" class="pill-btn text-[11px] font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1 rounded-xl transition-all">
-                        <span><i class="bci bci-trash" aria-hidden="true"></i></span> Tümünü Temizle
+                        <span><i class="bci bci-trash" aria-hidden="true"></i></span> Barı boşalt
                     </button>
                 </div>
                 <div id="selected-chips-container" class="flex flex-wrap gap-1.5 text-xs"></div>
@@ -383,10 +376,10 @@
         <section id="sync-panel" class="hidden px-4 animate-fade-in space-y-4">
             <div class="acrylic-card p-5 rounded-3xl space-y-3 text-xs">
                 <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider"><i class="bci bci-gear" aria-hidden="true"></i> Veri Yedekleme & Aktarım</h2>
-                <p class="text-slate-400 text-xs">Favori kokteyllerinizi ve kendi tariflerinizi başka bir cihaza taşımak için kodu kopyalayın veya yapıştırın.</p>
+                <p class="text-slate-400 text-xs">Favorilerini ve kendi tariflerini başka bir cihaza taşımak için kodu kopyala ya da yapıştır.</p>
                 <div class="space-y-2.5 pt-2">
                     <button data-ui="ui-34" class="w-full bg-slate-900 border border-white/10 text-white font-semibold py-2.5 rounded-xl hover:border-amber-500 transition-all">Yedekleme Kodunu Kopyala</button>
-                    <textarea id="sync-data-input" rows="3" placeholder="Başka cihazdan aldığınız yedekleme kodunu buraya yapıştırın..." class="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white resize-none outline-none focus:border-amber-500"></textarea>
+                    <textarea id="sync-data-input" rows="3" aria-label="Yedekleme kodu" placeholder="Başka cihazdan aldığın yedekleme kodunu buraya yapıştır…" class="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white resize-none outline-none focus:border-amber-500"></textarea>
                     <button data-ui="ui-35" class="w-full bg-amber-500 text-slate-950 font-bold py-2.5 rounded-xl hover:bg-amber-400 transition-all">Yedeği Geri Yükle</button>
                 </div>
 
@@ -510,30 +503,30 @@
     <!-- Barmen Zamanlayıcısı (Shaker & Stir Timer) Modal -->
     <div id="shaker-timer-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 animate-fade-in">
         <div class="acrylic-card w-full max-w-xs p-6 rounded-3xl space-y-4 text-center relative border border-amber-500/30 shadow-2xl">
-            <button data-ui="ui-38" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
+            <button data-ui="ui-38" aria-label="Kapat" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
 
-            <div class="flex items-center justify-center gap-2 pt-1">
-                <span class="text-2xl">⏱️</span>
-                <h3 class="text-sm font-extrabold text-white tracking-wide">BARMEN ZAMANLAYICISI</h3>
-            </div>
+            <h3 class="pt-1 text-sm font-extrabold text-white tracking-wide">BARMEN ZAMANLAYICISI</h3>
 
-            <!-- Süre Göstergesi -->
+            <!-- Süre Göstergesi: bardak altlığı (coaster) dolar, bitince damga basılır -->
             <div class="py-2">
-                <div id="timer-display" class="text-5xl font-black font-mono text-amber-400 tracking-tight transition-all">00:15</div>
+                <div id="timer-coaster" class="timer-coaster" style="--p:0">
+                    <div id="timer-display" class="font-black">00:15</div>
+                    <span id="timer-stamp" class="timer-stamp" role="status" aria-live="polite"><span class="timer-stamp-text"></span></span>
+                </div>
                 <p id="timer-label" class="text-xs text-slate-300 mt-2 font-medium px-2 break-words">Buzla kuvvetlice çalkala (Shaker)</p>
             </div>
 
             <!-- Hızlı Süre Seçenekleri -->
             <div class="grid grid-cols-3 gap-1.5 text-xs font-semibold">
-                <button data-ui="ui-39" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px]">15s Shaker</button>
-                <button data-ui="ui-40" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-black/40 text-slate-300 border border-white/10 text-[11px]">30s Karıştır</button>
-                <button data-ui="ui-41" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl bg-black/40 text-slate-300 border border-white/10 text-[11px]">45s Soğut</button>
+                <button data-ui="ui-39" aria-pressed="true" class="timer-preset-btn is-selected pill-btn py-2 px-1 rounded-xl">15s Shaker</button>
+                <button data-ui="ui-40" aria-pressed="false" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl">30s Karıştır</button>
+                <button data-ui="ui-41" aria-pressed="false" class="timer-preset-btn pill-btn py-2 px-1 rounded-xl">45s Soğut</button>
             </div>
 
             <!-- Kontrol Butonları -->
             <div class="flex gap-2 pt-2">
-                <button id="btn-timer-toggle" data-ui="ui-42" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black py-3 rounded-2xl shadow-lg active:scale-95 transition-all text-xs hover:from-amber-400 hover:to-amber-500">
-                    ▶ Başlat
+                <button id="btn-timer-toggle" data-ui="ui-42" class="timer-toggle-btn flex-1 font-black py-3 rounded-2xl active:scale-95 transition-all text-xs">
+                    <i class="bci bci-play" aria-hidden="true"></i> Başlat
                 </button>
                 <button data-ui="ui-43" class="px-3.5 py-3 bg-white/5 border border-white/10 text-slate-300 font-semibold rounded-2xl hover:bg-white/10 transition-all text-xs">
                     <i class="bci bci-refresh" aria-hidden="true"></i> Sıfırla
@@ -600,7 +593,7 @@
             <!-- Modala Özel Sayaç Kutusu (Gerektiğinde Görünür) -->
             <div id="mix-timer-box" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
-                    <span class="text-2xl">⏱️</span>
+                    <i class="bci bci-timer text-2xl" aria-hidden="true"></i>
                     <div>
                         <div id="mix-timer-display" class="font-mono font-black text-lg text-amber-400">00:15</div>
                         <p id="mix-timer-label" class="text-[10px] text-slate-300">Shaker ile kuvvetlice çalkala</p>
@@ -662,7 +655,7 @@
                     </div>
                     <div class="flex items-center gap-2.5">
                         <span class="text-base text-amber-400 shrink-0"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span>
-                        <span><strong>Reserve Altın Rozeti:</strong> Hesabında parıldayan statü ve öncelikli destek.</span>
+                        <span><strong>Reserve rozeti:</strong> Hesabında görünür, öncelikli destek dahil.</span>
                     </div>
                 </div>
 
@@ -690,7 +683,7 @@
                     <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500/15 via-slate-900 to-black border border-amber-500/40 space-y-2">
                         <div class="flex flex-wrap items-center justify-between gap-1.5">
                             <span id="reserve-plan-title" class="text-[11px] sm:text-xs font-bold text-amber-400 uppercase tracking-wide">Yıllık Reserve (En Popüler)</span>
-                            <span id="reserve-plan-badge" class="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/30 shrink-0">%17 TASARRUF</span>
+                            <span id="reserve-plan-badge" class="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/30 shrink-0">%17 tasarruf</span>
                         </div>
                         <div class="flex items-baseline justify-between pt-1">
                             <div class="text-2xl font-black text-white">
@@ -699,7 +692,7 @@
                             </div>
                             <span id="reserve-plan-subtitle" class="text-[11px] text-amber-300/80">33,33 ₺/ay — %17 Tasarruf</span>
                         </div>
-                        <p id="reserve-plan-desc" class="text-[11px] text-slate-300">12 ay boyunca kesintisiz reklamsız VIP deneyim ve tüm güncellemeler.</p>
+                        <p id="reserve-plan-desc" class="text-[11px] text-slate-300">12 ay boyunca reklamsız kullanım ve tüm güncellemeler.</p>
                         <a id="btn-shopier-checkout" href="https://www.shopier.com/Anawin/51735632" target="_blank" rel="noopener noreferrer" class="pill-btn w-full mt-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black py-2.5 sm:py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 text-xs transition-all">
                             <span><i class="bci bci-card" aria-hidden="true"></i></span>
                             <span id="reserve-checkout-label">Shopier ile Güvenli Satın Al (400 ₺)</span>

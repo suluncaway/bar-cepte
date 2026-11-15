@@ -240,12 +240,25 @@
             ${step===2 ? `<label for="personal-ingredient-search">${t('Malzeme ara', 'Search ingredients')}</label><input id="personal-ingredient-search" type="search" autocomplete="off"><p>${t('Mevcut barın korunur; seçimlerini buradan değiştirebilirsin.', 'Your current bar is preserved; adjust it here.')}</p><div class="personal-ingredients">${ingredientChoices('')}</div>` : ''}
             ${step===3 ? suggestionMarkup(suggestions(draftSelected,draft,false)) : ''}
             <div class="personal-actions">${step<3 ? button('skip',t('Atla', 'Skip')) : button('done',t('Barıma git', 'Go to my bar'))}
-            ${step>0&&step<3?button('back',t('Geri', 'Back')):''}${step<3?button('next',step===2?t('Kaydet ve tarifleri gör', 'Save and see recipes'):t('Devam', 'Next')):''}</div>`;
+            ${step>0&&step<3?button('back',t('Geri', 'Back')):''}${step<3?button('next',step===2?`${t('Kaydet ve tarifleri gör', 'Save and see recipes')} (<span class="personal-count">${draftSelected.length}</span>)`:t('Devam', 'Next'),'','class="primary-action"'):''}</div>`;
     }
     function ingredientChoices(query) {
         const normalized = normalizeSearchText(query);
-        return popularIngredients.filter(ing=>normalizeSearchText([ing.id,ing.name,ing.nameEn].join(' ')).includes(normalized)).map(ing=>
-            `<label><input type="checkbox" data-personal-ingredient="${e(ing.id)}" ${draftSelected.includes(ing.id)?'checked':''}> ${e(en()?(ing.nameEn||ing.id):translateIngredientName(ing.name||ing.id))}</label>`).join('') || `<p>${t('Malzeme bulunamadı.', 'No ingredients found.')}</p>`;
+        // Ingredients that share a display name (Whiskey/Whisky, Soda Water/Club soda…) become one checkbox for all their ids.
+        const groups = new Map();
+        popularIngredients.filter(ing=>normalizeSearchText([ing.id,ing.name,ing.nameEn].join(' ')).includes(normalized)).forEach(ing=>{
+            const label = en()?(ing.nameEn||ing.id):translateIngredientName(ing.name||ing.id);
+            const key = label.toLocaleLowerCase(en()?'en':'tr');
+            const g = groups.get(key);
+            if (g) { g.ids.push(ing.id); if (ing.cat==='alkol') g.cat='alkol'; } else groups.set(key, {label, cat:ing.cat, ids:[ing.id]});
+        });
+        const row = g => `<label><input type="checkbox" data-personal-ingredient="${e(g.ids.join('|'))}" ${g.ids.some(id=>draftSelected.includes(id))?'checked':''}> ${e(g.label)}</label>`;
+        const all = [...groups.values()];
+        if (!all.length) return `<p>${t('Malzeme bulunamadı.', 'No ingredients found.')}</p>`;
+        return [['alkol', t('İçkiler', 'Spirits & liqueurs')], ['mutfak', t('Mutfak', 'Kitchen')]].map(([cat, title])=>{
+            const items = all.filter(g=>g.cat===cat);
+            return items.length ? `<h3 class="personal-group-title">${e(title)}</h3>${items.map(row).join('')}` : '';
+        }).join('');
     }
     function skip() {
         if (write({[PKEY]:{...preferences(),onboardingDone:true}})) {close(); refresh();}
@@ -306,8 +319,12 @@
             if(event.target.id==='personal-ingredient-search') dialog.querySelector('.personal-ingredients').innerHTML=ingredientChoices(event.target.value);
         });
         document.addEventListener('change',event=>{
-            const id=event.target.dataset.personalIngredient;
-            if(id) draftSelected=event.target.checked?[...new Set([...draftSelected,id])]:draftSelected.filter(value=>value!==id);
+            const raw=event.target.dataset.personalIngredient;
+            if(!raw) return;
+            const ids=raw.split('|');
+            draftSelected=event.target.checked?[...new Set([...draftSelected,...ids])]:draftSelected.filter(value=>!ids.includes(value));
+            const count=dialog.querySelector('[data-personal="next"] .personal-count');
+            if(count) count.textContent=String(draftSelected.length);
         });
         document.addEventListener('click',event=>{
             const target=event.target.closest('[data-personal]');if(!target)return;

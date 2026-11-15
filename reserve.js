@@ -26,12 +26,12 @@
             shopierUrl: 'https://www.shopier.com/Anawin/51736039'
         },
         annual: {
-            title: 'Yıllık Abonelik (Annual Pass)',
+            title: 'Yıllık Abonelik',
             price: '400 ₺',
             period: '/ yıl (33,33 ₺/ay)',
-            badge: '%17 TASARRUF — POPÜLER',
-            subtitle: '365 Gün VIP Erişim',
-            desc: 'Aylık sadece 33,33 ₺! 1 tam yıl boyunca kesintisiz reklamsız deneyim ve altın rozet.',
+            badge: '%17 tasarruf',
+            subtitle: '365 gün erişim',
+            desc: 'Ayda 33,33 ₺. Bir yıl boyunca reklamsız kullanım ve Reserve rozeti.',
             checkoutLabel: 'Shopier ile Yıllık Abone Ol',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
         }
@@ -49,12 +49,12 @@
             shopierUrl: 'https://www.shopier.com/Anawin/51736039'
         },
         annual: {
-            title: 'Annual Pass (Best Value)',
+            title: 'Annual Pass',
             price: '$14.99',
             period: '/ year ($1.25/mo)',
-            badge: 'SAVE 58% — POPULAR',
-            subtitle: '365 Days VIP Access',
-            desc: 'Only $1.25/mo! 1 full year of uninterrupted ad-free VIP cocktail experience and gold badge.',
+            badge: 'Save 58%',
+            subtitle: '365 days of access',
+            desc: '$1.25 a month. One year ad-free, with the Reserve badge.',
             checkoutLabel: 'Secure Checkout via Shopier ($14.99)',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
         }
@@ -72,12 +72,12 @@
             shopierUrl: 'https://www.shopier.com/Anawin/51736039'
         },
         annual: {
-            title: 'Annual Pass (Best Value)',
+            title: 'Annual Pass',
             price: '€13.99',
             period: '/ year (€1.16/mo)',
-            badge: 'SAVE 60% — POPULAR',
-            subtitle: '365 Days VIP Access',
-            desc: 'Only €1.16/mo! 1 full year of uninterrupted ad-free VIP cocktail experience and gold badge.',
+            badge: 'Save 60%',
+            subtitle: '365 days of access',
+            desc: '€1.16 a month. One year ad-free, with the Reserve badge.',
             checkoutLabel: 'Secure Checkout via Shopier (€13.99)',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
         }
@@ -150,7 +150,7 @@
         }
         switch (plan) {
             case 'monthly': return 'Aylık Abonelik (Monthly Pass)';
-            case 'annual': return 'Yıllık Abonelik (Annual Pass)';
+            case 'annual': return 'Yıllık Abonelik';
             case 'lifetime': return 'Ömür Boyu VIP (Lifetime Pass)';
             default: return 'Reserve Üyeliği';
         }
@@ -282,18 +282,22 @@
                 body: JSON.stringify(payload),
                 signal: controller ? controller.signal : undefined
             });
-            const data = await resp.json();
+            // Render can answer a cold start with an HTML error page; never let that surface as a network error.
+            let data = {};
+            try { data = await resp.json(); } catch { data = {}; }
             if (!resp.ok || !data.success) {
-                // Sunucu reddetti (başkası tarafından kullanılmış veya süresi dolmuş)
-                if (resp.status === 409 && root.BarAuth && typeof root.BarAuth.markLicenseClaimedLocally === 'function') {
-                    root.BarAuth.markLicenseClaimedLocally(cleanKey, data.claimedBy || 'external_user');
+                if (resp.status === 409) {
+                    if (root.BarAuth && typeof root.BarAuth.markLicenseClaimedLocally === 'function') {
+                        root.BarAuth.markLicenseClaimedLocally(cleanKey, data.claimedBy || 'external_user');
+                    }
+                    return { success: false, reason: data.reason || (isEn
+                        ? 'This license key was already claimed by another user or device. Licenses are single-use.'
+                        : 'Bu lisans anahtarı başka bir kullanıcı ya da cihazda kullanılmış. Lisanslar tek kullanımlıktır.') };
                 }
-                return {
-                    success: false,
-                    reason: data.reason || (isEn
-                        ? 'This license key was already claimed by another user or device! Licenses are single-use.'
-                        : 'Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.')
-                };
+                // Only a 409 means "already claimed". Anything else is a server problem: the key is still valid, retry.
+                return { success: false, reason: (resp.ok && data.reason) || (isEn
+                    ? 'The license server could not confirm your key right now. Your key is safe; please try again in a minute.'
+                    : 'Lisans sunucusu şu an kodunu doğrulayamadı. Kodun geçerli kalır; bir dakika sonra tekrar dene.') };
             }
 
             // Sunucu onayladı! Lisansı bu cihaza kaydet
@@ -474,8 +478,8 @@
                 ? '<strong>Party & Batch Calculator:</strong> Exact ingredient scaling for 10-50 guests.'
                 : '<strong>Parti & Porsiyon Modu:</strong> 10-50 kişilik davetler için tam malzeme hesabı.';
             reserveBullets[3].innerHTML = isEn
-                ? '<strong>Reserve Gold Badge:</strong> Shining status on your account & priority support.'
-                : '<strong>Reserve Altın Rozeti:</strong> Hesabında parıldayan statü ve öncelikli destek.';
+                ? '<strong>Reserve badge:</strong> Shown on your account, with priority support.'
+                : '<strong>Reserve rozeti:</strong> Hesabında görünür, öncelikli destek dahil.';
         }
 
         // Sekmeler

@@ -51,6 +51,17 @@ moreTabsBtn?.addEventListener('click', () => {
     moreTabsBtn.setAttribute('aria-expanded', String(open));
     moreTabsBtn.textContent = moreTabsBtn.textContent.replace(/[▾▴]$/, open ? '▴' : '▾');
 });
+// Picking a section, pressing Escape or tapping outside folds the secondary list back.
+function closeMoreTabs() {
+    const nav = moreTabsBtn?.closest('.main-navigation');
+    if (!nav?.classList.contains('show-more')) return;
+    nav.classList.remove('show-more');
+    moreTabsBtn.setAttribute('aria-expanded', 'false');
+    moreTabsBtn.textContent = moreTabsBtn.textContent.replace(/[▾▴]$/, '▾');
+}
+document.querySelectorAll('.main-navigation > [data-nav-secondary]').forEach(el => el.addEventListener('click', closeMoreTabs));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMoreTabs(); });
+document.addEventListener('click', e => { if (moreTabsBtn && !moreTabsBtn.closest('.main-navigation').contains(e.target)) closeMoreTabs(); });
 
 document.getElementById('home-daily-open')?.addEventListener('click', () => {
     const drink = typeof getDailyCocktail === 'function' && getDailyCocktail();

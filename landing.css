@@ -54,3 +54,8 @@ html[data-theme=light] em{color:#8a5a00}
 html[data-theme=light] .site-header{background:var(--bg)}
 html[data-theme=light] .app-preview{--ink:#f3ead8;--muted:#aeb4c2;--line:rgba(243,234,216,.28);--bg:#0e131d;--surface:#161d2a;--raised:#1e2738;color:#f3ead8}
 .button,html[data-theme=light] .button{color:#1b1503}
+/* Quieter: citrus stays on buttons only; big blocks go back to board + keyline */
+h1{font-size:clamp(56px,6.4vw,92px)}
+.gold-card,.contact{background:var(--surface);color:var(--ink);border:2px solid var(--gold)}
+.gold-card p,.contact>p:not(.eyebrow){color:var(--muted)}.gold-card h3 em{color:var(--gold)}
+.contact .dark-link{color:var(--ink)}.contact .dark-button{background:var(--gold);color:#1b1503;border-color:var(--gold)}

@@ -22,7 +22,7 @@ Turkish matchbox-and-coaster print ephemera on deep ink. Flat two-colour print, 
 | `--night` | `#6f9be8` | AI Barmen, links on secondary |
 | `--clay` | `#e8834e` | Shopping, sponsor, "today", striker |
 
-Every hue fill carries dark ink, never white. Nav tabs take hues in order (citrus, mint, night, clay, cherry) when active.
+Every hue fill carries dark ink, never white. Nav tabs take the hue of their section's job when active: ingredients/Barım/Mutfak mint, Favoriler cherry, Alışveriş clay, AI Barmen night, everything else citrus. On phones the bar is four fixed tabs plus "Daha fazla", which opens the secondary sections as full-width rows above the bar and wears the active secondary section's hue when it is collapsed.
 Light theme (opt-in `html[data-theme=light]`): same print on cream board `#efe6d2`, darker hue variants.
 
 ## Type
@@ -41,6 +41,8 @@ Light theme (opt-in `html[data-theme=light]`): same print on cream board `#efe6d
 
 1. **Coaster stamp** — makeable cocktail cards (`#recipes-ready`) carry a rotated mint disc with a check; missing cards a cherry dashed ring.
 2. **Matchbox striker** — `#smart-recommendation-banner` has a 12px clay/brown striker band on its leading edge; "+X kokteyl" renders as a citrus matchstick tag with a cherry head.
+
+3. **Timer coaster** — the shaker timer (`#timer-coaster`) is a coaster disc whose rim fills with mint as the countdown runs (`--p` 0→1); at zero a rotated mint "SERVİS ET / SERVE IT" stamp (`#timer-stamp`, role=status) lands on the rim. Start/Pause is flat citrus (`.timer-toggle-btn`, outlined while running).
 
 ## Motion
 

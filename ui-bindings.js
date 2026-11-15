@@ -63,7 +63,7 @@ if (unitToggleBtn) {
 let serviceWorkerAPI = null;
 try { serviceWorkerAPI = navigator.serviceWorker; } catch { /* Restricted preview: offline mode unavailable. */ }
 // Native Android assets already work offline; a worker cannot intercept WebView asset loads reliably.
-if (serviceWorkerAPI && !window.AndroidBridge) {
+if (serviceWorkerAPI && !window.AndroidBridge && window.location.hostname !== 'appassets.androidplatform.net') {
     window.addEventListener('load', () => {
         serviceWorkerAPI.register('./sw.js', {updateViaCache:'none'}).then(reg => {
             reg.update().catch(() => {});

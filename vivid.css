@@ -44,13 +44,16 @@ a { text-underline-offset:3px; text-decoration-thickness:1px; }
 #brand-title { font-size:30px; text-transform:uppercase; letter-spacing:.02em; }
 .pill-btn[class*="bg-gradient"],#affiliate-banner a { background:var(--clay)!important; border-color:transparent!important; color:#200d03!important; }
 .pill-btn[class*="bg-gradient"] *,#affiliate-banner a * { color:#200d03!important; }
-.topbar #btn-open-reserve:hover,.primary-action:hover,.tutorial-actions .primary-action:hover { background:#ffd54d!important; border-color:#ffd54d!important; }
+.primary-action:hover,.tutorial-actions .primary-action:hover { background:#ffd54d!important; border-color:#ffd54d!important; }
 .main-navigation > button[aria-current="page"]:hover { background:var(--hue,var(--citrus))!important; color:#120f08!important; }
 /* No gradient text anywhere: Tailwind clip-text headings print in solid citrus */
 [class*="bg-clip-text"] { background:none!important; -webkit-text-fill-color:currentColor!important; color:var(--citrus)!important; }
 .pill-btn:not([class*="bg-"]),.topbar button { background:transparent!important; border:1.5px solid var(--keyline-strong)!important; border-radius:var(--r-sm)!important; color:var(--ink); font-weight:600; }
-.pill-btn:not([class*="bg-"]):hover,.topbar button:not(#btn-open-reserve):hover { background:var(--surface-raised)!important; border-color:var(--ink)!important; }
-.topbar #btn-open-reserve { background:var(--citrus)!important; border-color:var(--citrus)!important; }
+.pill-btn:not([class*="bg-"]):hover,.topbar button:hover { background:var(--surface-raised)!important; border-color:var(--ink)!important; }
+/* Reserve is a calm upgrade: outlined crown, not the brand's action fill */
+.topbar #btn-open-reserve { background:transparent!important; border-color:var(--keyline-strong)!important; color:var(--citrus)!important; box-shadow:none!important; }
+.topbar #btn-open-reserve * { color:var(--citrus)!important; }
+#reserve-modal .inline-flex:has(.ui-icon,.bci-crown):not(button) { display:none!important; }
 .topbar [data-support-button],.topbar-tools-ribbon [data-support-button] { color:var(--clay); border-color:color-mix(in srgb,var(--clay) 55%,transparent)!important; }
 
 /* Navigation: printed tabs, the active one takes its section's coaster hue */
@@ -106,6 +109,7 @@ a { text-underline-offset:3px; text-decoration-thickness:1px; }
 #ingredients-container > div:hover,#ingredients-container > div[role="button"]:hover { border-color:var(--keyline-strong); transform:translateY(-2px); background:var(--surface-raised); }
 #ingredients-container > div[aria-pressed="true"] { background:var(--mint); border-color:var(--mint); color:var(--on-mint)!important; box-shadow:none; }
 #ingredients-container > div[aria-pressed="true"] * { color:var(--on-mint)!important; }
+#ingredients-container > div[aria-pressed="true"] .ingredient-group-tag { background:transparent!important; border:1.5px solid var(--on-mint); font-size:11px; font-weight:700; }
 #ingredients-container > div[aria-pressed="true"]::after { background:var(--on-mint); color:var(--mint); }
 .ingredient-shelf > button { background:transparent; border:1.5px solid var(--keyline-strong); color:var(--ink); border-radius:var(--r-sm); }
 
@@ -162,8 +166,37 @@ a { text-underline-offset:3px; text-decoration-thickness:1px; }
 dialog::backdrop,#personal-dialog::backdrop { background:rgba(5,8,14,.84); }
 #shaker-timer-modal > div,#update-modal > div { background:var(--surface); border:2px solid var(--keyline-strong); border-radius:var(--r-lg); }
 #reserve-modal .acrylic-card,#auth-modal .acrylic-card { background:var(--surface); border:2px solid var(--keyline-strong); border-radius:var(--r-lg); }
-.timer-finish-anim { color:var(--mint)!important; }
 #shaker-timer-modal { font-variant-numeric:tabular-nums; }
+/* Layout: one vertical rhythm for the app's main sections (was ad-hoc 0/16/22/38/48px margins).
+   Content sections sit --section-gap apart; the footer steps further away to read as chrome. */
+:root { --section-gap:40px; }
+@media (max-width:767px) { :root { --section-gap:28px; } }
+.app-main { display:flex; flex-direction:column; gap:var(--section-gap); }
+.app-main > * { margin-top:0!important; margin-bottom:0!important; }
+.app-main > .app-footer { margin-top:calc(var(--section-gap) * .6)!important; }
+/* Distill: on phones each filter group is one swipeable strip, so results start higher. */
+@media (max-width:767px) {
+  #discovery-controls > .overflow-x-auto, #discovery-controls .vibe-filters { flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; }
+  #discovery-controls .vibe-filters > span { flex-basis:auto; }
+}
+/* Delight: the timer is a coaster. Mint ink sweeps the rim as you shake; at zero a SERVİS ET stamp lands. */
+.timer-coaster { --p:0; position:relative; width:184px; height:184px; margin:0 auto; border-radius:50%; display:grid; place-items:center;
+  background:conic-gradient(var(--mint) calc(var(--p) * 360deg), var(--surface-sunk) 0); transition:--p 1s linear; }
+.timer-coaster::before { content:""; position:absolute; inset:10px; border-radius:50%; background:var(--surface); border:2px solid var(--keyline-strong); }
+.timer-coaster > #timer-display { position:relative; color:var(--ink)!important; font-family:'Big Shoulders Display',sans-serif; font-size:3.5rem; letter-spacing:0; }
+.timer-coaster.is-served > #timer-display { color:var(--mint)!important; }
+.timer-stamp { position:absolute; right:-26px; bottom:-8px; width:84px; height:84px; border-radius:50%; display:grid; place-items:center; pointer-events:none;
+  background:var(--mint); color:#06241a; border:2px dashed #06241a; outline:3px solid var(--mint); outline-offset:-1px;
+  opacity:0; transform:rotate(-40deg) scale(1.9); box-shadow:0 10px 28px rgba(3,6,12,.45); }
+.timer-stamp-text { font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:1.1rem; line-height:.95; text-align:center; }
+.timer-coaster.is-served .timer-stamp { opacity:1; transform:rotate(-14deg) scale(1); transition:transform .42s cubic-bezier(.16,1,.3,1), opacity .12s linear; }
+.timer-preset-btn { background:var(--surface-sunk); color:var(--muted); border:1.5px solid var(--keyline); font-size:12px; font-weight:600; }
+.timer-preset-btn.is-selected { background:var(--citrus); color:#1b1503; border-color:var(--citrus); font-weight:700; }
+#shaker-timer-modal button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.timer-toggle-btn { background:var(--citrus); color:#1b1503; border:2px solid var(--citrus); }
+.timer-toggle-btn.is-running { background:transparent; color:var(--citrus); }
+@property --p { syntax:'<number>'; inherits:true; initial-value:0; }
+@media (prefers-reduced-motion: reduce) { .timer-coaster, .timer-coaster.is-served .timer-stamp { transition:none; } }
 
 /* AI Barmen */
 .ai-assistant-shell { background:var(--surface); border:2px solid var(--keyline); box-shadow:none; border-radius:var(--r-lg); }
@@ -209,8 +242,6 @@ dialog::backdrop,#personal-dialog::backdrop { background:rgba(5,8,14,.84); }
 }
 
 /* Home shortcuts: four coasters, one hue each */
-.home-shortcuts { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:16px 0; }
-@media (min-width:768px) { .home-shortcuts { grid-template-columns:repeat(4,1fr); } }
 .shortcut-tile { --hue:var(--citrus); display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:18px; text-align:left; color:var(--ink); background:var(--surface); border:2px solid var(--keyline); border-radius:var(--r-lg); cursor:pointer; transition:transform .2s var(--ease-out),border-color .15s; }
 .shortcut-tile:nth-child(4n+2) { --hue:var(--mint); } .shortcut-tile:nth-child(4n+3) { --hue:var(--night); } .shortcut-tile:nth-child(4n+4) { --hue:var(--clay); }
 .shortcut-tile:hover { transform:translateY(-3px); border-color:var(--hue); }
@@ -268,6 +299,44 @@ dialog::backdrop,#personal-dialog::backdrop { background:rgba(5,8,14,.84); }
 .main-navigation:not(.show-more) > [data-nav-secondary]:not([aria-current="page"]) { display:none; }
 .main-navigation > .nav-more { color:var(--muted); font-weight:600; }
 .main-navigation.show-more > .nav-more { color:var(--ink); background:var(--surface-raised); }
+
+/* Hue by section meaning, not by position */
+.main-navigation > #tab-home,.main-navigation > #tab-alkol,.main-navigation > #tab-custom,.main-navigation > #tab-my-recipes,.main-navigation > #tab-sync { --hue:var(--citrus); }
+.main-navigation > #tab-ingredients,.main-navigation > #tab-bar,.main-navigation > #tab-mutfak { --hue:var(--mint); }
+.main-navigation > #tab-favorites { --hue:var(--cherry); }
+.main-navigation > #tab-shop { --hue:var(--clay); }
+.main-navigation > #tab-ai { --hue:var(--night); }
+
+/* Phones: four fixed tabs + "Daha fazla"; secondary sections open as full-width rows above the bar */
+@media (max-width:767px) {
+  .main-navigation { display:grid!important; grid-template-columns:repeat(5,auto); gap:2px; overflow:visible; }
+  .main-navigation > button,.main-navigation > a { padding:6px 2px!important; font-size:12px; line-height:1.15; white-space:nowrap; text-align:center; justify-content:center; }
+  .main-navigation > [data-nav-secondary] { display:none!important; }
+  .main-navigation.show-more > [data-nav-secondary] { display:flex!important; align-items:center; grid-column:1 / -1; order:-1; min-height:48px!important; padding:0 14px!important; font-size:15px; text-align:left; justify-content:flex-start; color:var(--ink); border-bottom:1.5px solid var(--keyline)!important; border-radius:0!important; }
+  .main-navigation.show-more > [data-nav-secondary][aria-current="page"] { border-radius:var(--r-sm)!important; border-bottom-color:transparent!important; }
+  .main-navigation:not(.show-more):has(> [data-nav-secondary][aria-current="page"]) > .nav-more { --hue:var(--citrus); color:var(--on-citrus)!important; background:var(--hue)!important; font-weight:700; }
+  .main-navigation:not(.show-more):has(> #tab-bar[aria-current="page"],> #tab-mutfak[aria-current="page"]) > .nav-more { --hue:var(--mint); }
+  .main-navigation:not(.show-more):has(> #tab-shop[aria-current="page"]) > .nav-more { --hue:var(--clay); }
+  .main-navigation:not(.show-more):has(> #tab-ai[aria-current="page"]) > .nav-more { --hue:var(--night); }
+}
+/* Wizard ingredient list: grouped, taller window, readable rows */
+#personal-dialog .personal-ingredients { max-height:min(48vh,420px); border-color:var(--keyline); }
+#personal-dialog .personal-ingredients label { display:flex; align-items:center; gap:10px; min-height:44px; padding:0 4px; border-bottom:1px solid var(--keyline); font-size:15px; color:var(--ink); }
+#personal-dialog .personal-ingredients input[type="checkbox"] { width:20px; height:20px; accent-color:var(--mint); flex-shrink:0; }
+#personal-dialog [data-personal="next"].primary-action { background:var(--citrus)!important; color:var(--on-citrus)!important; border-color:var(--citrus)!important; font-weight:700; }
+#personal-dialog .personal-group-title { position:sticky; top:0; z-index:1; margin:0; padding:10px 4px 6px; background:var(--surface); font-family:"Big Shoulders Display",sans-serif; font-weight:800; font-size:18px; text-transform:uppercase; color:var(--mint); }
+
+/* Phones: the shelf is a wrapping 3-column grid of compact tiles instead of a two-at-a-time carousel */
+@media (max-width:767px) {
+  .ingredient-shelf > [data-ui="ui-30"],.ingredient-shelf > [data-ui="ui-31"] { display:none!important; }
+  #ingredients-container { display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px!important; padding:8px 4px!important; overflow:visible!important; min-height:0!important; }
+  #ingredients-container > div[role="button"] { width:auto!important; min-height:112px!important; padding:8px 6px!important; gap:4px; }
+  #ingredients-container > div[role="button"] > div:first-child { height:44px!important; margin-bottom:0; }
+  #ingredients-container .ingredient-name { font-size:13px!important; line-height:1.2; }
+  #ingredients-container .ingredient-group-tag { font-size:12px!important; padding:2px 6px!important; }
+  #ingredients-container > :not([role="button"]) { grid-column:1 / -1; }
+}
+@media (max-width:374px) { .main-navigation { left:4px; right:4px; padding:5px!important; gap:0; } }
 
 /* Calmer cards: one badge in the list */
 .cocktail-card .flex.flex-wrap.gap-1\.5.mb-1\.5 > span:not(:first-child) { display:none; }
@@ -370,11 +439,24 @@ body:has(.cocktail-card .details-section.open) { overflow:hidden; }
 .cocktail-card:has(.details-section.open) .toggle-icon { position:sticky; top:0; z-index:2; width:44px; height:44px; padding:0!important; display:inline-flex; align-items:center; justify-content:center; font-size:20px; line-height:1; border-radius:50%; background:var(--surface-raised); border:1.5px solid var(--keyline-strong); cursor:pointer; }
 @media (max-width:767px) { .cocktail-card:has(.details-section.open) { top:0; bottom:0; width:100%; height:100dvh!important; border-radius:0!important; } }
 body:has(.cocktail-card .details-section.open) .app-header { z-index:0; }
+/* Tools opened from inside a recipe (timer, step mode, dialogs, toasts) sit above the reading window */
+#shaker-timer-modal,#mix-mode-modal,#reserve-modal,#auth-modal,#update-modal { z-index:80!important; }
+#bar-toast-container { z-index:90!important; }
+/* One way to empty the bar (tray / dashboard), with undo; search fields clear only themselves */
+#btn-clear-selection-header,[data-ui="ui-13"] { display:none!important; }
+.toast-action { margin-left:auto; flex-shrink:0; min-height:36px; padding:0 12px; border-radius:var(--r-sm); background:var(--citrus); color:var(--on-citrus); font-weight:700; font-size:13px; }
+.toast-action:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+#cocktail-search::-webkit-search-cancel-button,#ing-search::-webkit-search-cancel-button {
+  -webkit-appearance:none; appearance:none; width:20px; height:20px; cursor:pointer; background:var(--muted);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center/16px no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center/16px no-repeat;
+}
+.timer-preset-btn.is-selected { background:var(--citrus)!important; color:var(--on-citrus)!important; border-color:var(--citrus)!important; }
 html[data-theme="light"] #reserve-modal :is([class*="bg-gradient-to"],[class*="from-slate"],[class*="from-black"]):not([class*="bg-clip-text"]) { background:var(--surface)!important; border-color:var(--keyline-strong)!important; }
 html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-slate-300) { color:var(--ink)!important; }
 
 /* Ink on fills: every citrus/mint/hue fill carries dark ink, never white */
-:is(.primary-action,.btn-primary,.main-navigation > button[aria-current="page"],.topbar #btn-open-reserve,.topbar #btn-open-reserve *,
+:is(.primary-action,.btn-primary,.main-navigation > button[aria-current="page"],
   .bg-amber-500,.bg-amber-400,.ai-recipe-actions button:first-child,.ai-chat-composer button,#affiliate-banner a,
   #discovery-controls button[class*="bg-amber-500"]:not(#btn-fav-filter),.personal-servings [aria-pressed="true"],
   .ai-message-user .ai-message-bubble,.tutorial-actions .primary-action) { color:var(--on-citrus)!important; }

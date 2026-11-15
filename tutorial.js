@@ -62,11 +62,14 @@
             else if (action === 'next') { if (step === STEPS.tr.length - 1) close(dialog); else { step++; render(dialog); } }
             else if (action === 'login') { close(dialog); document.getElementById('btn-auth-user')?.click(); }
         });
-        // The first-visit preference wizard opens on the same load; show the tour after it closes.
+        // The first-visit preference wizard already walks the user to their first recipes.
+        // Opening the tour right after it buried that payoff under a second modal, so wizard
+        // visitors never get the tour; it stays only for visits where the wizard does not run.
         setTimeout(() => {
             const wizard = document.getElementById('personal-dialog');
-            if (wizard?.open) wizard.addEventListener('close', open, { once: true });
-            else open();
+            if (wizard?.open) {
+                try { localStorage.setItem(HIDE_KEY, '1'); } catch {}
+            } else open();
         }, 0);
     });
 })();
