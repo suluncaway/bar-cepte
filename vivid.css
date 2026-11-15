@@ -17,7 +17,7 @@ html body {
 #brand-title,.topbar h1,.hero-copy h2,.editorial-hero h2,.section-intro h2,.cocktail-card h3,
 .ai-assistant-heading h2,.ai-recipe-card h3,.personal-panel h2,#personal-dialog h2,.personal-stock summary,
 :where(.app-main) h2,:where(.app-main) h3 { font-family:var(--font-display)!important; font-weight:800; letter-spacing:-.03em; }
-.hero-copy h2 span { font-style:normal; background:var(--grad-hot); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hero-copy h2 span { font-style:normal; color:#ff8a2a; }
 
 /* Header */
 .app-header { background:rgba(8,8,8,.82); border-bottom:1px solid var(--border-glass); box-shadow:var(--shadow-soft); }
@@ -364,3 +364,6 @@ html[data-theme="light"] .main-navigation > button[aria-current="page"],
 html[data-theme="light"] .eyebrow, html[data-theme="light"] #bar-advice-box :is(span,p,strong) { color:#a8460a; }
 :focus-visible { outline:2px solid #ff9d4d; outline-offset:2px; }
 ::selection { background:rgba(255,122,26,.35); color:#fff; }
+.ai-assistant-footnote { color:#9aab9f; }
+.video-pulse-dot { animation:none; }
+html[data-theme="light"] .hero-copy h2 span { color:#b54a00; }

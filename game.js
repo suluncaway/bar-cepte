@@ -4012,7 +4012,8 @@ function applyLanguage() {
     });
     const ingIntro = document.querySelector('#ingredients-section .page-intro');
     if (ingIntro && t.ingredientsHeading) {
-        ingIntro.querySelector('.eyebrow').textContent = t.ingredientsEyebrow;
+        const ingEyebrow = ingIntro.querySelector('.eyebrow');
+        if (ingEyebrow) ingEyebrow.textContent = t.ingredientsEyebrow;
         ingIntro.querySelector('h2').textContent = t.ingredientsHeading;
         ingIntro.querySelector('.section-aside').textContent = t.ingredientsAside;
     }

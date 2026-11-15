@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=17">
+    <link rel="stylesheet" href="vivid.css?v=19">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -169,7 +169,7 @@
         </section>
         <section id="discovery-controls" class="hidden discovery-controls" aria-labelledby="discovery-heading">
             <div class="section-intro">
-                <div><span class="eyebrow">KEŞİF TEZGÂHI</span><h2 id="discovery-heading">Senin barında ne var?</h2></div>
+                <div><h2 id="discovery-heading">Senin barında ne var?</h2></div>
                 <div class="flex items-center gap-2">
                     <span id="selection-summary" class="selection-summary">Malzemelerini seçerek başla</span>
                     <button id="btn-clear-selection-header" data-action="clear-all-ingredients" class="hidden pill-btn text-[11px] font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl transition-all active:scale-95" title="Seçili malzemeleri temizle">
@@ -271,7 +271,7 @@
 
         <!-- 2. Malzeme Seçim Alanı -->
         <section id="ingredients-section" class="hidden space-y-2 relative px-2">
-            <div class="section-intro page-intro"><div><span class="eyebrow">MALZEMELERİM</span><h2>Senin barında ne var?</h2></div><span class="section-aside">Elindekileri seç, tarifler sana göre şekillensin.</span></div>
+            <div class="section-intro page-intro"><div><h2>Senin barında ne var?</h2></div><span class="section-aside">Elindekileri seç, tarifler sana göre şekillensin.</span></div>
             <div class="flex gap-2">
                 <div class="relative w-full">
                     <span class="absolute left-3.5 top-2.5 text-xs text-slate-400">🔍</span>
@@ -405,7 +405,7 @@
             <div class="ai-assistant-shell">
                 <div class="ai-assistant-heading">
                     <div class="ai-orb" aria-hidden="true">✦</div>
-                    <div><span class="ai-kicker">BAR CEPTE INTELLIGENCE</span><h2 id="ai-assistant-title">AI Barmen</h2><p>Barını tanıyan, tarif geliştiren kişisel miksoloji asistanın.</p></div>
+                    <div><h2 id="ai-assistant-title">AI Barmen</h2><p>Barını tanıyan, tarif geliştiren kişisel miksoloji asistanın.</p></div>
                     <span class="ai-status"><i></i> Hazır</span>
                 </div>
                 <div class="ai-context-strip"><span>🍸 <b id="ai-inventory-count">0</b> malzeme barında</span><span>Tariflerini ve tercihlerini dikkate alır</span></div>
@@ -430,7 +430,7 @@
         <!-- 7. Kokteyl Listeleme Alanları -->
         <div id="recipes-display-sections" class="hidden recipe-content">
             <section id="editorial-picks" class="hidden">
-                <div class="section-intro"><div><span class="eyebrow">KLASİKLERDEN İLHAM AL</span><h2>Her güzel akşamın bir tarifi var.</h2></div><span class="section-aside">Bir tarif seç, detaylarını keşfet.</span></div>
+                <div class="section-intro"><div><h2>Her güzel akşamın bir tarifi var.</h2></div><span class="section-aside">Bir tarif seç, detaylarını keşfet.</span></div>
                 <div id="editorial-picks-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-start"></div>
             </section>
             <section id="ready-section">
@@ -638,7 +638,7 @@
                     <span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span> ÖZEL SEÇKİ KULÜBÜ
                 </div>
                 <h3 class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center justify-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
-                    BAR CEPTE <span class="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">RESERVE</span>
+                    BAR CEPTE <span class="text-amber-400">RESERVE</span>
                 </h3>
                 <p class="text-xs text-slate-400">Barının sınırlarını kaldır. Reklamsız, sınırsız ve usta miksoloji seviyesinde.</p>
             </div>
@@ -866,7 +866,7 @@
     <script src="auth.js?v=43"></script>
     <script src="personal-bar.js?v=43"></script>
     <script src="inventory.js?v=43"></script>
-    <script src="game.js?v=61"></script>
+    <script src="game.js?v=62"></script>
     <script src="personal-ui.js?v=44"></script>
     <script src="tutorial.js?v=1"></script>
     <script src="dynamic-ui.js?v=48"></script>

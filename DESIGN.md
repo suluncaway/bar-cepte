@@ -41,8 +41,13 @@ Landing (`landing.html`) and static pages: `landing.css` only.
 
 Top bar (brand mark + "Bar Cepte." + pill buttons), bottom main navigation (pills, active = `--grad-hot`), ingredient chips (`aria-pressed`), cocktail cards with photo, recipe sheet with servings multiplier and mix timer, AI Barmen dialog, Reserve upsell, onboarding tutorial dialog.
 
+## Rules
+
+- No eyebrow/kicker label above a heading. Remaining exceptions carry state, not decoration: "Bugünün kokteyli" (h2 is the drink name), the app hero tagline, the mix-mode label, the Reserve club badge (rewritten by `reserve.js`).
+- No gradient text; accent words use solid `#ff8a2a` (dark) / `#b54a00` (light).
+- Static pages (`tarif/`, `rehber/`, info pages, 404) come from `scripts/build-recipe-pages.js`; change the generator, not only the output.
+
 ## Known debt
 
-- Eyebrow labels above headings are a house pattern; kept for now but should not spread to new surfaces.
-- Gradient text on the hero span (`.hero-copy h2 span`) remains by brand choice.
+- Detector reports `cramped-padding`, `nested-cards` and dark-on-dark contrast in `index.html` from static parsing; runtime checks show the dark text sits on the orange gradient. Nested cards in recipe/Reserve sheets are a structural refactor.
 - Three stacked skin files override each other; consolidating them is a separate refactor.
