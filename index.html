@@ -179,12 +179,13 @@
                     <input type="search" id="cocktail-search" list="cocktail-suggestions" autocomplete="off" aria-label="Kokteyl ara" data-ui="ui-14" placeholder="Kokteyl veya malzeme yaz: 'rom nane', 'Margarita'…" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-amber-500/60 transition-all text-white placeholder-slate-500">
                 </div>
                 <button data-ui="ui-15" class="shrink-0 pill-btn bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 px-3.5 py-2 rounded-2xl text-xs font-bold hover:border-amber-400"><i class="bci bci-dice" aria-hidden="true"></i> Rastgele</button>
+                <button id="btn-filter-toggle" type="button" aria-expanded="false" class="filter-toggle shrink-0 pill-btn">Filtrele <span class="filter-count"></span></button>
             </div>
 
 </div>
-            <div class="filter-caption">Zevkine göre daralt</div>
+            <div class="filter-caption filter-extra">Zevkine göre daralt</div>
                     <!-- Tat, Alkol ve Favori Filtreleri -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-medium no-scrollbar">
+        <div class="filter-extra flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-medium no-scrollbar">
             <!-- Alkol Filtresi Segmenti -->
             <div class="flex bg-slate-900/90 p-0.5 rounded-xl border border-white/10 shrink-0 text-[11px] font-semibold">
                 <button id="btn-all-alcohol" data-ui="ui-3" class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold whitespace-nowrap transition-all shadow-sm">Hepsi</button>
@@ -206,7 +207,7 @@
         </div>
 
         <!-- Ortam & Ruh Hali Filtresi (Vibe Matcher) -->
-        <div class="vibe-filters flex items-center gap-1.5 overflow-x-auto pt-1 pb-1 text-[11px] font-medium no-scrollbar">
+        <div class="filter-extra vibe-filters flex items-center gap-1.5 overflow-x-auto pt-1 pb-1 text-[11px] font-medium no-scrollbar">
             <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider shrink-0 mr-1">Ortam:</span>
             <button data-action="vibe" data-vibe="all" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 font-bold">Tümü</button>
             <button data-action="vibe" data-vibe="summer" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">Yaz & Havuz</button>
@@ -220,8 +221,6 @@
         </section>
 
 
-        <!-- Akıllı Tavsiye Kutusu -->
-        <div id="smart-recommendation-banner" class="hidden px-4 animate-fade-in"></div>
 
         <!-- 1. Barım / Dashboard Paneli -->
         <section id="bar-dashboard" class="hidden px-4 animate-fade-in">
@@ -437,6 +436,9 @@
                 </div>
                 <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"></div>
             </section>
+
+            <!-- Akıllı Tavsiye Kutusu: kullanıcının kendi tariflerinden sonra -->
+            <div id="smart-recommendation-banner" class="hidden animate-fade-in"></div>
 
             <!-- Sponsorlu / Önerilen Bar Ekipmanı (Affiliate Kartı) -->
             <section id="affiliate-banner" class="p-4 rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-slate-900 border border-amber-500/25 shadow-xl relative overflow-hidden">

@@ -51,6 +51,28 @@ moreTabsBtn?.addEventListener('click', () => {
     moreTabsBtn.setAttribute('aria-expanded', String(open));
     moreTabsBtn.textContent = moreTabsBtn.textContent.replace(/[▾▴]$/, open ? '▴' : '▾');
 });
+// Phones: taste and mood filters fold behind one "Filtrele (n)" button so results lead the page.
+const filterToggle = document.getElementById('btn-filter-toggle');
+const discovery = document.getElementById('discovery-controls');
+function activeFilterCount() {
+    if (!discovery) return 0;
+    const taste = discovery.querySelector('.taste-btn.bg-amber-500:not([data-taste="all"])') ? 1 : 0;
+    const vibe = discovery.querySelector('.vibe-btn.bg-amber-500\\/20:not([data-vibe="all"])') ? 1 : 0;
+    return taste + vibe;
+}
+function updateFilterCount() {
+    const n = activeFilterCount();
+    const out = filterToggle?.querySelector('.filter-count');
+    if (out) out.textContent = n ? `(${n})` : '';
+    filterToggle?.classList.toggle('has-active', n > 0);
+}
+filterToggle?.addEventListener('click', () => {
+    const open = discovery.classList.toggle('filters-open');
+    filterToggle.setAttribute('aria-expanded', String(open));
+});
+discovery?.addEventListener('click', () => setTimeout(updateFilterCount, 0));
+updateFilterCount();
+
 // Picking a section, pressing Escape or tapping outside folds the secondary list back.
 function closeMoreTabs() {
     const nav = moreTabsBtn?.closest('.main-navigation');

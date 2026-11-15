@@ -326,6 +326,18 @@ dialog::backdrop,#personal-dialog::backdrop { background:rgba(5,8,14,.84); }
 #personal-dialog [data-personal="next"].primary-action { background:var(--citrus)!important; color:var(--on-citrus)!important; border-color:var(--citrus)!important; font-weight:700; }
 #personal-dialog .personal-group-title { position:sticky; top:0; z-index:1; margin:0; padding:10px 4px 6px; background:var(--surface); font-family:"Big Shoulders Display",sans-serif; font-weight:800; font-size:18px; text-transform:uppercase; color:var(--mint); }
 
+/* Results lead: filters fold behind one button on phones; the buy-this banner sits after your own drinks */
+.filter-toggle { display:none; }
+@media (max-width:767px) {
+  .filter-toggle { display:inline-flex; align-items:center; gap:4px; min-height:44px; padding:0 12px!important; font-size:13px!important; }
+  .filter-toggle.has-active { border-color:var(--citrus)!important; color:var(--citrus)!important; }
+  .filter-toggle[aria-expanded="true"] { background:var(--surface-raised)!important; color:var(--ink)!important; }
+  #discovery-controls:not(.filters-open) .filter-extra { display:none!important; }
+  #discovery-controls [data-ui="ui-15"] { min-height:44px; }
+  #cocktail-search { min-height:44px; }
+}
+#recipes-display-sections > #smart-recommendation-banner { padding-inline:0; order:1; }
+
 /* Phones: the shelf is a wrapping 3-column grid of compact tiles instead of a two-at-a-time carousel */
 @media (max-width:767px) {
   .ingredient-shelf > [data-ui="ui-30"],.ingredient-shelf > [data-ui="ui-31"] { display:none!important; }
