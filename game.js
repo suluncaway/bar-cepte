@@ -2660,7 +2660,8 @@ function openMixMode(drinkId, servings = 1) {
     });
 
     const isShaken = /shak|çalkala/i.test(d.strInstructions || '') || /shak|çalkala/i.test(d.strInstructionsTR || '');
-    const glass = d.strGlass || (currentLang === 'en' ? 'Cocktail glass' : 'Kokteyl bardağı');
+    const rawGlass = d.strGlass || (currentLang === 'en' ? 'Cocktail glass' : 'Kokteyl bardağı');
+    const glass = currentLang === 'en' ? rawGlass : (glassTranslations[rawGlass.trim().toLowerCase()] || rawGlass);
 
     if (currentLang === 'en') {
         mixSteps = [
@@ -2726,10 +2727,13 @@ function openMixMode(drinkId, servings = 1) {
 
     const modal = document.getElementById('mix-mode-modal');
     if (modal) {
+        mixReturnFocus = document.activeElement;
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        document.getElementById('btn-mix-next')?.focus({ preventScroll: true });
     }
 }
+let mixReturnFocus = null;
 
 function renderMixStep() {
     const step = mixSteps[currentMixStep];
@@ -2813,10 +2817,19 @@ function closeMixMode() {
     mixTimerInterval = null;
     const modal = document.getElementById('mix-mode-modal');
     if (modal) {
+        const wasOpen = !modal.classList.contains('hidden');
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        if (wasOpen && mixReturnFocus && document.contains(mixReturnFocus)) mixReturnFocus.focus({ preventScroll: true });
+        mixReturnFocus = null;
     }
 }
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !document.getElementById('mix-mode-modal')?.classList.contains('hidden')) {
+        event.stopPropagation();
+        closeMixMode();
+    }
+}, true);
 
 function toggleMixTimer() {
     const runBtn = document.getElementById('btn-mix-timer-run');

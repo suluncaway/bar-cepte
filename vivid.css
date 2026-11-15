@@ -326,6 +326,32 @@ dialog::backdrop,#personal-dialog::backdrop { background:rgba(5,8,14,.84); }
 #personal-dialog [data-personal="next"].primary-action { background:var(--citrus)!important; color:var(--on-citrus)!important; border-color:var(--citrus)!important; font-weight:700; }
 #personal-dialog .personal-group-title { position:sticky; top:0; z-index:1; margin:0; padding:10px 4px 6px; background:var(--surface); font-family:"Big Shoulders Display",sans-serif; font-weight:800; font-size:18px; text-transform:uppercase; color:var(--mint); }
 
+/* Step-by-step mode: flat print, legible mid-pour */
+#mix-mode-modal { backdrop-filter:none!important; -webkit-backdrop-filter:none!important; background:rgba(5,8,14,.86)!important; }
+#mix-mode-modal > div { background:var(--surface)!important; border:2px solid var(--keyline-strong)!important; border-radius:var(--r-lg)!important; box-shadow:0 10px 28px rgba(3,6,12,.45)!important; }
+#mix-mode-modal > div > div:first-child { border-color:var(--keyline)!important; }
+#mix-mode-modal span.uppercase { display:none!important; }
+#mix-modal-title { font-family:"Big Shoulders Display",sans-serif; font-weight:800; font-size:2rem!important; line-height:.95; text-transform:uppercase; color:var(--ink)!important; margin-top:0!important; }
+#mix-modal-subtitle { font-size:14px!important; color:var(--muted)!important; }
+#mix-mode-modal [data-action="close-mix-mode"] { width:44px!important; height:44px!important; font-size:18px!important; border:1.5px solid var(--keyline-strong); border-radius:var(--r-sm)!important; color:var(--ink)!important; }
+#mix-step-counter { font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums; }
+#mix-step-dots > span { width:10px!important; height:10px!important; background:var(--keyline-strong)!important; }
+#mix-step-dots > span.bg-amber-400 { background:var(--citrus)!important; }
+#mix-step-content { background:var(--surface-sunk)!important; border:0!important; border-radius:var(--r-md)!important; }
+#mix-step-heading { font-family:"Big Shoulders Display",sans-serif; font-weight:800; font-size:1.4rem!important; text-transform:uppercase; color:var(--citrus)!important; }
+#mix-step-body { font-size:16px!important; line-height:1.55!important; color:var(--ink)!important; }
+#mix-step-body li { background:transparent!important; border:0!important; border-bottom:1.5px solid var(--keyline)!important; border-radius:0!important; padding:8px 0!important; font-variant-numeric:tabular-nums; }
+#mix-step-body .text-amber-300,#mix-step-body .text-amber-400 { color:var(--mint)!important; }
+#mix-timer-box { background:var(--surface-sunk)!important; border:2px solid var(--mint)!important; border-radius:var(--r-md)!important; }
+#mix-timer-display { font-family:"Big Shoulders Display",sans-serif!important; font-size:2rem!important; color:var(--mint)!important; font-variant-numeric:tabular-nums; }
+#mix-timer-label { font-size:14px!important; color:var(--ink)!important; }
+#btn-mix-timer-run { min-height:44px; padding:0 18px!important; font-size:14px!important; }
+#btn-mix-prev,#btn-mix-next { min-height:52px; font-size:15px!important; border-radius:var(--r-sm)!important; }
+#btn-mix-next { background:var(--citrus)!important; background-image:none!important; color:var(--on-citrus)!important; box-shadow:none!important; }
+#btn-mix-next:hover { background:#ffd54d!important; }
+#btn-mix-prev { background:transparent!important; border:1.5px solid var(--keyline-strong)!important; color:var(--ink)!important; }
+#mix-mode-modal > div > div:last-child { border-color:var(--keyline)!important; }
+
 /* Results lead: filters fold behind one button on phones; the buy-this banner sits after your own drinks */
 .filter-toggle { display:none; }
 @media (max-width:767px) {
