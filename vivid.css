@@ -385,3 +385,12 @@ html[data-theme="light"] .main-navigation > button:not([aria-current="page"]) { 
 #discovery-controls .pill-btn[class*="bg-amber-500"]:not(#btn-fav-filter) { background:var(--grad-hot)!important; border-color:transparent!important; }
 #reserve-plan-badge { font-size:11px!important; }
 .app-footer a { display:inline-block; padding-block:5px; }
+/* Reserve modal distill: one surface, one price block, one CTA. Copy and JS hooks unchanged. */
+#reserve-modal .space-y-1 > .inline-flex { display:none; }
+#reserve-plan-badge { display:none; }
+#reserve-status-inactive > div:first-child { background:transparent; padding-inline:0; padding-block:0; }
+#reserve-status-inactive > div:first-child > div { align-items:flex-start; }
+#reserve-status-inactive .space-y-2\.5 > div:last-child { background:rgba(255,122,26,.06)!important; }
+#reserve-status-inactive .space-y-2\.5 > div:last-child > p { color:var(--muted); }
+#btn-shopier-checkout { min-height:48px; font-size:14px; }
+#btn-activate-reserve { background:var(--grad-hot); color:var(--on-hot); }
