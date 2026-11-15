@@ -62,7 +62,7 @@ img{width:100%;max-width:440px;aspect-ratio:1;object-fit:cover;border-radius:22p
 .list{display:flex;flex-wrap:wrap;gap:8px}.list a{padding:7px 13px;border:1px solid var(--line)!important;border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px}.list a:hover{border-color:var(--accent)!important;color:var(--accent-soft)}
 .site{max-width:1080px;margin:0 auto;padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;justify-content:space-between}
 header.site-wrap{position:sticky;top:0;z-index:10;background:rgba(8,8,8,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;color:#fff;letter-spacing:-.02em}.brand svg{width:34px;height:34px;color:#d9b77d}.brand span{color:var(--accent)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;color:#fff;letter-spacing:-.02em}.brand svg{width:34px;height:34px;color:#d9b77d}.brand span{color:var(--accent);margin-left:-10px}
 header nav{display:flex;flex-wrap:wrap;gap:6px}header nav a{padding:7px 12px;border-radius:999px;color:var(--muted);font-size:14px;font-weight:600}header nav a:hover{color:#fff;background:var(--raised)}header nav a.app{background:var(--accent);color:#1a0f05}
 footer.site-wrap{border-top:1px solid var(--line);margin-top:20px;background:#080808}footer .site{display:block;color:var(--muted);font-size:13px;padding:28px 20px 44px}footer p{color:var(--muted);margin:8px 0}footer a{color:#d6d6d6}
 .about,.gear,.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:6px 22px 14px;margin:28px 0}.gear li{margin:10px 0}.small{font-size:13px;color:var(--muted)}
@@ -259,7 +259,7 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
         // Ads only where the page has real substance (AdSense "low value content").
         const ads = Boolean(TIPS[drink.strDrink]) || textWords >= 200;
         const body = `<nav class="crumbs" aria-label="Sayfa yolu"><a href="/tarif/">Tarifler</a> › ${crumbCat ? `<a href="/tarif/kategori/${crumbCat.slug}.html">${esc(crumbCat.title)}</a> › ` : ''}<span>${esc(displayName)}</span></nav>
-<span class="eyebrow">Tarif</span><h1>${esc(displayName)}</h1><p class="meta">${esc([category, alcohol, glassTr(drink.strGlass)].filter(Boolean).join(' · '))}</p>
+<h1>${esc(displayName)}</h1><p class="meta">${esc([category, alcohol, glassTr(drink.strGlass)].filter(Boolean).join(' · '))}</p>
 <a class="cta cta-sm" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç →</a>
 ${imgSrc ? `<img class="hero" src="${esc(imgSrc)}" alt="${esc(displayName)} kokteyli" width="350" height="263" fetchpriority="high">` : ''}
 <section class="card"><h2>Malzemeler <span class="count">${rows.length} malzeme</span></h2><ul class="ing">${rows.map(r => { const [n, a] = ingParts(r); return `<li><span>${esc(n)}</span><b>${esc(a)}</b></li>`; }).join('')}</ul></section>
@@ -294,7 +294,7 @@ ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h
     const catLinks = CATEGORIES.map(c => `<a href="/tarif/kategori/${c.slug}.html">${esc(c.title)}</a>`).join('');
     fs.writeFileSync(path.join(outDir, 'index.html'), page({
         title: 'Kokteyl Tarifleri — Tüm Liste | Bar Cepte', description: `${entries.length} kokteyl tarifi: malzemeler ve yapılış.`,
-        canonical: `${SITE}/tarif/`, body: `<span class="eyebrow">Tarifler</span><h1>Kokteyl Tarifleri</h1><p class="meta">${entries.length} tarif</p>
+        canonical: `${SITE}/tarif/`, body: `<h1>Kokteyl Tarifleri</h1><p class="meta">${entries.length} tarif</p>
 <h2>Kategoriler</h2><div class="list">${catLinks}</div>
 <h2>Tüm tarifler</h2>${alphaIndex(entries)}`
     }));
@@ -305,7 +305,7 @@ ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h
         urls.push(url);
         fs.writeFileSync(path.join(catDir, `${cat.slug}.html`), page({
             title: `${cat.title} — ${members.length} Tarif | Bar Cepte`, description: `${cat.name} ile hazırlanan ${members.length} kokteyl tarifi: malzemeler, ölçüler ve yapılış.`,
-            canonical: url, ads: true, body: `<p><a href="/tarif/">← Tüm tarifler</a></p><span class="eyebrow">Kategori</span><h1>${esc(cat.title)}</h1><p class="meta">${members.length} tarif</p>
+            canonical: url, ads: true, body: `<p><a href="/tarif/">← Tüm tarifler</a></p><h1>${esc(cat.title)}</h1><p class="meta">${members.length} tarif</p>
 ${cat.intro}
 ${AD_UNIT}
 <h2>Tarifler</h2>${listCards(members, slugs)}
@@ -316,7 +316,7 @@ ${AD_UNIT}
     const guideLinks = GUIDES.map(g => `<li><a href="/rehber/${g.slug}.html"><b>${esc(g.title)}</b><span>${esc(g.description)}</span></a></li>`).join('');
     fs.writeFileSync(path.join(guideDir, 'index.html'), page({
         title: 'Kokteyl Rehberleri | Bar Cepte', description: 'Evde bar kurmak, ekipmanlar, bardaklar, teknikler ve şuruplar hakkında Türkçe rehberler.',
-        canonical: `${SITE}/rehber/`, body: `<span class="eyebrow">Rehber</span><h1>Kokteyl Rehberleri</h1><p>Evde kokteyl hazırlamayı öğrenmek için temel bilgiler.</p><ul class="guides">${guideLinks}</ul>`
+        canonical: `${SITE}/rehber/`, body: `<h1>Kokteyl Rehberleri</h1><p>Evde kokteyl hazırlamayı öğrenmek için temel bilgiler.</p><ul class="guides">${guideLinks}</ul>`
     }));
     for (const guide of GUIDES) {
         const url = `${SITE}/rehber/${guide.slug}.html`;
@@ -324,19 +324,19 @@ ${AD_UNIT}
         fs.writeFileSync(path.join(guideDir, `${guide.slug}.html`), page({
             title: `${guide.title} | Bar Cepte`, description: guide.description, canonical: url, ads: true,
             jsonLd: { '@context': 'https://schema.org', '@type': 'Article', headline: guide.title, description: guide.description, inLanguage: 'tr', url },
-            body: `<p><a href="/rehber/">← Rehberler</a></p><span class="eyebrow">Rehber · ~${withToc(guide.html).minutes} dk okuma</span><h1>${esc(guide.title)}</h1>${withToc(guide.html).toc}${withToc(guide.html).body}\n${gearBox(guide.products || [])}\n${AD_UNIT}\n<h2>Diğer rehberler</h2><ul class="guides">${guideLinks}</ul>`
+            body: `<p><a href="/rehber/">← Rehberler</a></p><h1>${esc(guide.title)}</h1><p class="meta">~${withToc(guide.html).minutes} dk okuma</p>${withToc(guide.html).toc}${withToc(guide.html).body}\n${gearBox(guide.products || [])}\n${AD_UNIT}\n<h2>Diğer rehberler</h2><ul class="guides">${guideLinks}</ul>`
         }));
     }
     for (const info of INFO_PAGES) {
         const url = `${SITE}/${info.slug}.html`;
         urls.push(url);
         fs.writeFileSync(path.join(root, `${info.slug}.html`), page({
-            title: `${info.title} | Bar Cepte`, description: info.description, canonical: url, body: `<span class="eyebrow">Bar Cepte</span><h1>${esc(info.title)}</h1><div class="card">${info.html}</div>`
+            title: `${info.title} | Bar Cepte`, description: info.description, canonical: url, body: `<h1>${esc(info.title)}</h1><div class="card">${info.html}</div>`
         }));
     }
     fs.writeFileSync(path.join(root, '404.html'), page({
         title: 'Sayfa bulunamadı | Bar Cepte', description: 'Aradığın sayfa bulunamadı.', canonical: `${SITE}/404.html`, robots: 'noindex',
-        body: `<span class="eyebrow">404</span><h1>Bu sayfa bulunamadı</h1><p>Aradığın sayfa taşınmış ya da hiç var olmamış olabilir. Şunlardan biriyle devam edebilirsin:</p>
+        body: `<h1>Bu sayfa bulunamadı</h1><p>Aradığın sayfa taşınmış ya da hiç var olmamış olabilir. Şunlardan biriyle devam edebilirsin:</p>
 <div class="list"><a href="/">Uygulamayı aç</a><a href="/tarif/">Tüm tarifler</a><a href="/rehber/">Rehberler</a>${CATEGORIES.slice(0, 4).map(c => `<a href="/tarif/kategori/${c.slug}.html">${esc(c.title)}</a>`).join('')}</div>`
     }));
     // sitemap: keep entries this script does not own, then list the generated pages

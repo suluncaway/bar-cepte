@@ -102,8 +102,15 @@
         const send = $('ai-chat-send');
         busy = true;
         if (send) send.disabled = true;
+        const controller = new AbortController();
+        const slowTimer = setTimeout(() => {
+            const bubble = typing?.querySelector('.ai-message-bubble');
+            if (bubble) bubble.textContent = 'Sunucu uyanıyor, bu ilk istekte biraz sürebilir…';
+        }, 8000);
+        const abortTimer = setTimeout(() => controller.abort(), 60000);
         try {
             const response = await fetch(API_URL, {
+                signal: controller.signal,
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -125,8 +132,18 @@
             addRecipeCards(result.recipes || []);
         } catch (error) {
             typing?.remove();
-            addMessage('assistant', error instanceof Error ? error.message : 'Bir bağlantı hatası oluştu.');
+            const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            const text = offline
+                ? 'İnternet bağlantın yok. AI Barmen çevrimiçi çalışır; tarif arşivi ve barın çevrimdışı da kullanılabilir.'
+                : error?.name === 'AbortError'
+                    ? 'AI Barmen yanıt vermedi. Biraz sonra tekrar dene; bu sırada Tarifler sekmesinden barına uygun kokteylleri görebilirsin.'
+                    : error?.name === 'TypeError'
+                        ? 'AI Barmen\'e ulaşılamadı. Bağlantını kontrol edip tekrar dene.'
+                        : (error instanceof Error ? error.message : 'Bir bağlantı hatası oluştu.');
+            addMessage('assistant', text);
         } finally {
+            clearTimeout(slowTimer);
+            clearTimeout(abortTimer);
             busy = false;
             if (send) send.disabled = false;
             input?.focus();

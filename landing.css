@@ -4,7 +4,7 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button{transition:none}}
 /* Vivid theme: black + orange */
 body{background:#050505 radial-gradient(900px 480px at 50% -10%,rgba(255,106,0,.14),transparent 65%) no-repeat}
-.button{border-radius:999px;background:linear-gradient(135deg,#ff9a2e,#ff6a00);border-color:transparent;box-shadow:0 8px 22px rgba(255,106,0,.3)}
+.button{border-radius:999px;background:linear-gradient(135deg,#ff9a2e,#ff6a00);border-color:transparent;box-shadow:0 8px 22px rgba(0,0,0,.45)}
 /* Pocket logo in the same black tile as the app header */
 .brand-mark{width:38px;height:38px;border-radius:12px;background:#0b0b0b;border-color:rgba(217,183,125,.4)}
 .brand-mark svg{width:auto;height:24px}
@@ -24,3 +24,12 @@ html[data-theme=light] .app-preview{--ink:#f7f4f0;--muted:#a8a29a;--line:rgba(25
 html[data-theme=light] .app-preview small{color:#a8a29a}
 html[data-theme=light] .app-preview .active{color:#fff}
 .button,html[data-theme=light] .button{color:#1a0f05}
+
+/* Impeccable refinement pass (2026-11-15) */
+.hero-visual small,.edition,.tag{font-size:11px}
+.chips span{font-size:12px}
+.drink-list small{font-size:11px;color:#a3a3a3}
+.button{box-shadow:0 10px 24px -8px rgba(0,0,0,.45)}
+:focus-visible{outline:2px solid #ff9d4d;outline-offset:3px}
+::selection{background:rgba(255,122,26,.35);color:#fff}
+@media(max-width:620px){.trust{gap:8px 16px}.trust b,.trust i{display:none}.trust span{display:inline-flex;align-items:center;gap:8px}.trust span::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--gold)}}

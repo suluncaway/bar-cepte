@@ -12,9 +12,9 @@
     <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
     <script src="theme.js"></script>
     <link rel="stylesheet" href="tailwind.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=16">
+    <link rel="stylesheet" href="vivid.css?v=23">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -59,7 +59,7 @@
                     </button>
 
                     <!-- Bar Cepte Reserve Üyelik Butonu -->
-                    <button id="btn-open-reserve" type="button" title="Bar Cepte Reserve — Reklamsız & Özel Seçkiler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all shrink-0 whitespace-nowrap">
+                    <button id="btn-open-reserve" type="button" title="Bar Cepte Reserve — Reklamsız & Özel Seçkiler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 hover:shadow-lg transition-all shrink-0 whitespace-nowrap">
                         <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg>
                         <span id="reserve-btn-label" class="hidden sm:inline tracking-wide">Reserve</span>
                     </button>
@@ -112,7 +112,7 @@
 
             <!-- Ana Sekmeler (Zarif Segmentasyon) -->
             <p class="mobile-nav-hint">Di&#287;er b&#246;l&#252;mler i&#231;in men&#252;y&#252; kayd&#305;r <span aria-hidden="true">&#8596;</span></p>
-            <div class="main-navigation" aria-label="Uygulama bölümleri" tabindex="0">
+            <div class="main-navigation" role="navigation" aria-label="Uygulama bölümleri" tabindex="0">
                 <button id="tab-home" type="button" class="bg-amber-500/15 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded-xl shrink-0 transition-all font-bold" aria-current="page">Ana sayfa</button>
                 <button id="tab-ingredients" type="button" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Malzemelerim</button>
                 <button id="tab-alkol" data-ui="ui-17" class="text-slate-400 py-1.5 px-2.5 rounded-xl shrink-0 transition-all hover:text-white">Tarifler</button>
@@ -169,7 +169,7 @@
         </section>
         <section id="discovery-controls" class="hidden discovery-controls" aria-labelledby="discovery-heading">
             <div class="section-intro">
-                <div><span class="eyebrow">KEŞİF TEZGÂHI</span><h2 id="discovery-heading">Senin barında ne var?</h2></div>
+                <div><h2 id="discovery-heading">Senin barında ne var?</h2></div>
                 <div class="flex items-center gap-2">
                     <span id="selection-summary" class="selection-summary">Malzemelerini seçerek başla</span>
                     <button id="btn-clear-selection-header" data-action="clear-all-ingredients" class="hidden pill-btn text-[11px] font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl transition-all active:scale-95" title="Seçili malzemeleri temizle">
@@ -271,7 +271,7 @@
 
         <!-- 2. Malzeme Seçim Alanı -->
         <section id="ingredients-section" class="hidden space-y-2 relative px-2">
-            <div class="section-intro page-intro"><div><span class="eyebrow">MALZEMELERİM</span><h2>Senin barında ne var?</h2></div><span class="section-aside">Elindekileri seç, tarifler sana göre şekillensin.</span></div>
+            <div class="section-intro page-intro"><div><h2>Senin barında ne var?</h2></div><span class="section-aside">Elindekileri seç, tarifler sana göre şekillensin.</span></div>
             <div class="flex gap-2">
                 <div class="relative w-full">
                     <span class="absolute left-3.5 top-2.5 text-xs text-slate-400">🔍</span>
@@ -329,11 +329,11 @@
                     <input type="text" id="custom-name" placeholder="Kokteyl Adı (Örn: Çilekli Margarita)" class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
 
                     <div class="grid grid-cols-2 gap-2">
-                        <select id="custom-alcoholic" class="bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
+                        <select id="custom-alcoholic" aria-label="Alkol durumu" class="bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
                             <option value="Alcoholic">Alkollü Kokteyl</option>
                             <option value="Non_Alcoholic">Alkolsüz (Mocktail)</option>
                         </select>
-                        <select id="custom-glass" class="bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
+                        <select id="custom-glass" aria-label="Bardak türü" class="bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
                             <option value="Cocktail glass">🍸 Martini / Kadeh</option>
                             <option value="Highball glass">🥤 Uzun Bardak (Highball)</option>
                             <option value="Old-fashioned glass">🥃 Kısa Bardak (On the Rocks)</option>
@@ -351,7 +351,7 @@
 
                     <div class="border border-white/10 rounded-2xl p-3.5 bg-black/40">
                         <label class="text-slate-400 block mb-2 font-medium text-xs">📷 Kokteyl Fotoğrafı:</label>
-                        <input type="file" id="custom-image-input" accept="image/*" class="w-full text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20">
+                        <input type="file" id="custom-image-input" aria-label="Tarif fotoğrafı" accept="image/*" class="w-full text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20">
                     </div>
 
                     <button data-ui="ui-32" class="w-full bg-amber-500 text-slate-950 font-bold py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-amber-400">Tarifi Kaydet</button>
@@ -405,7 +405,7 @@
             <div class="ai-assistant-shell">
                 <div class="ai-assistant-heading">
                     <div class="ai-orb" aria-hidden="true">✦</div>
-                    <div><span class="ai-kicker">BAR CEPTE INTELLIGENCE</span><h2 id="ai-assistant-title">AI Barmen</h2><p>Barını tanıyan, tarif geliştiren kişisel miksoloji asistanın.</p></div>
+                    <div><h2 id="ai-assistant-title">AI Barmen</h2><p>Barını tanıyan, tarif geliştiren kişisel miksoloji asistanın.</p></div>
                     <span class="ai-status"><i></i> Hazır</span>
                 </div>
                 <div class="ai-context-strip"><span>🍸 <b id="ai-inventory-count">0</b> malzeme barında</span><span>Tariflerini ve tercihlerini dikkate alır</span></div>
@@ -430,7 +430,7 @@
         <!-- 7. Kokteyl Listeleme Alanları -->
         <div id="recipes-display-sections" class="hidden recipe-content">
             <section id="editorial-picks" class="hidden">
-                <div class="section-intro"><div><span class="eyebrow">KLASİKLERDEN İLHAM AL</span><h2>Her güzel akşamın bir tarifi var.</h2></div><span class="section-aside">Bir tarif seç, detaylarını keşfet.</span></div>
+                <div class="section-intro"><div><h2>Her güzel akşamın bir tarifi var.</h2></div><span class="section-aside">Bir tarif seç, detaylarını keşfet.</span></div>
                 <div id="editorial-picks-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-start"></div>
             </section>
             <section id="ready-section">
@@ -638,7 +638,7 @@
                     <span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span> ÖZEL SEÇKİ KULÜBÜ
                 </div>
                 <h3 class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center justify-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
-                    BAR CEPTE <span class="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">RESERVE</span>
+                    BAR CEPTE <span class="text-amber-400">RESERVE</span>
                 </h3>
                 <p class="text-xs text-slate-400">Barının sınırlarını kaldır. Reklamsız, sınırsız ve usta miksoloji seviyesinde.</p>
             </div>
@@ -722,7 +722,7 @@
 
             <!-- Aktif Durum (Reserve Zaten Açık) -->
             <div id="reserve-status-active" class="hidden space-y-4 py-2">
-                <div class="w-16 h-16 mx-auto rounded-3xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-3xl shadow-xl shadow-amber-500/10">
+                <div class="w-16 h-16 mx-auto rounded-3xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-3xl shadow-xl">
                     <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg>
                 </div>
                 <div>
@@ -866,7 +866,7 @@
     <script src="auth.js?v=43"></script>
     <script src="personal-bar.js?v=43"></script>
     <script src="inventory.js?v=43"></script>
-    <script src="game.js?v=61"></script>
+    <script src="game.js?v=63"></script>
     <script src="personal-ui.js?v=44"></script>
     <script src="tutorial.js?v=1"></script>
     <script src="dynamic-ui.js?v=48"></script>
@@ -875,7 +875,7 @@
     <script src="support.js"></script>
     <script src="ads.js"></script>
     <script src="reserve.js"></script>
-    <script src="ai-assistant-ui.js?v=1"></script>
+    <script src="ai-assistant-ui.js?v=2"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
