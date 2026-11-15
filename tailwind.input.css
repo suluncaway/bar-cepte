@@ -4,3 +4,12 @@
 @source "./game.js";
 @source "./ui-bindings.js";
 @source "./support.js";
+@source "./privacy.html";
+@source "./privacy.js";
+@source "./reserve.js";
+@source "./auth.js";
+@source "./personal-ui.js";
+@source "./tutorial.js";
+@source "./ai-assistant-ui.js";
+@source "./editorial-ui.js";
+@source "./dynamic-ui.js";

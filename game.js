@@ -3339,7 +3339,7 @@ function createCocktailCardElement(item, isMissingList) {
 
         card.innerHTML = `
             ${d.strDrinkThumb && safeImageSrc(d.strDrinkThumb) 
-                ? `<img src="${escapeHTML(BarSecurity.displayImage(d.strDrinkThumb))}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" data-image-fallback>`
+                ? `<img src="${escapeHTML(BarSecurity.displayImage(d.strDrinkThumb))}" alt="" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" data-image-fallback>`
                 : `<div class="w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-slate-600"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8-7-8ZM12 12v7M8 20h8"/></svg></div>`}
             
             <button data-action="favorite" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50">${isFav ? '❤️' : '🤍'}</button>
