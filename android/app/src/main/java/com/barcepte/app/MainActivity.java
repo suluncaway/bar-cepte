@@ -390,6 +390,13 @@ public class MainActivity extends Activity {
             runOnUiThread(MainActivity.this::applyAdVisibility);
         }
 
+        // The installed APK's own version (build.gradle versionName), so the web layer compares
+        // GitHub releases against what is really installed instead of the web bundle's version.
+        @JavascriptInterface
+        public String getAppVersion() {
+            return BuildConfig.VERSION_NAME;
+        }
+
         @JavascriptInterface
         public void saveDataUrl(String dataUrl, String fileName) {
             MainActivity.this.saveDataUrl(dataUrl, fileName);

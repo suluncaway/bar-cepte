@@ -472,8 +472,8 @@
         const reserveDesc = document.querySelector('#reserve-modal .space-y-1 p');
         if (reserveDesc) {
             reserveDesc.innerText = isEn
-                ? 'Use Pocket Bar without ads and support its independent development.'
-                : 'Bar Cepte\'yi reklamsız kullan, bağımsız gelişimine destek ol.';
+                ? 'Use Pocket Bar without ads, unlock the party planner and support its independent development.'
+                : 'Bar Cepte\'yi reklamsız kullan, parti planlayıcısını aç ve bağımsız gelişimine destek ol.';
         }
 
         // Avantajlar listesi (4 Bullets)
@@ -481,11 +481,11 @@
         if (reserveBullets.length >= 4) {
             // Only benefits the code actually delivers (see applyReserveUI and the Android bridge).
             reserveBullets[0].innerHTML = isEn
-                ? '<strong>Ad-free experience:</strong> No ad slots on the web, no banner or interstitial ads in the Android app.'
-                : '<strong>Reklamsız deneyim:</strong> Web\'de reklam alanları, Android uygulamasında banner ve geçiş reklamları gösterilmez.';
+                ? '<strong>Ad-free experience:</strong> No ad slots on the web, no banner or interstitial ads in the Android app; the affiliate banner is hidden too.'
+                : "<strong>Reklamsız deneyim:</strong> Web'de reklam alanları, Android uygulamasında banner ve geçiş reklamları gösterilmez; satış ortaklığı bandı da gizlenir.";
             reserveBullets[1].innerHTML = isEn
-                ? '<strong>No sponsored banner:</strong> The affiliate shopping banner is hidden.'
-                : '<strong>Sponsorlu bant yok:</strong> Satış ortaklığı (affiliate) bandı gizlenir.';
+                ? '<strong>Party planner:</strong> Total ingredients (cl), bottle counts and missing items added to your shopping list for 10–50 guests.'
+                : '<strong>Parti planlayıcısı:</strong> 10–50 misafir için toplam malzeme (cl), şişe sayısı ve eksiklerin alışveriş listesine eklenmesi.';
             reserveBullets[2].innerHTML = isEn
                 ? '<strong>Reserve badge:</strong> Shown next to the logo and on your account.'
                 : '<strong>Reserve rozeti:</strong> Logonun yanında ve hesabında görünür.';
@@ -573,6 +573,7 @@
                 statusActive.classList.add('hidden');
             }
         }
+        if (root.BarPartyUI && typeof root.BarPartyUI.refresh === 'function') root.BarPartyUI.refresh();
     }
 
     function scheduleRevalidation() {

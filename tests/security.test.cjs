@@ -240,7 +240,7 @@ test('License keys are strictly single-use and bound to one account', () => {
     assert.equal(auth.claimLicenseKey(validKey, 'annual', Date.now() + 365 * 24 * 60 * 60 * 1000), false);
     assert.equal(JSON.stringify([...storageMap]), before, 'a local claim must not write any entitlement');
     assert.equal(auth.getCurrentUser().isReserve, false);
-    assert.equal(auth.getCurrentUser().reserveKey, undefined);
+    assert.ok(!auth.getCurrentUser().reserveKey);
     assert.equal(reserve.activateReserve(validKey), false);
     assert.equal(reserve.isReserveActive(), false);
 
@@ -251,7 +251,7 @@ test('License keys are strictly single-use and bound to one account', () => {
     assert.equal(check.alreadyClaimed, undefined);
 
     // Planting a legacy local claim registry for another account grants nothing either.
-    storageMap.set('barcepte_used_keys', JSON.stringify({ [validKey]: { uid: 'user_alice', plan: 'annual', expiresAt: Date.now() + 1e9 } }));
+    storageMap.set('barcepte_claimed_licenses', JSON.stringify({ [validKey]: { uid: 'user_alice', plan: 'annual', expiresAt: Date.now() + 1e9 } }));
     auth.saveUser({ uid: 'user_bob', name: 'Bob', email: 'bob@gmail.com' });
     assert.equal(auth.getCurrentUser().isReserve, false);
     assert.equal(reserve.activateReserve(validKey), false);

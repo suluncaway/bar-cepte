@@ -31,9 +31,21 @@ const baseIngredients = [
     { id: "Ice", name: "Buz", nameEn: "Ice", emoji: "", cat: "mutfak", taste: "Ferah", cal: 0 }
 ];
 
-// Uygulama sürümü için tek kaynak (package.json "version" ile aynı tutulur).
-// Not: Android versionName (android/app/build.gradle) ayrı yönetilir.
+// Web/masaüstü sürümü (package.json "version" ile aynı tutulur).
+// Android'de kurulu APK'nın sürümü (build.gradle versionName) köprüden okunur; bkz. getInstalledAppVersion.
 const CURRENT_APP_VERSION = "1.1.0";
+
+// Kurulu uygulamanın gerçek sürümü: Android'de AndroidBridge.getAppVersion(), diğerlerinde CURRENT_APP_VERSION.
+function getInstalledAppVersion() {
+    try {
+        const bridge = typeof window !== 'undefined' ? window.AndroidBridge : undefined;
+        if (bridge && typeof bridge.getAppVersion === 'function') {
+            const version = String(bridge.getAppVersion() || '').trim();
+            if (/^v?\d+(?:\.\d+){0,3}$/.test(version)) return version.replace(/^v/i, '');
+        }
+    } catch (e) {}
+    return CURRENT_APP_VERSION;
+}
 
 let currentLang = 'tr';
 try { currentLang = localStorage.getItem('bar_cepte_lang') || localStorage.getItem('bar_language') || 'tr'; } catch(e) {}
@@ -110,6 +122,11 @@ const I18N = {
         missingSearchTitle: 'Arama Sonuçları (Eksik Malzemeli)',
         missingFavTitle: 'Favorilerim (Eksik Malzemeli)',
         emptyDiscovery: 'Yukarıdan malzeme seçerek veya kokteyl adı aratarak kokteylleri keşfedebilirsin.',
+        substituteTitle: 'İkameyle yapılabilenler',
+        substituteIntro: 'Tek eksiği olan ve o eksiğin yerine barındaki bir malzemeyi güvenle kullanabileceğin tarifler.',
+        dailyReady: 'Barınla yapılabilir',
+        dailyClosest: 'Barına en yakın tarif',
+        dailyOccasion: { newyear: 'Yılbaşı seçkisi', winter: 'Kış seçkisi', summer: 'Yaz seçkisi', valentine: 'Sevgililer Günü seçkisi', halloween: 'Cadılar Bayramı seçkisi' },
         noSelectedIng: 'Henüz seçili malzeme yok.',
         detailsToggle: 'Detay ▼',
         detailsClose: 'Kapat ▲',
@@ -196,15 +213,15 @@ const I18N = {
         mixPrev: "← Önceki",
         mixNext: "Sonraki Adım →",
         mixFinish: "Tamamla & Kapat",
-        reserveExclusiveClub: "ÖZEL SEÇKİ KULÜBÜ",
-        reserveBullet1: "<strong>%100 Reklamsız Deneyim:</strong> Sıfır reklam, kesintisiz hız.",
-        reserveBullet2: "<strong>Gizli Speakeasy Seçkisi:</strong> Usta barmenlerin imza kokteylleri ve şurup rehberleri.",
-        reserveBullet3: "<strong>Parti & Porsiyon Modu:</strong> 10-50 kişilik davetler için tam malzeme hesabı.",
-        reserveBullet4: "<strong>Reserve rozeti:</strong> Hesabında görünür, öncelikli destek dahil.",
+        reserveExclusiveClub: "RESERVE ÜYELİĞİ",
+        reserveBullet1: "<strong>Reklamsız deneyim:</strong> Web'de reklam alanları, Android uygulamasında banner ve geçiş reklamları gösterilmez; satış ortaklığı bandı da gizlenir.",
+        reserveBullet2: "<strong>Parti planlayıcısı:</strong> 10–50 misafir için toplam malzeme (cl), şişe sayısı ve eksiklerin alışveriş listesine eklenmesi.",
+        reserveBullet3: "<strong>Reserve rozeti:</strong> Logonun yanında ve hesabında görünür.",
+        reserveBullet4: "<strong>Bağımsız geliştirmeye destek:</strong> Tüm tarif ve rehberlerin ücretsiz kalmasına katkı sağlar.",
         reserveHaveKey: "Zaten bir aktivasyon kodun var mı?",
         reserveActivateBtn: "Aktive Et",
         reserveActiveHeading: "Reserve Üyeliğiniz Aktif!",
-        reserveActiveDesc: "Tüm ayrıcalıklar, gizli kokteyller ve reklamsız deneyim bu cihazda devrede.",
+        reserveActiveDesc: "Reklamsız deneyim ve parti planlayıcısı bu cihazda açık.",
         reserveActiveNote: "Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde!",
         reserveDeactivateBtn: "Bu cihazdan üyeliği kaldır",
         authH3: "BARMEN KULÜBÜ",
@@ -291,6 +308,11 @@ const I18N = {
         missingSearchTitle: 'Search Results (Missing Ingredients)',
         missingFavTitle: 'Favorites (Missing Ingredients)',
         emptyDiscovery: 'Select ingredients above or search by cocktail name to discover drinks.',
+        substituteTitle: 'Makeable with a substitute',
+        substituteIntro: 'Recipes missing just one ingredient that something in your bar can safely replace.',
+        dailyReady: 'Makeable with your bar',
+        dailyClosest: 'Closest to your bar',
+        dailyOccasion: { newyear: 'New Year pick', winter: 'Winter pick', summer: 'Summer pick', valentine: "Valentine's pick", halloween: 'Halloween pick' },
         noSelectedIng: 'No ingredients selected yet.',
         detailsToggle: 'Details ▼',
         detailsClose: 'Close ▲',
@@ -377,15 +399,15 @@ const I18N = {
         mixPrev: "← Previous",
         mixNext: "Next Step →",
         mixFinish: "Finish",
-        reserveExclusiveClub: "EXCLUSIVE CURATION CLUB",
-        reserveBullet1: "<strong>100% Ad-Free Experience:</strong> Zero ads, pure speed.",
-        reserveBullet2: "<strong>Secret Speakeasy Curation:</strong> Master bartenders' signature cocktails & syrup guides.",
-        reserveBullet3: "<strong>Party & Batch Calculator:</strong> Exact ingredient scaling for 10-50 guests.",
-        reserveBullet4: "<strong>Reserve badge:</strong> Shown on your account, with priority support.",
+        reserveExclusiveClub: "RESERVE MEMBERSHIP",
+        reserveBullet1: "<strong>Ad-free experience:</strong> No ad slots on the web, no banner or interstitial ads in the Android app; the affiliate banner is hidden too.",
+        reserveBullet2: "<strong>Party planner:</strong> Total ingredients (cl), bottle counts and missing items added to your shopping list for 10–50 guests.",
+        reserveBullet3: "<strong>Reserve badge:</strong> Shown next to the logo and on your account.",
+        reserveBullet4: "<strong>Support independent work:</strong> Helps keep every recipe and guide free.",
         reserveHaveKey: "Already have an activation code?",
         reserveActivateBtn: "Activate",
         reserveActiveHeading: "Your Reserve Membership is Active!",
-        reserveActiveDesc: "All privileges, secret cocktails, and ad-free experience are active on this device.",
+        reserveActiveDesc: "The ad-free experience and the party planner are active on this device.",
         reserveActiveNote: "Enjoy your evening. You run the bar tonight!",
         reserveDeactivateBtn: "Remove membership from this device",
         authH3: "BARTENDER CLUB",
@@ -1670,6 +1692,7 @@ function switchTab(tab) {
     } else if (tab === 'shop') { 
         document.getElementById('shopping-list-panel').classList.remove('hidden'); 
         renderShoppingList(); 
+        window.BarPartyUI?.refresh();
     } else if (tab === 'sync') {
         document.getElementById('sync-panel').classList.remove('hidden');
     } else if (tab === 'favorites') {
@@ -1973,12 +1996,16 @@ function setVibeFilter(vibe, btn) {
 }
 
 function matchesVibeFilter(d) {
-    if (currentVibeFilter === 'all') return true;
+    return matchesVibe(d, currentVibeFilter);
+}
+
+function matchesVibe(d, vibe) {
+    if (!vibe || vibe === 'all') return true;
     const str = `${d.strDrink || ''} ${d.strCategory || ''} ${d.strInstructions || ''} ${d.strGlass || ''}`.toLowerCase();
     const abv = d.computedABV ? d.computedABV.abv : 0;
     const taste = d.computedTaste || '';
 
-    switch (currentVibeFilter) {
+    switch (vibe) {
         case 'summer':
             return (taste === 'Ferah' || taste === 'Tatlı') || /(mojito|margarita|daiquiri|colada|spritz|fizz|tonic|lemonade|soda|punch|tropical|gin|rum|tequila)/i.test(str);
         case 'romantic':
@@ -2634,6 +2661,7 @@ const INGREDIENT_SUBSTITUTES = {
     'krema': { sub: 'Süt + az Tereyağı veya Hindistan Cevizi Kreması', subEn: 'Whole Milk + Butter or Coconut Cream', note: 'Kıvam ve yumuşaklık katar.' },
     'coconut cream': { sub: 'Krema + Hindistan Cevizi Sütü', subEn: 'Heavy Cream + Coconut Milk', note: 'Tropikal kıvam sağlar.' },
     'ginger beer': { sub: 'Zencefilli Gazoz veya Zencefil Suyu + Soda', subEn: 'Ginger Ale or Ginger Juice + Soda', note: 'Baharatlı zencefil lezzeti verir.' },
+    'ginger ale': { sub: 'Zencefilli Bira (Ginger Beer)', subEn: 'Ginger Beer', note: 'Daha keskin bir zencefil tadı verir.' },
     'zencefilli gazoz': { sub: 'Zencefil Rendesi + Soda + Bal', subEn: 'Fresh Ginger + Club Soda + Honey', note: 'Baharatlı ferahlık sağlar.' }
 };
 
@@ -3165,6 +3193,7 @@ function filterCocktails() {
     document.getElementById('editorial-picks')?.classList.toggle('hidden', !isDiscovery);
     document.getElementById('ready-section')?.classList.toggle('hidden', isDiscovery);
     document.getElementById('missing-section')?.classList.toggle('hidden', isDiscovery);
+    if (isDiscovery) document.getElementById('substitute-section')?.classList.add('hidden');
 
     if (cocktailSearch && document.getElementById('recipes-display-sections')?.classList.contains('hidden')) {
         switchTab('alkol');
@@ -3275,6 +3304,28 @@ function filterCocktails() {
         return sortFn(a.drink, b.drink);
     });
 
+    // İkameyle yapılabilenler: tek eksiği olan ve o eksiğin barda güvenilir bir ikamesi bulunan tarifler.
+    const substituteMatches = [];
+    if (window.BarSmart && selectedIngredients.length > 0) {
+        const owned = name => selectedIngredients.some(s => checkIngredientMatch(name, s));
+        missingMatches = missingMatches.filter(item => {
+            const substitution = window.BarSmart.findSubstitution(item.missingList, owned, checkIngredientMatch);
+            if (!substitution) return true;
+            substituteMatches.push({ ...item, substitution });
+            return false;
+        });
+    }
+    const substituteSection = document.getElementById('substitute-section');
+    const substituteContainer = document.getElementById('recipes-substitute');
+    if (substituteSection && substituteContainer) {
+        substituteSection.classList.toggle('hidden', substituteMatches.length === 0);
+        const substituteTitle = document.getElementById('title-substitute');
+        if (substituteTitle) substituteTitle.innerHTML = `${escapeHTML(I18N[currentLang].substituteTitle)} <span id="count-substitute" class="text-[10px] px-2 py-0.5 rounded-full font-bold">${substituteMatches.length}</span>`;
+        const substituteIntro = document.getElementById('substitute-intro');
+        if (substituteIntro) substituteIntro.textContent = I18N[currentLang].substituteIntro;
+        renderLists(substituteMatches, substituteContainer, true);
+    }
+
     const readySectionH2 = document.querySelector('#ready-section h2');
     if (readySectionH2) {
         readySectionH2.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${I18N[currentLang].readyTitle} <span id="count-ready" class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-bold">${readyMatches.length}</span>`;
@@ -3380,7 +3431,14 @@ function createCocktailCardElement(item, isMissingList) {
             `;
         });
 
-        let missingTextHTML = isMissingList ? missingList.map(m => {
+        const substitution = isMissingList ? item.substitution : null;
+        const substitutionHTML = substitution ? (() => {
+            const fromName = currentLang === 'en' ? substitution.missing : translateIngredientName(substitution.missing);
+            const useName = currentLang === 'en' ? substitution.use : translateIngredientName(substitution.use);
+            const note = currentLang === 'en' ? substitution.rule.en : substitution.rule.tr;
+            return `<p class="substitute-badge text-[11px] px-3 py-1.5 rounded-xl min-w-0 break-words"><b>${currentLang === 'en' ? 'Make it with a substitute:' : 'İkameyle yapılır:'}</b> ${escapeHTML(currentLang === 'en' ? `${useName} instead of ${fromName}` : `${fromName} yerine ${useName}`)}. ${escapeHTML(note)}</p>`;
+        })() : '';
+        let missingTextHTML = substitutionHTML + (isMissingList ? missingList.map(m => {
             const encodedM = encodeURIComponent(m);
             const inShop = shoppingList.includes(m);
             const missingDisplayName = currentLang === 'en' ? m : translateIngredientName(m);
@@ -3405,7 +3463,7 @@ function createCocktailCardElement(item, isMissingList) {
                 ${subHTML}
             </div>
             `;
-        }).join('') : '';
+        }).join('') : '');
 
         const card = document.createElement('div');
         const cardId = `card_${d.idDrink.replace(/[^a-zA-Z0-9_]/g, '_')}`;
@@ -3984,21 +4042,41 @@ function pickRandomCocktail() {
     openCocktail(pool[Math.floor(Math.random() * pool.length)]);
 }
 
-// Same drink for everyone on a given day, from the built-in recipes that have a photo.
-function getDailyCocktail() {
+// Today's cocktail: deterministic for the local date and the bar. Prefers drinks the bar can make
+// (else the closest ones) and the season or a fixed-date occasion (New Year, Valentine's, Halloween).
+function getDailyPick(date = new Date()) {
     const pool = allCocktails.filter(d => safeImageSrc(d.strDrinkThumb));
     if (!pool.length) return null;
-    return pool[Math.floor(Date.now() / 86400000) % pool.length];
+    const bar = Array.isArray(selectedIngredients) ? selectedIngredients : [];
+    const requirementsOf = d => {
+        const reqs = [];
+        for (let i = 1; i <= 15; i++) { const ing = d[`strIngredient${i}`]; if (ing && ing.trim()) reqs.push(ing.trim()); }
+        return reqs;
+    };
+    const missingCount = bar.length ? d => {
+        const reqs = requirementsOf(d);
+        return reqs.length ? reqs.filter(r => !bar.some(s => checkIngredientMatch(r, s))).length : Infinity;
+    } : undefined;
+    if (window.BarSmart) return window.BarSmart.pickDailyCocktail(pool, date, { missingCount, vibeMatch: (d, vibe) => { enrichDrink(d); return matchesVibe(d, vibe); } });
+    const sorted = pool.slice().sort((a, b) => String(a.idDrink).localeCompare(String(b.idDrink)));
+    return { drink: sorted[Math.floor(Date.now() / 86400000) % sorted.length], reason: 'all', occasion: '' };
+}
+
+function getDailyCocktail() {
+    return getDailyPick()?.drink || null;
 }
 
 function renderDailyCocktail() {
-    const drink = getDailyCocktail();
+    const pick = getDailyPick();
+    const drink = pick?.drink;
     const box = document.getElementById('home-daily');
     if (!drink || !box) return false;
     const t = I18N[currentLang];
+    box.dataset.drinkId = drink.idDrink;
     box.querySelector('#home-daily-img').src = BarSecurity.displayImage(drink.strDrinkThumb);
     box.querySelector('#home-daily-title').textContent = drink.strDrink;
-    box.querySelector('#home-daily-meta').textContent = [drink.strGlass, drink.strCategory].filter(Boolean).join(' · ');
+    const why = [pick.reason === 'ready' ? t.dailyReady : pick.reason === 'closest' ? t.dailyClosest : '', pick.occasion ? t.dailyOccasion[pick.occasion] : ''].filter(Boolean);
+    box.querySelector('#home-daily-meta').textContent = [drink.strGlass, drink.strCategory, ...why].filter(Boolean).join(' · ');
     box.querySelector('#home-daily-eyebrow').textContent = t.dailyCocktail;
     box.querySelector('#home-daily-open').innerHTML = `${t.openRecipe} <span aria-hidden="true">→</span>`;
     return true;
@@ -4065,7 +4143,7 @@ document.addEventListener('keydown', event => {
 
 // Kartı ada göre değil kimliğe göre bulur: "Martini" araması "Espresso Martini"yi açmamalı.
 function findCocktailCardById(id) {
-    return Array.from(document.querySelectorAll('#recipes-ready > .cocktail-card, #recipes-missing > .cocktail-card'))
+    return Array.from(document.querySelectorAll('#recipes-ready > .cocktail-card, #recipes-substitute > .cocktail-card, #recipes-missing > .cocktail-card'))
         .find(card => card.dataset.drinkId === id) || null;
 }
 
@@ -4081,7 +4159,7 @@ function openCocktail(randomDrink) {
         let card = findCocktailCardById(id);
         // Aynı adı içeren çok sonuç varsa hedef kart sonraki sayfada kalmış olabilir.
         for (let guard = 0; !card && guard < 20; guard++) {
-            const more = document.querySelector('#recipes-ready .load-more-container button, #recipes-missing .load-more-container button');
+            const more = document.querySelector('#recipes-ready .load-more-container button, #recipes-substitute .load-more-container button, #recipes-missing .load-more-container button');
             if (!more) break;
             more.click();
             card = findCocktailCardById(id);
@@ -4383,7 +4461,7 @@ function applyLanguage() {
     const btnForceSync = document.getElementById('btn-force-sync');
     if (btnForceSync) btnForceSync.innerHTML = `<span><i class="bci bci-refresh" aria-hidden="true"></i></span> ${t.updateDb}`;
     const btnCheckUpdate = document.querySelector('[data-ui="ui-37"]');
-    if (btnCheckUpdate) btnCheckUpdate.innerHTML = `<span><i class="bci bci-rocket" aria-hidden="true"></i></span> ${t.checkUpdates} (v${CURRENT_APP_VERSION})`;
+    if (btnCheckUpdate) btnCheckUpdate.innerHTML = `<span><i class="bci bci-rocket" aria-hidden="true"></i></span> ${t.checkUpdates} (v${getInstalledAppVersion()})`;
 
     // Affiliate Card
     const affLabel = document.querySelector('#affiliate-banner span.tracking-wider');
@@ -4432,7 +4510,7 @@ function applyLanguage() {
 
     const btnReserve = document.getElementById('btn-open-reserve');
     if (btnReserve) {
-        btnReserve.title = currentLang === 'en' ? 'Pocket Bar Reserve — Ad-Free & Exclusive Curation' : 'Bar Cepte Reserve — Reklamsız & Özel Seçkiler';
+        btnReserve.title = currentLang === 'en' ? 'Pocket Bar Reserve — Ad-free & party planner' : 'Bar Cepte Reserve — Reklamsız & parti planlayıcısı';
     }
 
     const btnAuth = document.getElementById('btn-auth-user');
@@ -4530,8 +4608,8 @@ function applyLanguage() {
     const reserveDesc = document.querySelector('#reserve-modal .space-y-1 p');
     if (reserveDesc) {
         reserveDesc.innerText = currentLang === 'en'
-            ? 'Unleash your bar. Ad-free, unlimited, and master mixologist level.'
-            : 'Barının sınırlarını kaldır. Reklamsız, sınırsız ve usta miksoloji seviyesinde.';
+            ? 'Use Pocket Bar without ads, unlock the party planner and support its independent development.'
+            : 'Bar Cepte\'yi reklamsız kullan, parti planlayıcısını aç ve bağımsız gelişimine destek ol.';
     }
     const reserveActiveH4 = document.querySelector('#reserve-status-active h4');
     if (reserveActiveH4) reserveActiveH4.innerText = t.reserveActiveHeading;
@@ -5064,7 +5142,7 @@ async function forceSyncOnlineDatabase() {
 // ==========================================
 // OTOMATİK SÜRÜM GÜNCELLEME SİSTEMİ (Android APK, Windows .exe, Web)
 // ==========================================
-// Tek sürüm kaynağı (CURRENT_APP_VERSION) dosyanın başında tanımlıdır.
+// Sürüm: CURRENT_APP_VERSION (web/masaüstü) ve getInstalledAppVersion() (Android köprüsü) dosyanın başında.
 
 // Güncelleme hedefi: web her zaman en son sürümü sunar (service worker bildirir), indirme yalnızca
 // masaüstü (Electron) ve Android içindir. Masaüstünde işletim sistemine uygun paket seçilir.
@@ -5115,10 +5193,10 @@ async function checkForAppUpdates(manual = false) {
         const release = await resp.json();
         const latestTag = release.tag_name || '';
 
-        if (latestTag && isNewerVersion(CURRENT_APP_VERSION, latestTag)) {
+        if (latestTag && isNewerVersion(getInstalledAppVersion(), latestTag)) {
             showUpdateModal(release);
         } else if (manual) {
-            alert(currentLang === 'en' ? `Awesome! Pocket Bar is up to date (v${CURRENT_APP_VERSION}).` : `Harika! Bar Cepte uygulamanız en güncel sürümde (v${CURRENT_APP_VERSION}).`);
+            alert(currentLang === 'en' ? `Awesome! Pocket Bar is up to date (v${getInstalledAppVersion()}).` : `Harika! Bar Cepte uygulamanız en güncel sürümde (v${getInstalledAppVersion()}).`);
         }
     } catch (e) {
         if (manual) alert(currentLang === 'en' ? "Connection error during update check." : "Güncelleme denetimi sırasında bağlantı hatası oluştu.");
@@ -5134,7 +5212,7 @@ function showUpdateModal(release) {
     const btn = document.getElementById('btn-update-download');
     const btnLabel = document.getElementById('update-btn-label');
 
-    if (verEl) verEl.innerText = currentLang === 'en' ? `${release.tag_name} Ready! (Current: v${CURRENT_APP_VERSION})` : `${release.tag_name} Hazır! (Mevcut: v${CURRENT_APP_VERSION})`;
+    if (verEl) verEl.innerText = currentLang === 'en' ? `${release.tag_name} Ready! (Current: v${getInstalledAppVersion()})` : `${release.tag_name} Hazır! (Mevcut: v${getInstalledAppVersion()})`;
     if (notesEl) {
         notesEl.innerText = release.body 
             ? release.body.replace(/###|\*\*|_/g, '').slice(0, 300) 
@@ -5236,6 +5314,19 @@ window.BarAIAddRecipe = function(recipe) {
     try { localStorage.setItem('customRecipes', JSON.stringify(customRecipes)); } catch(e) { return false; }
     if (currentTab === 'my-recipes') renderMyRecipes();
     return true;
+};
+
+// Party planner: adds missing ingredients without duplicates (same rules as the personal bar).
+// Returns how many were added, or -1 if the list could not be validated or saved.
+window.BarAddToShopping = function(items) {
+    const names = Array.isArray(items) ? items.filter(item => typeof item === 'string' && item.trim()).slice(0, 60) : [];
+    const updated = BarPersonal.mergeShopping(shoppingList, names);
+    try { BarSecurity.stringList(updated); localStorage.setItem('shoppingList', JSON.stringify(updated)); } catch(e) { return -1; }
+    const added = updated.length - shoppingList.length;
+    shoppingList = updated;
+    if (currentTab === 'shop') renderShoppingList();
+    filterCocktails();
+    return added;
 };
 
 window.BarAIAddMissingToShopping = function(items) {

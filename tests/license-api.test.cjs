@@ -50,6 +50,7 @@ test('Production API protects issued licenses, admin data and webhook requests',
     assert.equal(unissued.status, 400);
     assert.equal(unissued.data.success, false);
     assert.equal((await claim({ key: 'RESERVE-SULUNCA-2026', deviceId: 'alice-phone' })).status, 400);
+    assert.equal((await claim({ key: 'BARCEPTE-RESERVE-VIP', deviceId: 'alice-phone' })).status, 400);
     assert.equal((await claim({key:testKey,uid:'forged-alice',deviceId:'alice-phone'})).status,401);
     const claimsPath = path.join(dataDir, 'claimed_licenses.json');
     const claims = JSON.parse(fs.readFileSync(claimsPath, 'utf8'));

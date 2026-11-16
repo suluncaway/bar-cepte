@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=17">
+    <link rel="stylesheet" href="vivid.css?v=18">
     <link rel="stylesheet" href="icons.css?v=1">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -60,7 +60,7 @@
                     </button>
 
                     <!-- Bar Cepte Reserve Üyelik Butonu -->
-                    <button id="btn-open-reserve" type="button" title="Bar Cepte Reserve — Reklamsız & Özel Seçkiler" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all shrink-0 whitespace-nowrap">
+                    <button id="btn-open-reserve" type="button" title="Bar Cepte Reserve — Reklamsız & parti planlayıcısı" class="pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all shrink-0 whitespace-nowrap">
                         <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg>
                         <span id="reserve-btn-label" class="hidden sm:inline tracking-wide">Reserve</span>
                     </button>
@@ -362,6 +362,7 @@
 
         <!-- 5. Eksik Malzeme Alışveriş Listesi Paneli -->
         <section id="shopping-list-panel" class="hidden px-4 animate-fade-in space-y-4">
+            <section id="party-planner" class="personal-panel party-planner" aria-labelledby="party-title"></section>
             <div class="acrylic-card p-5 rounded-3xl space-y-4">
                 <div class="flex items-center justify-between border-b border-white/10 pb-3">
                     <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider"><i class="bci bci-cart" aria-hidden="true"></i> Eksik Malzeme Alışveriş Listesi</h2>
@@ -435,6 +436,14 @@
                     </h2>
                 </div>
                 <div id="recipes-ready" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"></div>
+            </section>
+
+            <section id="substitute-section" class="hidden" aria-labelledby="title-substitute">
+                <div class="mb-3.5">
+                    <h2 id="title-substitute" class="text-xs font-bold uppercase tracking-wider flex items-center gap-2">İkameyle yapılabilenler <span id="count-substitute" class="text-[10px] px-2 py-0.5 rounded-full font-bold">0</span></h2>
+                    <p id="substitute-intro" class="substitute-intro text-xs text-slate-400 mt-1">Tek eksiği olan ve o eksiğin yerine barındaki bir malzemeyi güvenle kullanabileceğin tarifler.</p>
+                </div>
+                <div id="recipes-substitute" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start"></div>
             </section>
 
             <!-- Akıllı Tavsiye Kutusu: kullanıcının kendi tariflerinden sonra -->
@@ -631,12 +640,12 @@
             <!-- Başlık & Logo -->
             <div class="space-y-1 pt-1">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-black tracking-widest uppercase">
-                    <span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span> ÖZEL SEÇKİ KULÜBÜ
+                    <span><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span> RESERVE ÜYELİĞİ
                 </div>
                 <h3 class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center justify-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
                     BAR CEPTE <span class="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">RESERVE</span>
                 </h3>
-                <p class="text-xs text-slate-400">Barının sınırlarını kaldır. Reklamsız, sınırsız ve usta miksoloji seviyesinde.</p>
+                <p class="text-xs text-slate-400">Bar Cepte'yi reklamsız kullan, parti planlayıcısını aç ve bağımsız gelişimine destek ol.</p>
             </div>
 
             <!-- İnaktif Durum: Planlar ve Satın Alma -->
@@ -645,19 +654,19 @@
                 <div class="bg-black/40 border border-white/5 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl text-left space-y-2 sm:space-y-2.5 text-[11px] sm:text-xs text-slate-300 break-words">
                     <div class="flex items-center gap-2.5">
                         <span class="text-base text-amber-400 shrink-0"><i class="bci bci-ban" aria-hidden="true"></i></span>
-                        <span><strong>%100 Reklamsız Deneyim:</strong> Sıfır reklam, kesintisiz hız.</span>
-                    </div>
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-base text-amber-400 shrink-0"><i class="bci bci-martini" aria-hidden="true"></i></span>
-                        <span><strong>Gizli Speakeasy Seçkisi:</strong> Usta barmenlerin imza kokteylleri ve şurup rehberleri.</span>
+                        <span><strong>Reklamsız deneyim:</strong> Web'de reklam alanları, Android uygulamasında banner ve geçiş reklamları gösterilmez; satış ortaklığı bandı da gizlenir.</span>
                     </div>
                     <div class="flex items-center gap-2.5">
                         <span class="text-base text-amber-400 shrink-0"><i class="bci bci-party" aria-hidden="true"></i></span>
-                        <span><strong>Parti & Porsiyon Modu:</strong> 10-50 kişilik davetler için tam malzeme hesabı.</span>
+                        <span><strong>Parti planlayıcısı:</strong> 10–50 misafir için toplam malzeme (cl), şişe sayısı ve eksiklerin alışveriş listesine eklenmesi.</span>
                     </div>
                     <div class="flex items-center gap-2.5">
                         <span class="text-base text-amber-400 shrink-0"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg></span>
-                        <span><strong>Reserve rozeti:</strong> Hesabında görünür, öncelikli destek dahil.</span>
+                        <span><strong>Reserve rozeti:</strong> Logonun yanında ve hesabında görünür.</span>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base text-amber-400 shrink-0"><i class="bci bci-heart" aria-hidden="true"></i></span>
+                        <span><strong>Bağımsız geliştirmeye destek:</strong> Tüm tarif ve rehberlerin ücretsiz kalmasına katkı sağlar.</span>
                     </div>
                 </div>
 
@@ -727,7 +736,7 @@
                         <span id="reserve-active-plan-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500 text-slate-950">Yıllık Plan</span>
                         <span id="reserve-active-duration" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-amber-300 border border-white/10">⏳ 365 Gün Kaldı</span>
                     </div>
-                    <p class="text-xs text-slate-300 mt-2">Tüm ayrıcalıklar, gizli kokteyller ve reklamsız deneyim bu cihazda devrede.</p>
+                    <p class="text-xs text-slate-300 mt-2">Reklamsız deneyim ve parti planlayıcısı bu cihazda açık.</p>
                 </div>
                 <div class="p-3 bg-white/5 rounded-2xl border border-white/10 text-xs text-slate-400">
                     Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde! <i class="bci bci-martini" aria-hidden="true"></i>
@@ -839,6 +848,15 @@
                         Hesaptan Çıkış Yap
                     </button>
                 </div>
+
+                <!-- Hesabı Sil (yalnızca Google ile bağlı bulut hesabı) -->
+                <div id="auth-delete-section" class="hidden p-3.5 rounded-2xl bg-rose-950/20 border border-rose-500/25 space-y-2 text-left">
+                    <p id="auth-delete-desc" class="text-[11px] text-slate-400">Bulut yedeğin ve oturumların sunucudan kalıcı olarak silinir. Bu cihazdaki verilerin ve satın aldığın Reserve kodu korunur.</p>
+                    <button id="btn-auth-delete-account" type="button" aria-describedby="auth-delete-desc" class="text-xs text-rose-300 border border-rose-500/40 px-3 py-1.5 rounded-xl hover:bg-rose-500/15 font-bold cursor-pointer">
+                        Hesabımı ve bulut yedeğimi sil
+                    </button>
+                    <p id="auth-delete-status" class="text-[11px] text-rose-300" role="status" aria-live="polite"></p>
+                </div>
             </div>
         </div>
     </div>
@@ -859,11 +877,13 @@
     </dialog>
     <script src="security.js?v=45"></script>
     <script src="firebase-config.js"></script>
-    <script src="auth.js?v=43"></script>
+    <script src="auth.js?v=44"></script>
     <script src="personal-bar.js?v=43"></script>
     <script src="inventory.js?v=43"></script>
-    <script src="game.js?v=62"></script>
+    <script src="smart-bar.js?v=1"></script>
+    <script src="game.js?v=63"></script>
     <script src="personal-ui.js?v=44"></script>
+    <script src="party-ui.js?v=1"></script>
     <script src="tutorial.js?v=1"></script>
     <script src="dynamic-ui.js?v=48"></script>
     <script src="editorial-ui.js?v=45"></script>
@@ -871,7 +891,7 @@
     <script src="support.js"></script>
     <script src="ads.js"></script>
     <script src="reserve.js"></script>
-    <script src="ai-assistant-ui.js?v=2"></script>
+    <script src="ai-assistant-ui.js?v=3"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>

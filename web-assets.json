@@ -34,6 +34,8 @@
   "favicon-32.png",
   "storage-migration.js",
   "personal-bar.js",
+  "smart-bar.js",
+  "party-ui.js",
   "personal-ui.js",
   "tutorial.js",
   "theme.js",

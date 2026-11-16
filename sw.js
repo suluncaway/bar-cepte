@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bar-cepte-v83-client-fixes';
+const CACHE_NAME = 'bar-cepte-v84-smart-bar';
 const NETWORK_TIMEOUT_MS = 3000;
 const IMAGE_CACHE = 'bar-cepte-images-v2';
-const ASSETS = ['./business-flow.js', './landing.html', './landing.css', './business-reports.js', './business.html', './business.css', './business-rules.js', './business-ui.js', './inventory.js', './personal-bar.js', './personal-ui.js', './', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './vivid.css', './icons.css', './tailwind.css', './game.js',
+const ASSETS = ['./business-flow.js', './landing.html', './landing.css', './business-reports.js', './business.html', './business.css', './business-rules.js', './business-ui.js', './inventory.js', './personal-bar.js', './personal-ui.js', './smart-bar.js', './party-ui.js', './', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './vivid.css', './icons.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
     './ads.js', './reserve.js', './ai-assistant-ui.js', './tutorial.js', './theme.js', './auth.js', './firebase-config.js', './manifest.json', './cocktails.json', './icon.png', './icon-192.png', './icon-512.png', './icon-512-maskable.png', './apple-touch-icon.png', './favicon.svg', './favicon-32.png', './editorial-ui.js', './editorial-cocktails.webp'];
 const SCOPE = new URL('./', self.location.href);

@@ -92,6 +92,20 @@
         if (count) count.textContent = String(context.inventory.length);
     }
 
+    // Short taste summary from the personal notebook (preferences + latest like/dislike per recipe).
+    // Recipe names and tastes only; notes and dates never leave the device. Server caps it at 200 chars.
+    function preferenceContext(language) {
+        try {
+            if (!window.BarSmart || !window.BarSecurity) return '';
+            const prefs = window.BarSecurity.readStored('personalPreferences', window.BarSecurity.preferences);
+            const history = window.BarSecurity.readStored('preparationHistory', window.BarSecurity.history);
+            return window.BarSmart.preferenceSummary(Array.isArray(prefs) ? {} : prefs, Array.isArray(history) ? history : [],
+                { language: language === 'en' ? 'en' : 'tr', maxLength: 200 });
+        } catch {
+            return '';
+        }
+    }
+
     async function sendMessage(text) {
         const message = String(text || '').trim();
         if (!message || busy) return;
@@ -123,7 +137,7 @@
                     history: messages.slice(-8),
                     language: context.language,
                     unit: context.unit,
-                    preferences: ''
+                    preferences: preferenceContext(context.language)
                 })
             });
             const result = await response.json().catch(() => ({}));
@@ -168,7 +182,7 @@
         updateInventoryCount();
     }
 
-    window.BarAI = { onOpen: updateInventoryCount, sendMessage };
+    window.BarAI = { onOpen: updateInventoryCount, sendMessage, preferenceContext };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
     else init();
 })();

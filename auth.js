@@ -511,6 +511,16 @@
             const cloudStatus=document.getElementById('auth-cloud-status');
             if(cloudStatus)cloudStatus.textContent=cloudEnabled?(getCurrentLang()==='en'?'● Connected':'● Bağlı'):(getCurrentLang()==='en'?'Local mode':'Yerel mod');
 
+            const deleteSection=document.getElementById('auth-delete-section');
+            if(deleteSection){
+                deleteSection.classList.toggle('hidden',!cloudEnabled);
+                const isEn=getCurrentLang()==='en';
+                const desc=document.getElementById('auth-delete-desc');
+                if(desc)desc.textContent=isEn?'Your cloud backup and sessions are permanently deleted from the server. Data on this device and any Reserve code you bought are kept.':'Bulut yedeğin ve oturumların sunucudan kalıcı olarak silinir. Bu cihazdaki verilerin ve satın aldığın Reserve kodu korunur.';
+                const deleteBtn=document.getElementById('btn-auth-delete-account');
+                if(deleteBtn)deleteBtn.textContent=isEn?'Delete my account and cloud backup':'Hesabımı ve bulut yedeğimi sil';
+            }
+
             // Lisans bağlama kutusunun durumunu ayarla
             const licenseBindBox = document.getElementById('auth-license-bind-section');
             if (licenseBindBox) {
@@ -600,6 +610,29 @@
             logoutBtn.addEventListener('click', () => {
                 if (confirm(getCurrentLang() === 'en' ? 'Are you sure you want to sign out of your account?' : 'Hesabınızdan çıkış yapmak istediğinize emin misiniz?')) {
                     logout();
+                }
+            });
+        }
+
+        const deleteAccountBtn = document.getElementById('btn-auth-delete-account');
+        if (deleteAccountBtn) {
+            deleteAccountBtn.addEventListener('click', async () => {
+                const isEn = getCurrentLang() === 'en';
+                const status = document.getElementById('auth-delete-status');
+                if (!confirm(isEn
+                    ? 'Permanently delete your account, cloud backup and sessions from the server? This cannot be undone. Data on this device and your Reserve code are kept.'
+                    : 'Hesabın, bulut yedeğin ve oturumların sunucudan kalıcı olarak silinsin mi? Bu işlem geri alınamaz. Bu cihazdaki verilerin ve Reserve kodun korunur.')) return;
+                deleteAccountBtn.disabled = true;
+                if (status) status.textContent = isEn ? 'Deleting…' : 'Siliniyor…';
+                let result;
+                try { result = await deleteCloudAccount(); } catch { result = { success: false, reason: '' }; }
+                deleteAccountBtn.disabled = false;
+                if (result.success) {
+                    if (status) status.textContent = '';
+                    showAlert(isEn ? 'Your account and cloud backup were deleted. You are signed out.' : 'Hesabın ve bulut yedeğin silindi. Oturumun kapatıldı.');
+                    renderAuthModalState();
+                } else if (status) {
+                    status.textContent = (isEn ? 'Could not delete: ' : 'Silinemedi: ') + (result.reason || (isEn ? 'try again later.' : 'daha sonra tekrar dene.'));
                 }
             });
         }
