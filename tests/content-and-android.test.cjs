@@ -92,7 +92,9 @@ test('Android wrapper honours Reserve, clears migration history, exports files a
     assert.match(activity, /APP_ORIGIN = "https:\/\/appassets\.androidplatform\.net"/);
     assert.match(activity, /WebViewCompat\.addWebMessageListener\(webView, NATIVE_CHANNEL, Collections\.singleton\(APP_ORIGIN\)/);
     assert.match(activity, /if \(!isMainFrame \|\| sourceOrigin == null \|\| !APP_ORIGIN\.equals\(sourceOrigin\.toString\(\)\)\) return;/);
-    assert.match(activity, /public void setReserveActive\(boolean active\) \{\s+if \(reserveActive == active\) return;\s+if \(!callerIsApp\(\)\) return;/);
+    // With the origin-restricted channel set up, the older bridge cannot change the Reserve state.
+    assert.match(activity, /public void setReserveActive\(boolean active\) \{\s+if \(nativeChannelReady \|\| reserveActive == active\) return;\s+if \(!callerIsApp\(\)\) return;/);
+    assert.match(activity, /"setReserveActive"\.equals\(type\)\) \{\s+applyReserveState\(json\.optBoolean\("active"\)\);/);
     assert.match(activity, /if \(nativeChannelReady \|\| !callerIsApp\(\)\) return;/);
     assert.match(activity, /runOnUiThread\(\(\) -> \{\s+try \{\s+url\.set\(webView\.getUrl\(\)\);/);
     const extensions = activity.match(/private static String exportExtension\(String mime\) \{([\s\S]*?)\n    \}/)[1];
@@ -103,6 +105,8 @@ test('Android wrapper honours Reserve, clears migration history, exports files a
     assert.match(activity, /String name = base \+ extension;/);
     assert.match(activity, /EXPORT_MAX_AGE_MS = 24L \* 60 \* 60 \* 1000/);
     assert.match(activity, /new Thread\(this::deleteOldExports/);
-    // reserve.js still reports the state through the bridge.
-    assert.match(read('reserve.js'), /AndroidBridge\.setReserveActive\(isReserveActive\(\)\)/);
+    // reserve.js reports the state through BarCepteNative when present, else through the older bridge.
+    const reserveJs = read('reserve.js');
+    assert.match(reserveJs, /channel\.postMessage\(JSON\.stringify\(\{ type: 'setReserveActive', active: Boolean\(active\) \}\)\); return;/);
+    assert.match(reserveJs, /AndroidBridge\.setReserveActive\(Boolean\(active\)\)/);
 });

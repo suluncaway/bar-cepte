@@ -79,12 +79,10 @@ function createFileStore(directory) {
                     if(existing.needsReview) {
                         const sale=(await store.getSold()).find(row=>row.licenseKey===key);
                         const recovered=recoverLegacyClaim(existing,sale,proposed);
-                        if(recovered) {existing=recovered;claimed[key]=recovered;write(claimedFile,claimed);}
+                        if(recovered) {existing={...recovered,binding:'account'};claimed[key]=existing;write(claimedFile,claimed);}
                     }
-                    if (!existing.uid && proposed.uid && existing.deviceId===proposed.deviceId && !existing.needsReview &&
-                        (existing.expiresAt===0 || existing.expiresAt>Date.now())) {
-                        claimed[key]={...existing,uid:proposed.uid,email:proposed.email};write(claimedFile,claimed);
-                    }
+                    // A device-bound claim stays bound to the device: a signed-in re-check never adds the
+                    // caller's account to it (that used to tie the key to whoever signed in on the device).
                     return {issued:true,buyerMatch,existing:claimed[key]};
                 }
                 if (options.requireBuyer && !buyerMatch) return {issued: true, needsAccount: true, buyerMatch};
@@ -351,13 +349,9 @@ function createPostgresStore(connectionString) {
                     let existing=rows[0].payload;
                     if(existing.needsReview) {
                         const recovered=recoverLegacyClaim(existing,sold.rows[0].payload,proposed);
-                        if(recovered) {existing=recovered;await client.query('UPDATE barcepte_claims SET payload=$2::jsonb WHERE license_key=$1',[key,JSON.stringify(existing)]);}
+                        if(recovered) {existing={...recovered,binding:'account'};await client.query('UPDATE barcepte_claims SET payload=$2::jsonb WHERE license_key=$1',[key,JSON.stringify(existing)]);}
                     }
-                    if(!existing.uid && proposed.uid && existing.deviceId===proposed.deviceId && !existing.needsReview &&
-                        (existing.expiresAt===0 || existing.expiresAt>Date.now())) {
-                        existing={...existing,uid:proposed.uid,email:proposed.email};
-                        await client.query('UPDATE barcepte_claims SET payload=$2::jsonb WHERE license_key=$1',[key,JSON.stringify(existing)]);
-                    }
+                    // A device-bound claim is never silently attached to the signed-in caller's account.
                     await client.query('COMMIT'); return {issued:true,buyerMatch,existing};
                 }
                 if (options.requireBuyer && !buyerMatch) {await client.query('ROLLBACK'); return {issued: true, needsAccount: true, buyerMatch};}

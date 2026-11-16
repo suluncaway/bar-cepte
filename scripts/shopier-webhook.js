@@ -108,6 +108,20 @@ function readJsonBody(req, maxBytes = 64 * 1024) {
     });
 }
 
+// Who may use a sealed claim and what it is bound to ('device' | 'account').
+// - Claims made without a session (binding 'device', or no uid) belong to the device id that sealed them;
+//   a signed-in caller on that device is answered as the device, and the claim never gains a uid.
+// - Claims made with a session (binding 'account') belong to that Google account only.
+// - Claims stored before bindings were recorded may carry a uid that an earlier version attached
+//   silently to a device claim, so the sealing device id keeps them as a device claim as well.
+function claimAccess(claim, uid, deviceId) {
+    if (!claim || claim.needsReview) return {owner: false};
+    const deviceMatch = Boolean(deviceId && claim.deviceId === deviceId);
+    if (!claim.uid || claim.binding === 'device') return {owner: deviceMatch, boundTo: 'device'};
+    if (!claim.binding && deviceMatch) return {owner: true, boundTo: 'device'};
+    return {owner: Boolean(uid) && uid === claim.uid, boundTo: 'account'};
+}
+
 // Format/typo check only (current 130-bit keys and legacy keys); the sales registry decides validity.
 function verifyKeyChecksum(rawKey) {
     return isValidKeyFormat(rawKey);
@@ -508,6 +522,8 @@ async function handleRequest(req, res) {
     // - Legacy short keys (~20 random bits, guessable) are only restored for their sealed owner or
     //   first claimed by the signed-in Google account whose verified e-mail is the sale's buyer e-mail;
     //   everyone else gets 403 legacy_requires_account (whether or not the key exists).
+    // - Success answers carry boundTo ('device' | 'account', see claimAccess); a signed-in re-check of
+    //   a device claim stays 'device' and does not attach the account.
     if (req.method === 'POST' && requestPath === '/api/claim-license') {
         const startedAt = Date.now();
         const ip = ipOf(req);
@@ -544,10 +560,11 @@ async function handleRequest(req, res) {
             const proposedDuration = proposedPlan === 'monthly' ? 30 * 86400000 : proposedPlan === 'annual' ? 365 * 86400000 : 0;
             const proposed = {key: cleanKey, plan: proposedPlan, duration: proposedDuration,
                 claimedAt: time, expiresAt: proposedDuration ? time + proposedDuration : 0,
-                uid, email, deviceId};
+                uid, email, deviceId, binding: uid ? 'account' : 'device'};
             const result = await licenseStore.claim(cleanKey, proposed, legacy ? {requireBuyer: true} : undefined);
             const existing = result.existing;
-            const isOwner = Boolean(existing) && !existing.needsReview && (existing.uid ? uid===existing.uid : Boolean(deviceId && existing.deviceId===deviceId));
+            const access = claimAccess(existing, uid, deviceId);
+            const isOwner = access.owner;
             if (legacy && !isOwner && !result.buyerMatch) {
                 licenseBackoff.fail(ip);
                 return rejectClaim(res, startedAt, 403, {success: false, code: 'legacy_requires_account',
@@ -578,7 +595,7 @@ async function handleRequest(req, res) {
                 }
                 licenseBackoff.succeed(ip);
                 return json(res, 200, {success: true, plan: existing.plan, expiresAt: existing.expiresAt, restored: true,
-                    message: 'Aboneliğiniz bu cihazda doğrulandı.'});
+                    boundTo: access.boundTo, message: 'Aboneliğiniz bu cihazda doğrulandı.'});
             }
             if (!result.record) {
                 // Defensive: a store that neither created nor found a claim.
@@ -588,7 +605,7 @@ async function handleRequest(req, res) {
             }
             licenseBackoff.succeed(ip);
             const {plan, expiresAt} = result.record;
-            return json(res, 200, {success: true, plan, expiresAt,
+            return json(res, 200, {success: true, plan, expiresAt, boundTo: result.record.uid ? 'account' : 'device',
                 message: '🎉 Lisans anahtarınız başarıyla aktif edildi ve tek kullanımlık olarak mühürlendi!'});
         } catch {
             return json(res, 500, { success: false, reason: 'Sunucu hatası oluştu.' });
@@ -618,8 +635,8 @@ async function handleRequest(req, res) {
             const cleanKey = rawKey.trim().toUpperCase();
             const license = verifyKeyChecksum(cleanKey) && (uid || deviceId) ? await licenseStore.getLicense(cleanKey) : null;
             const claim = license && license.claim;
-            const isOwner = Boolean(claim) && !claim.needsReview && (claim.uid ? uid===claim.uid : Boolean(deviceId && claim.deviceId===deviceId));
-            if (!isOwner) {
+            const access = claimAccess(claim, uid, deviceId);
+            if (!access.owner) {
                 licenseBackoff.fail(ip);
                 return json(res, 200, { valid: false, reason: 'Bu cihaz veya hesap için etkin bir lisans bulunamadı.' });
             }
@@ -627,7 +644,7 @@ async function handleRequest(req, res) {
             const revoked = Boolean(license.sale.revoked || claim.revoked);
             const expired = claim.expiresAt > 0 && now() > claim.expiresAt;
             return json(res, 200, { valid: !revoked && !expired, claimed: true, isOwner: true, expired, revoked,
-                plan: claim.plan, expiresAt: claim.expiresAt });
+                plan: claim.plan, expiresAt: claim.expiresAt, boundTo: access.boundTo });
         } catch {
             return json(res, 500, { valid: false, error: 'Hata' });
         }

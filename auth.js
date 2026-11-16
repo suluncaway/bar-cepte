@@ -790,7 +790,13 @@
                 try {
                     if (root.BarReserve && typeof root.BarReserve.verifyAndActivateLicense === 'function') {
                         const result = await root.BarReserve.verifyAndActivateLicense(rawKey);
-                        if (result.success) {
+                        if (result.success && result.binding === 'device') {
+                            // The key was sealed to this device earlier; the server keeps it there and does not move it to the account.
+                            alert(getCurrentLang() === 'en' ? 'This key is active on this device. It was activated without an account, so it stays bound to this device and is not added to your account.' : 'Bu kod bu cihazda etkin. Hesapsız etkinleştirildiği için bu cihaza bağlı kalır, hesabına eklenmez.');
+                            if (input) input.value = '';
+                            renderAuthModalState();
+                            updateAuthUI();
+                        } else if (result.success) {
                             alert(getCurrentLang() === 'en' ? 'Your license key was successfully linked to your account!' : 'Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
                             if (input) input.value = '';
                             renderAuthModalState();

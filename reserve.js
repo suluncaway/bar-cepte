@@ -205,7 +205,7 @@
         if (!key || !validateLicenseKey(key)) return null;
         let since = 0, plan = '', expiresAt = 0;
         try {
-            since = Number(root.localStorage.getItem(LEGACY_GRACE_STORAGE)) || 0;
+            since = parseGraceStart(root.localStorage.getItem(LEGACY_GRACE_STORAGE));
             plan = root.localStorage.getItem(PLAN_STORAGE) || '';
             expiresAt = Number(root.localStorage.getItem(EXPIRES_STORAGE)) || 0;
         } catch { return null; }
@@ -216,8 +216,16 @@
         if (expiresAt > 0 && now >= expiresAt) return null;
         return { key, plan, expiresAt, graceUntil: since + LEGACY_GRACE_MS };
     }
+    // The grace start is written once, on the first verification attempt, and never rewritten: an
+    // edited value that is malformed or in the future ends the grace instead of restarting it. This is
+    // client-side state, so it only raises the bar; deleting the value still restarts the period.
+    function parseGraceStart(value) {
+        if (typeof value !== 'string' || !/^[1-9][0-9]{0,15}$/.test(value)) return 0;
+        const since = Number(value);
+        return Number.isSafeInteger(since) && since <= Date.now() ? since : 0;
+    }
     function startLegacyGrace() {
-        try { if (!root.localStorage.getItem(LEGACY_GRACE_STORAGE)) root.localStorage.setItem(LEGACY_GRACE_STORAGE, String(Date.now())); } catch {}
+        try { if (root.localStorage.getItem(LEGACY_GRACE_STORAGE) === null) root.localStorage.setItem(LEGACY_GRACE_STORAGE, String(Date.now())); } catch {}
     }
 
     // Only a server-confirmed entitlement counts; backups and local registries do not. Legacy flags
@@ -279,8 +287,12 @@
         const key = subscription.key.trim().toUpperCase();
         const previous = readEntitlement();
         // Same key re-confirmed without new information keeps what we already know about its binding.
-        const binding = options.binding === 'account' || options.binding === 'device' ? options.binding
+        let binding = options.binding === 'account' || options.binding === 'device' ? options.binding
             : (previous && previous.key === key ? previous.binding : undefined);
+        // The account server lists every claim carrying the account's id, including device claims an
+        // older server version attached to it. Only the license server's own answer (serverBinding)
+        // can turn a key this device holds as 'device' into an account key.
+        if (binding === 'account' && !options.serverBinding && previous && previous.key === key && previous.binding === 'device') binding = 'device';
         try {
             // An account's Reserve must not erase a different key bound to this device: set it aside.
             if (binding === 'account' && previous && previous.key !== key && previous.binding === 'device') {
@@ -298,8 +310,9 @@
         return isReserveActive();
     }
 
-    // Without a session the server only accepts a key bound to this device. With a session a new
-    // claim binds to the account, but a "restored" answer may be either binding.
+    // The license server says what the key is bound to (boundTo: 'device' | 'account'). Older servers
+    // did not: without a session only a device key is accepted; with a session a new claim binds to
+    // the account, but a "restored" answer may be either binding.
     function claimBinding(withAccount, data) {
         if (data && (data.boundTo === 'account' || data.boundTo === 'device')) return data.boundTo;
         if (!withAccount) return 'device';
@@ -327,7 +340,10 @@
             // Render can answer a cold start with an HTML error page; never let that surface as a network error.
             let data = {};
             try { data = await resp.json(); } catch { data = {}; }
-            if (resp.ok && data && data.success === true) return { status: 'ok', data, binding: claimBinding(withAccount, data) };
+            if (resp.ok && data && data.success === true) {
+                return { status: 'ok', data, binding: claimBinding(withAccount, data),
+                    serverBinding: data.boundTo === 'account' || data.boundTo === 'device' };
+            }
             // Only the server's explicit rejection codes remove a key; any other 409 (conflict,
             // proxy or deployment error) is retried like a network failure.
             const explicit = (resp.status === 400 || resp.status === 409 || resp.status === 410) &&
@@ -338,6 +354,12 @@
         } finally {
             if (timeout !== null) clearTimeout(timeout);
         }
+    }
+
+    function legacyAccountMessage(isEn) {
+        return isEn
+            ? 'To activate this key, sign in with the Google account you used for the purchase, or contact support.'
+            : 'Bu anahtarı etkinleştirmek için satın alırken kullandığın Google hesabıyla giriş yap ya da destekle iletişime geç.';
     }
 
     async function verifyAndActivateLicense(key) {
@@ -361,8 +383,8 @@
         }
         if (result.status === 'ok') {
             const { plan, expiresAt } = result.data;
-            if (acceptServerSubscription({ key: cleanKey, plan, expiresAt }, { binding: result.binding })) {
-                return { success: true, plan, expiresAt, message: result.data.message };
+            if (acceptServerSubscription({ key: cleanKey, plan, expiresAt }, { binding: result.binding, serverBinding: result.serverBinding })) {
+                return { success: true, plan, expiresAt, binding: result.binding, message: result.data.message };
             }
             return { success: false, reason: isEn
                 ? 'License verification could not be completed. Please try again.'
@@ -372,9 +394,7 @@
         // Older-format keys can only be activated from the buyer's Google account. This is not a
         // rejection of anything already stored: the saved entitlement stays untouched.
         if (result.httpStatus === 403 && data.code === 'legacy_requires_account') {
-            return { success: false, code: data.code, reason: isEn
-                ? 'To activate this key, sign in with the Google account you used for the purchase, or contact support.'
-                : 'Bu anahtarı etkinleştirmek için satın alırken kullandığın Google hesabıyla giriş yap ya da destekle iletişime geç.' };
+            return { success: false, code: data.code, reason: legacyAccountMessage(isEn) };
         }
         // Without an account the server gives one answer for unknown keys and keys used elsewhere.
         if (result.status === 'rejected' && data.code === 'not_issued') {
@@ -405,13 +425,18 @@
 
     // Re-confirms the stored key with the server (about once a day, or once for legacy flags).
     // Removes Reserve only when the server explicitly rejects the key; network/server errors keep it.
+    // 403 legacy_requires_account means "this caller does not own this legacy key": for a key the
+    // server once confirmed (an entitlement) that is a rejection; legacy flags that were never
+    // verified keep only their grace period.
     let revalidating = null;
     function revalidate(options = {}) {
         if (revalidating) return revalidating;
         const entitlement = readEntitlement();
         const key = entitlement ? entitlement.key : readLegacyKey();
         if (!key) return Promise.resolve({ status: 'none' });
-        if (entitlement && !options.force && Date.now() - entitlement.verifiedAt < REVALIDATE_MS) return Promise.resolve({ status: 'fresh' });
+        // A verification time in the future is not trusted (it would postpone the next check forever).
+        if (entitlement && !options.force && entitlement.verifiedAt <= Date.now() &&
+            Date.now() - entitlement.verifiedAt < REVALIDATE_MS) return Promise.resolve({ status: 'fresh' });
         if (!entitlement) { startLegacyGrace(); applyReserveUI(); }
         if (root.navigator && root.navigator.onLine === false) return Promise.resolve({ status: 'offline' });
         const generation = entitlementGeneration;
@@ -419,13 +444,17 @@
         revalidating = requestClaim(key).then(result => {
             if (generation !== entitlementGeneration || owner !== ownerScope()) return { status: 'stale' };
             if (result.status === 'ok') {
-                acceptServerSubscription({ key, plan: result.data.plan, expiresAt: result.data.expiresAt }, { binding: result.binding });
+                acceptServerSubscription({ key, plan: result.data.plan, expiresAt: result.data.expiresAt },
+                    { binding: result.binding, serverBinding: result.serverBinding });
                 return { status: 'confirmed' };
             }
-            if (result.status === 'rejected') {
+            const legacyRefused = Boolean(entitlement) && result.httpStatus === 403 &&
+                result.data && result.data.code === 'legacy_requires_account';
+            if (result.status === 'rejected' || legacyRefused) {
                 entitlementGeneration++;
                 clearStoredReserve();
                 applyReserveUI();
+                if (legacyRefused) showVerificationNotice(legacyAccountMessage(getCurrentLang() === 'en'));
                 return { status: 'removed', code: result.data && result.data.code };
             }
             return { status: 'kept', session: Boolean(result.session) };
@@ -528,10 +557,20 @@
         if (typeof root.showToast === 'function') { try { root.showToast(message, 'info'); } catch {} }
     }
 
-    function applyReserveUI() {
-        if (root.AndroidBridge && typeof root.AndroidBridge.setReserveActive === 'function') {
-            try { root.AndroidBridge.setReserveActive(isReserveActive()); } catch {}
+    // Android: the origin-restricted BarCepteNative channel when the WebView offers it, else the
+    // older AndroidBridge interface (which the app ignores once the channel is set up).
+    function reportNativeReserveState(active) {
+        const channel = root.BarCepteNative;
+        if (channel && typeof channel.postMessage === 'function') {
+            try { channel.postMessage(JSON.stringify({ type: 'setReserveActive', active: Boolean(active) })); return; } catch {}
         }
+        if (root.AndroidBridge && typeof root.AndroidBridge.setReserveActive === 'function') {
+            try { root.AndroidBridge.setReserveActive(Boolean(active)); } catch {}
+        }
+    }
+
+    function applyReserveUI() {
+        reportNativeReserveState(isReserveActive());
         if (typeof document === 'undefined') return;
         const active = isReserveActive();
         const isEn = getCurrentLang() === 'en';

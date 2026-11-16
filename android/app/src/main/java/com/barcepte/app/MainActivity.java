@@ -506,9 +506,11 @@ public class MainActivity extends Activity {
 
         // reserve.js reports the server-verified Reserve state on every UI refresh.
         // Only the bundled app page may change it (ads off); other pages or frames are ignored.
+        // Fallback for WebViews without WEB_MESSAGE_LISTENER: with the origin-restricted channel in
+        // place, reserve.js uses BarCepteNative and calls arriving here are ignored.
         @JavascriptInterface
         public void setReserveActive(boolean active) {
-            if (reserveActive == active) return;
+            if (nativeChannelReady || reserveActive == active) return;
             if (!callerIsApp()) return;
             applyReserveState(active);
         }
