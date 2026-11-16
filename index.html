@@ -20,7 +20,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#050505">
+    <meta name="theme-color" content="#0e131d">
     <meta property="og:title" content="Bar Cepte — Akıllı Bar & Kokteyl Asistanı">
     <meta property="og:description" content="Elindeki malzemelerle yapabileceğin kokteylleri anında bul.">
     <meta property="og:image" content="https://barcepte.com.tr/og-image.jpg">
@@ -33,7 +33,7 @@
     <meta name="description" content="Bar Cepte — Evdeki malzemelerinizi seçin, yapabileceğiniz 440+ kokteyl tarifini anında keşfedin. Akıllı barmen ve kokteyl asistanı.">
     <!-- Google AdSense -->
 </head>
-<body class="bg-[#050505] text-slate-100 min-h-screen antialiased select-none pb-28">
+<body class="bg-[#0e131d] text-slate-100 min-h-screen antialiased pb-28">
 
     <!-- Üst Başlık & Kontrol Çubuğu -->
     <header class="app-header">
@@ -307,9 +307,9 @@
             </div>
 
             <div class="ingredient-shelf">
-                <button data-ui="ui-30" class="absolute left-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all">◀</button>
+                <button data-ui="ui-30" type="button" aria-label="Malzemeleri sola kaydır" class="absolute left-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all"><span aria-hidden="true">◀</span></button>
                 <div id="ingredients-container" class="flex gap-3 overflow-x-auto custom-scroll px-12 py-2 scroll-smooth snap-x w-full min-h-[168px]"></div>
-                <button data-ui="ui-31" class="absolute right-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all">▶</button>
+                <button data-ui="ui-31" type="button" aria-label="Malzemeleri sağa kaydır" class="absolute right-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all"><span aria-hidden="true">▶</span></button>
             </div>
             <div class="ingredients-cta"><button id="btn-ingredients-to-recipes" type="button" class="primary-action">Tarifleri gör <span aria-hidden="true">→</span></button></div>
         </section>
@@ -319,7 +319,7 @@
             <div class="acrylic-card p-5 rounded-3xl space-y-4">
                 <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider"><i class="bci bci-sparkle" aria-hidden="true"></i> Yeni Kokteyl Tarifi Ekle</h2>
                 <div class="space-y-3 text-xs">
-                    <input type="text" id="custom-name" placeholder="Kokteyl Adı (Örn: Çilekli Margarita)" class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
+                    <input type="text" id="custom-name" aria-label="Kokteyl adı" placeholder="Kokteyl Adı (Örn: Çilekli Margarita)" class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
 
                     <div class="grid grid-cols-2 gap-2">
                         <select id="custom-alcoholic" class="bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
@@ -336,11 +336,11 @@
                         </select>
                     </div>
 
-                    <input type="text" id="custom-ingredients" placeholder="Malzemeler (Virgülle ayırın: 50 ml Votka, 25 ml Limon Suyu, Buz)" class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
+                    <input type="text" id="custom-ingredients" aria-label="Malzemeler" placeholder="Malzemeler (virgül, noktalı virgül ya da satırla ayırın: 4,5 cl Votka, 25 ml Limon Suyu, Buz)" class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-white focus:border-amber-500 outline-none">
 
-                    <textarea id="custom-instructions" rows="3" placeholder="Hazırlanış Adımları (Örn: Shaker'a buz ekleyin, 15 saniye kuvvetlice çalkalayın...)" class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 resize-none text-white focus:border-amber-500 outline-none"></textarea>
+                    <textarea id="custom-instructions" rows="3" aria-label="Hazırlanış adımları" placeholder="Hazırlanış Adımları (Örn: Shaker'a buz ekleyin, 15 saniye kuvvetlice çalkalayın...)" class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 resize-none text-white focus:border-amber-500 outline-none"></textarea>
 
-                    <textarea id="custom-serving" rows="2" placeholder="Servis & Garnitür Önerisi (Örn: Tuzlu kenar ve misket limonu dilimi ile servis edin)..." class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 resize-none text-white focus:border-amber-500 outline-none"></textarea>
+                    <textarea id="custom-serving" rows="2" aria-label="Servis ve garnitür önerisi" placeholder="Servis & Garnitür Önerisi (Örn: Tuzlu kenar ve misket limonu dilimi ile servis edin)..." class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 resize-none text-white focus:border-amber-500 outline-none"></textarea>
 
                     <div class="border border-white/10 rounded-2xl p-3.5 bg-black/40">
                         <label class="text-slate-400 block mb-2 font-medium text-xs"><i class="bci bci-camera" aria-hidden="true"></i> Kokteyl Fotoğrafı:</label>
@@ -388,7 +388,7 @@
                         <span><i class="bci bci-refresh" aria-hidden="true"></i></span> Kokteyl Veritabanını Güncelle
                     </button>
                     <button data-ui="ui-37" class="w-full bg-slate-900 border border-white/10 text-slate-300 font-semibold py-2.5 rounded-xl hover:border-amber-500/40 hover:text-white transition-all flex items-center justify-center gap-2">
-                        <span><i class="bci bci-rocket" aria-hidden="true"></i></span> Yeni Sürüm Kontrolü Yap (v1.1.0)
+                        <span><i class="bci bci-rocket" aria-hidden="true"></i></span> Yeni Sürüm Kontrolü Yap
                     </button>
                 </div>
             </div>
@@ -503,11 +503,11 @@
     </main>
 
     <!-- Barmen Zamanlayıcısı (Shaker & Stir Timer) Modal -->
-    <div id="shaker-timer-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 animate-fade-in">
+    <div id="shaker-timer-modal" role="dialog" aria-modal="true" aria-labelledby="timer-modal-title" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 animate-fade-in">
         <div class="acrylic-card w-full max-w-xs p-6 rounded-3xl space-y-4 text-center relative border border-amber-500/30 shadow-2xl">
             <button data-ui="ui-38" aria-label="Kapat" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
 
-            <h3 class="pt-1 text-sm font-extrabold text-white tracking-wide">BARMEN ZAMANLAYICISI</h3>
+            <h3 id="timer-modal-title" class="pt-1 text-sm font-extrabold text-white tracking-wide">BARMEN ZAMANLAYICISI</h3>
 
             <!-- Süre Göstergesi: bardak altlığı (coaster) dolar, bitince damga basılır -->
             <div class="py-2">
@@ -538,17 +538,17 @@
     </div>
 
     <!-- Uygulama Güncelleme Modalı (Android, Windows ve Web) -->
-    <div id="update-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4 animate-fade-in">
+    <div id="update-modal" role="dialog" aria-modal="true" aria-labelledby="update-modal-title" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4 animate-fade-in">
         <div class="acrylic-card w-full max-w-sm p-6 rounded-3xl space-y-4 text-center relative border border-amber-500/40 shadow-2xl">
-            <button data-ui="ui-44" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
+            <button data-ui="ui-44" type="button" aria-label="Kapat" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
 
             <div class="w-14 h-14 mx-auto rounded-3xl bg-gradient-to-tr from-amber-500/30 to-amber-400/10 border border-amber-500/40 flex items-center justify-center text-3xl shadow-lg">
                 <i class="bci bci-rocket" aria-hidden="true"></i>
             </div>
 
             <div>
-                <h3 class="text-base font-extrabold text-white tracking-wide">YENİ SÜRÜM MEVCUT!</h3>
-                <p id="update-version-text" class="text-xs text-amber-400 font-bold mt-1">v1.2.0 hazır</p>
+                <h3 id="update-modal-title" class="text-base font-extrabold text-white tracking-wide">YENİ SÜRÜM MEVCUT!</h3>
+                <p id="update-version-text" class="text-xs text-amber-400 font-bold mt-1">Yeni sürüm hazır</p>
             </div>
 
             <div id="update-notes-container" class="bg-black/40 border border-white/5 p-3 rounded-2xl text-left text-xs text-slate-300 max-h-32 overflow-y-auto space-y-1">
@@ -624,9 +624,9 @@
         <button id="support-close" type="button" class="mt-5 w-full rounded-xl bg-amber-500 text-slate-950 font-bold px-4 py-2">Tamam</button>
     </dialog>
     <!-- Bar Cepte Reserve Premium Modalı -->
-    <div id="reserve-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-3 sm:p-4 animate-fade-in">
+    <div id="reserve-modal" role="dialog" aria-modal="true" aria-label="Bar Cepte Reserve" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-3 sm:p-4 animate-fade-in">
         <div class="acrylic-card w-full max-w-md p-4 sm:p-7 rounded-2xl sm:rounded-3xl space-y-4 sm:space-y-5 text-center relative border border-amber-400/40 shadow-2xl max-h-[90dvh] overflow-y-auto overflow-x-hidden">
-            <button id="btn-close-reserve" type="button" class="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
+            <button id="btn-close-reserve" type="button" aria-label="Kapat" class="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
 
             <!-- Başlık & Logo -->
             <div class="space-y-1 pt-1">
@@ -707,7 +707,7 @@
                 <div class="border-t border-white/10 pt-3 space-y-2">
                     <p class="text-[11px] text-slate-400 font-medium">Zaten bir aktivasyon kodun var mı?</p>
                     <div class="flex gap-2 items-center">
-                        <input type="text" id="reserve-key-input" placeholder="RESERVE-XXXX-XXXX-XXXX" class="flex-1 min-w-0 bg-black/50 border border-white/10 rounded-xl px-2.5 sm:px-3 py-2 text-xs text-white uppercase tracking-wider font-mono outline-none focus:border-amber-400">
+                        <input type="text" id="reserve-key-input" aria-label="Reserve lisans anahtarı" placeholder="RESERVE-XXXX-XXXX-XXXX" class="flex-1 min-w-0 bg-black/50 border border-white/10 rounded-xl px-2.5 sm:px-3 py-2 text-xs text-white uppercase tracking-wider font-mono outline-none focus:border-amber-400">
                         <button id="btn-activate-reserve" type="button" class="shrink-0 bg-amber-500 text-slate-950 font-black px-3.5 sm:px-4 py-2 rounded-xl text-xs hover:bg-amber-400 transition-all whitespace-nowrap">
                             Aktive Et
                         </button>
@@ -740,9 +740,9 @@
     </div>
 
     <!-- Barmen Kulübü & Google Üyelik Modalı -->
-    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-3 sm:p-4 animate-fade-in">
+    <div id="auth-modal" role="dialog" aria-modal="true" aria-label="Barmen Kulübü" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-3 sm:p-4 animate-fade-in">
         <div class="acrylic-card w-full max-w-sm sm:max-w-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3.5 relative border border-amber-500/30 shadow-2xl max-h-[90dvh] overflow-y-auto overflow-x-hidden mx-auto text-left">
-            <button id="btn-close-auth" type="button" class="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
+            <button id="btn-close-auth" type="button" aria-label="Kapat" class="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all text-xs font-bold w-7 h-7 flex items-center justify-center"><i class="bci bci-x" aria-hidden="true"></i></button>
 
             <!-- Giriş Yapılmamış Görünüm -->
             <div id="auth-view-logged-out" class="space-y-3.5 text-center">
@@ -826,7 +826,7 @@
                     </div>
                     <p class="text-[11px] text-slate-400">Shopier'dan aldığın aktivasyon anahtarını hesabına mühürle; tüm cihazlarında kod yazmadan VIP ol.</p>
                     <div class="flex gap-2 items-center pt-1">
-                        <input type="text" id="auth-license-input" placeholder="RESERVE-XXXX-XXXX-XXXX" class="flex-1 min-w-0 bg-black/60 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white uppercase font-mono outline-none focus:border-amber-400">
+                        <input type="text" id="auth-license-input" aria-label="Reserve lisans anahtarı" placeholder="RESERVE-XXXX-XXXX-XXXX" class="flex-1 min-w-0 bg-black/60 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white uppercase font-mono outline-none focus:border-amber-400">
                         <button id="btn-bind-account-license" type="button" class="shrink-0 bg-amber-500 text-slate-950 font-black px-3 py-1.5 rounded-xl text-xs hover:bg-amber-400 transition-all cursor-pointer">
                             Bağla
                         </button>

@@ -18,13 +18,11 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { timingSafeEqual } = require('crypto');
-const { generateKey, checksum } = require('./generate-keys');
+const { generateKey, isValidKeyFormat } = require('./generate-keys');
+const { clientIp, createWindowLimiter, createFailureBackoff, createDailyCap, positiveInt } = require('./rate-limit');
 
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-
-// Master geliştirici anahtarları
-const MASTER_KEYS = new Set(['RESERVE-SULUNCA-2026', 'BARCEPTE-RESERVE-VIP']);
 
 // Shopier Kişisel Erişim Anahtarı (Personal Access Token - PAT)
 const SHOPIER_API_TOKEN = process.env.SHOPIER_API_TOKEN || '';
@@ -49,40 +47,21 @@ const PRODUCT_PLANS = {
 };
 
 const {createLicenseStore} = require('./license-store');
-const licenseStore = createLicenseStore();
+const defaultLicenseStore = createLicenseStore();
 const {createGoogleVerifier} = require('./google-identity');
 const {createAccountService} = require('./account-service');
 const googleClientId=process.env.GOOGLE_CLIENT_ID || require('../firebase-config').googleClientId;
-const accounts=createAccountService({store:licenseStore,verifyGoogle:createGoogleVerifier({clientId:googleClientId})});
-const businesses=require('./business-service').createBusinessService({store:licenseStore,authenticate:accounts.authenticate});
 const { createAIAssistant } = require('./ai-assistant');
-const aiAssistant = createAIAssistant();
-const aiRateLimits = new Map();
-const metricsRateLimits = new Map();
-// Hourly per-address limit kept in memory only (addresses are never stored elsewhere).
-function allowRequest(limits, ip, max) {
-    const now = Date.now();
-    const windowMs = 60 * 60 * 1000;
-    const row = limits.get(ip) || { startedAt: now, count: 0 };
-    if (now - row.startedAt >= windowMs) { row.startedAt = now; row.count = 0; }
-    if (row.count >= max) return false;
-    row.count++;
-    limits.set(ip, row);
-    if (limits.size > 5000) {
-        for (const [key, value] of limits) if (now - value.startedAt >= windowMs) limits.delete(key);
-    }
-    return true;
-}
-const allowAIRequest = ip => allowRequest(aiRateLimits, ip, 12);
-const inFlightOrders = new Set();
-const getSoldLicenses = () => licenseStore.getSold();
-const getClaimedLicenses = () => licenseStore.getClaimed();
-const saveSoldLicense = record => licenseStore.saveSold(record);
-async function isOrderProcessed(orderId) {
-    if (!orderId) return false;
-    const id = String(orderId).trim();
-    return inFlightOrders.has(id) || (await getSoldLicenses()).some(row => String(row.orderId).trim() === id);
-}
+const HOUR = 60 * 60 * 1000;
+// Optional overrides (Render environment); defaults are deliberately conservative.
+const LIMITS = {
+    licensePerIp: positiveInt(process.env.LICENSE_RATE_LIMIT_PER_IP, 20),
+    licenseGlobal: positiveInt(process.env.LICENSE_RATE_LIMIT_GLOBAL, 2000),
+    authPerIp: positiveInt(process.env.AUTH_RATE_LIMIT_PER_IP, 30),
+    authGlobal: positiveInt(process.env.AUTH_RATE_LIMIT_GLOBAL, 3000),
+    aiPerIp: 12,
+    aiDaily: positiveInt(process.env.AI_DAILY_REQUEST_LIMIT, 300)
+};
 
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
@@ -125,14 +104,9 @@ function readJsonBody(req, maxBytes = 64 * 1024) {
     });
 }
 
+// Format/typo check only (current 130-bit keys and legacy keys); the sales registry decides validity.
 function verifyKeyChecksum(rawKey) {
-    if (!rawKey || typeof rawKey !== 'string') return false;
-    const cleanKey = rawKey.trim().toUpperCase();
-    if (MASTER_KEYS.has(cleanKey)) return false;
-    const parts = cleanKey.split('-');
-    if (parts.length !== 4 || parts[0] !== 'RESERVE') return false;
-    if (parts[1].length !== 4 || parts[2].length !== 4 || parts[3].length !== 4) return false;
-    return checksum(parts[1] + parts[2]) === parts[3];
+    return isValidKeyFormat(rawKey);
 }
 
 // Plan Türü ve Para Birimi Tespiti (ID veya Başlıktan)
@@ -166,7 +140,7 @@ function detectPlan(orderItem) {
 const {createShopierClient} = require('./shopier-client');
 const {createFulfillmentService} = require('./order-fulfillment');
 const shopier = createShopierClient({token:SHOPIER_API_TOKEN});
-const fulfillment = createFulfillmentService({store:licenseStore,products:PRODUCT_PLANS,generateKey,sendEmail});
+const fulfillment = createFulfillmentService({store:defaultLicenseStore,products:PRODUCT_PLANS,generateKey,sendEmail});
 let polling = false;
 async function processNewOrders() {
     if (polling || !SHOPIER_API_TOKEN) return;
@@ -177,12 +151,8 @@ async function processNewOrders() {
     finally {polling = false;}
 }
 
-async function sendEmail(toEmail, customerName, licenseKey, planName, currency = 'TRY', options = {}) {
-    if (!RESEND_API_KEY) {
-        console.warn('RESEND_API_KEY is not configured; delivery remains pending.');
-        return false;
-    }
-
+// Builds the license e-mail; every interpolated value is HTML-escaped (buyer names come from Shopier).
+function buildLicenseEmail(customerName, licenseKey, planName, currency = 'TRY') {
     const isIntl = currency === 'USD' || currency === 'EUR' || /pocket bar/i.test(planName);
     const fromAddress = isIntl 
         ? (process.env.RESEND_FROM_EMAIL || 'Pocket Bar <lisans@barcepte.com.tr>')
@@ -192,15 +162,18 @@ async function sendEmail(toEmail, customerName, licenseKey, planName, currency =
         ? '🍸 Pocket Bar VIP — Your Single-Use Activation Key is Ready!'
         : '🍸 Bar Cepte VIP Aktivasyon Kodunuz Hazır!';
 
+    const safeName = escapeHtml(customerName);
+    const safePlan = escapeHtml(planName);
+    const safeKey = escapeHtml(licenseKey);
     const html = isIntl ? `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #101b19; color: #ffffff; padding: 32px 24px; border-radius: 16px;">
                 <h1 style="color: #d5b47b; font-size: 22px; margin-top: 0;">👑 Welcome to Pocket Bar Reserve Club!</h1>
-                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${customerName || 'Valued Customer'}</strong>,</p>
-                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Your single-use activation key for <strong>${planName}</strong> purchased via Shopier has been generated:</p>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${safeName || 'Valued Customer'}</strong>,</p>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Your single-use activation key for <strong>${safePlan}</strong> purchased via Shopier has been generated:</p>
                 
                 <div style="background: #172922; border: 1px solid rgba(213,180,123,0.4); border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0;">
                     <span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Your Activation Key:</span>
-                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${licenseKey}</strong>
+                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${safeKey}</strong>
                 </div>
 
                 <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6;">
@@ -215,12 +188,12 @@ async function sendEmail(toEmail, customerName, licenseKey, planName, currency =
     ` : `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #101b19; color: #ffffff; padding: 32px 24px; border-radius: 16px;">
                 <h1 style="color: #d5b47b; font-size: 22px; margin-top: 0;">👑 Bar Cepte Reserve Kulübüne Hoş Geldiniz!</h1>
-                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Merhaba <strong>${customerName || 'Değerli Müşterimiz'}</strong>,</p>
-                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Shopier üzerinden satın aldığınız <strong>${planName}</strong> üyeliğiniz için tek kullanımlık aktivasyon kodunuz üretildi:</p>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Merhaba <strong>${safeName || 'Değerli Müşterimiz'}</strong>,</p>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Shopier üzerinden satın aldığınız <strong>${safePlan}</strong> üyeliğiniz için tek kullanımlık aktivasyon kodunuz üretildi:</p>
                 
                 <div style="background: #172922; border: 1px solid rgba(213,180,123,0.4); border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0;">
                     <span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Aktivasyon Kodunuz:</span>
-                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${licenseKey}</strong>
+                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${safeKey}</strong>
                 </div>
 
                 <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6;">
@@ -234,6 +207,15 @@ async function sendEmail(toEmail, customerName, licenseKey, planName, currency =
             </div>
     `;
 
+    return {from: fromAddress, subject, html};
+}
+
+async function sendEmail(toEmail, customerName, licenseKey, planName, currency = 'TRY', options = {}) {
+    if (!RESEND_API_KEY) {
+        console.warn('RESEND_API_KEY is not configured; delivery remains pending.');
+        return false;
+    }
+    const {from: fromAddress, subject, html} = buildLicenseEmail(customerName, licenseKey, planName, currency);
     const payload = JSON.stringify({
         from: fromAddress,
         to: [toEmail],
@@ -291,6 +273,42 @@ function authorizeAdmin(req) {
     return separator >= 0 && tokenMatches(credentials.slice(separator + 1), ADMIN_TOKEN);
 }
 
+function json(res, status, value, headers = {}) {
+    res.writeHead(status, {'Content-Type': 'application/json; charset=utf-8', ...headers});
+    res.end(JSON.stringify(value));
+}
+
+// options.store / options.now / options.limits / options.verifyGoogle / options.aiAssistant are for tests and tools.
+function createServer(options = {}) {
+    const licenseStore = options.store || defaultLicenseStore;
+    const now = options.now || Date.now;
+    const limits = {...LIMITS, ...(options.limits || {})};
+    const accounts = createAccountService({store: licenseStore, clock: now,
+        verifyGoogle: options.verifyGoogle || createGoogleVerifier({clientId: googleClientId})});
+    const businesses = require('./business-service').createBusinessService({store: licenseStore, authenticate: accounts.authenticate});
+    const aiAssistant = options.aiAssistant || createAIAssistant();
+    const orderFulfillment = options.store ? createFulfillmentService({store: licenseStore, products: PRODUCT_PLANS, generateKey, sendEmail, now}) : fulfillment;
+    const aiLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.aiPerIp, now});
+    const aiDailyCap = createDailyCap({limit: limits.aiDaily, now});
+    const metricsLimiter = createWindowLimiter({windowMs: HOUR, perKey: 60, now});
+    // Claim and check share one budget: both accept a guessed key.
+    const licenseLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.licensePerIp, global: limits.licenseGlobal, now});
+    const licenseBackoff = createFailureBackoff({now});
+    const authLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.authPerIp, global: limits.authGlobal, now});
+    const getSoldLicenses = () => licenseStore.getSold();
+    const getClaimedLicenses = () => licenseStore.getClaimed();
+    const saveSoldLicense = record => licenseStore.saveSold(record);
+
+    // Returns false (and answers 429) when the caller must wait.
+    function admitLicenseRequest(req, res, ip) {
+        const backoff = licenseBackoff.check(ip);
+        const window = backoff.ok ? licenseLimiter.take(ip) : backoff;
+        if (window.ok) return true;
+        json(res, 429, {success: false, valid: false, code: 'rate_limited',
+            reason: 'Çok fazla deneme yapıldı. Lütfen biraz bekleyip tekrar deneyiniz.'}, {'Retry-After': String(window.retryAfter || 60)});
+        return false;
+    }
+
 async function handleRequest(req, res) {
     const origin=req.headers.origin;
     const allowedOrigins=new Set(['https://barcepte.com.tr','https://www.barcepte.com.tr','https://suluncaway.github.io','https://appassets.androidplatform.net']);
@@ -298,7 +316,7 @@ async function handleRequest(req, res) {
     try {const parsed=new URL(origin);localOrigin=parsed.protocol==='http:' && ['localhost','127.0.0.1'].includes(parsed.hostname);}catch {}
     if(origin && !allowedOrigins.has(origin) && !localOrigin) {res.writeHead(403);res.end('Origin denied');return;}
     if(origin) {res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');}
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Cache-Control', 'no-store');
 
@@ -309,9 +327,13 @@ async function handleRequest(req, res) {
     }
 
     const requestPath = new URL(req.url, 'http://localhost').pathname;
+    if (requestPath === '/api/auth/google' && req.method === 'POST') {
+        const allowed = authLimiter.take(clientIp(req));
+        if (!allowed.ok) return json(res, 429, {success: false, reason: 'Çok fazla giriş denemesi. Lütfen biraz sonra tekrar deneyiniz.'}, {'Retry-After': String(allowed.retryAfter || 60)});
+    }
     if(await accounts.handle(req,res,requestPath,readJsonBody)) return;
     if(await businesses.handle(req,res,requestPath,readJsonBody)) return;
-    const adminPaths = ['/licenses', '/dashboard', '/api/resend-license', '/resend', '/api/export-licenses', '/api/metrics/summary'];
+    const adminPaths = ['/licenses', '/dashboard', '/api/resend-license', '/resend', '/api/export-licenses', '/api/metrics/summary', '/api/revoke-license'];
     if (adminPaths.includes(requestPath) && !authorizeAdmin(req)) {
         res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Bar Cepte Admin", charset="UTF-8"' });
         return res.end('Unauthorized');
@@ -337,8 +359,7 @@ async function handleRequest(req, res) {
 
     // Anonymous usage counters: only allow-listed event names and counts, nothing that identifies a person.
     if (req.method === 'POST' && requestPath === '/api/metrics') {
-        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
-        if (!allowRequest(metricsRateLimits, forwarded || req.socket?.remoteAddress || 'unknown', 60)) {
+        if (!metricsLimiter.take(clientIp(req)).ok) {
             res.writeHead(429); return res.end();
         }
         try {
@@ -364,22 +385,27 @@ async function handleRequest(req, res) {
 
     // AI kokteyl asistanı: anahtar yalnızca sunucuda tutulur; istekler IP başına sınırlandırılır.
     if (req.method === 'POST' && requestPath === '/api/ai-assistant') {
-        // Render appends the real client address last; earlier entries are client-controlled and spoofable.
-        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
-        const clientIp = forwarded || req.socket?.remoteAddress || 'unknown';
-        if (!allowAIRequest(clientIp)) {
-            res.writeHead(429, {'Content-Type':'application/json; charset=utf-8'});
-            return res.end(JSON.stringify({success:false,reason:'Saatlik AI kullanım sınırına ulaştın. Bir saat sonra tekrar dene.'}));
+        if (!aiLimiter.take(clientIp(req)).ok) {
+            return json(res, 429, {success:false,reason:'Saatlik AI kullanım sınırına ulaştın. Bir saat sonra tekrar dene.'});
+        }
+        // Global daily ceiling protects the paid AI budget from distributed abuse.
+        if (!aiDailyCap.take()) {
+            return json(res, 429, {success:false,reason:'AI asistanı bugünlük kullanım sınırına ulaştı. Yarın tekrar dene.'});
         }
         try {
             const params = await readJsonBody(req, 32 * 1024);
             const result = await aiAssistant.respond(params);
-            res.writeHead(200, {'Content-Type':'application/json; charset=utf-8'});
-            return res.end(JSON.stringify({success:true,...result}));
+            return json(res, 200, {success:true,...result});
         } catch (error) {
-            const status = Number(error.status) || 502;
-            res.writeHead(status, {'Content-Type':'application/json; charset=utf-8'});
-            return res.end(JSON.stringify({success:false,reason:error.message || 'AI isteği tamamlanamadı.'}));
+            // Fixed texts only: internal error messages never reach the client.
+            const status = [400, 413, 429, 503].includes(Number(error.status)) ? Number(error.status) : 502;
+            const reason = {
+                400: 'İstek işlenemedi. Mesajını kısaltıp tekrar dene.',
+                413: 'İstek işlenemedi. Mesajını kısaltıp tekrar dene.',
+                429: 'AI servisi şu anda yoğun. Biraz sonra tekrar dene.',
+                503: 'AI asistanı şu anda kullanılamıyor. Daha sonra tekrar dene.'
+            }[status] || 'AI isteği tamamlanamadı. Lütfen daha sonra tekrar dene.';
+            return json(res, status, {success:false,reason});
         }
     }
 
@@ -459,176 +485,126 @@ async function handleRequest(req, res) {
     }
 
     // Merkezi Lisans Kullanma / Mühürleme Endpoint'i (Single-Use Anti-Reuse Enforcement)
-    if (req.method === 'POST' && req.url === '/api/claim-license') {
-        (async () => {
+    // Failure responses carry a machine-readable `code`; clients drop a stored entitlement only for
+    // not_issued / claimed_elsewhere / expired / revoked / invalid_format, never for 429/5xx/network errors.
+    if (req.method === 'POST' && requestPath === '/api/claim-license') {
+        const ip = clientIp(req);
+        if (!admitLicenseRequest(req, res, ip)) return;
+        try {
+            let params;
             try {
-                let params;
-                try {
-                    params = await readJsonBody(req);
-                } catch (jsonErr) {
-                    const status = jsonErr.message === 'Payload Too Large' ? 413 : 400;
-                    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-                    return res.end(JSON.stringify({ success: false, reason: jsonErr.message }));
-                }
-
-                const rawKey = typeof params.key === 'string' ? params.key : '';
-                const verifiedUser=await accounts.authenticate(req);
-                if((params.uid || req.headers.authorization) && !verifiedUser) {
-                    res.writeHead(401,{'Content-Type':'application/json'});
-                    return res.end(JSON.stringify({success:false,reason:'Google ile tekrar giriş yapınız.'}));
-                }
-                const uid=verifiedUser?verifiedUser.uid:null;
-                const email=verifiedUser?verifiedUser.email:'';
-                const deviceId=typeof params.deviceId==='string' && /^[a-zA-Z0-9_-]{8,200}$/.test(params.deviceId) && params.deviceId!=='dev_unknown'?params.deviceId:null;
-
-                if (!rawKey || typeof rawKey !== 'string') {
-                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-                    res.end(JSON.stringify({ success: false, reason: 'Lütfen bir aktivasyon kodu giriniz.' }));
-                    return;
-                }
-
-                const cleanKey = rawKey.trim().toUpperCase();
-
-                // 2. Format ve Checksum Kontrolü
-                if (!verifyKeyChecksum(cleanKey)) {
-                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-                    res.end(JSON.stringify({
-                        success: false,
-                        reason: '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.'
-                    }));
-                    return;
-                }
-
-                if ((!uid || typeof uid !== 'string') && (!deviceId || typeof deviceId !== 'string')) {
-                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-                    return res.end(JSON.stringify({success: false, reason: 'Kullanıcı veya cihaz kimliği gerekli.'}));
-                }
-                const proposedPlan = cleanKey.includes('-MTH1-') ? 'monthly' :
-                    /-(ANN1|YIL1)-/.test(cleanKey) ? 'annual' : 'lifetime';
-                const proposedDuration = proposedPlan === 'monthly' ? 30 * 86400000 : proposedPlan === 'annual' ? 365 * 86400000 : 0;
-                const proposed = {key: cleanKey, plan: proposedPlan, duration: proposedDuration,
-                    claimedAt: Date.now(), expiresAt: proposedDuration ? Date.now() + proposedDuration : 0,
-                    uid, email, deviceId};
-                const result = await licenseStore.claim(cleanKey, proposed);
-                if (!result.issued) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({success: false, reason: 'Bu lisans sunucu tarafından verilmemiş.'}));
-                }
-                const existing = result.existing;
-                if (existing) {
-                    const isOwner = !existing.needsReview && (existing.uid ? uid===existing.uid : Boolean(deviceId && existing.deviceId===deviceId));
-                    if (!isOwner) {
-                        res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({
-                            success: false,
-                            reason: '❌ Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.'
-                        }));
-                        return;
-                    }
-
-                    // Aynı kullanıcı/cihaz: Süre kontrolü
-                    if (existing.expiresAt > 0 && Date.now() > existing.expiresAt) {
-                        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-                        res.end(JSON.stringify({
-                            success: false,
-                            reason: '❌ Bu lisans anahtarının kullanım süresi dolmuştur! Lütfen yeni bir lisans temin ediniz.'
-                        }));
-                        return;
-                    }
-
-                    // Aynı kullanıcı, aktif:
-                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                    res.end(JSON.stringify({
-                        success: true,
-                        plan: existing.plan,
-                        expiresAt: existing.expiresAt,
-                        restored: true,
-                        message: 'Aboneliğiniz bu cihazda doğrulandı.'
-                    }));
-                    return;
-                }
-
-                const {plan, expiresAt} = result.record;
-                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({
-                    success: true,
-                    plan,
-                    expiresAt,
-                    message: '🎉 Lisans anahtarınız başarıyla aktif edildi ve tek kullanımlık olarak mühürlendi!'
-                }));
-            } catch (err) {
-                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({ success: false, reason: 'Sunucu hatası oluştu.' }));
+                params = await readJsonBody(req);
+            } catch (jsonErr) {
+                return json(res, jsonErr.message === 'Payload Too Large' ? 413 : 400, { success: false, reason: 'Geçersiz istek.' });
             }
-        })();
-        return;
+
+            const rawKey = typeof params.key === 'string' ? params.key : '';
+            const verifiedUser=await accounts.authenticate(req);
+            if((params.uid || req.headers.authorization) && !verifiedUser) {
+                return json(res, 401, {success:false,code:'session_required',reason:'Google ile tekrar giriş yapınız.'});
+            }
+            const uid=verifiedUser?verifiedUser.uid:null;
+            const email=verifiedUser?verifiedUser.email:'';
+            const deviceId=typeof params.deviceId==='string' && /^[a-zA-Z0-9_-]{8,200}$/.test(params.deviceId) && params.deviceId!=='dev_unknown'?params.deviceId:null;
+
+            if (!rawKey) return json(res, 400, { success: false, reason: 'Lütfen bir aktivasyon kodu giriniz.' });
+            const cleanKey = rawKey.trim().toUpperCase();
+            if (!verifyKeyChecksum(cleanKey)) {
+                licenseBackoff.fail(ip);
+                return json(res, 400, { success: false, code: 'invalid_format', reason: '❌ Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' });
+            }
+            if (!uid && !deviceId) return json(res, 400, {success: false, reason: 'Kullanıcı veya cihaz kimliği gerekli.'});
+
+            const time = now();
+            const proposedPlan = cleanKey.includes('-MTH1-') ? 'monthly' :
+                /-(ANN1|YIL1)-/.test(cleanKey) ? 'annual' : 'lifetime';
+            const proposedDuration = proposedPlan === 'monthly' ? 30 * 86400000 : proposedPlan === 'annual' ? 365 * 86400000 : 0;
+            const proposed = {key: cleanKey, plan: proposedPlan, duration: proposedDuration,
+                claimedAt: time, expiresAt: proposedDuration ? time + proposedDuration : 0,
+                uid, email, deviceId};
+            const result = await licenseStore.claim(cleanKey, proposed);
+            if (!result.issued) {
+                licenseBackoff.fail(ip);
+                return json(res, 400, {success: false, code: 'not_issued', reason: 'Bu lisans sunucu tarafından verilmemiş.'});
+            }
+            const existing = result.existing;
+            const isOwner = Boolean(existing) && !existing.needsReview && (existing.uid ? uid===existing.uid : Boolean(deviceId && existing.deviceId===deviceId));
+            if (result.revoked && (!existing || isOwner)) {
+                return json(res, 410, {success: false, code: 'revoked', reason: 'Bu lisans, siparişin iadesi veya iptali nedeniyle geçersiz kılındı.'});
+            }
+            if (existing) {
+                if (!isOwner) {
+                    licenseBackoff.fail(ip);
+                    return json(res, 409, {success: false, code: 'claimed_elsewhere',
+                        reason: '❌ Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.'});
+                }
+                if (existing.expiresAt > 0 && time > existing.expiresAt) {
+                    return json(res, 400, {success: false, code: 'expired',
+                        reason: '❌ Bu lisans anahtarının kullanım süresi dolmuştur! Lütfen yeni bir lisans temin ediniz.'});
+                }
+                licenseBackoff.succeed(ip);
+                return json(res, 200, {success: true, plan: existing.plan, expiresAt: existing.expiresAt, restored: true,
+                    message: 'Aboneliğiniz bu cihazda doğrulandı.'});
+            }
+            licenseBackoff.succeed(ip);
+            const {plan, expiresAt} = result.record;
+            return json(res, 200, {success: true, plan, expiresAt,
+                message: '🎉 Lisans anahtarınız başarıyla aktif edildi ve tek kullanımlık olarak mühürlendi!'});
+        } catch {
+            return json(res, 500, { success: false, reason: 'Sunucu hatası oluştu.' });
+        }
     }
 
-    // Merkezi Lisans Sorgulama Endpoint'i
-    if (req.method === 'POST' && req.url === '/api/check-license') {
-        (async () => {
+    // Merkezi Lisans Sorgulama Endpoint'i: only the key's owner (same account or device) learns its state.
+    // Unknown, unclaimed and someone else's keys all get the same answer, so the endpoint cannot be
+    // used to find issued-but-unused keys.
+    if (req.method === 'POST' && requestPath === '/api/check-license') {
+        const ip = clientIp(req);
+        if (!admitLicenseRequest(req, res, ip)) return;
+        try {
+            let params;
             try {
-                let params;
-                try {
-                    params = await readJsonBody(req);
-                } catch (jsonErr) {
-                    const status = jsonErr.message === 'Payload Too Large' ? 413 : 400;
-                    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-                    return res.end(JSON.stringify({ valid: false, reason: jsonErr.message }));
-                }
-
-                const rawKey = typeof params.key === 'string' ? params.key : '';
-                const verifiedUser=await accounts.authenticate(req);
-                if((params.uid || req.headers.authorization) && !verifiedUser) {
-                    res.writeHead(401,{'Content-Type':'application/json'});
-                    return res.end(JSON.stringify({valid:false,reason:'Google ile tekrar giriş yapınız.'}));
-                }
-                const uid=verifiedUser?verifiedUser.uid:null;
-                const deviceId=typeof params.deviceId==='string' && /^[a-zA-Z0-9_-]{8,200}$/.test(params.deviceId) && params.deviceId!=='dev_unknown'?params.deviceId:null;
-                const cleanKey = rawKey.trim().toUpperCase();
-
-                const valid = verifyKeyChecksum(cleanKey);
-                if (!valid) {
-                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                    res.end(JSON.stringify({ valid: false, reason: 'Geçersiz kod' }));
-                    return;
-                }
-
-                // A checksum detects typos; only keys in the issued sales registry may activate.
-                if (!(await getSoldLicenses()).some(record => record.licenseKey === cleanKey)) {
-                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-                    return res.end(JSON.stringify({ success: false, valid: false, reason: 'Bu lisans sunucu tarafından verilmemiş.' }));
-                }
-                if ((!uid || typeof uid !== 'string') && (!deviceId || typeof deviceId !== 'string')) {
-                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-                    return res.end(JSON.stringify({ success: false, valid: false, reason: 'Kullanıcı veya cihaz kimliği gerekli.' }));
-                }
-                const claimed = await getClaimedLicenses();
-                const existing = claimed[cleanKey];
-                if (!existing) {
-                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                    res.end(JSON.stringify({ valid: true, claimed: false }));
-                    return;
-                }
-
-                const isOwner = !existing.needsReview && (existing.uid ? uid===existing.uid : Boolean(deviceId && existing.deviceId===deviceId));
-                const expired = existing.expiresAt > 0 && Date.now() > existing.expiresAt;
-
-                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({
-                    valid: true,
-                    claimed: true,
-                    isOwner,
-                    expired,
-                    plan: existing.plan,
-                    expiresAt: existing.expiresAt
-                }));
-            } catch {
-                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({ valid: false, error: 'Hata' }));
+                params = await readJsonBody(req);
+            } catch (jsonErr) {
+                return json(res, jsonErr.message === 'Payload Too Large' ? 413 : 400, { valid: false, reason: 'Geçersiz istek.' });
             }
-        })();
-        return;
+            const rawKey = typeof params.key === 'string' ? params.key : '';
+            const verifiedUser=await accounts.authenticate(req);
+            if((params.uid || req.headers.authorization) && !verifiedUser) {
+                return json(res, 401, {valid:false,code:'session_required',reason:'Google ile tekrar giriş yapınız.'});
+            }
+            const uid=verifiedUser?verifiedUser.uid:null;
+            const deviceId=typeof params.deviceId==='string' && /^[a-zA-Z0-9_-]{8,200}$/.test(params.deviceId) && params.deviceId!=='dev_unknown'?params.deviceId:null;
+            const cleanKey = rawKey.trim().toUpperCase();
+            const license = verifyKeyChecksum(cleanKey) && (uid || deviceId) ? await licenseStore.getLicense(cleanKey) : null;
+            const claim = license && license.claim;
+            const isOwner = Boolean(claim) && !claim.needsReview && (claim.uid ? uid===claim.uid : Boolean(deviceId && claim.deviceId===deviceId));
+            if (!isOwner) {
+                licenseBackoff.fail(ip);
+                return json(res, 200, { valid: false, reason: 'Bu cihaz veya hesap için etkin bir lisans bulunamadı.' });
+            }
+            licenseBackoff.succeed(ip);
+            const revoked = Boolean(license.sale.revoked || claim.revoked);
+            const expired = claim.expiresAt > 0 && now() > claim.expiresAt;
+            return json(res, 200, { valid: !revoked && !expired, claimed: true, isOwner: true, expired, revoked,
+                plan: claim.plan, expiresAt: claim.expiresAt });
+        } catch {
+            return json(res, 500, { valid: false, error: 'Hata' });
+        }
+    }
+
+    // Yönetici: iade/iptal edilen siparişin lisansını elle iptal et (Shopier yansıtmasa bile).
+    if (req.method === 'POST' && requestPath === '/api/revoke-license') {
+        try {
+            const params = await readJsonBody(req);
+            const orderId = String(params.orderId || '').trim();
+            if (!/^[a-zA-Z0-9_-]{1,100}$/.test(orderId)) return json(res, 400, {success: false, reason: 'orderId gerekli.'});
+            const result = await licenseStore.revokeOrder(orderId, {at: now(), reason: typeof params.reason === 'string' ? params.reason.slice(0, 40) : 'manual'});
+            if (!result) return json(res, 404, {success: false, reason: 'Sipariş bulunamadı.'});
+            return json(res, 200, {success: true, changed: result.changed});
+        } catch {
+            return json(res, 400, {success: false, reason: 'Geçersiz istek.'});
+        }
     }
 
     // Üretilen Lisansları İzleme Tablosu (Dashboard)
@@ -722,7 +698,7 @@ async function handleRequest(req, res) {
                                     <td><span class="badge" style="${currBadge}">${escapeHtml(curr)}</span></td>
                                     <td><code>${escapeHtml(s.licenseKey)}</code></td>
                                     <td>
-                                        ${isClaimed 
+                                        ${s.revoked ? `<span class="badge-claimed">⛔ İPTAL (${escapeHtml(s.revokeReason || 'iade')})</span> ` : ''}${isClaimed 
                                             ? `<span class="badge-claimed">🔒 KULLANILDI (${new Date(claimInfo.claimedAt).toLocaleDateString('tr-TR')})</span>` 
                                             : `<span class="badge-available">✨ KULLANILMADI (BEKLİYOR)</span>`}
                                     </td>
@@ -778,8 +754,8 @@ async function handleRequest(req, res) {
                 res.writeHead(400, {'Content-Type':'application/json'});
                 return res.end(JSON.stringify({success:false,reason:'Order ID required'}));
             }
-            const result = await fulfillment.fulfill(await shopier.getOrder(String(orderId)));
-            const ok = ['delivered','already_processed','delivery_pending'].includes(result.status);
+            const result = await orderFulfillment.fulfill(await shopier.getOrder(String(orderId)));
+            const ok = ['delivered','already_processed','delivery_pending','revoked','already_revoked'].includes(result.status);
             res.writeHead(ok?200:422, {'Content-Type':'application/json'});
             return res.end(JSON.stringify({success:ok,status:result.status}));
         } catch {
@@ -848,18 +824,20 @@ async function handleRequest(req, res) {
     res.writeHead(404);
     res.end('Bulunamadı');
 }
-const server = http.createServer((req, res) => {
-    handleRequest(req, res).catch(() => {
-        if (!res.headersSent) res.writeHead(503, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({success: false, reason: 'Veritabanına ulaşılamıyor. Tekrar deneyiniz.'}));
+    return http.createServer((req, res) => {
+        handleRequest(req, res).catch(() => {
+            if (!res.headersSent) res.writeHead(503, {'Content-Type': 'application/json'});
+            res.end(JSON.stringify({success: false, reason: 'Veritabanına ulaşılamıyor. Tekrar deneyiniz.'}));
+        });
     });
-});
+}
+const server = createServer();
 
 
 if (require.main === module) {
-    licenseStore.ready().then(() => server.listen(PORT, () => {
+    defaultLicenseStore.ready().then(() => server.listen(PORT, () => {
         console.log(`🍸 Bar Cepte Shopier API & Webhook Servisi Çalışıyor (Port: ${PORT})`);
-        console.log(licenseStore.kind === 'postgres' && process.env.LICENSE_MIGRATION_COMPLETE !== 'true'
+        console.log(defaultLicenseStore.kind === 'postgres' && process.env.LICENSE_MIGRATION_COMPLETE !== 'true'
             ? 'Migration confirmation required; polling and activation paused.'
             : 'Shopier polling enabled (30s).');
         console.log(`📊 Yönetim Paneli: http://localhost:${PORT}/licenses`);
@@ -871,7 +849,7 @@ if (require.main === module) {
                 .then(status=>console.log('Email smoke delivery status: '+status))
                 .catch(()=>console.error('Email smoke delivery status unavailable.')),delay);
         }).catch(()=>console.error('Email smoke test failed; check Resend configuration.'));
-        if (licenseStore.kind !== 'postgres' || process.env.LICENSE_MIGRATION_COMPLETE === 'true') {
+        if (defaultLicenseStore.kind !== 'postgres' || process.env.LICENSE_MIGRATION_COMPLETE === 'true') {
             setInterval(processNewOrders, 30000);
             setTimeout(processNewOrders, 2000);
         }
@@ -880,7 +858,9 @@ if (require.main === module) {
 
 module.exports = {
     server,
-    licenseStore,
+    createServer,
+    licenseStore: defaultLicenseStore,
+    buildLicenseEmail,
     detectPlanAndCurrency,
     detectPlan,
     generateKey,

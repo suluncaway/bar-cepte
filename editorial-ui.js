@@ -105,7 +105,7 @@ function syncThemeToggle() {
     themeToggle?.setAttribute('aria-pressed', String(light));
     const label = document.getElementById('theme-toggle-label');
     if (label) label.textContent = light ? (en ? 'Dark theme' : 'Koyu tema') : (en ? 'Light theme' : 'Açık tema');
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#f6f3ee' : '#050505');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#efe6d2' : '#0e131d');
 }
 themeToggle?.addEventListener('click', () => {
     const light = document.documentElement.dataset.theme !== 'light';
@@ -114,5 +114,5 @@ themeToggle?.addEventListener('click', () => {
     if (typeof track === 'function') track('action', light ? 'theme_light' : 'theme_dark');
     syncThemeToggle();
 });
-document.getElementById('btn-lang-toggle')?.addEventListener('click', () => setTimeout(syncThemeToggle));
+// Dil değişimi applyLanguage() içinden syncThemeToggle() çağırır (dynamic-ui.js tıklamayı yakalayıp durdurur).
 syncThemeToggle();

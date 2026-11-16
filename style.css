@@ -342,3 +342,8 @@ dialog::backdrop { background:rgba(0,0,0,.7); }
  .ai-chat-composer { margin:0 14px; }
  .ai-assistant-footnote { padding:9px 14px 13px; font-size:8px; }
 }
+
+/* Metin seçimi yalnızca düğmelerde kapalı; tarif metni kopyalanabilir kalır. */
+button, [role="button"], .pill-btn { -webkit-user-select:none; user-select:none; }
+.cocktail-card button.toggle-icon { background:none; border:0; font:inherit; font-weight:700; cursor:pointer; }
+.cocktail-card button.toggle-icon:focus-visible { outline:2px solid currentColor; outline-offset:2px; border-radius:6px; }

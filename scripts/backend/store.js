@@ -3,9 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const PLANS = { monthly: 30, annual: 365, lifetime: 0 };
+// Same 130-bit format as the live delivery path, so every issued key passes the client format check.
 function generateKey(plan = 'lifetime') {
     if (!Object.hasOwn(PLANS, plan)) throw new Error('Invalid plan');
-    return `RESERVE-${{ monthly: 'MTH1', annual: 'ANN1', lifetime: 'LIFE' }[plan]}-${crypto.randomBytes(24).toString('hex').toUpperCase()}`;
+    return require('../generate-keys').generateKey(plan);
 }
 function readJson(file, missing) {
     try { return JSON.parse(fs.readFileSync(file, 'utf8')); }

@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { randomInt } = require('crypto');
+const { randomBytes, randomUUID } = require('crypto');
 
 const args = process.argv.slice(2);
 let plan = 'lifetime';
@@ -45,6 +45,8 @@ for (let i = 0; i < args.length; i++) {
 
 if (plan === 'a') plan = 'all';
 
+// Typo check only: this 16-bit checksum is public and is NOT a secret or proof of purchase.
+// Only keys present in the server's sales registry can be activated.
 function checksum(str) {
     let hash = 5381;
     for (let i = 0; i < str.length; i++) {
@@ -54,16 +56,51 @@ function checksum(str) {
     return hash.toString(16).toUpperCase().padStart(4, '0');
 }
 
-function generateKey(planType = 'lifetime') {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let prefix = 'LIFE';
-    if (planType === 'monthly') prefix = 'MTH1';
-    if (planType === 'annual') prefix = 'ANN1';
+// 32 unambiguous symbols (no 0/O, 1/I): every symbol carries exactly 5 bits.
+const KEY_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const RANDOM_LENGTH = 26; // 26 x 5 = 130 bits from crypto.randomBytes
+const PLAN_PREFIX = { monthly: 'MTH1', annual: 'ANN1', lifetime: 'LIFE' };
 
-    let part2 = '';
-    for (let i = 0; i < 4; i++) part2 += chars[randomInt(chars.length)];
-    const check = checksum(prefix + part2);
-    return `RESERVE-${prefix}-${part2}-${check}`;
+function randomPart(length = RANDOM_LENGTH) {
+    const bytes = randomBytes(length);
+    let out = '';
+    // 256 is a multiple of 32, so masking keeps the distribution uniform.
+    for (let i = 0; i < length; i++) out += KEY_ALPHABET[bytes[i] & 31];
+    return out;
+}
+
+function generateKey(planType = 'lifetime') {
+    const prefix = PLAN_PREFIX[planType] || PLAN_PREFIX.lifetime;
+    const part2 = randomPart();
+    return `RESERVE-${prefix}-${part2}-${checksum(prefix + part2)}`;
+}
+
+// Accepts the current 130-bit format and the legacy 4-character format that was sold
+// before; legacy keys still activate only while they are in the server registry.
+function isValidKeyFormat(rawKey) {
+    if (!rawKey || typeof rawKey !== 'string') return false;
+    const parts = rawKey.trim().toUpperCase().split('-');
+    if (parts.length !== 4 || parts[0] !== 'RESERVE' || !/^[A-Z0-9]{4}$/.test(parts[1]) || !/^[0-9A-F]{4}$/.test(parts[3])) return false;
+    const legacy = /^[A-Z0-9]{4}$/.test(parts[2]);
+    const current = parts[2].length === RANDOM_LENGTH && [...parts[2]].every(c => KEY_ALPHABET.includes(c));
+    return (legacy || current) && checksum(parts[1] + parts[2]) === parts[3];
+}
+
+function isLegacyKey(rawKey) {
+    return isValidKeyFormat(rawKey) && rawKey.trim().split('-')[2].length === 4;
+}
+
+// Registers keys in the server's sales registry (file store or PostgreSQL via DATABASE_URL),
+// so manually issued keys can be activated. Returns the stored records.
+async function registerKeys(store, planType, keys, now = Date.now) {
+    const records = [];
+    for (const licenseKey of keys) {
+        const record = { orderId: 'manual-' + randomUUID(), licenseKey, planType, planTitle: planType,
+            currency: 'TRY', email: '', name: '', source: 'manual', createdAt: new Date(now()).toISOString(),
+            emailSent: false, emailSentCount: 0, lastEmailSentAt: null };
+        records.push(await store.createSale(record));
+    }
+    return records;
 }
 
 const planLabels = {
@@ -96,20 +133,32 @@ if (require.main === module) {
         if (!isSilent) console.log('='.repeat(48));
     }
 
-    if (shouldExport) {
-        const outDir = path.resolve(__dirname, '..', 'keys');
-        if (!fs.existsSync(outDir)) {
-            fs.mkdirSync(outDir, { recursive: true });
+    const finish = async () => {
+        if (!shouldExport) return;
+        // Keys that are not in the sales registry can never be activated, so --save registers them.
+        const { createLicenseStore } = require('./license-store');
+        const store = createLicenseStore();
+        const outDir = process.env.LICENSE_DATA_DIR ? path.resolve(process.env.LICENSE_DATA_DIR) : path.resolve(__dirname, '..', 'keys');
+        fs.mkdirSync(outDir, { recursive: true, mode: 0o700 });
+        try {
+            await store.ready();
+            const plansToExport = plan === 'all' ? ['monthly', 'annual', 'lifetime'] : [plan];
+            for (const p of plansToExport) {
+                await registerKeys(store, p, exportedKeys[p]);
+                const filePath = path.join(outDir, `${p}_keys.txt`);
+                fs.writeFileSync(filePath, exportedKeys[p].join('\n') + '\n', { encoding: 'utf8', mode: 0o600 });
+                console.log(`📁 ${exportedKeys[p].length} anahtar sunucu siciline kaydedildi ve ${filePath} dosyasına yazıldı.`);
+            }
+        } finally {
+            if (store.close) await store.close();
         }
-        const plansToExport = plan === 'all' ? ['monthly', 'annual', 'lifetime'] : [plan];
-        plansToExport.forEach(p => {
-            const filePath = path.join(outDir, `${p}_keys.txt`);
-            fs.writeFileSync(filePath, exportedKeys[p].join('\n') + '\n', 'utf8');
-            console.log(`📁 Dosyaya kaydedildi: keys/${p}_keys.txt (${exportedKeys[p].length} adet)`);
-        });
-    }
-
-    console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
+    };
+    finish().then(() => {
+        console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
+    }).catch(() => {
+        console.error('Anahtarlar sunucu siciline kaydedilemedi; hiçbir anahtarı dağıtmayın.');
+        process.exitCode = 1;
+    });
 }
 
-module.exports = { generateKey, checksum };
+module.exports = { generateKey, checksum, isValidKeyFormat, isLegacyKey, registerKeys, KEY_ALPHABET, RANDOM_LENGTH };

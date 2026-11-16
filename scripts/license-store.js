@@ -60,8 +60,10 @@ function createFileStore(directory) {
         claim: async (key, proposed) => {
             // File mode is intended for a single process; serialize through one promise chain.
             const task = store.pending.then(async () => {
-                if (!(await store.getSold()).some(row => row.licenseKey === key)) return {issued: false};
+                const sale = (await store.getSold()).find(row => row.licenseKey === key);
+                if (!sale) return {issued: false};
                 const claimed = await store.getClaimed();
+                if (sale.revoked) return {issued: true, revoked: true, existing: claimed[key] || null};
                 if (claimed[key]) {
                     let existing=claimed[key];
                     if(existing.needsReview) {
@@ -84,7 +86,7 @@ function createFileStore(directory) {
         putSession: async (token, data) => {const all=read(path.join(directory,'sessions.json'),{});all[token]=data;write(path.join(directory,'sessions.json'),all);},
         getSession: async token => read(path.join(directory,'sessions.json'),{})[token] || null,
         revokeSession: async token => {const file=path.join(directory,'sessions.json');const all=read(file,{});delete all[token];write(file,all);},
-        getSubscription: async (uid,now) => Object.values(await store.getClaimed()).filter(c=>c.uid===uid && !c.needsReview &&
+        getSubscription: async (uid,now) => Object.values(await store.getClaimed()).filter(c=>c.uid===uid && !c.needsReview && !c.revoked &&
             (c.plan==='lifetime' && c.expiresAt===0 || c.expiresAt>now)).sort((a,b)=>(b.claimedAt||0)-(a.claimedAt||0))[0] || null,
         getBackup: async uid => read(path.join(directory,'backups.json'),{})[uid] || null,
         saveBackup: (uid,data,revision,updatedAt) => {
@@ -95,6 +97,42 @@ function createFileStore(directory) {
             });store.pending=task.catch(()=>{});return task;
         },
         exportBackup: async () => ({version: 1, sold: read(soldFile, []), claimed: read(claimedFile, {})}),
+        // Single-key lookup used by the public license endpoints.
+        getLicense: async key => {
+            const sale = (await store.getSold()).find(row => row.licenseKey === key);
+            return sale ? {sale, claim: (await store.getClaimed())[key] || null} : null;
+        },
+        getSale: async orderId => (await store.getSold()).find(row => String(row.orderId) === String(orderId)) || null,
+        // Marks a refunded/cancelled order's key as revoked (sale and claim). Idempotent.
+        revokeOrder: (orderId, info = {}) => {
+            const task = store.pending.then(async () => {
+                const sold = await store.getSold();
+                const sale = sold.find(row => String(row.orderId) === String(orderId));
+                if (!sale) return null;
+                if (sale.revoked) return {changed: false, licenseKey: sale.licenseKey};
+                const mark = {revoked: true, revokedAt: info.at || Date.now(), revokeReason: info.reason || 'refund'};
+                Object.assign(sale, mark); write(soldFile, sold);
+                const claimed = await store.getClaimed();
+                if (claimed[sale.licenseKey]) {claimed[sale.licenseKey] = {...claimed[sale.licenseKey], ...mark}; write(claimedFile, claimed);}
+                return {changed: true, licenseKey: sale.licenseKey};
+            });
+            store.pending = task.catch(() => {}); return task;
+        },
+        // Account deletion: cloud backup and every session go; license claims keep the uid
+        // binding (the purchase stays usable) but lose the stored e-mail address.
+        deleteAccount: uid => {
+            const task = store.pending.then(async () => {
+                const backups = path.join(directory, 'backups.json'), sessions = path.join(directory, 'sessions.json');
+                const allBackups = read(backups, {}); delete allBackups[uid]; write(backups, allBackups);
+                const allSessions = read(sessions, {});
+                for (const [token, data] of Object.entries(allSessions)) if (data?.user?.uid === uid) delete allSessions[token];
+                write(sessions, allSessions);
+                const claimed = await store.getClaimed(); let changed = false;
+                for (const claim of Object.values(claimed)) if (claim.uid === uid && claim.email) {claim.email = ''; changed = true;}
+                if (changed) write(claimedFile, claimed);
+            });
+            store.pending = task.catch(() => {}); return task;
+        },
         // Anonymous usage counters: {day: {event: count}}
         bumpMetrics: async (day, counts) => {
             const file = path.join(directory, 'metrics.json'); const all = read(file, {});
@@ -196,9 +234,53 @@ function createPostgresStore(connectionString) {
             await store.ready();return (await pool.query('SELECT payload FROM barcepte_sessions WHERE token_hash=$1 AND expires_at>$2',[token,Date.now()])).rows[0]?.payload || null;
         },
         async revokeSession(token) {await store.ready();await pool.query('DELETE FROM barcepte_sessions WHERE token_hash=$1',[token]);},
+        async getLicense(key) {
+            await store.ready();
+            const {rows} = await pool.query(`SELECT s.payload AS sale, c.payload AS claim FROM barcepte_sales s
+                LEFT JOIN barcepte_claims c ON c.license_key=s.license_key WHERE s.license_key=$1`, [key]);
+            return rows.length ? {sale: rows[0].sale, claim: rows[0].claim || null} : null;
+        },
+        async getSale(orderId) {
+            await store.ready();
+            return (await pool.query('SELECT payload FROM barcepte_sales WHERE order_id=$1', [String(orderId)])).rows[0]?.payload || null;
+        },
+        async revokeOrder(orderId, info = {}) {
+            await store.ready();
+            const mark = JSON.stringify({revoked: true, revokedAt: info.at || Date.now(), revokeReason: info.reason || 'refund'});
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                const sale = await client.query('SELECT license_key,payload FROM barcepte_sales WHERE order_id=$1 FOR UPDATE', [String(orderId)]);
+                if (!sale.rowCount) {await client.query('ROLLBACK'); return null;}
+                const licenseKey = sale.rows[0].license_key;
+                if (sale.rows[0].payload.revoked === true) {await client.query('ROLLBACK'); return {changed: false, licenseKey};}
+                await client.query('UPDATE barcepte_sales SET payload=payload || $2::jsonb WHERE order_id=$1', [String(orderId), mark]);
+                await client.query('UPDATE barcepte_claims SET payload=payload || $2::jsonb WHERE license_key=$1', [licenseKey, mark]);
+                await client.query('COMMIT');
+                return {changed: true, licenseKey};
+            } catch (error) {
+                await client.query('ROLLBACK').catch(() => {});
+                throw error;
+            } finally {client.release();}
+        },
+        async deleteAccount(uid) {
+            await store.ready();
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                await client.query('DELETE FROM barcepte_backups WHERE uid=$1', [uid]);
+                await client.query('DELETE FROM barcepte_sessions WHERE uid=$1', [uid]);
+                await client.query(`UPDATE barcepte_claims SET payload=payload || jsonb_build_object('email','') WHERE payload->>'uid'=$1`, [uid]);
+                await client.query('COMMIT');
+            } catch (error) {
+                await client.query('ROLLBACK').catch(() => {});
+                throw error;
+            } finally {client.release();}
+        },
         async getSubscription(uid,now) {
             await store.ready();return (await pool.query(`SELECT payload FROM barcepte_claims WHERE payload->>'uid'=$1
                 AND COALESCE(payload->>'needsReview','false')<>'true'
+                AND COALESCE(payload->>'revoked','false')<>'true'
                 AND ((payload->>'plan'='lifetime' AND (payload->>'expiresAt')::bigint=0) OR (payload->>'expiresAt')::bigint>$2)
                 ORDER BY (payload->>'claimedAt')::bigint DESC NULLS LAST LIMIT 1`,[uid,now])).rows[0]?.payload || null;
         },
@@ -252,6 +334,7 @@ function createPostgresStore(connectionString) {
                 const sold = await client.query('SELECT license_key,payload FROM barcepte_sales WHERE license_key=$1 FOR UPDATE', [key]);
                 if (!sold.rowCount) {await client.query('ROLLBACK'); return {issued: false};}
                 const {rows} = await client.query('SELECT payload FROM barcepte_claims WHERE license_key=$1', [key]);
+                if (sold.rows[0].payload.revoked === true) {await client.query('ROLLBACK'); return {issued: true, revoked: true, existing: rows[0]?.payload || null};}
                 if (rows.length) {
                     let existing=rows[0].payload;
                     if(existing.needsReview) {

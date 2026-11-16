@@ -1,0 +1,164 @@
+// Behaviour locks for client-side fixes: sync merge, translation failures, opening recipes by id,
+// ingredient matching, substitutes and custom-recipe ingredient parsing.
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const src = fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8');
+const slice = (from, to) => {
+    const start = src.indexOf(from);
+    const end = src.indexOf(to, start + 1);
+    assert.ok(start >= 0 && end > start, `game.js block ${from} .. ${to}`);
+    return src.slice(start, end);
+};
+const baseIngredients = slice('const baseIngredients', 'let currentLang');
+const matchBlock = slice('// Malzeme satırının başındaki ölçüyü', '// Barmen Modu');
+const matcher = new Function(`${baseIngredients}
+let popularIngredients = [...baseIngredients, { id: 'Lemon', name: 'Limon', nameEn: 'Lemon' }];
+${matchBlock}
+return { checkIngredientMatch, splitMeasureAndName, splitCustomIngredients, stripLeadingMeasure };`)();
+
+test('ingredient matching rejects product-changing qualifiers and reverse matches', () => {
+    const { checkIngredientMatch: match } = matcher;
+    const wrong = [
+        ['Ginger Beer', 'Beer'], ['Root beer', 'Beer'], ['Coffee liqueur', 'Coffee'], ['Coffee brandy', 'Coffee'],
+        ['Bacardi Limon', 'Lemon'], ['Bacardi Limon', 'Limon'], ['Vanilla ice-cream', 'Ice'], ['Tonic water', 'Water'],
+        ['Soda water', 'Water'], ['Dr. Pepper', 'Pepper'], ['Coconut milk', 'Milk'], ['Sloe gin', 'Gin'],
+        ['Ginger ale', 'Gin'], ['Lime vodka', 'Lime'], ['Orange bitters', 'Orange'], ['Orange Curacao', 'Orange'],
+        ['Cherry brandy', 'Cherry'], ['Sugar syrup', 'Sugar'], ['Irish cream', 'Cream'], ['Lemon-lime soda', 'Lemon'],
+        // reverse direction: having soda water does not mean the recipe's plain "Water" is covered
+        ['Water', 'Soda Water'], ['Lime', 'Lime Juice'], ['Rum', 'Dark rum']
+    ];
+    for (const [recipe, user] of wrong) assert.equal(match(recipe, user), false, `${user} must not satisfy ${recipe}`);
+    const right = [
+        ['Lime juice', 'Lime'], ['Fresh Lime Juice', 'Lime Juice'], ['Dark rum', 'Rum'], ['Light rum', 'Rum'],
+        ['Lemon peel', 'Lemon'], ['Egg white', 'Egg White'], ['Heavy cream', 'Cream'], ['Angostura bitters', 'Bitters'],
+        ['Ice', 'Ice'], ['Ice', 'Buz'], ['Gin', 'Gin'], ['Club soda', 'Soda Water'], ['Irish whiskey', 'Whiskey'],
+        ['50 ml Votka', 'Vodka'], ['4,5 cl Votka', 'Vodka'], ['25 ml Limon Suyu', 'Lemon Juice']
+    ];
+    for (const [recipe, user] of right) assert.equal(match(recipe, user), true, `${user} should satisfy ${recipe}`);
+});
+
+test('Rum + Beer no longer makes Dark and Stormy ready (ginger beer missing)', () => {
+    const { checkIngredientMatch: match } = matcher;
+    const darkAndStormy = ['Dark rum', 'Ginger beer'];
+    const selected = ['Rum', 'Beer'];
+    const missing = darkAndStormy.filter(r => !selected.some(s => match(r, s)));
+    assert.deepEqual(missing, ['Ginger beer']);
+});
+
+test('leading measures are removed only when a unit follows the number', () => {
+    const { splitMeasureAndName: split, stripLeadingMeasure: strip } = matcher;
+    assert.deepEqual(split('50 ml Votka'), { measure: '50 ml', name: 'Votka' });
+    assert.deepEqual(split('4,5 cl Votka'), { measure: '4,5 cl', name: 'Votka' });
+    assert.deepEqual(split('1 1/2 oz Gin'), { measure: '1 1/2 oz', name: 'Gin' });
+    assert.deepEqual(split('2 yemek kaşığı Şeker'), { measure: '2 yemek kaşığı', name: 'Şeker' });
+    assert.equal(strip('7-Up'), '7-Up');
+    assert.equal(strip('151 proof rum'), '151 proof rum');
+    assert.equal(strip('Buz'), 'Buz');
+    assert.ok(!/\[\\d\\s\\\/\.,-\]\+\(/.test(slice('function autoExtractAllIngredients', 'function scrollIngredients')),
+        'autoExtractAllIngredients uses the shared measure helper');
+});
+
+test('custom recipe ingredients keep decimal commas and accept new lines / semicolons', () => {
+    const { splitCustomIngredients: split } = matcher;
+    assert.deepEqual(split('4,5 cl Votka, 2,5 cl Limon Suyu, Buz'), ['4,5 cl Votka', '2,5 cl Limon Suyu', 'Buz']);
+    assert.deepEqual(split('50 ml Votka\n25 ml Limon Suyu;Buz'), ['50 ml Votka', '25 ml Limon Suyu', 'Buz']);
+    assert.deepEqual(split('Votka,Tonik'), ['Votka', 'Tonik']);
+    assert.match(slice('async function saveCustomRecipe', 'if(!name ||'), /splitCustomIngredients\(ingredientsRaw\)/);
+});
+
+test('substitutes match whole words: missing Gin is not offered ginger beer', () => {
+    const block = slice('const INGREDIENT_SUBSTITUTES', 'function showToast');
+    const escape = slice('function escapeRegExp', '// Akıllı ve Hassas');
+    const substitute = new Function(`${escape}${block}return getIngredientSubstitute;`)();
+    assert.equal(substitute('Gin'), null);
+    assert.equal(substitute('Beer'), null);
+    assert.match(substitute('Ginger beer').subEn, /Ginger Ale/);
+    assert.match(substitute('Sugar syrup').subEn, /Simple Syrup/);
+    assert.ok(substitute('Lime juice'));
+});
+
+function loadSync(fetchImpl, existing) {
+    const block = slice('const SYNC_INTERVAL_MS', '// ==========================================\n// OTOMATİK SÜRÜM');
+    const storage = {};
+    const env = {
+        allCocktails: existing,
+        toasts: [],
+        storage
+    };
+    const api = new Function('env', 'fetch', `
+        let allCocktails = env.allCocktails; const customRecipes = []; const db = null; const currentTab = 'alkol';
+        let currentLang = 'tr'; const I18N = { tr: { statusCount: 'tarif' } };
+        const localStorage = { getItem: k => env.storage[k] ?? null, setItem: (k, v) => { env.storage[k] = v; } };
+        const navigator = { onLine: true };
+        const document = { getElementById: () => null };
+        const isValidCocktailObject = d => typeof d.idDrink === 'string' && typeof d.strDrink === 'string';
+        const enrichDrink = () => {}, autoExtractAllIngredients = () => {}, renderIngredients = () => {},
+            filterCocktails = () => {}, renderMyRecipes = () => {}, triggerHaptic = () => {};
+        const showToast = (message, type) => env.toasts.push({ message, type });
+        const alert = message => env.toasts.push({ message, type: 'alert' });
+        const setTimeout = fn => fn();
+        ${block}
+        return { mergeCocktailLists, updateDataInBackground, forceSyncOnlineDatabase, current: () => allCocktails };
+    `)(env, fetchImpl);
+    return { api, env };
+}
+
+test('online sync never empties or shrinks the recipe list and keeps Turkish instructions', async () => {
+    const existing = [
+        { idDrink: '1', strDrink: 'Martini', strInstructions: 'Stir.', strInstructionsTR: 'Karıştır.' },
+        { idDrink: '2', strDrink: 'Mojito', strInstructions: 'Muddle.' }
+    ];
+    const offline = loadSync(async () => { throw new Error('offline'); }, existing);
+    const failed = await offline.api.forceSyncOnlineDatabase();
+    assert.equal(failed.ok, false);
+    assert.equal(offline.api.current().length, 2, 'existing recipes kept when the network fails');
+    assert.equal(offline.env.toasts.at(-1).type, 'error');
+    assert.doesNotMatch(offline.env.toasts.at(-1).message, /başarıyla/);
+    assert.equal(offline.env.storage.bar_cepte_last_sync, undefined, 'failed sync is not recorded');
+
+    // API returns only one (updated) drink for one letter and nothing for the others.
+    const partial = loadSync(async url => ({
+        ok: true,
+        json: async () => ({ drinks: /f=m$/.test(url) ? [{ idDrink: '1', strDrink: 'Martini', strInstructions: 'Stir well.', strInstructionsTR: null }, { idDrink: '3', strDrink: 'Margarita', strInstructions: 'Shake.' }] : null })
+    }), existing);
+    const result = await partial.api.forceSyncOnlineDatabase();
+    assert.equal(result.ok, true);
+    const list = partial.api.current();
+    assert.deepEqual(list.map(d => d.idDrink).sort(), ['1', '2', '3']);
+    const martini = list.find(d => d.idDrink === '1');
+    assert.equal(martini.strInstructions, 'Stir well.');
+    assert.equal(martini.strInstructionsTR, 'Karıştır.', 'Turkish translation survives the merge');
+    assert.match(partial.env.toasts.at(-1).message, /1 yeni/);
+});
+
+test('failed translation is not stored as Turkish instructions', () => {
+    const translate = slice('async function translateToTurkish', 'function autoExtractAllIngredients');
+    assert.match(translate, /catch \{[\s\S]*?return null;/);
+    assert.doesNotMatch(translate, /catch \{\s*return cleanInstructionText\(text\)/);
+    const card = slice('const trText = await translateToTurkish', '} else {\n                details.classList.remove');
+    assert.match(card, /if \(trText\) \{[\s\S]*d\.strInstructionsTR = cleanInstructionText\(trText\)/);
+});
+
+test('openCocktail opens the card with the requested id, not the first search hit', () => {
+    const block = slice('function findCocktailCardById', 'function applyLanguage');
+    const clicked = [];
+    const makeCard = (id, name) => ({
+        dataset: { drinkId: id }, name,
+        querySelector: () => ({ classList: { contains: () => false } }),
+        scrollIntoView() {}, click() { clicked.push(name); }
+    });
+    const cards = [makeCard('17212', 'Espresso Martini'), makeCard('11728', 'Martini')];
+    const document = {
+        getElementById: id => (id === 'cocktail-search' ? { value: '' } : null),
+        querySelectorAll: () => cards,
+        querySelector: () => null
+    };
+    const openCocktail = new Function('document', 'switchTab', 'filterCocktails', 'setTimeout',
+        `${block}; return openCocktail;`)(document, () => {}, () => {}, fn => fn());
+    openCocktail({ idDrink: '11728', strDrink: 'Martini' });
+    assert.deepEqual(clicked, ['Martini']);
+    assert.match(src, /card\.dataset\.drinkId = d\.idDrink;/);
+});

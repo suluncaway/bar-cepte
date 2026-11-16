@@ -4,8 +4,8 @@
  * Özellikler:
  * 1. Google OAuth 2.0 (Google Identity Services) ile tek tıkla giriş.
  * 2. Cihazlar arası otomatik Bulut Senkronizasyonu (Favoriler, Dolap, Özel Kokteyller).
- * 3. Tek Kullanımlık Lisans Anahtarı Mühürleme (Bir lisans yalnızca bir hesaba bağlanabilir).
- * 4. Çoklu Cihazda Otomatik VIP Tanıma (Google ile girilen her cihazda Reserve anında aktif).
+ * 3. Lisans anahtarları yalnızca lisans sunucusunda mühürlenir; yerel kayıtlar hiçbir yetki vermez.
+ * 4. Google hesabına bağlı Reserve, sunucunun döndürdüğü abonelikle her cihazda tanınır.
  * 5. XSS ve Veri Güvenliği: BarSecurity ile %100 sanitize edilmiş veri akışı.
  */
 
@@ -21,6 +21,9 @@
     try {sessionToken=root.sessionStorage.getItem(SESSION_KEY)||'';const r=root.sessionStorage.getItem(REVISION_KEY);cloudRevision=r===null?null:Number(r);}catch {}
 
     let currentUser = null;
+    let googleCredential = null;
+    const CLOUD_CONSENT_KEY = 'barcepte_cloud_backup_consent';
+    const LOCAL_BACKUP_PREFIX = 'barcepte_cloud_data_';
 
     // --- Güvenlik & Doğrulama Yardımcıları ---
     function showAlert(msg) {
@@ -89,10 +92,11 @@
             name: sanitizeText(raw.name || 'Barmen Kulübü Üyesi', 100),
             email: sanitizeText(raw.email || '', 150),
             picture: safeAvatar(raw.picture || ''),
-            isReserve: Boolean(raw.isReserve),
-            plan: ['monthly', 'annual', 'lifetime'].includes(raw.plan) ? raw.plan : null,
-            reserveKey: sanitizeText(raw.reserveKey || '', 50),
-            reserveExpiresAt: Number(raw.reserveExpiresAt) || 0,
+            // Reserve fields are derived from the server-verified entitlement in getCurrentUser().
+            isReserve: false,
+            plan: null,
+            reserveKey: '',
+            reserveExpiresAt: 0,
             provider: raw.provider === 'google' ? 'google' : 'local',
             createdAt: Number(raw.createdAt) || Date.now(),
             lastSync: Number(raw.lastSync) || 0
@@ -127,6 +131,15 @@
 
     function getCurrentUser() {
         if (!currentUser) loadStoredUser();
+        if (currentUser) {
+            const info = root.BarReserve && typeof root.BarReserve.getSubscriptionInfo === 'function'
+                ? root.BarReserve.getSubscriptionInfo() : null;
+            const active = Boolean(info && info.active);
+            currentUser.isReserve = active;
+            currentUser.plan = active ? info.plan : null;
+            currentUser.reserveKey = active ? info.key : '';
+            currentUser.reserveExpiresAt = active ? info.expiresAt : 0;
+        }
         return currentUser;
     }
 
@@ -136,11 +149,14 @@
 
     const DEVICE_ID_KEY = 'barcepte_device_id';
 
+    // Existing IDs are kept verbatim: device-bound licenses on the server are tied to that exact string.
     function getDeviceId() {
         try {
             let id = root.localStorage.getItem(DEVICE_ID_KEY);
             if (!id) {
-                id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+                const bytes = new Uint8Array(32);
+                root.crypto.getRandomValues(bytes);
+                id = 'dev_' + Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
                 root.localStorage.setItem(DEVICE_ID_KEY, id);
             }
             return id;
@@ -149,7 +165,17 @@
         }
     }
 
-    // --- Tek Kullanımlık Lisans Anahtarı Denetleyicisi ---
+    // The raw Google credential is kept in memory only; the server, not parseJwt, verifies identity.
+    function getIdToken() {
+        const user = getCurrentUser();
+        const profile = googleCredential && parseJwt(googleCredential);
+        if (!user || user.provider !== 'google' || !profile || 'google_' + profile.sub !== user.uid ||
+            !Number.isFinite(profile.exp) || profile.exp * 1000 <= Date.now()) return null;
+        return googleCredential;
+    }
+
+    // --- Lisans anahtarı (yalnızca biçim kontrolü; sahiplik kararını sunucu verir) ---
+    // Legacy read-only: older versions kept a local claim registry. It never grants or denies anything.
     function getClaimedLicenses() {
         try {
             const raw = root.localStorage.getItem(USED_KEYS_STORAGE);
@@ -160,124 +186,26 @@
         }
     }
 
-    function saveClaimedLicenses(registry) {
-        try {
-            root.localStorage.setItem(USED_KEYS_STORAGE, JSON.stringify(registry));
-        } catch {}
-    }
-
     function canUseLicenseKey(rawKey) {
-        if (!rawKey || typeof rawKey !== 'string') {
-            return { allowed: false, reason: 'Geçersiz anahtar formatı.' };
-        }
-        const cleanKey = rawKey.trim().toUpperCase();
-
-        // Master geliştirici anahtarları her zaman serbesttir
-        if (cleanKey === 'RESERVE-SULUNCA-2026' || cleanKey === 'BARCEPTE-RESERVE-VIP') {
-            return { allowed: true, reason: 'Master geliştirici anahtarı.' };
-        }
-
-        // 1. Matematiksel Doğruluk Kontrolü
-        if (root.BarReserve && typeof root.BarReserve.validateLicenseKey === 'function') {
-            if (!root.BarReserve.validateLicenseKey(cleanKey)) {
-                return { allowed: false, reason: 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
-            }
-        }
-
-        // 2. Tek Kullanımlık Hesap / Cihaz Bağlantısı Kontrolü
-        const registry = getClaimedLicenses();
-        const existingClaim = registry[cleanKey];
-
-        const user = getCurrentUser();
-        const deviceId = getDeviceId();
-        const currentUid = user ? user.uid : deviceId;
-
-        if (existingClaim) {
-            // Süre dolumu kontrolü: Süresi dolmuş anahtar tekrar KULLANILAMAZ!
-            if (existingClaim.expiresAt > 0 && Date.now() > existingClaim.expiresAt) {
-                return {
-                    allowed: false,
-                    reason: 'Bu lisans anahtarının kullanım süresi dolmuştur! Lisanslar tek kullanımlıktır.'
-                };
-            }
-
-            // Sahip doğrulaması:
-            // 1. Eğer lisans bir hesaba (UID) bağlıysa, farklı bir hesap kesinlikle KULLANAMAZ.
-            // 2. Sadece aynı UID veya misafir durumunda aynı cihaz kabul edilir.
-            let isOwner = false;
-            if (user && user.uid && existingClaim.uid) {
-                isOwner = (existingClaim.uid === user.uid);
-            } else if (!user && existingClaim.deviceId && !existingClaim.uid) {
-                isOwner = (existingClaim.deviceId === deviceId);
-            }
-
-            if (isOwner) {
-                return {
-                    allowed: true,
-                    reason: 'Bu anahtar zaten mevcut hesabınıza tanımlı.',
-                    alreadyClaimed: true
-                };
-            } else {
-                return {
-                    allowed: false,
-                    reason: 'Bu lisans anahtarı daha önce başka bir hesap tarafından kullanılmış! Lisanslar tek kullanımlıktır.'
-                };
-            }
-        }
-
-        return { allowed: true, reason: 'Anahtar kullanılabilir.' };
+        const allowed = Boolean(root.BarReserve && root.BarReserve.validateLicenseKey(rawKey));
+        return { allowed, reason: allowed ? 'Sunucu doğrulaması gerekli.' : 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
     }
 
-    function claimLicenseKey(rawKey, plan, expiresAt) {
-        const cleanKey = rawKey.trim().toUpperCase();
-        const user = getCurrentUser();
-        const deviceId = getDeviceId();
-        const currentUid = user ? user.uid : null;
-
-        const registry = getClaimedLicenses();
-        registry[cleanKey] = {
-            uid: currentUid,
-            deviceId: deviceId,
-            email: user ? user.email : '',
-            claimedAt: Date.now(),
-            plan: plan || 'annual',
-            expiresAt: Number(expiresAt) || 0
-        };
-        saveClaimedLicenses(registry);
-
-        if (user) {
-            user.isReserve = true;
-            user.plan = plan || 'annual';
-            user.reserveKey = cleanKey;
-            user.reserveExpiresAt = Number(expiresAt) || 0;
-            saveUser(user);
-            syncToCloud();
-        }
-    }
-
-    function markLicenseClaimedLocally(rawKey, uid) {
-        if (!rawKey) return;
-        const cleanKey = rawKey.trim().toUpperCase();
-        const registry = getClaimedLicenses();
-        if (!registry[cleanKey]) {
-            registry[cleanKey] = {
-                uid: uid || 'external_user',
-                claimedAt: Date.now(),
-                externallyClaimed: true
-            };
-            saveClaimedLicenses(registry);
-        }
-    }
+    // Compatibility only: local registries never grant entitlement any more.
+    function claimLicenseKey() { return false; }
+    function markLicenseClaimedLocally() { return false; }
 
     // --- Bulut Senkronizasyonu (Cloud Sync) ---
     function collectCurrentLocalData() {
         const sec = root.BarSecurity;
+        const list = key => { try { const v = JSON.parse(root.localStorage.getItem(key) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
+        if (!sec) return { favorites: list('favoriteCocktails'), customs: list('customRecipes'), shopping: list('shoppingList'), selected: list('selectedIngredients') };
         try {
             return {
-                favorites: sec ? sec.readStored('favoriteCocktails', sec.stringList) : JSON.parse(root.localStorage.getItem('favoriteCocktails') || '[]'),
-                customs: sec ? sec.readStored('customRecipes', sec.recipes) : JSON.parse(root.localStorage.getItem('customRecipes') || '[]'),
-                shopping: sec ? sec.readStored('shoppingList', sec.stringList) : JSON.parse(root.localStorage.getItem('shoppingList') || '[]'),
-                selected: sec ? sec.readStored('selectedIngredients', sec.stringList) : JSON.parse(root.localStorage.getItem('selectedIngredients') || '[]'),
+                favorites: sec.readStored('favoriteCocktails', sec.stringList),
+                customs: sec.readStored('customRecipes', sec.recipes),
+                shopping: sec.readStored('shoppingList', sec.stringList),
+                selected: sec.readStored('selectedIngredients', sec.stringList),
                 preferences: sec.preferences({...sec.readStored('personalPreferences',sec.preferences)}),
                 history: sec.readStored('preparationHistory',sec.history),
                 inventory: sec.inventory({...{items:[],deductions:[],receipts:[]},...sec.readStored('barInventory',sec.inventory)})
@@ -285,6 +213,26 @@
         } catch {
             return { favorites: [], customs: [], shopping: [], selected: [] };
         }
+    }
+
+    // On sign-out the account's lists move to an on-device copy so the next person on this device
+    // does not see them; signing back in to the same local profile restores them.
+    function stashAccountData(user) {
+        if (!user || !user.uid) return;
+        root.localStorage.setItem(LOCAL_BACKUP_PREFIX + user.uid, JSON.stringify({ updatedAt: Date.now(), data: collectCurrentLocalData() }));
+        for (const key of ['favoriteCocktails', 'customRecipes', 'shoppingList', 'selectedIngredients']) root.localStorage.setItem(key, '[]');
+    }
+    function restoreStashedData(uid) {
+        try {
+            const stash = JSON.parse(root.localStorage.getItem(LOCAL_BACKUP_PREFIX + uid) || 'null');
+            if (!stash || !stash.data) return false;
+            const keys = { favorites: 'favoriteCocktails', customs: 'customRecipes', shopping: 'shoppingList', selected: 'selectedIngredients' };
+            for (const [field, key] of Object.entries(keys)) {
+                const current = JSON.parse(root.localStorage.getItem(key) || '[]');
+                if (Array.isArray(stash.data[field]) && (!Array.isArray(current) || !current.length)) root.localStorage.setItem(key, JSON.stringify(stash.data[field]));
+            }
+            return true;
+        } catch { return false; }
     }
 
     function getSessionToken() {return sessionToken;}
@@ -308,17 +256,15 @@
     function rememberRevision(revision) {
         cloudRevision=revision;try {root.sessionStorage.setItem(REVISION_KEY,String(revision));}catch {}
     }
+    // The account server's answer is authoritative for an account-bound subscription. "No subscription
+    // for this account" is not proof that a device-bound key is invalid, so that case re-checks the key.
     function applyServerSubscription(subscription) {
         const user=getCurrentUser();if(!user)return;
-        user.isReserve=Boolean(subscription);
-        user.plan=subscription?subscription.plan:null;
-        user.reserveKey=subscription?subscription.key:'';
-        user.reserveExpiresAt=subscription?subscription.expiresAt:0;
-        saveUser(user);
         if(root.BarReserve) {
-            if(subscription)root.BarReserve.activateFromCloud({...subscription,active:true});
-            else if(root.BarReserve.deactivateReserve)root.BarReserve.deactivateReserve(false);
+            if(subscription && root.BarReserve.acceptServerSubscription)root.BarReserve.acceptServerSubscription(subscription);
+            else if(!subscription && root.BarReserve.revalidate)root.BarReserve.revalidate({force:true}).catch(()=>{});
         }
+        saveUser(getCurrentUser());
     }
     function applyCloudData(valid,user) {
         valid={...valid,preferences:valid.preferences||root.BarSecurity.preferences({}),history:valid.history||[],inventory:valid.inventory||{items:[],deductions:[],receipts:[]}};
@@ -378,7 +324,7 @@
         const result=await accountRequest('/api/auth/google',{method:'POST',body:JSON.stringify({credential:response.credential})});
         if(attempt!==loginAttempt)return;
         if(!result.success){showAlert(result.reason);return;}
-        sessionToken=result.token;rememberRevision(null);
+        sessionToken=result.token;rememberRevision(null);googleCredential=response.credential;
         try {root.sessionStorage.setItem(SESSION_KEY,sessionToken);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
         const googleUser=saveUser({...result.user,isReserve:false,createdAt:Date.now()});
         try {
@@ -393,10 +339,34 @@
                 const owner=root.localStorage.getItem('barcepte_data_owner');
                 if(owner && owner!==googleUser.uid)applyCloudData({favorites:[],customs:[],shopping:[],selected:[]},googleUser);
             }catch {}
-            await syncToCloud();
+            // The first upload needs explicit consent; later uploads only happen when the user syncs.
+            if(askCloudConsent())await syncToCloud();
         }
         closeAuthModal();
         showAlert(getCurrentLang()==='en'?`Welcome, ${googleUser.name}!`: `Hoş geldin, ${googleUser.name}!`);
+    }
+    function askCloudConsent() {
+        let stored=null;
+        try {stored=root.localStorage.getItem(CLOUD_CONSENT_KEY);}catch {}
+        if(stored==='granted')return true;
+        if(typeof root.confirm!=='function')return stored!=='denied'; // no dialog available (tests/automation)
+        const granted=root.confirm(getCurrentLang()==='en'
+            ? 'Back up your favourites, custom recipes, shopping list, bar stock and tasting notes to your Google-linked Bar Cepte account? They are stored on our server (Render/Neon) so other devices can restore them. You can delete the backup at any time.'
+            : 'Favorilerin, özel tariflerin, alışveriş listen, bar stoğun ve tadım notların Google hesabına bağlı Bar Cepte yedeğine yüklensin mi? Veriler diğer cihazlarda geri yüklenebilmesi için sunucumuzda (Render/Neon) saklanır. Yedeği istediğin zaman silebilirsin.');
+        try {root.localStorage.setItem(CLOUD_CONSENT_KEY,granted?'granted':'denied');}catch {}
+        return granted;
+    }
+    // Deletes the server-side backup and all sessions of the signed-in Google account, then signs out locally.
+    async function deleteCloudAccount() {
+        const user=getCurrentUser();
+        if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:getCurrentLang()==='en'?'Sign in with Google first.':'Önce Google ile giriş yapınız.'};
+        const result=await accountRequest('/api/account',{method:'DELETE'});
+        if(!result.success)return result;
+        try {root.localStorage.removeItem(CLOUD_CONSENT_KEY);root.localStorage.removeItem('barcepte_data_owner');}catch {}
+        sessionToken='';cloudRevision=null;
+        try {root.sessionStorage.removeItem(SESSION_KEY);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
+        logout();
+        return {success:true};
     }
     async function restoreSession() {
         if(!sessionToken)return;
@@ -420,7 +390,7 @@
             reserveExpiresAt: 0
         };
         saveUser(demoUser);
-        syncToCloud();
+        restoreStashedData(demoUser.uid);
         closeAuthModal();
         showAlert(getCurrentLang() === 'en'
             ? 'Guest Bartender mode: data stays on this device.'
@@ -433,11 +403,15 @@
         loginAttempt++;
         const token=sessionToken;sessionToken='';cloudRevision=null;
         try {root.sessionStorage.removeItem(SESSION_KEY);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
+        googleCredential=null;
         if(token && root.fetch)root.fetch(API_ORIGIN+'/api/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}).catch(()=>{});
         if(getCurrentUser()?.provider==='google' && root.BarReserve?.deactivateReserve)root.BarReserve.deactivateReserve(false);
     }
     function logout() {
+        try {stashAccountData(getCurrentUser());} catch {}
         clearSession();
+        // Signing out removes this device's Reserve state too; signing in again restores it from the server.
+        if(root.BarReserve?.deactivateReserve)root.BarReserve.deactivateReserve(false);
         currentUser = null;
         try {
             root.localStorage.removeItem(AUTH_USER_KEY);
@@ -677,23 +651,8 @@
                             alert(result.reason || (getCurrentLang() === 'en' ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.'));
                         }
                     } else {
-                        const check = canUseLicenseKey(rawKey);
-                        if (!check.allowed) {
-                            alert(check.reason);
-                            return;
-                        }
-
-                        if (root.BarReserve && typeof root.BarReserve.activateReserve === 'function') {
-                            const activated = root.BarReserve.activateReserve(rawKey);
-                            if (activated) {
-                                alert(getCurrentLang() === 'en' ? 'Your license key was successfully linked to your account!' : 'Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
-                                if (input) input.value = '';
-                                renderAuthModalState();
-                                updateAuthUI();
-                            } else {
-                                alert(getCurrentLang() === 'en' ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.');
-                            }
-                        }
+                        // No offline fallback: a key is only activated after the license server confirms it.
+                        alert(getCurrentLang() === 'en' ? 'Activation is unavailable right now. Please reload and try again.' : 'Aktivasyon şu an kullanılamıyor. Sayfayı yenileyip tekrar deneyiniz.');
                     }
                 } finally {
                     bindLicenseBtn.disabled = false;
@@ -723,6 +682,8 @@
         saveUser,
         logout,
         getDeviceId,
+        getIdToken,
+        deleteCloudAccount,
         canUseLicenseKey,
         claimLicenseKey,
         markLicenseClaimedLocally,

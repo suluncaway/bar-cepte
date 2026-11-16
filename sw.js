@@ -1,4 +1,5 @@
-const CACHE_NAME = 'bar-cepte-v82-icons';
+const CACHE_NAME = 'bar-cepte-v83-client-fixes';
+const NETWORK_TIMEOUT_MS = 3000;
 const IMAGE_CACHE = 'bar-cepte-images-v2';
 const ASSETS = ['./business-flow.js', './landing.html', './landing.css', './business-reports.js', './business.html', './business.css', './business-rules.js', './business-ui.js', './inventory.js', './personal-bar.js', './personal-ui.js', './', './index.html', './privacy.html', './privacy.js', './style.css', './visual-refresh.css', './vivid.css', './icons.css', './tailwind.css', './game.js',
     './security.js', './ui-bindings.js', './dynamic-ui.js', './support.js',
@@ -22,20 +23,42 @@ self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
     if (url.origin === SCOPE.origin && allowedAssets.has(url.pathname)) {
         // App code is network-first so security fixes do not remain stuck in an old cache.
+        // A slow network falls back to the cached copy after NETWORK_TIMEOUT_MS; the download
+        // keeps running and refreshes the cache for the next load.
         event.respondWith((async () => {
             // Storage may be unavailable or full; it must never discard a valid network response.
             const cache = await caches.open(CACHE_NAME).catch(() => null);
-            const saved = async () => cache && await cache.match(event.request, { ignoreSearch: true }).catch(() => null);
-            try {
+            // Exact match first: a ?v= request must not get an older precached copy when its own
+            // version is cached. Only then fall back to the same file ignoring the query.
+            const saved = async () => {
+                if (!cache) return null;
+                return await cache.match(event.request).catch(() => null) ||
+                    await cache.match(event.request, { ignoreSearch: true }).catch(() => null);
+            };
+            const network = (async () => {
                 const response = await fetch(event.request, {cache:'no-cache'});
-                if (response.status >= 500) return await saved() || response;
                 if (cache && response.ok && response.status !== 206 && !response.redirected && !event.request.headers.has('range')) {
                     await cache.put(event.request, response.clone()).catch(() => {});
                 }
                 return response;
+            })();
+            if (event.waitUntil) event.waitUntil(network.catch(() => {}));
+            let timer;
+            const slow = new Promise(resolve => { timer = setTimeout(() => resolve('timeout'), NETWORK_TIMEOUT_MS); });
+            try {
+                const first = await Promise.race([network, slow]);
+                if (first === 'timeout') {
+                    const cached = await saved();
+                    if (cached) return cached;
+                    return await network;
+                }
+                if (first.status >= 500) return await saved() || first;
+                return first;
             } catch {
                 return await saved() ||
                     new Response('Çevrimdışı: Bu dosya henüz önbellekte değil.', { status: 503 });
+            } finally {
+                clearTimeout(timer);
             }
         })());
     } else if (url.protocol === 'https:' && ((url.hostname === 'www.thecocktaildb.com' && url.pathname.startsWith('/images/')) ||

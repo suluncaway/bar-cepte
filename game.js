@@ -31,6 +31,10 @@ const baseIngredients = [
     { id: "Ice", name: "Buz", nameEn: "Ice", emoji: "", cat: "mutfak", taste: "Ferah", cal: 0 }
 ];
 
+// Uygulama sürümü için tek kaynak (package.json "version" ile aynı tutulur).
+// Not: Android versionName (android/app/build.gradle) ayrı yönetilir.
+const CURRENT_APP_VERSION = "1.1.0";
+
 let currentLang = 'tr';
 try { currentLang = localStorage.getItem('bar_cepte_lang') || localStorage.getItem('bar_language') || 'tr'; } catch(e) {}
 if (typeof window !== 'undefined') window.currentLang = currentLang;
@@ -176,7 +180,7 @@ const I18N = {
         saveRecipeBtn: "Tarifi Kaydet",
         syncOnlineDbNote: "Çevrimiçi veritabanından yeni kokteylleri kontrol et:",
         updateTitle: "YENİ SÜRÜM MEVCUT!",
-        updateVersionText: "v1.2.0 hazır",
+        updateVersionText: "Yeni sürüm hazır",
         updateWhatsNew: "Yenilikler:",
         updateNotes: "Hata düzeltmeleri ve performans iyileştirmeleri.",
         updateBtn: "Şimdi Güncelle",
@@ -357,7 +361,7 @@ const I18N = {
         saveRecipeBtn: "Save Recipe",
         syncOnlineDbNote: "Check for new cocktails from online database:",
         updateTitle: "NEW VERSION AVAILABLE!",
-        updateVersionText: "v1.2.0 ready",
+        updateVersionText: "New version ready",
         updateWhatsNew: "What's New:",
         updateNotes: "Bug fixes and performance improvements.",
         updateBtn: "Update Now",
@@ -1216,53 +1220,96 @@ function isValidCocktailObject(drink) {
 }
 
 
+// Malzeme satırının başındaki ölçüyü ayırır. Rakamlar yalnızca ardından bir birim geliyorsa ölçüdür:
+// "50 ml Votka" → { measure: "50 ml", name: "Votka" }; "7-Up" ve "151 proof rum" adın parçası olarak kalır.
+const MEASURE_UNIT_PATTERN = '(?:fl\\.?\\s*oz|ml|cl|dl|oz|lt|litres?|liters?|l|dash(?:es)?|drops?|splash(?:es)?|tsp|tbsp|teaspoons?|tablespoons?|gr|g|shots?|parts?|cups?|jiggers?|pinch(?:es)?|slices?|wedges?|leaves|sprigs?|cubes?|yemek kaşığı|çay kaşığı|tatlı kaşığı|su bardağı|bardak|damla|dilim|adet|tutam|kaşık|ölçü)';
+const MEASURE_NUMBER_PATTERN = '(?:\\d+(?:[.,]\\d+)?(?:\\s+\\d+\\s*\\/\\s*\\d+|\\s*\\/\\s*\\d+)?|[½¼¾⅓⅔])(?:\\s*(?:-|–|to)\\s*\\d+(?:[.,]\\d+)?)?';
+const LEADING_MEASURE_RE = new RegExp(`^(${MEASURE_NUMBER_PATTERN}\\s*${MEASURE_UNIT_PATTERN})(?![\\p{L}\\p{N}])\\.?\\s*(.*)$`, 'iu');
+
+function splitMeasureAndName(str) {
+    const s = String(str || '').trim();
+    const m = s.match(LEADING_MEASURE_RE);
+    if (!m || !m[2].trim()) return { measure: '', name: s };
+    return { measure: m[1].trim(), name: m[2].trim() };
+}
+
+function stripLeadingMeasure(str) {
+    return splitMeasureAndName(str).name;
+}
+
+// Kullanıcı tarifindeki malzeme listesini böler. Satır sonu ve ";" her zaman ayırıcıdır;
+// virgül yalnızca iki rakamın arasında değilse ayırır ("4,5 cl Votka" tek malzemedir).
+function splitCustomIngredients(raw) {
+    return String(raw || '')
+        .split(/[\r\n;]+|,(?!\s*\d)|(?<!\d),/)
+        .map(i => i.trim())
+        .filter(Boolean);
+}
+// Bitiş: ölçü yardımcıları
+
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // Akıllı ve Hassas Malzeme Eşleme (False-positive engelleme)
+// Seçilen malzeme tarif malzemesinin "baş" sözcüğü olmalı: "Lime" → "Lime juice" olur,
+// ama "Coffee" → "Coffee liqueur", "Water" → "Tonic water", "Beer" → "Ginger beer" olmaz.
+// Ters yön (tarif adı kullanıcı malzemesinin içinde) eşleşme sayılmaz.
+const INGREDIENT_FORM_WORDS = new Set(['juice', 'peel', 'peels', 'slice', 'slices', 'wedge', 'wedges', 'twist', 'twists',
+    'zest', 'wheel', 'wheels', 'spiral', 'leaf', 'leaves', 'sprig', 'sprigs', 'white', 'whites', 'yolk', 'yolks',
+    'cube', 'cubes', 'crushed', 'rind', 'fresh', 'freshly', 'squeezed',
+    'suyu', 'kabuğu', 'kabuk', 'dilimi', 'dilim', 'yaprağı', 'yaprakları', 'yaprak', 'rendesi', 'küpü', 'küp', 'akı', 'sarısı']);
+// Bu niteleyiciler ürünü başka bir şeye çevirir (likör, şurup, gazoz, aromalı içki...).
+const INGREDIENT_QUALIFIER_WORDS = new Set(['liqueur', 'liquor', 'brandy', 'schnapps', 'syrup', 'beer', 'ale', 'vodka',
+    'rum', 'gin', 'whiskey', 'whisky', 'cream', 'bitters', 'bitter', 'curacao', 'soda', 'water', 'cordial', 'creme',
+    'crème', 'wine', 'sherry', 'tea', 'milk', 'heering', 'pop']);
+// Ön ek, baş sözcükle birlikte ayrı bir ürün adı oluşturuyorsa ("Dr. Pepper", "Ginger beer", "Tonic water").
+const INGREDIENT_BLOCKING_PREFIXES = new Set(['dr', 'bacardi']);
+const INGREDIENT_BLOCKING_PREFIXES_BY_HEAD = {
+    beer: ['ginger', 'root'], ale: ['ginger'],
+    water: ['tonic', 'soda', 'carbonated', 'sparkling', 'coconut', 'rose', 'orange', 'flower'],
+    milk: ['coconut', 'condensed', 'evaporated', 'almond', 'oat', 'soy', 'chocolate'],
+    cream: ['irish', 'baileys', 'coconut'], gin: ['sloe'], salt: ['celery'], pepper: ['dr']
+};
+
+function ingredientTokens(text) {
+    return String(text || '').toLowerCase().split(/[\s\-\/]+/).map(w => w.replace(/[^\p{L}\p{N}]+/gu, '')).filter(Boolean);
+}
+
+function ingredientHeadMatches(recipeTokens, candTokens) {
+    if (!candTokens.length || candTokens.length > recipeTokens.length) return false;
+    for (let start = 0; start + candTokens.length <= recipeTokens.length; start++) {
+        if (!candTokens.every((w, i) => recipeTokens[start + i] === w)) continue;
+        const prefix = recipeTokens.slice(0, start);
+        const suffix = recipeTokens.slice(start + candTokens.length);
+        if (!suffix.every(w => INGREDIENT_FORM_WORDS.has(w))) continue;
+        const headBlocked = INGREDIENT_BLOCKING_PREFIXES_BY_HEAD[candTokens[candTokens.length - 1]] || [];
+        if (prefix.some(w => INGREDIENT_BLOCKING_PREFIXES.has(w) || headBlocked.includes(w) || (INGREDIENT_QUALIFIER_WORDS.has(w) && !candTokens.includes(w)))) continue;
+        return true;
+    }
+    return false;
+}
+
 function checkIngredientMatch(recipeIng, userIngId) {
     if (!recipeIng || !userIngId) return false;
 
-    const r = recipeIng.trim().toLowerCase();
+    const r = stripLeadingMeasure(recipeIng).toLowerCase();
     const u = userIngId.trim().toLowerCase();
 
-    if (r === u) return true;
+    if (r === u || recipeIng.trim().toLowerCase() === u) return true;
 
-    const foundIng = popularIngredients.find(pi => pi.id.toLowerCase() === u || pi.name.toLowerCase() === u);
-    const candidateNames = [u];
-    if (foundIng) {
-        if (foundIng.id) candidateNames.push(foundIng.id.toLowerCase());
-        if (foundIng.name) candidateNames.push(foundIng.name.toLowerCase());
+    const foundIng = popularIngredients.find(pi => pi.id.toLowerCase() === u || pi.name.toLowerCase() === u || (pi.nameEn && pi.nameEn.toLowerCase() === u));
+    // Türkçe ad, kullanıcı tariflerindeki ("50 ml Votka") Türkçe malzemeler için de aranır;
+    // "Bacardi Limon" gibi markalar ön ek kuralıyla elenir.
+    const names = new Set([u]);
+    if (foundIng) [foundIng.id, foundIng.name, foundIng.nameEn].filter(Boolean).forEach(n => names.add(n.toLowerCase()));
+    if (names.has(r)) return true;
+    const wordNames = names;
+
+    const recipeTokens = ingredientTokens(r);
+    for (const cand of wordNames) {
+        if (ingredientHeadMatches(recipeTokens, ingredientTokens(cand))) return true;
     }
-
-    for (const cand of candidateNames) {
-        if (r === cand) return true;
-
-        if (cand === "ice" || cand === "buz") {
-            if (/\bjuice\b/i.test(r) && !/\bice\b/i.test(r)) return false;
-            if (new RegExp(`\\b${escapeRegExp(cand)}\\b`, 'i').test(r)) return true;
-            continue;
-        }
-
-        if (cand === "gin" || cand === "cin") {
-            if (/\bginger\b/i.test(r) && !/\bgin\b/i.test(r)) return false;
-            if (new RegExp(`\\b${escapeRegExp(cand)}\\b`, 'i').test(r)) return true;
-            continue;
-        }
-
-        if (cand === "rum" || cand === "rom") {
-            if (new RegExp(`\\b${escapeRegExp(cand)}\\b`, 'i').test(r)) return true;
-            continue;
-        }
-
-        const regexCand = new RegExp(`\\b${escapeRegExp(cand)}\\b`, 'i');
-        if (regexCand.test(r)) return true;
-
-        const regexRecipe = new RegExp(`\\b${escapeRegExp(r)}\\b`, 'i');
-        if (regexRecipe.test(cand)) return true;
-    }
-
     return false;
 }
 
@@ -1373,7 +1420,7 @@ function getGlassBadge(glassStr) {
 
 // Türkçe Çeviri (Google Translate API + Cache)
 async function translateToTurkish(text) {
-    if (!text) return "Bilinmiyor.";
+    if (!text) return null;
 
     let preProcessedText = convertOzToCl(text);
     const engGlossary = {
@@ -1407,8 +1454,11 @@ async function translateToTurkish(text) {
 
     try {
         const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=tr&dt=t&q=${encodeURIComponent(preProcessedText)}`);
+        if (!res.ok) return null;
         const data = await res.json();
         let translatedText = data[0].map(item => item[0]).join('');
+        // Boş/aynı yanıt çeviri sayılmaz: İngilizce metin asla TR olarak kaydedilmemeli.
+        if (!translatedText.trim() || translatedText.trim() === preProcessedText.trim()) return null;
 
         const trGlossary = {
             "ezmek": "tokmakla ezin",
@@ -1446,8 +1496,9 @@ async function translateToTurkish(text) {
         });
 
         return cleanInstructionText(translatedText);
-    } catch { 
-        return cleanInstructionText(text); 
+    } catch {
+        // Çeviri başarısız: çağıran İngilizce metni gösterir ama strInstructionsTR'ye yazmaz.
+        return null;
     }
 }
 
@@ -1469,7 +1520,7 @@ function autoExtractAllIngredients() {
 
         reqs.forEach(ing => {
             if (ing && ing.trim()) {
-                const cleanIng = ing.replace(/^[\d\s\/.,-]+(ml|oz|cl|dash|dashes|tsp|tbsp|gr|shot)?\s*/i, '').trim() || ing.trim();
+                const cleanIng = stripLeadingMeasure(ing) || ing.trim();
                 const lowerIng = cleanIng.toLowerCase();
                 
                 if (!existingIds.includes(lowerIng) && !newIngredientsMap.has(lowerIng)) {
@@ -2194,9 +2245,7 @@ function removeIngredientFromBar(ingId, event) {
 }
 
 function ingredientNameOnly(str) {
-    const s = String(str || '').trim();
-    const m = s.match(/^[\d\s\/.,-]+(?:ml|oz|cl|dash(?:es)?|tsp|tbsp|gr|shot|parts?)?\s*(.*)$/i);
-    return m ? m[1].trim() : s;
+    return splitMeasureAndName(str).name;
 }
 
 function analyzeRecipe(drink) {
@@ -2233,9 +2282,7 @@ function calculateRecipeABV(drink) {
     let reqs = [];
     if (drink.isCustom && Array.isArray(drink.customIngredients)) {
         drink.customIngredients.forEach(ing => {
-            const parts = ing.match(/^([\d\s\/.,-]+(?:ml|oz|cl|dash|dashes|tsp|tbsp|gr|shot)?)\s*(.*)$/i);
-            const measure = parts && parts[1] ? parts[1].trim() : '';
-            const name = parts && parts[2] ? parts[2].trim() : ing.trim();
+            const { measure, name } = splitMeasureAndName(ing);
             reqs.push({ name, measure });
         });
     } else {
@@ -2593,12 +2640,14 @@ const INGREDIENT_SUBSTITUTES = {
 function getIngredientSubstitute(name) {
     if (!name) return null;
     const lower = String(name).toLowerCase().trim();
+    // Anahtar, addaki tam sözcük(ler) olarak geçmeli: "Gin" → "ginger beer" önerisi olmaz.
+    // En uzun (en özgül) anahtar kazanır: "Sugar syrup" → 'sugar syrup', 'sugar' değil.
+    let best = null;
     for (const [key, val] of Object.entries(INGREDIENT_SUBSTITUTES)) {
-        if (lower.includes(key) || key.includes(lower)) {
-            return val;
-        }
+        const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(key)}(?![\\p{L}\\p{N}])`, 'u');
+        if (pattern.test(lower) && (!best || key.length > best.key.length)) best = { key, val };
     }
-    return null;
+    return best ? best.val : null;
 }
 
 function showToast(message, type = 'info', action = null) {
@@ -3260,8 +3309,8 @@ function filterCocktails() {
         }
     }
 
-    renderLists(readyMatches, readyContainer, false);
-    renderLists(missingMatches, missingContainer, true);
+    renderLists(readyMatches, readyContainer, false, getEmptyStateMessage('ready', missingMatches.length));
+    renderLists(missingMatches, missingContainer, true, getEmptyStateMessage('missing', readyMatches.length));
     
     updateSmartAdvice(missingMatches);
 
@@ -3291,9 +3340,7 @@ function createCocktailCardElement(item, isMissingList) {
 
         if (d.isCustom && Array.isArray(d.customIngredients)) {
             d.customIngredients.forEach(ing => {
-                const parts = ing.match(/^([\d\s\/.,-]+(?:ml|oz|cl|dash|dashes|tsp|tbsp|gr|shot)?)\s*(.*)$/i);
-                const measure = parts && parts[1] ? parts[1].trim() : '';
-                const name = parts && parts[2] ? parts[2].trim() : ing.trim();
+                const { measure, name } = splitMeasureAndName(ing);
                 rawIngredientsData.push({ name: name || ing, measure: measure });
             });
         } else {
@@ -3363,7 +3410,8 @@ function createCocktailCardElement(item, isMissingList) {
         const card = document.createElement('div');
         const cardId = `card_${d.idDrink.replace(/[^a-zA-Z0-9_]/g, '_')}`;
         card.id = cardId;
-        card.className = "acrylic-card cocktail-card rounded-3xl p-4 shadow-xl cursor-pointer select-none relative animate-fade-in flex flex-col min-w-0 overflow-hidden self-start h-fit";
+        card.dataset.drinkId = d.idDrink;
+        card.className = "acrylic-card cocktail-card rounded-3xl p-4 shadow-xl cursor-pointer relative animate-fade-in flex flex-col min-w-0 overflow-hidden self-start h-fit";
         
         const drinkIdEncoded = encodeURIComponent(d.idDrink);
         const glassBadge = getGlassBadge(d.strGlass);
@@ -3389,14 +3437,14 @@ function createCocktailCardElement(item, isMissingList) {
 
         card.innerHTML = `
             ${d.strDrinkThumb && safeImageSrc(d.strDrinkThumb) 
-                ? `<img src="${escapeHTML(BarSecurity.displayImage(d.strDrinkThumb))}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" data-image-fallback>`
+                ? `<img src="${escapeHTML(BarSecurity.displayImage(d.strDrinkThumb))}" alt="${safeDrinkName}" class="w-full h-40 object-contain bg-black/30 rounded-2xl mb-3 shadow-inner" loading="lazy" data-image-fallback>`
                 : `<div class="w-full h-40 bg-black/30 rounded-2xl mb-3 flex items-center justify-center text-slate-600"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8-7-8ZM12 12v7M8 20h8"/></svg></div>`}
             
-            <button data-action="favorite" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50" aria-pressed="${isFav ? 'true' : 'false'}">${isFav ? '<i class="bci bci-heart-fill" aria-hidden="true"></i>' : '<i class="bci bci-heart" aria-hidden="true"></i>'}</button>
+            <button data-action="favorite" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 right-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-rose-500/50" aria-pressed="${isFav ? 'true' : 'false'}" aria-label="${currentLang === 'en' ? `Favorite: ${safeDrinkName}` : `Favori: ${safeDrinkName}`}">${isFav ? '<i class="bci bci-heart-fill" aria-hidden="true"></i>' : '<i class="bci bci-heart" aria-hidden="true"></i>'}</button>
             
             ${d.isCustom ? `
-            <button data-action="share" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-amber-500"><i class="bci bci-share" aria-hidden="true"></i></button>
-            <button data-action="delete" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10 shadow-lg"><i class="bci bci-trash" aria-hidden="true"></i></button>
+            <button data-action="share" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-6 bg-slate-950/80 p-2 rounded-full border border-white/10 text-sm z-10 shadow-lg hover:border-amber-500" aria-label="${currentLang === 'en' ? 'Share recipe' : 'Tarifi paylaş'}"><i class="bci bci-share" aria-hidden="true"></i></button>
+            <button data-action="delete" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn absolute top-6 left-16 bg-rose-500/20 text-rose-400 p-2 rounded-full border border-rose-500/30 text-sm z-10 shadow-lg" aria-label="${currentLang === 'en' ? 'Delete recipe' : 'Tarifi sil'}"><i class="bci bci-trash" aria-hidden="true"></i></button>
             ` : ''}
             
             <div class="flex justify-between items-start mt-2 min-w-0 gap-2">
@@ -3410,12 +3458,12 @@ function createCocktailCardElement(item, isMissingList) {
                     <h3 class="font-extrabold text-white text-base leading-snug break-words hyphens-auto text-title-responsive">${safeDrinkName}</h3>
                     <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 break-words">${glassBadge}</p>
                 </div>
-                <span class="text-amber-400 text-xs font-bold toggle-icon shrink-0 pl-1 pt-1">${currentLang === 'en' ? 'Details ▼' : 'Detay ▼'}</span>
+                <button type="button" class="text-amber-400 text-xs font-bold toggle-icon shrink-0 pl-1 pt-1" aria-expanded="false" aria-controls="${cardId}_details">${currentLang === 'en' ? 'Details ▼' : 'Detay ▼'}</button>
             </div>
             
             ${isMissingList ? `<div class="mt-2.5 pt-2 border-t border-white/5 flex flex-col gap-1 min-w-0">${missingTextHTML}</div>` : ''}
             
-            <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden">
+            <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden" id="${cardId}_details">
                 <!-- Ev Maliyeti ve Bar Tasarrufu -->
                 <div class="flex flex-wrap items-center justify-between gap-2 bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-2xl text-[11px] text-emerald-300">
                     <span class="flex items-center gap-1 font-medium"><b>${currentLang === 'en' ? 'Home Cost:' : 'Ev Maliyeti:'}</b> ${formatRecipeCost(d)}</span>
@@ -3465,7 +3513,8 @@ function createCocktailCardElement(item, isMissingList) {
         `;
 
         card.onclick = async (e) => {
-            if (e.target.closest('button')) return;
+            const clickedButton = e.target.closest('button');
+            if (clickedButton && !clickedButton.classList.contains('toggle-icon')) return;
             const details = card.querySelector('.details-section');
             const icon = card.querySelector('.toggle-icon');
             const span = card.querySelector('.instruction-text span');
@@ -3481,14 +3530,14 @@ function createCocktailCardElement(item, isMissingList) {
                             if (otherDet) {
                                 otherDet.classList.remove('open');
                                 const otherIcon = other.querySelector('.toggle-icon');
-                                if (otherIcon) otherIcon.innerText = currentLang === 'en' ? "Details ▼" : "Detay ▼";
+                                if (otherIcon) { otherIcon.innerText = currentLang === 'en' ? "Details ▼" : "Detay ▼"; otherIcon.removeAttribute('aria-label'); otherIcon.setAttribute('aria-expanded', 'false'); }
                             }
                         }
                     });
                 }
                 details.classList.add('open');
                 track('recipe', d.isCustom ? 'custom' : d.idDrink);
-                icon.innerHTML = '<i class="bci bci-x" aria-hidden="true"></i>'; icon.setAttribute('aria-label', currentLang === 'en' ? 'Close' : 'Kapat');
+                icon.innerHTML = '<i class="bci bci-x" aria-hidden="true"></i>'; icon.setAttribute('aria-label', currentLang === 'en' ? 'Close' : 'Kapat'); icon.setAttribute('aria-expanded', 'true');
 
                 // Android uygulaması için akıllı reklam tetikleyicisi
                 if (window.AndroidBridge && typeof window.AndroidBridge.onRecipeOpened === 'function') {
@@ -3501,22 +3550,28 @@ function createCocktailCardElement(item, isMissingList) {
                         if (!d.strInstructionsTR) {
                             span.textContent = "Çevriliyor...";
                             const trText = await translateToTurkish(d.strInstructions);
-                            d.strInstructionsTR = cleanInstructionText(trText);
-                            if (db) {
-                                try {
-                                    const tx = db.transaction("cocktails", "readwrite");
-                                    tx.objectStore("cocktails").put(d);
-                                } catch(e) {}
+                            if (trText) {
+                                d.strInstructionsTR = cleanInstructionText(trText);
+                                if (db) {
+                                    try {
+                                        const tx = db.transaction("cocktails", "readwrite");
+                                        tx.objectStore("cocktails").put(d);
+                                    } catch(e) {}
+                                }
+                                span.textContent = d.strInstructionsTR;
+                            } else {
+                                // Başarısız çeviri kalıcı kaydedilmez; bir dahaki açılışta yeniden denenir.
+                                span.textContent = cleanInstructionText(d.strInstructions || '') + ' (Çeviri şu an yapılamadı.)';
                             }
                         } else {
                             d.strInstructionsTR = cleanInstructionText(d.strInstructionsTR);
+                            span.textContent = d.strInstructionsTR;
                         }
-                        span.textContent = d.strInstructionsTR;
                     }
                 }
             } else {
                 details.classList.remove('open');
-                icon.innerText = currentLang === 'en' ? "Details ▼" : "Detay ▼"; icon.removeAttribute('aria-label');
+                icon.innerText = currentLang === 'en' ? "Details ▼" : "Detay ▼"; icon.removeAttribute('aria-label'); icon.setAttribute('aria-expanded', 'false');
             }
         };
         return card;
@@ -3524,12 +3579,37 @@ function createCocktailCardElement(item, isMissingList) {
 
 const COCKTAIL_PAGE_SIZE = 24;
 
-function renderLists(items, container, isMissingList) {
+// Arama/filtre etkin mi? Etkin değilken boş liste "filtreleri temizle" önermemeli.
+function hasActiveCocktailFilters() {
+    const search = document.getElementById('cocktail-search')?.value.trim();
+    return !!search || onlyFavoritesFilter || currentVibeFilter !== 'all' || tasteFilter !== 'all' || alcoholFilter !== 'all';
+}
+
+// Boş liste metni: filtre yokken kullanıcıya ne yapabileceğini söyler.
+function getEmptyStateMessage(section, otherCount) {
+    if (hasActiveCocktailFilters()) return null;
+    const en = currentLang === 'en';
+    if (section === 'ready') {
+        return otherCount > 0
+            ? (en ? "No recipe you can fully make yet; the ones you're 1-2 ingredients away from are below." : 'Henüz tam yapabileceğin tarif yok; 1-2 eksikle yapabileceklerin aşağıda.')
+            : (en ? 'No recipe you can fully make yet. Add a few more ingredients to your bar.' : 'Henüz tam yapabileceğin tarif yok. Barına birkaç malzeme daha ekle.');
+    }
+    return otherCount > 0
+        ? (en ? 'You can already make every matching recipe above.' : 'Eşleşen tariflerin hepsini zaten yapabiliyorsun; yukarıda.')
+        : (en ? 'No close matches yet. Try adding a base spirit or a mixer.' : 'Henüz yakın eşleşme yok. Bir ana içki ya da karıştırıcı eklemeyi dene.');
+}
+
+function renderLists(items, container, isMissingList, emptyMessage = null) {
     container.innerHTML = "";
     // Recipes still loading: leave the list empty so the CSS skeleton shows instead of "nothing found".
     if (!allCocktails.length && !customRecipes.length) return;
     if (!items || items.length === 0) {
-        container.innerHTML = `<div class="empty-state col-span-full">${currentLang === 'en' ? 'No cocktails found matching these criteria.' : 'Bu kriterlere uygun kokteyl bulunamadı.'}<button type="button" data-action="reset-filters" class="text-action">${currentLang === 'en' ? 'Clear filters' : 'Filtreleri temizle'}</button></div>`;
+        if (emptyMessage) {
+            container.innerHTML = `<div class="empty-state col-span-full">${escapeHTML(emptyMessage)}</div>`;
+            return;
+        }
+        const resetButton = hasActiveCocktailFilters() ? `<button type="button" data-action="reset-filters" class="text-action">${currentLang === 'en' ? 'Clear filters' : 'Filtreleri temizle'}</button>` : '';
+        container.innerHTML = `<div class="empty-state col-span-full">${currentLang === 'en' ? 'No cocktails found matching these criteria.' : 'Bu kriterlere uygun kokteyl bulunamadı.'}${resetButton}</div>`;
         return;
     }
 
@@ -3637,10 +3717,20 @@ function deleteCustomRecipe(id, event) {
 
 function toggleFavorite(id, event) {
     if(event) event.stopPropagation();
-    favoriteCocktails = favoriteCocktails.includes(id) ? favoriteCocktails.filter(f => f !== id) : [...favoriteCocktails, id];
+    const nowFav = !favoriteCocktails.includes(id);
+    favoriteCocktails = nowFav ? [...favoriteCocktails, id] : favoriteCocktails.filter(f => f !== id);
     try { localStorage.setItem('favoriteCocktails', JSON.stringify(favoriteCocktails)); } catch(e) {}
     updateFavoritesFilterUI();
-    filterCocktails();
+    // Listeyi yeniden çizmek açık kartı kapatır, porsiyonu sıfırlar ve sırayı değiştirir:
+    // yalnızca bu tarifin kalp düğmelerini güncelle.
+    const encodedId = encodeURIComponent(id);
+    document.querySelectorAll('button[data-action="favorite"]').forEach(btn => {
+        if (btn.dataset.value !== encodedId) return;
+        btn.setAttribute('aria-pressed', nowFav ? 'true' : 'false');
+        btn.innerHTML = nowFav ? '<i class="bci bci-heart-fill" aria-hidden="true"></i>' : '<i class="bci bci-heart" aria-hidden="true"></i>';
+    });
+    // "Yalnızca favoriler" görünümünde çıkarılan tarifin listeden düşmesi beklenir.
+    if (onlyFavoritesFilter && !nowFav) filterCocktails();
 }
 
 function toggleShoppingList(item, event) {
@@ -3742,7 +3832,7 @@ async function saveCustomRecipe() {
     const glassType = glassSelect ? glassSelect.value : "Cocktail glass";
     const imageInput = document.getElementById('custom-image-input');
 
-    const ingredients = ingredientsRaw.split(',').map(i => i.trim()).filter(Boolean);
+    const ingredients = splitCustomIngredients(ingredientsRaw);
 
     if(!name || !instructions || ingredients.length === 0) {
         return alert(currentLang === 'en' ? "Please fill in recipe name, at least one ingredient, and instructions!" : "Lütfen tarif adı, en az bir malzeme ve hazırlanışını doldurun!");
@@ -3973,27 +4063,34 @@ document.addEventListener('keydown', event => {
     if (event.key === 'Escape') document.querySelector('.cocktail-card:has(.details-section.open) .toggle-icon')?.click();
 });
 
+// Kartı ada göre değil kimliğe göre bulur: "Martini" araması "Espresso Martini"yi açmamalı.
+function findCocktailCardById(id) {
+    return Array.from(document.querySelectorAll('#recipes-ready > .cocktail-card, #recipes-missing > .cocktail-card'))
+        .find(card => card.dataset.drinkId === id) || null;
+}
+
 function openCocktail(randomDrink) {
     const searchInput = document.getElementById('cocktail-search');
-    
-    if (searchInput) {
-        switchTab('alkol');
-        searchInput.value = randomDrink.strDrink;
-        filterCocktails();
-        
-        setTimeout(() => {
-            const displaySec = document.getElementById('recipes-display-sections');
-            if (displaySec) displaySec.scrollIntoView({ behavior: 'smooth' });
-            
-            const firstCard = document.querySelector('#recipes-ready > .cocktail-card') || document.querySelector('#recipes-missing > .cocktail-card');
-            if (firstCard) {
-                const details = firstCard.querySelector('.details-section');
-                if (details && !details.classList.contains('open')) {
-                    firstCard.click();
-                }
-            }
-        }, 200);
-    }
+    if (!randomDrink || !searchInput) return;
+    const id = randomDrink.idDrink;
+    switchTab('alkol');
+    searchInput.value = randomDrink.strDrink;
+    filterCocktails();
+
+    setTimeout(() => {
+        let card = findCocktailCardById(id);
+        // Aynı adı içeren çok sonuç varsa hedef kart sonraki sayfada kalmış olabilir.
+        for (let guard = 0; !card && guard < 20; guard++) {
+            const more = document.querySelector('#recipes-ready .load-more-container button, #recipes-missing .load-more-container button');
+            if (!more) break;
+            more.click();
+            card = findCocktailCardById(id);
+        }
+        if (!card) return;
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const details = card.querySelector('.details-section');
+        if (details && !details.classList.contains('open')) card.click();
+    }, 200);
 }
 
 function applyLanguage() {
@@ -4003,6 +4100,9 @@ function applyLanguage() {
 
     // Document title
     document.title = t.title;
+    document.documentElement.lang = currentLang === 'en' ? 'en' : 'tr';
+    // Tema düğmesi etiketi (editorial-ui.js) dil değişince de güncellenmeli.
+    if (typeof syncThemeToggle === 'function') syncThemeToggle();
 
     // Brand title in header
     const brandTitle = document.getElementById('brand-title');
@@ -4246,7 +4346,15 @@ function applyLanguage() {
     const photoLabel = document.querySelector('#custom-recipe-panel label');
     if (photoLabel) photoLabel.innerText = t.photoLabel;
     const customIngsInput = document.getElementById('custom-ingredients');
-    if (customIngsInput) customIngsInput.placeholder = currentLang === 'en' ? 'Ingredients (comma separated: 2 oz Vodka, 1 oz Lemon Juice, Ice)' : 'Malzemeler (Virgülle ayırın: 50 ml Votka, 25 ml Limon Suyu, Buz)';
+    if (customIngsInput) customIngsInput.placeholder = currentLang === 'en' ? 'Ingredients (separate with commas, semicolons or new lines: 2 oz Vodka, 1 oz Lemon Juice, Ice)' : 'Malzemeler (virgül, noktalı virgül ya da satırla ayırın: 4,5 cl Votka, 25 ml Limon Suyu, Buz)';
+    // Yalnızca placeholder taşıyan alanların erişilebilir adları da dile göre güncellenir.
+    const a11yLabels = currentLang === 'en'
+        ? { 'custom-name': 'Cocktail name', 'custom-ingredients': 'Ingredients', 'custom-instructions': 'Preparation steps', 'custom-serving': 'Serving and garnish', 'reserve-key-input': 'Reserve license key', 'auth-license-input': 'Reserve license key' }
+        : { 'custom-name': 'Kokteyl adı', 'custom-ingredients': 'Malzemeler', 'custom-instructions': 'Hazırlanış adımları', 'custom-serving': 'Servis ve garnitür önerisi', 'reserve-key-input': 'Reserve lisans anahtarı', 'auth-license-input': 'Reserve lisans anahtarı' };
+    Object.entries(a11yLabels).forEach(([id, label]) => document.getElementById(id)?.setAttribute('aria-label', label));
+    document.querySelector('[data-ui="ui-30"]')?.setAttribute('aria-label', currentLang === 'en' ? 'Scroll ingredients left' : 'Malzemeleri sola kaydır');
+    document.querySelector('[data-ui="ui-31"]')?.setAttribute('aria-label', currentLang === 'en' ? 'Scroll ingredients right' : 'Malzemeleri sağa kaydır');
+    ['[data-ui="ui-38"]', '[data-ui="ui-44"]', '#btn-close-reserve', '#btn-close-auth'].forEach(sel => document.querySelector(sel)?.setAttribute('aria-label', currentLang === 'en' ? 'Close' : 'Kapat'));
     const customInstrInput = document.getElementById('custom-instructions');
     if (customInstrInput) customInstrInput.placeholder = currentLang === 'en' ? 'Preparation Steps (e.g., Add ice to shaker, shake vigorously for 15s...)' : 'Hazırlanış Adımları (Örn: Shaker\'a buz ekleyin, 15 saniye kuvvetlice çalkalayın...)';
     const customServingInput = document.getElementById('custom-serving');
@@ -4275,7 +4383,7 @@ function applyLanguage() {
     const btnForceSync = document.getElementById('btn-force-sync');
     if (btnForceSync) btnForceSync.innerHTML = `<span><i class="bci bci-refresh" aria-hidden="true"></i></span> ${t.updateDb}`;
     const btnCheckUpdate = document.querySelector('[data-ui="ui-37"]');
-    if (btnCheckUpdate) btnCheckUpdate.innerHTML = `<span><i class="bci bci-rocket" aria-hidden="true"></i></span> ${t.checkUpdates} (v1.1.0)`;
+    if (btnCheckUpdate) btnCheckUpdate.innerHTML = `<span><i class="bci bci-rocket" aria-hidden="true"></i></span> ${t.checkUpdates} (v${CURRENT_APP_VERSION})`;
 
     // Affiliate Card
     const affLabel = document.querySelector('#affiliate-banner span.tracking-wider');
@@ -4633,6 +4741,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (authModal && !authModal.classList.contains('hidden')) {
                 authModal.classList.add('hidden');
             }
+            const updateModal = document.getElementById('update-modal');
+            if (updateModal && !updateModal.classList.contains('hidden') && typeof closeUpdateModal === 'function') closeUpdateModal();
         }
     });
 
@@ -4824,16 +4934,46 @@ async function fetchAndStoreData() {
 
 const SYNC_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000; // 14 günde bir otomatik kontrol
 
+// API yanıtını mevcut listeyle idDrink üzerinden birleştirir. Hiçbir tarifi silmez;
+// API'de olmayan alanları (ör. strInstructionsTR çevirisi) asla kaybetmez.
+function mergeCocktailLists(existing, incoming) {
+    const merged = new Map();
+    (existing || []).forEach(d => { if (d && d.idDrink) merged.set(d.idDrink, d); });
+    let added = 0, updated = 0;
+    (incoming || []).forEach(apiDrink => {
+        if (!apiDrink || !apiDrink.idDrink) return;
+        const old = merged.get(apiDrink.idDrink);
+        if (!old) { merged.set(apiDrink.idDrink, apiDrink); added++; return; }
+        const next = Object.assign({}, old);
+        let changed = false;
+        Object.keys(apiDrink).forEach(key => {
+            const value = apiDrink[key];
+            // Boş API alanı, yerelde dolu olan değeri ezmez.
+            if (value === null || value === undefined || value === '') return;
+            if (next[key] !== value) { next[key] = value; changed = true; }
+        });
+        if (old.strInstructionsTR && !apiDrink.strInstructionsTR) next.strInstructionsTR = old.strInstructionsTR;
+        if (changed) updated++;
+        merged.set(apiDrink.idDrink, next);
+    });
+    return { list: Array.from(merged.values()), added, updated };
+}
+// Bitiş: mergeCocktailLists
+
 async function updateDataInBackground(force = false) {
     try {
         const lastSync = parseInt(localStorage.getItem('bar_cepte_last_sync') || '0', 10);
         const now = Date.now();
         if (!force && (now - lastSync < SYNC_INTERVAL_MS)) {
-            return; // 14 gün dolmadan arka planda 26 API çağrısı yapma
+            return { ok: true, skipped: true, added: 0, updated: 0 }; // 14 gün dolmadan arka planda 26 API çağrısı yapma
+        }
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            return { ok: false, reason: 'offline', added: 0, updated: 0 };
         }
 
         const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
         let apiDrinks = [];
+        let failedLetters = 0;
 
         const chunkSize = 6;
         for (let i = 0; i < letters.length; i += chunkSize) {
@@ -4841,10 +4981,10 @@ async function updateDataInBackground(force = false) {
             const promises = chunk.map(async (letter) => {
                 try {
                     const r = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/search.php?f=${letter}`);
-                    if (!r.ok) return [];
+                    if (!r.ok) { failedLetters++; return []; }
                     const d = await r.json();
                     return d.drinks || [];
-                } catch(e) { return []; }
+                } catch(e) { failedLetters++; return []; }
             });
             const results = await Promise.all(promises);
             results.forEach(list => apiDrinks.push(...list));
@@ -4857,14 +4997,19 @@ async function updateDataInBackground(force = false) {
         });
         const newCocktails = Array.from(uniqueDrinks.values());
 
-        if (newCocktails.length > 0) {
-            try {
-                localStorage.setItem('bar_cepte_last_sync', Date.now().toString());
-            } catch(e) {}
+        // Boş yanıt (ağ yok / API kapalı): mevcut veri olduğu gibi korunur.
+        if (newCocktails.length === 0) {
+            return { ok: false, reason: failedLetters ? 'network' : 'empty', added: 0, updated: 0 };
         }
 
-        if (newCocktails.length > allCocktails.length || force) {
-            newCocktails.forEach(enrichDrink);
+        const { list, added, updated } = mergeCocktailLists(allCocktails, newCocktails);
+        const partial = failedLetters > 0;
+        if (!partial) {
+            try { localStorage.setItem('bar_cepte_last_sync', Date.now().toString()); } catch(e) {}
+        }
+
+        if (added > 0 || updated > 0) {
+            list.forEach(enrichDrink);
             if (db) {
                 try {
                     await new Promise((resolve, reject) => {
@@ -4872,37 +5017,67 @@ async function updateDataInBackground(force = false) {
                         writeTx.oncomplete = resolve;
                         writeTx.onerror = writeTx.onabort = () => reject(writeTx.error);
                         const writeStore = writeTx.objectStore("cocktails");
-                        newCocktails.forEach(drink => writeStore.put(drink));
+                        list.forEach(drink => writeStore.put(drink));
                     });
                 } catch(e) { console.warn('IDB cocktail yazma hatası (updateInBackground):', e); }
             }
-            
-            allCocktails = newCocktails;
+
+            allCocktails = list;
             autoExtractAllIngredients();
             renderIngredients();
             filterCocktails();
             if (currentTab === 'my-recipes') renderMyRecipes();
-            
-            const statusEl = document.getElementById('status');
-            if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} Tarif Güncellendi`;
         }
+        return { ok: true, partial, added, updated, total: allCocktails.length };
     } catch (error) {
         console.error("Arka plan güncelleme hatası:", error);
+        return { ok: false, reason: 'error', added: 0, updated: 0 };
     }
 }
 
 async function forceSyncOnlineDatabase() {
     triggerHaptic('medium');
     const statusEl = document.getElementById('status');
-    if (statusEl) statusEl.innerText = currentLang === 'en' ? "Syncing online database..." : "Online veritabanı eşitleniyor...";
-    await updateDataInBackground(true);
-    alert(currentLang === 'en' ? "Cocktail database successfully synced from the cloud!" : "Kokteyl veritabanı internet üzerinden başarıyla eşitlendi!");
+    const isEn = currentLang === 'en';
+    if (statusEl) statusEl.innerText = isEn ? "Syncing online database..." : "Online veritabanı eşitleniyor...";
+    const result = await updateDataInBackground(true) || { ok: false, reason: 'error' };
+    if (statusEl) statusEl.innerText = `${allCocktails.length + customRecipes.length} ${I18N[currentLang].statusCount}`;
+    let message;
+    if (!result.ok) {
+        message = result.reason === 'offline' || result.reason === 'network'
+            ? (isEn ? "Could not reach the cocktail database. Check your connection; your current recipes were kept." : "Kokteyl veritabanına ulaşılamadı. Bağlantını kontrol et; mevcut tariflerin korundu.")
+            : (isEn ? "Sync failed. Your current recipes were kept." : "Eşitleme başarısız oldu. Mevcut tariflerin korundu.");
+    } else if (result.partial) {
+        message = isEn ? `Partially synced: ${result.added} new recipes added; some pages could not be fetched. Existing recipes were kept.`
+            : `Kısmen eşitlendi: ${result.added} yeni tarif eklendi; bazı sayfalar indirilemedi. Mevcut tarifler korundu.`;
+    } else if (result.added || result.updated) {
+        message = isEn ? `Sync complete: ${result.added} new, ${result.updated} updated recipes.`
+            : `Eşitleme tamam: ${result.added} yeni, ${result.updated} güncellenen tarif.`;
+    } else {
+        message = isEn ? "Your cocktail database is already up to date." : "Kokteyl veritabanın zaten güncel.";
+    }
+    if (typeof showToast === 'function') showToast(message, result.ok ? 'success' : 'error');
+    else alert(message);
+    return result;
 }
 
 // ==========================================
 // OTOMATİK SÜRÜM GÜNCELLEME SİSTEMİ (Android APK, Windows .exe, Web)
 // ==========================================
-const CURRENT_APP_VERSION = "1.1.0";
+// Tek sürüm kaynağı (CURRENT_APP_VERSION) dosyanın başında tanımlıdır.
+
+// Güncelleme hedefi: web her zaman en son sürümü sunar (service worker bildirir), indirme yalnızca
+// masaüstü (Electron) ve Android içindir. Masaüstünde işletim sistemine uygun paket seçilir.
+function getUpdatePlatform() {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    if (ua.includes('electron')) {
+        if (ua.includes('windows')) return 'windows';
+        if (ua.includes('linux')) return 'linux';
+        return 'desktop';
+    }
+    if (window.AndroidBridge !== undefined || ua.includes('android') && location.hostname === 'appassets.androidplatform.net') return 'android';
+    return 'web';
+}
 
 function isNewerVersion(current, latest) {
     const cleanCurr = String(current).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
@@ -4925,6 +5100,11 @@ async function checkForAppUpdates(manual = false) {
             return;
         }
 
+        if (getUpdatePlatform() === 'web') {
+            // Web sürümü sunucudan her açılışta güncel gelir; indirme penceresi gösterilmez.
+            if (manual) alert(currentLang === 'en' ? `The web app updates itself automatically (v${CURRENT_APP_VERSION}).` : `Web sürümü kendiliğinden güncellenir (v${CURRENT_APP_VERSION}).`);
+            return;
+        }
         const resp = await fetch('https://api.github.com/repos/suluncaway/bar-cepte/releases/latest');
         if (!resp.ok) {
             if (manual) alert(currentLang === 'en' ? "Could not reach update server." : "Güncelleme sunucusuna erişilemedi.");
@@ -4961,33 +5141,30 @@ function showUpdateModal(release) {
             : (currentLang === 'en' ? "New cocktails, performance improvements and bug fixes." : "Yeni kokteyller, performans artışı ve hata düzeltmeleri.");
     }
 
-    const ua = navigator.userAgent.toLowerCase();
-    const isElectron = ua.includes('electron');
-    const isAndroid = ua.includes('android') || (window.AndroidBridge !== undefined);
-
+    const platform = getUpdatePlatform();
+    if (platform === 'web') return; // web: indirme penceresi yok
+    if (verEl) verEl.dataset.custom = '1';
+    const findAsset = test => release.assets && release.assets.find(a => test(String(a.name || '').toLowerCase()));
     let targetUrl = release.html_url || 'https://github.com/suluncaway/bar-cepte/releases/latest';
-
-    if (isElectron) {
+    if (platform === 'windows') {
         if (btnLabel) btnLabel.innerText = currentLang === 'en' ? "Download Windows Update (.exe)" : "Windows Güncellemesini İndir (.exe)";
-        const exeAsset = release.assets && release.assets.find(a => a.name.endsWith('.exe'));
-        if (exeAsset) targetUrl = exeAsset.browser_download_url;
-        else targetUrl = 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Setup.exe';
-    } else if (isAndroid) {
+        const exeAsset = findAsset(name => name.endsWith('.exe'));
+        targetUrl = exeAsset ? exeAsset.browser_download_url : 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Setup.exe';
+    } else if (platform === 'linux') {
+        if (btnLabel) btnLabel.innerText = currentLang === 'en' ? "Download Linux Update (.AppImage)" : "Linux Güncellemesini İndir (.AppImage)";
+        const linuxAsset = findAsset(name => name.endsWith('.appimage')) || findAsset(name => name.endsWith('.deb'));
+        if (linuxAsset) targetUrl = linuxAsset.browser_download_url;
+    } else if (platform === 'android') {
         if (btnLabel) btnLabel.innerText = currentLang === 'en' ? "Download & Install New APK" : "Yeni APK'yı İndir & Güncelle";
-        const apkAsset = release.assets && release.assets.find(a => a.name.endsWith('.apk'));
-        if (apkAsset) targetUrl = apkAsset.browser_download_url;
-        else targetUrl = 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Debug.apk';
-    } else {
-        if (btnLabel) btnLabel.innerText = currentLang === 'en' ? "See What's New & Reload" : "Yenilikleri Gör & Sayfayı Yenile";
-        targetUrl = window.location.href;
+        const apkAsset = findAsset(name => name.endsWith('.apk'));
+        targetUrl = apkAsset ? apkAsset.browser_download_url : 'https://github.com/suluncaway/bar-cepte/releases/latest/download/BarCepte-Debug.apk';
+    } else if (btnLabel) {
+        btnLabel.innerText = currentLang === 'en' ? "Open Release Page" : "Sürüm Sayfasını Aç";
     }
 
     if (btn) {
-        btn.href = (isElectron || isAndroid) ? BarSecurity.releaseURL(targetUrl) : window.location.href;
-        btn.onclick = (isElectron || isAndroid) ? null : event => {
-            event.preventDefault();
-            window.location.reload();
-        };
+        btn.href = BarSecurity.releaseURL(targetUrl);
+        btn.onclick = null;
     }
 
     modal.classList.remove('hidden');

@@ -73,8 +73,12 @@ if (serviceWorkerAPI && !window.AndroidBridge && window.location.hostname !== 'a
                 if (newWorker) {
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && serviceWorkerAPI.controller) {
-                            // PWA yeni sürüm yüklendi, kullanıcıya bildirim ver
-                            console.log('Yeni PWA sürümü hazır.');
+                            // PWA yeni sürüm yüklendi: mevcut toast diliyle kısa bir yenileme önerisi göster.
+                            const en = typeof currentLang !== 'undefined' && currentLang === 'en';
+                            const message = en ? 'New version ready' : 'Yeni sürüm hazır';
+                            const action = { label: en ? 'Reload' : 'Yenile', onClick: () => window.location.reload() };
+                            if (typeof showToast === 'function') showToast(message, 'info', action);
+                            else console.log(message);
                         }
                     });
                 }
@@ -83,3 +87,44 @@ if (serviceWorkerAPI && !window.AndroidBridge && window.location.hostname !== 'a
     });
 }
     
+
+// Modal dialogs (timer, update, Reserve, sign-in) are shown/hidden by toggling the "hidden" class
+// from several scripts. Watch that class so every dialog moves focus inside when it opens, keeps
+// Tab inside while open, and returns focus to the control that opened it when it closes.
+(function manageDialogFocus() {
+    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const visible = el => !el.classList.contains('hidden');
+    const focusables = dialog => Array.from(dialog.querySelectorAll(FOCUSABLE)).filter(el => el.offsetParent !== null || el === document.activeElement);
+    ['shaker-timer-modal', 'update-modal', 'reserve-modal', 'auth-modal'].forEach(id => {
+        const dialog = document.getElementById(id);
+        if (!dialog || typeof MutationObserver === 'undefined') return;
+        let opener = null;
+        let wasOpen = visible(dialog);
+        new MutationObserver(() => {
+            const open = visible(dialog);
+            if (open === wasOpen) return;
+            wasOpen = open;
+            if (open) {
+                opener = document.activeElement instanceof HTMLElement && !dialog.contains(document.activeElement) ? document.activeElement : null;
+                requestAnimationFrame(() => {
+                    if (dialog.contains(document.activeElement)) return;
+                    const first = dialog.querySelector('[autofocus]') || focusables(dialog)[0];
+                    (first || dialog).focus?.();
+                });
+            } else if (opener && document.contains(opener)) {
+                const target = opener;
+                opener = null;
+                requestAnimationFrame(() => target.focus?.());
+            }
+        }).observe(dialog, { attributes: true, attributeFilter: ['class'] });
+        if (!dialog.hasAttribute('tabindex')) dialog.setAttribute('tabindex', '-1');
+        dialog.addEventListener('keydown', event => {
+            if (event.key !== 'Tab' || !visible(dialog)) return;
+            const items = focusables(dialog);
+            if (!items.length) { event.preventDefault(); return; }
+            const first = items[0], last = items[items.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        });
+    });
+})();

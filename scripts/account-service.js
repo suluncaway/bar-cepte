@@ -32,6 +32,13 @@ function createAccountService({store,verifyGoogle,clock=Date.now}) {
             if(path==='/api/account' && req.method==='GET') {
                 json(res,200,{success:true,user,subscription:await subscription(user)});return true;
             }
+            // Deletes the cloud backup and every session of the verified account. License claims keep
+            // only the account id (so a paid Reserve stays usable) and lose the e-mail address.
+            if(path==='/api/account' && req.method==='DELETE') {
+                if(typeof store.deleteAccount!=='function'){json(res,501,{success:false,reason:'Hesap silme bu sunucuda desteklenmiyor.'});return true;}
+                await store.deleteAccount(user.uid);
+                json(res,200,{success:true,deleted:['backup','sessions','claimEmail']});return true;
+            }
             if(path==='/api/account/backup' && req.method==='GET') {
                 const backup=await store.getBackup(user.uid);
                 json(res,200,{success:true,backup,personalDataVersion:1,inventoryDataVersion:1,subscription:await subscription(user)});return true;

@@ -2,7 +2,16 @@
 function createFulfillmentService({store, products, generateKey, sendEmail, now = Date.now}) {
     async function fulfill(order) {
         const payment = order && (order.paymentStatus || order.payment_status);
-        if (payment !== 'paid' || order.cancelled || order.refunds?.length || order.returns?.length) return {status:'not_paid'};
+        // Same refund/cancel signals as the first delivery check; a later refund revokes the issued key.
+        if (order && (order.cancelled || order.refunds?.length || order.returns?.length)) {
+            const orderId = String(order.id || order.order_id || '').trim();
+            if (store.revokeOrder && /^[a-zA-Z0-9_-]{1,100}$/.test(orderId)) {
+                const revoked = await store.revokeOrder(orderId, {at: now(), reason: order.cancelled ? 'cancelled' : order.refunds?.length ? 'refund' : 'return'});
+                if (revoked) return {status: revoked.changed ? 'revoked' : 'already_revoked'};
+            }
+            return {status:'not_paid'};
+        }
+        if (payment !== 'paid') return {status:'not_paid'};
         const orderId = String(order.id || order.order_id || '').trim();
         if (!/^[a-zA-Z0-9_-]{1,100}$/.test(orderId)) return {status:'invalid_order'};
         const items = order.lineItems || order.items || [];
