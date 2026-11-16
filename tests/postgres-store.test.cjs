@@ -57,7 +57,9 @@ test('PostgreSQL HTTP mode pauses activation until migration is confirmed', {ski
     };
     const activated=await claim('alice');
     assert.equal(activated.status,200);
-    assert.equal((await claim('bob')).status,409);
+    const bobClaim=await claim('bob');
+    assert.equal(bobClaim.status,400);
+    assert.equal(bobClaim.data.code,'not_issued');
     const restored=await claim('alice');
     assert.equal(restored.data.expiresAt,activated.data.expiresAt);
     const exported=await (await fetch(origin+'/api/export-licenses',{headers:{Authorization:'Basic '+Buffer.from('admin:database-test-admin').toString('base64')}})).json();
@@ -67,20 +69,43 @@ test('PostgreSQL HTTP mode pauses activation until migration is confirmed', {ski
     const {createHash,randomBytes}=require('node:crypto');
     const alice=randomBytes(32).toString('hex'),bob=randomBytes(32).toString('hex');
     for(const [token,uid] of [[alice,'google_alice'],[bob,'google_bob']])await licenseStore.putSession(createHash('sha256').update(token).digest('hex'),{user:{uid,email:uid+'@example.invalid',provider:'google'},expiresAt:Date.now()+60000});
-    const bind=async(token,uid,deviceId)=>{
-        const response=await fetch(origin+'/api/claim-license',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify({key,uid,deviceId})});
+    const bind=async(token,uid,deviceId,licenseKey=key)=>{
+        const response=await fetch(origin+'/api/claim-license',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify({key:licenseKey,uid,deviceId})});
         return {status:response.status,data:await response.json()};
     };
     assert.equal((await bind(null,'google_alice','device-alice')).status,401);
-    assert.equal((await bind(alice,'forged-uid','device-alice')).status,200);
-    assert.equal((await licenseStore.getClaimed())[key].uid,'google_alice');
-    assert.equal((await bind(bob,'google_alice','device-alice')).status,409);
-    assert.equal((await bind(null,null,'device-alice')).status,409);
-    const anotherDevice=await bind(alice,null,'another-device');
-    assert.equal(anotherDevice.status,200);
-    assert.equal(anotherDevice.data.expiresAt,activated.data.expiresAt);
+    // A device-bound record stays device-bound: signing in on that device never attaches a uid.
+    const signedIn=await bind(alice,'forged-uid','device-alice');
+    assert.equal(signedIn.status,200);
+    assert.equal(signedIn.data.boundTo,'device');
+    assert.equal((await licenseStore.getClaimed())[key].uid,null);
+    for(const token of [bob,null]){
+        const sameDevice=await bind(token,null,'device-alice');
+        assert.equal(sameDevice.status,200);
+        assert.equal(sameDevice.data.boundTo,'device');
+    }
+    const elsewhere=await bind(alice,null,'another-device');
+    assert.equal(elsewhere.status,409);
+    assert.equal(elsewhere.data.code,'claimed_elsewhere');
+    const deviceOnly=await (await fetch(origin+'/api/account',{headers:{Authorization:'Bearer '+alice}})).json();
+    assert.equal(deviceOnly.subscription,null);
+    // A key first claimed with a session is account-bound and follows that account only.
+    const key2=require('../scripts/generate-keys').generateKey('monthly');
+    await licenseStore.saveSold({orderId:'api2-'+Date.now(),licenseKey:key2,planType:'monthly'});
+    const bound=await bind(alice,null,'device-x',key2);
+    assert.equal(bound.status,200);
+    assert.equal(bound.data.boundTo,'account');
+    const stolen=await bind(bob,null,'device-x',key2);
+    assert.equal(stolen.status,409);
+    assert.equal(stolen.data.code,'claimed_elsewhere');
+    const anonymous=await bind(null,null,'device-x',key2);
+    assert.equal(anonymous.status,400);
+    assert.equal(anonymous.data.code,'not_issued');
+    const followed=await bind(alice,null,'another-device',key2);
+    assert.equal(followed.status,200);
+    assert.equal(followed.data.expiresAt,bound.data.expiresAt);
     const account=await (await fetch(origin+'/api/account',{headers:{Authorization:'Bearer '+alice}})).json();
-    assert.equal(account.subscription.key,key);
+    assert.equal(account.subscription.key,key2);
 });
 
 test('PostgreSQL delivery leases, sessions, backup revisions and legacy recovery survive reconnects', {skip: !databaseUrl},async t=>{
