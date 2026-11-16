@@ -450,8 +450,7 @@ async function handleRequest(req, res) {
                     return res.end(JSON.stringify({ success: false, reason: 'orderId parametresi zorunludur.' }));
                 }
 
-                const sold = await getSoldLicenses();
-                const record = sold.find(s => String(s.orderId).trim() === orderId);
+                const record = await licenseStore.getSale(orderId);
                 if (!record || !record.email || !record.licenseKey) {
                     res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
                     return res.end(JSON.stringify({ success: false, reason: 'Belirtilen sipariş ID için lisans kaydı bulunamadı.' }));
