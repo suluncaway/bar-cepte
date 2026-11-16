@@ -3591,7 +3591,7 @@ function getEmptyStateMessage(section, otherCount) {
     const en = currentLang === 'en';
     if (section === 'ready') {
         return otherCount > 0
-            ? (en ? "No recipe you can fully make yet; the ones you're 1-2 ingredients away from are below." : 'Henüz tam yapabileceğin tarif yok; 1-2 eksikle yapabileceklerin aşağıda.')
+            ? (en ? "No recipe you can fully make yet; the ones you're 1-4 ingredients away from are below." : 'Henüz tam yapabileceğin tarif yok; 1-4 eksikle yapabileceklerin aşağıda.')
             : (en ? 'No recipe you can fully make yet. Add a few more ingredients to your bar.' : 'Henüz tam yapabileceğin tarif yok. Barına birkaç malzeme daha ekle.');
     }
     return otherCount > 0

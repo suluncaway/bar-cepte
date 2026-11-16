@@ -32,7 +32,9 @@ const CATEGORY_TR = { 'Ordinary Drink': 'Klasik kokteyl', Cocktail: 'Kokteyl', S
 const measureTr = measure => measure.replace(/(\d+\/\d+|\d+(?:\.\d+)?)\s*-\s*(?=(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*(?:fl\s*)?(?:oz|ounces?)\b)/gi, '$1 oz-').replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*(?:fl\s*)?(?:oz|ounces?)\b/gi, (m, n) => {
     const v = n.includes('/') ? n.trim().split(/\s+/).reduce((s, p) => s + (p.includes('/') ? p.split('/')[0] / p.split('/')[1] : +p), 0) : +n;
     return `${Math.round(v * 3 * 10) / 10} cl`;
-}).replace(/(\d+(?:\.\d+)?) cl-(\d+(?:\.\d+)?) cl/g, '$1-$2 cl').replace(new RegExp(`\\b(${MEASURE_KEYS.join('|')})\\b`, 'gi'), word => MEASURE_TR[word.toLowerCase()] ?? word);
+}).replace(/(\d+(?:\.\d+)?) cl-(\d+(?:\.\d+)?) cl/g, '$1-$2 cl').replace(new RegExp(`\\b(${MEASURE_KEYS.join('|')})\\b`, 'gi'), word => MEASURE_TR[word.toLowerCase()] ?? word)
+    // Turkish has no plural after a number: "2 shots" -> "2 shot", "1/4 Shot" -> "1/4 shot".
+    .replace(/\bshots?\b/gi, 'shot');
 // "6 cl Viski", but "Limon suyu: 1/2" when the measure starts with a word.
 // [name, amount] for the ingredient card; "suyu: 1/2" becomes ["Limon suyu", "1/2 adet"].
 const ingParts = r => { const juice = /^suyu:\s*(.+)$/.exec(r.measure || ''); return juice ? [`${r.name} suyu`, `${juice[1]} adet`] : /^[\d½¼¾]/.test(r.measure || '') || !r.measure ? [r.name, r.measure || ''] : [r.name, r.measure]; };
@@ -122,7 +124,11 @@ const techniqueOf = drink => {
     return /blend/.test(en) ? 'blend' : /shake|shaker/.test(en) ? 'shake' : /\bstir/.test(en) ? 'stir' : /muddle|crush/.test(en) ? 'muddle' : 'build';
 };
 const SPIRIT = /\b(gin|vodka|rum|tequila|mezcal|whisk(?:e)?y|bourbon|scotch|rye|brandy|cognac|absinthe|pisco|cachaca|everclear|151)\b/;
-const MIXER = /juice|soda|tonic|cola|coke|ginger|lemonade|milk|cream|water|coffee|tea|7-up|sprite|beer|cider/;
+// Ingredients that lengthen a drink. A dash of water, bitters or sugar does not.
+const MIXER = /juice|soda|tonic|cola|coke|ginger ale|ginger beer|lemonade|milk|cream|coffee|\btea\b|7-up|sprite|beer|cider/;
+const CREAMY = /cream|milk|\begg\b|egg yolk|egg white|coconut|yoghurt|ice-cream/;
+// Stemmed and small glasses never hold a long drink.
+const SHORT_GLASS = /cocktail glass|martini|coupe|shot|old-fashioned|whiskey|cordial|snifter|nick|pousse|margarita|champagne flute/;
 // Flavour notes and strength from the ingredient list.
 function profileOf(drink) {
     const text = ingredientText(drink);
@@ -136,7 +142,10 @@ function profileOf(drink) {
     ].filter(Boolean);
     const rows = Array.from({ length: 15 }, (_, i) => (drink[`strIngredient${i + 1}`] || '').toLowerCase()).filter(Boolean);
     const spirits = rows.filter(r => SPIRIT.test(r)).length, mixers = rows.filter(r => MIXER.test(r)).length;
-    const strength = isAlcoholFree(drink) ? 'alkolsüz' : spirits >= 3 ? 'oldukça sert' : spirits && !mixers ? 'sert, içki ağırlıklı' : mixers >= 2 || /soda|tonic|cola|ginger ale|lemonade/.test(text) ? 'hafif ve uzun içimli' : 'orta sertlikte';
+    const shortGlass = SHORT_GLASS.test((drink.strGlass || '').toLowerCase());
+    const strength = isAlcoholFree(drink) ? 'alkolsüz' : spirits >= 3 ? 'oldukça sert' : spirits && !mixers ? 'sert, içki ağırlıklı'
+        : CREAMY.test(text) ? 'kremalı ve yumuşak içimli'
+        : !shortGlass && (mixers >= 2 || /soda|tonic|cola|ginger ale|lemonade/.test(text)) ? 'hafif ve uzun içimli' : 'orta sertlikte';
     return { notes, strength, text };
 }
 const joinTr = list => list.length < 2 ? list.join('') : `${list.slice(0, -1).join(', ')} ve ${list[list.length - 1]}`;
@@ -156,7 +165,7 @@ function aboutRecipe(drink, rows, cats) {
         ` Tadında ${joinTr(notes)} notalar öne çıkar`,
         ` ${joinTr(notes).replace(/^./, c => c.toLocaleUpperCase('tr'))} bir tat profiline sahiptir`,
         ` Karakteri ${joinTr(notes)} tatlar üzerine kuruludur`
-    ], seed >> 3) + (strength === 'alkolsüz' ? '.' : `; ${strength} bir içimdir.`) : (strength === 'alkolsüz' ? '' : ` ${strength.replace(/^./, c => c.toLocaleUpperCase('tr'))} bir içimdir.`);
+    ], seed >> 3) + (strength === 'alkolsüz' ? '.' : `; ${strength} bir içecektir.`) : (strength === 'alkolsüz' ? '' : ` ${strength.replace(/^./, c => c.toLocaleUpperCase('tr'))} bir içecektir.`);
     const howTo = {
         shake: ['Malzemeler buzla birlikte shaker’da kuvvetlice çalkalanır; bu sayede içecek hızla soğur ve hafif köpüklü bir doku kazanır.', 'Shaker’da buzla 10–15 saniye çalkalanarak hazırlanır; çalkalama, farklı yoğunluktaki malzemeleri tamamen birleştirir.', 'Hazırlanışının temeli çalkalamadır: buzla dolu shaker içeceği hem soğutur hem havalandırır.'],
         stir: ['Malzemeler buzla yavaşça karıştırılır; bu yöntem içeceği berrak ve ipeksi tutar.', 'Çalkalanmak yerine buzla karıştırılarak hazırlanır, böylece içine hava girmez ve dokusu pürüzsüz kalır.', 'Bar kaşığıyla buz üzerinde karıştırmak, bu tarifin dengeli sulanmasını sağlar.'],
@@ -208,6 +217,8 @@ function recipeGear(drink) {
     return keys.slice(0, 3);
 }
 
+// Recipes with crude names keep their own page but are not promoted in "related" lists.
+const CRUDE_NAME = /asshole|bitch|nipple|orgasm|fuck|shit|slut|puss(?:y|ies)|dick|penis|\bsex\b|blow ?job|whore|piss|\bcum\b/i;
 const listItems = (items, slugs) => `<div class="list">${items.map(d => `<a href="/tarif/${slugs.get(d)}.html">${esc(d.strDrink)}</a>`).join('')}</div>`;
 // Photo cards for recipe lists (thumbnails are lazy: lists can hold hundreds of recipes).
 const thumbOf = drink => { const image = ownImage(safeImage(drink.strDrinkThumb)); return image && image.startsWith(SITE) ? image.slice(SITE.length) : image; };
@@ -225,6 +236,14 @@ function withToc(html) {
 function build({ root = path.join(__dirname, '..'), drinks } = {}) {
     drinks = drinks || JSON.parse(fs.readFileSync(path.join(root, 'cocktails.json'), 'utf8'));
     const outDir = path.join(root, 'tarif'), catDir = path.join(outDir, 'kategori'), guideDir = path.join(root, 'rehber');
+    // Remember the previous output so <lastmod> only moves for pages whose content really changed.
+    const previous = new Map();
+    const snapshot = dir => { if (!fs.existsSync(dir)) return; for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const file = path.join(dir, entry.name);
+        if (entry.isDirectory()) snapshot(file); else if (entry.name.endsWith('.html')) previous.set(file, fs.readFileSync(file, 'utf8'));
+    } };
+    snapshot(outDir); snapshot(guideDir);
+    for (const info of INFO_PAGES) { const file = path.join(root, `${info.slug}.html`); if (fs.existsSync(file)) previous.set(file, fs.readFileSync(file, 'utf8')); }
     for (const dir of [outDir, guideDir]) fs.rmSync(dir, { recursive: true, force: true });
     for (const dir of [catDir, guideDir]) fs.mkdirSync(dir, { recursive: true });
     const used = new Set(), entries = [], slugs = new Map();
@@ -240,7 +259,7 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
     const base = drink => (drink.strIngredient1 || '').trim().toLowerCase();
     for (const drink of drinks) {
         const slug = slugs.get(drink);
-        const related = drinks.filter(other => other !== drink && base(other) && base(other) === base(drink)).slice(0, 6);
+        const related = drinks.filter(other => other !== drink && base(other) && base(other) === base(drink) && !CRUDE_NAME.test(other.strDrink)).slice(0, 6);
         const url = `${SITE}/tarif/${slug}.html`, image = ownImage(safeImage(drink.strDrinkThumb)), rows = ingredients(drink);
         const displayName = titleCase(drink.strDrink), cats = catsOf.get(drink), technique = techniqueOf(drink), { strength } = profileOf(drink);
         const free = isAlcoholFree(drink);
@@ -313,7 +332,8 @@ ${AD_UNIT}
         }));
     }
     urls.push(...entries.map(e => e.url), `${SITE}/rehber/`);
-    const guideLinks = GUIDES.map(g => `<li><a href="/rehber/${g.slug}.html"><b>${esc(g.title)}</b><span>${esc(g.description)}</span></a></li>`).join('');
+    const guideLink = g => `<li><a href="/rehber/${g.slug}.html"><b>${esc(g.title)}</b><span>${esc(g.description)}</span></a></li>`;
+    const guideLinks = GUIDES.map(guideLink).join('');
     fs.writeFileSync(path.join(guideDir, 'index.html'), page({
         title: 'Kokteyl Rehberleri | Bar Cepte', description: 'Evde bar kurmak, ekipmanlar, bardaklar, teknikler ve şuruplar hakkında Türkçe rehberler.',
         canonical: `${SITE}/rehber/`, body: `<span class="eyebrow">Rehber</span><h1>Kokteyl Rehberleri</h1><p>Evde kokteyl hazırlamayı öğrenmek için temel bilgiler.</p><ul class="guides">${guideLinks}</ul>`
@@ -324,7 +344,7 @@ ${AD_UNIT}
         fs.writeFileSync(path.join(guideDir, `${guide.slug}.html`), page({
             title: `${guide.title} | Bar Cepte`, description: guide.description, canonical: url, ads: true,
             jsonLd: { '@context': 'https://schema.org', '@type': 'Article', headline: guide.title, description: guide.description, inLanguage: 'tr', url },
-            body: `<p><a href="/rehber/">← Rehberler</a></p><span class="eyebrow">Rehber · ~${withToc(guide.html).minutes} dk okuma</span><h1>${esc(guide.title)}</h1>${withToc(guide.html).toc}${withToc(guide.html).body}\n${gearBox(guide.products || [])}\n${AD_UNIT}\n<h2>Diğer rehberler</h2><ul class="guides">${guideLinks}</ul>`
+            body: `<p><a href="/rehber/">← Rehberler</a></p><span class="eyebrow">Rehber · ~${withToc(guide.html).minutes} dk okuma</span><h1>${esc(guide.title)}</h1>${withToc(guide.html).toc}${withToc(guide.html).body}\n${gearBox(guide.products || [])}\n${AD_UNIT}\n<h2>Diğer rehberler</h2><ul class="guides">${GUIDES.filter(g => g !== guide).map(guideLink).join('')}</ul>`
         }));
     }
     for (const info of INFO_PAGES) {
@@ -341,11 +361,30 @@ ${AD_UNIT}
     }));
     // sitemap: keep entries this script does not own, then list the generated pages
     const sitemapPath = path.join(root, 'sitemap.xml');
-    const owned = new Set(urls);
-    const kept = (fs.existsSync(sitemapPath) ? fs.readFileSync(sitemapPath, 'utf8') : '').match(/<url>[\s\S]*?<\/url>/g)
+    const oldSitemap = fs.existsSync(sitemapPath) ? fs.readFileSync(sitemapPath, 'utf8') : '';
+    const oldLastmod = new Map((oldSitemap.match(/<url>[\s\S]*?<\/url>/g) || [])
+        .map(u => [(u.match(/<loc>([^<]+)<\/loc>/) || [])[1], (u.match(/<lastmod>([^<]+)<\/lastmod>/) || [])[1]]));
+    const today = new Date().toISOString().slice(0, 10);
+    const fileOf = loc => path.join(root, loc.slice(SITE.length).replace(/^\//, '').replace(/(^|\/)$/, '$1index.html'));
+    const lastmodOf = loc => {
+        const file = fileOf(loc);
+        const unchanged = previous.has(file) && fs.existsSync(file) && previous.get(file) === fs.readFileSync(file, 'utf8');
+        return unchanged && oldLastmod.get(loc) ? oldLastmod.get(loc) : today;
+    };
+    // Hand-written pages listed alongside the generated ones; their date follows the file itself.
+    const STATIC_PAGES = [{ loc: `${SITE}/`, file: 'index.html', changefreq: 'weekly', priority: '1.0' },
+        { loc: `${SITE}/landing.html`, file: 'landing.html', changefreq: 'monthly', priority: '0.7' },
+        { loc: `${SITE}/privacy.html`, file: 'privacy.html', changefreq: 'monthly', priority: '0.5' }];
+    const staticEntry = ({ loc, file, changefreq, priority }) => {
+        const mtime = fs.existsSync(path.join(root, file)) ? fs.statSync(path.join(root, file)).mtime.toISOString().slice(0, 10) : today;
+        const lastmod = [oldLastmod.get(loc), mtime].filter(Boolean).sort().pop();
+        return `  <url>\n    <loc>${esc(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+    };
+    const owned = new Set([...urls, ...STATIC_PAGES.map(p => p.loc)]);
+    const kept = oldSitemap.match(/<url>[\s\S]*?<\/url>/g)
         ?.filter(u => !/\/(tarif|rehber)\//.test(u) && !owned.has((u.match(/<loc>([^<]+)<\/loc>/) || [])[1])) || [];
-    const generated = urls.map(loc => `  <url>\n    <loc>${esc(loc)}</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>`);
-    fs.writeFileSync(sitemapPath, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...kept.map(u => '  ' + u.trim()), ...generated].join('\n')}\n</urlset>\n`);
+    const generated = urls.map(loc => `  <url>\n    <loc>${esc(loc)}</loc>\n    <lastmod>${lastmodOf(loc)}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>`);
+    fs.writeFileSync(sitemapPath, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...STATIC_PAGES.map(staticEntry), ...kept.map(u => '  ' + u.trim()), ...generated].join('\n')}\n</urlset>\n`);
     return entries;
 }
 

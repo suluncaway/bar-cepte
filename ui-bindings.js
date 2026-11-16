@@ -66,6 +66,7 @@ try { serviceWorkerAPI = navigator.serviceWorker; } catch { /* Restricted previe
 if (serviceWorkerAPI && !window.AndroidBridge && window.location.hostname !== 'appassets.androidplatform.net') {
     window.addEventListener('load', () => {
         serviceWorkerAPI.register('./sw.js', {updateViaCache:'none'}).then(reg => {
+            if (!reg) return;
             reg.update().catch(() => {});
             // PWA arka plan güncellemesi yakalandığında
             reg.addEventListener('updatefound', () => {

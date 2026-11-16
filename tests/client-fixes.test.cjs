@@ -175,7 +175,7 @@ test('favoriting only updates the heart buttons instead of re-rendering the list
 
 test('empty ready list without filters points at near-miss recipes and hides "clear filters"', () => {
     const block = slice('function hasActiveCocktailFilters', 'function renderLists');
-    assert.match(block, /1-2 eksikle yapabileceklerin aşağıda/);
+    assert.match(block, /1-4 eksikle yapabileceklerin aşağıda/);
     assert.match(slice('function renderLists', 'let currentIndex'), /hasActiveCocktailFilters\(\) \? `<button type="button" data-action="reset-filters"/);
 });
 
