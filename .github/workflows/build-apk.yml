@@ -42,8 +42,11 @@ jobs:
         echo "sdk.dir=$ANDROID_HOME" > local.properties
         gradle assembleDebug assembleDebugAndroidTest --no-daemon --stacktrace 2>&1 | tee ../build.log
 
-    - name: Verify APK web assets match the canonical allowlist
+    - name: Verify APK web assets against the canonical allowlist
       shell: bash
+      # Every web-assets.json file must be in assets/ with canonical bytes, and no other root-level
+      # web file (html/js/css/json/..., dotfiles) may be; files or directories that dependencies such as
+      # the Start.io SDK merge into assets/ are not errors.
       run: |
         set -euo pipefail
         apk=$(ls android/app/build/outputs/apk/debug/*.apk | head -n 1)

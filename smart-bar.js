@@ -143,7 +143,9 @@
         (Array.isArray(history) ? history : []).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach(row => {
             if (row && row.rating && row.drinkId && !latest.has(row.drinkId)) latest.set(row.drinkId, row);
         });
-        const clean = name => String(name || '').replace(/[\r\n\t]+/g, ' ').replace(/[;|]/g, ',').trim().slice(0, 40);
+        // Names may be user-written: no control/format characters, no brackets that could pose as markup.
+        const clean = name => String(name || '').replace(/[\p{Cc}\p{Cf}\u2028\u2029]+/gu, ' ').replace(/[<>\[\]{}()`"\\]+/g, ' ')
+            .replace(/[;|]/g, ',').replace(/\s+/g, ' ').trim().slice(0, 40).trim();
         const liked = [...latest.values()].filter(r => r.rating === 'like').map(r => clean(r.name)).filter(Boolean).slice(0, 4);
         const disliked = [...latest.values()].filter(r => r.rating === 'dislike').map(r => clean(r.name)).filter(Boolean).slice(0, 3);
         if (liked.length) parts.push((en ? 'liked: ' : 'beğendi: ') + liked.join(', '));

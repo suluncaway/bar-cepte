@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +23,11 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebViewClient;
 import androidx.core.content.FileProvider;
+import androidx.webkit.JavaScriptReplyProxy;
+import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebViewAssetLoader;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -33,7 +38,11 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -53,6 +62,12 @@ public class MainActivity extends Activity {
     private static final String APP_URL = "https://appassets.androidplatform.net/assets/index.html";
     private static final String MIGRATION_URL = "https://appassets.androidplatform.net/assets/__migration__.html";
     private static final String LEGACY_URL = "file:///android_asset/index.html";
+    // The only origin allowed to talk to native code (bundled app pages served by WebViewAssetLoader).
+    private static final String APP_ORIGIN = "https://appassets.androidplatform.net";
+    // Name of the origin-restricted WebMessageListener object (androidx.webkit) injected into app frames.
+    private static final String NATIVE_CHANNEL = "BarCepteNative";
+    private static final long EXPORT_MAX_AGE_MS = 24L * 60 * 60 * 1000;
+    private volatile boolean nativeChannelReady;
     private String migrationScript;
     private String migrationData;
     private volatile boolean migrating;
@@ -67,9 +82,13 @@ public class MainActivity extends Activity {
     // Routes <a download> clicks on blob:/data: URLs (story card PNG, business CSV/JSON) to the bridge,
     // reading blobs before the page revokes their URL.
     private static final String DOWNLOAD_HOOK = "(function(){if(window.__barCepteDownloads)return;window.__barCepteDownloads=true;"
-            + "function send(href,name){if(href.indexOf('data:')===0){AndroidBridge.saveDataUrl(href,name);return;}"
+            + "function save(d,name){if(window.BarCepteNative&&BarCepteNative.postMessage){"
+            + "BarCepteNative.postMessage(JSON.stringify({type:'saveDataUrl',dataUrl:d,name:name}));}"
+            + "else if(window.AndroidBridge){AndroidBridge.saveDataUrl(d,name);}}"
+            + "window.__barCepteSave=save;"
+            + "function send(href,name){if(href.indexOf('data:')===0){save(href,name);return;}"
             + "var x=new XMLHttpRequest();x.open('GET',href);x.responseType='blob';"
-            + "x.onload=function(){var r=new FileReader();r.onload=function(){AndroidBridge.saveDataUrl(String(r.result),name);};r.readAsDataURL(x.response);};"
+            + "x.onload=function(){var r=new FileReader();r.onload=function(){save(String(r.result),name);};r.readAsDataURL(x.response);};"
             + "x.send();}"
             + "var click=HTMLAnchorElement.prototype.click;"
             + "HTMLAnchorElement.prototype.click=function(){var h=this.href||'';"
@@ -136,6 +155,9 @@ public class MainActivity extends Activity {
         applyAdVisibility();
 
         setContentView(rootLayout);
+
+        // Shared files from earlier sessions are not needed once the share sheet has finished.
+        new Thread(this::deleteOldExports, "barcepte-export-cleanup").start();
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -240,11 +262,15 @@ public class MainActivity extends Activity {
         // İndirmeler (ör. kullanıcı uzun basıp kaydettiğinde): data: doğrudan, blob: sayfa içinden okunur.
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
             if (url == null) return;
+            boolean local = url.startsWith("data:") || url.startsWith("blob:");
+            // Only downloads started while the bundled app page is shown are written to the cache.
+            if (local && !isAppUrl(webView.getUrl())) return;
             if (url.startsWith("data:")) {
-                saveDataUrl(url, "");
+                final String dataUrl = url;
+                new Thread(() -> saveDataUrl(dataUrl, ""), "barcepte-export").start();
             } else if (url.startsWith("blob:")) {
-                webView.evaluateJavascript("(function(h){var x=new XMLHttpRequest();x.open('GET',h);x.responseType='blob';"
-                        + "x.onload=function(){var r=new FileReader();r.onload=function(){AndroidBridge.saveDataUrl(String(r.result),'');};"
+                webView.evaluateJavascript("(function(h){if(!window.__barCepteSave)return;var x=new XMLHttpRequest();x.open('GET',h);x.responseType='blob';"
+                        + "x.onload=function(){var r=new FileReader();r.onload=function(){window.__barCepteSave(String(r.result),'');};"
                         + "r.readAsDataURL(x.response);};x.send();})(" + JSONObject.quote(url) + ")", null);
             } else {
                 openExternal(url);
@@ -269,7 +295,26 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Web arayüzü ile iletişim köprüsü (Akıllı reklam sayacı)
+        // Origin-restricted channel (androidx.webkit): only main-frame documents from APP_ORIGIN receive
+        // the BarCepteNative object, and every message is re-checked for origin and main frame.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            try {
+                WebViewCompat.addWebMessageListener(webView, NATIVE_CHANNEL, Collections.singleton(APP_ORIGIN),
+                        new WebViewCompat.WebMessageListener() {
+                            @Override
+                            public void onPostMessage(WebView view, WebMessageCompat message, Uri sourceOrigin,
+                                                      boolean isMainFrame, JavaScriptReplyProxy replyProxy) {
+                                handleNativeMessage(message, sourceOrigin, isMainFrame);
+                            }
+                        });
+                nativeChannelReady = true;
+            } catch (RuntimeException error) {
+                nativeChannelReady = false;
+            }
+        }
+
+        // Web arayüzü ile iletişim köprüsü (Akıllı reklam sayacı). Existing web code (reserve.js, game.js)
+        // calls it synchronously, so it stays; every state-changing method verifies the caller page first.
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
 
         // Yerel dosyaları doğrudan yükle
@@ -286,6 +331,80 @@ public class MainActivity extends Activity {
         if (success) getPreferences(MODE_PRIVATE).edit().putBoolean("httpsStorageMigrated", true).apply();
         else Toast.makeText(this, "Eski veriler korunuyor; aktarım bir sonraki açılışta tekrar denenecek.", Toast.LENGTH_LONG).show();
         webView.loadUrl(APP_URL);
+    }
+
+    // Messages from the origin-restricted channel; runs on the UI thread.
+    private void handleNativeMessage(WebMessageCompat message, Uri sourceOrigin, boolean isMainFrame) {
+        if (!isMainFrame || sourceOrigin == null || !APP_ORIGIN.equals(sourceOrigin.toString())) return;
+        String data = message == null ? null : message.getData();
+        if (data == null || data.length() > MAX_EXPORT_BYTES * 2 + 4096) return;
+        try {
+            JSONObject json = new JSONObject(data);
+            String type = json.optString("type");
+            if ("saveDataUrl".equals(type)) {
+                final String dataUrl = json.optString("dataUrl");
+                final String name = json.optString("name");
+                new Thread(() -> saveDataUrl(dataUrl, name), "barcepte-export").start();
+            } else if ("setReserveActive".equals(type)) {
+                applyReserveState(json.optBoolean("active"));
+            }
+        } catch (Exception ignored) {
+            // Malformed messages are dropped.
+        }
+    }
+
+    // True when the WebView's main frame shows a bundled app page. Bridge methods run on a binder
+    // thread, so the URL is read on the UI thread (WebView may only be touched there).
+    private boolean callerIsApp() {
+        if (webView == null) return false;
+        if (Looper.myLooper() == Looper.getMainLooper()) return isAppUrl(webView.getUrl());
+        final AtomicReference<String> url = new AtomicReference<>();
+        final CountDownLatch latch = new CountDownLatch(1);
+        runOnUiThread(() -> {
+            try {
+                url.set(webView.getUrl());
+            } finally {
+                latch.countDown();
+            }
+        });
+        try {
+            if (!latch.await(2, TimeUnit.SECONDS)) return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+        return isAppUrl(url.get());
+    }
+
+    private void applyReserveState(boolean active) {
+        if (reserveActive == active) return;
+        reserveActive = active;
+        SharedPreferences.Editor editor = getSharedPreferences(PREFS, MODE_PRIVATE).edit();
+        editor.putBoolean(PREF_RESERVE_ACTIVE, active).apply();
+        runOnUiThread(MainActivity.this::applyAdVisibility);
+    }
+
+    // Deletes shared export files older than a day (FileProvider grants are short-lived).
+    private void deleteOldExports() {
+        File directory = new File(getCacheDir(), "exports");
+        File[] files = directory.listFiles();
+        if (files == null) return;
+        long cutoff = System.currentTimeMillis() - EXPORT_MAX_AGE_MS;
+        for (File file : files) {
+            if (file.isFile() && file.lastModified() < cutoff) {
+                //noinspection ResultOfMethodCallIgnored
+                file.delete();
+            }
+        }
+    }
+
+    // Only these export types are written and shared; the file extension always follows the MIME type.
+    private static String exportExtension(String mime) {
+        if ("image/png".equals(mime)) return ".png";
+        if ("image/jpeg".equals(mime)) return ".jpg";
+        if ("text/csv".equals(mime)) return ".csv";
+        if ("application/json".equals(mime)) return ".json";
+        return null;
     }
 
     private boolean isAppUrl(String url) {
@@ -337,19 +456,24 @@ public class MainActivity extends Activity {
             String meta = dataUrl.substring(5, comma);
             String payload = dataUrl.substring(comma + 1);
             boolean base64 = meta.endsWith(";base64");
-            String mime = meta.split(";")[0].trim().toLowerCase(Locale.ROOT);
-            if (mime.isEmpty()) mime = "application/octet-stream";
+            final String mime = meta.split(";")[0].trim().toLowerCase(Locale.ROOT);
+            final String extension = exportExtension(mime);
+            if (extension == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Bu dosya türü kaydedilemez.", Toast.LENGTH_SHORT).show());
+                return;
+            }
             if (payload.length() > MAX_EXPORT_BYTES * 2) return;
             byte[] bytes = base64 ? Base64.decode(payload, Base64.DEFAULT)
                     : URLDecoder.decode(payload, "UTF-8").getBytes(StandardCharsets.UTF_8);
             if (bytes.length > MAX_EXPORT_BYTES) return;
-            String name = suggestedName == null ? "" : suggestedName.replaceAll("[^A-Za-z0-9._-]", "_");
-            if (name.isEmpty() || name.startsWith(".")) {
-                String extension = mime.equals("image/png") ? ".png" : mime.equals("image/jpeg") ? ".jpg"
-                        : mime.startsWith("text/csv") ? ".csv" : mime.equals("application/json") ? ".json" : ".bin";
-                name = "bar-cepte-" + System.currentTimeMillis() + extension;
-            }
-            if (name.length() > 120) name = name.substring(name.length() - 120);
+            // Base name from the page (sanitised, its own extension dropped) + extension from the MIME type.
+            String base = suggestedName == null ? "" : suggestedName.replaceAll("[^A-Za-z0-9._-]", "_");
+            int dot = base.lastIndexOf('.');
+            if (dot >= 0) base = base.substring(0, dot);
+            base = base.replaceAll("^[._-]+", "");
+            if (base.isEmpty()) base = "bar-cepte-" + System.currentTimeMillis();
+            if (base.length() > 100) base = base.substring(0, 100);
+            String name = base + extension;
             File directory = new File(getCacheDir(), "exports");
             if (!directory.isDirectory() && !directory.mkdirs()) return;
             File file = new File(directory, name);
@@ -381,13 +505,12 @@ public class MainActivity extends Activity {
         private StartAppAd startAppAd;
 
         // reserve.js reports the server-verified Reserve state on every UI refresh.
+        // Only the bundled app page may change it (ads off); other pages or frames are ignored.
         @JavascriptInterface
         public void setReserveActive(boolean active) {
             if (reserveActive == active) return;
-            reserveActive = active;
-            SharedPreferences.Editor editor = getSharedPreferences(PREFS, MODE_PRIVATE).edit();
-            editor.putBoolean(PREF_RESERVE_ACTIVE, active).apply();
-            runOnUiThread(MainActivity.this::applyAdVisibility);
+            if (!callerIsApp()) return;
+            applyReserveState(active);
         }
 
         // The installed APK's own version (build.gradle versionName), so the web layer compares
@@ -397,14 +520,17 @@ public class MainActivity extends Activity {
             return BuildConfig.VERSION_NAME;
         }
 
+        // Fallback for WebViews without WEB_MESSAGE_LISTENER; with it, exports go through BarCepteNative.
         @JavascriptInterface
         public void saveDataUrl(String dataUrl, String fileName) {
+            if (nativeChannelReady || !callerIsApp()) return;
             MainActivity.this.saveDataUrl(dataUrl, fileName);
         }
 
         @JavascriptInterface
         public void onRecipeOpened() {
             if (BuildConfig.DEBUG || reserveActive) return;
+            if (!callerIsApp()) return;
             recipeCounter++;
             long now = System.currentTimeMillis();
 

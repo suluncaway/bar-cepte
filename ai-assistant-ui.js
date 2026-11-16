@@ -94,12 +94,25 @@
 
     // Short taste summary from the personal notebook (preferences + latest like/dislike per recipe).
     // Recipe names and tastes only; notes and dates never leave the device. Server caps it at 200 chars.
+    // Recipe names in the notebook can be user-written (custom recipes): strip control/format
+    // characters and markup-like brackets so they cannot pose as instructions, and cap the length.
+    const NAME_MAX = 40;
+    function safeRecipeName(value) {
+        return String(value ?? '')
+            .replace(/[\p{Cc}\p{Cf}\u2028\u2029]+/gu, ' ')
+            .replace(/[<>\[\]{}()`"\\|#*_~=]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, NAME_MAX)
+            .trim();
+    }
     function preferenceContext(language) {
         try {
             if (!window.BarSmart || !window.BarSecurity) return '';
             const prefs = window.BarSecurity.readStored('personalPreferences', window.BarSecurity.preferences);
-            const history = window.BarSecurity.readStored('preparationHistory', window.BarSecurity.history);
-            return window.BarSmart.preferenceSummary(Array.isArray(prefs) ? {} : prefs, Array.isArray(history) ? history : [],
+            const stored = window.BarSecurity.readStored('preparationHistory', window.BarSecurity.history);
+            const history = (Array.isArray(stored) ? stored : []).map(row => ({ ...row, name: safeRecipeName(row.name) }));
+            return window.BarSmart.preferenceSummary(Array.isArray(prefs) ? {} : prefs, history,
                 { language: language === 'en' ? 'en' : 'tr', maxLength: 200 });
         } catch {
             return '';

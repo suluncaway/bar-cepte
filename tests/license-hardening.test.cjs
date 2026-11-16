@@ -74,14 +74,49 @@ test('legacy short keys stay valid in format, client and server, but only while 
 
     const { store } = tempStore(t);
     await store.createSale(sale(legacy));
-    const { call } = await startServer(t, { store });
-    const first = await call('/api/claim-license', { key: legacy.toLowerCase(), deviceId: 'dev_alice-phone' });
-    assert.equal(first.status, 200);
-    assert.equal(first.data.plan, 'monthly');
+    // Google identity is stubbed: the "credential" is the e-mail the verified token would carry.
+    const { call } = await startServer(t, { store, rejectionFloorMs: 0,
+        verifyGoogle: async token => ({ uid: 'google_' + token.split('@')[0], email: token, provider: 'google', name: token }) });
+    // An anonymous device cannot make the first claim of a guessable legacy key...
+    const anonymous = await call('/api/claim-license', { key: legacy.toLowerCase(), deviceId: 'dev_alice-phone' });
+    assert.equal(anonymous.status, 403);
+    assert.equal(anonymous.data.code, 'legacy_requires_account');
+    // ...and an unregistered legacy key gives exactly the same answer (no oracle for sold keys).
     const unregistered = `RESERVE-MTH1-ZZ9Z-${keys.checksum('MTH1ZZ9Z')}`;
     const missing = await call('/api/claim-license', { key: unregistered, deviceId: 'dev_alice-phone' }, { ip: '198.51.100.2' });
-    assert.equal(missing.status, 400);
-    assert.equal(missing.data.code, 'not_issued');
+    assert.deepEqual([missing.status, missing.data], [anonymous.status, anonymous.data]);
+    assert.equal((await store.getClaimed())[legacy], undefined, 'nothing was sealed');
+    // A signed-in account with another e-mail is refused the same way.
+    const mallory = (await call('/api/auth/google', { credential: 'mallory@example.invalid' })).data.token;
+    const wrong = await call('/api/claim-license', { key: legacy, deviceId: 'dev_mallory' }, { ip: '198.51.100.3', headers: { Authorization: 'Bearer ' + mallory } });
+    assert.deepEqual([wrong.status, wrong.data], [anonymous.status, anonymous.data]);
+    // The buyer's verified Google account (same e-mail, any case) can make the first claim.
+    const buyer = (await call('/api/auth/google', { credential: 'Buyer@Example.invalid' })).data.token;
+    const first = await call('/api/claim-license', { key: legacy, deviceId: 'dev_alice-phone' }, { ip: '198.51.100.4', headers: { Authorization: 'Bearer ' + buyer } });
+    assert.equal(first.status, 200);
+    assert.equal(first.data.plan, 'monthly');
+    // The sealed owner restores it on another device; strangers still learn nothing.
+    const restore = await call('/api/claim-license', { key: legacy, deviceId: 'dev_alice-tablet' }, { ip: '198.51.100.4', headers: { Authorization: 'Bearer ' + buyer } });
+    assert.equal(restore.status, 200);
+    assert.equal(restore.data.restored, true);
+    const stranger = await call('/api/claim-license', { key: legacy, deviceId: 'dev_stranger' }, { ip: '198.51.100.5' });
+    assert.deepEqual([stranger.status, stranger.data], [anonymous.status, anonymous.data]);
+});
+
+test('a legacy key already sealed to an anonymous device is still restored on that device', async t => {
+    const { store } = tempStore(t);
+    const legacy = `RESERVE-ANN1-QW7E-${keys.checksum('ANN1QW7E')}`;
+    await store.createSale(sale(legacy, 'annual'));
+    // Claim made before this change, bound to a device id only.
+    const claimedAt = Date.now() - 86400000;
+    await store.claim(legacy, { key: legacy, plan: 'annual', claimedAt, expiresAt: claimedAt + 365 * 86400000, uid: null, email: '', deviceId: 'dev_old-phone' });
+    const { call } = await startServer(t, { store, rejectionFloorMs: 0 });
+    const restored = await call('/api/claim-license', { key: legacy, deviceId: 'dev_old-phone' });
+    assert.equal(restored.status, 200);
+    assert.equal(restored.data.restored, true);
+    assert.equal((await call('/api/check-license', { key: legacy, deviceId: 'dev_old-phone' })).data.valid, true);
+    const other = await call('/api/claim-license', { key: legacy, deviceId: 'dev_new-phone' }, { ip: '198.51.100.9' });
+    assert.equal(other.data.code, 'legacy_requires_account');
 });
 
 test('claims are limited per address and globally, and repeated failures back off', async t => {

@@ -215,24 +215,108 @@
         }
     }
 
-    // On sign-out the account's lists move to an on-device copy so the next person on this device
-    // does not see them; signing back in to the same local profile restores them.
+    const DATA_KEYS = { favorites: 'favoriteCocktails', customs: 'customRecipes', shopping: 'shoppingList', selected: 'selectedIngredients',
+        preferences: 'personalPreferences', history: 'preparationHistory', inventory: 'barInventory' };
+    const EMPTY_DATA = () => ({ favorites: [], customs: [], shopping: [], selected: [] });
+    function isEmptyData(data) {
+        if (!data) return true;
+        const items = data.inventory && Array.isArray(data.inventory.items) ? data.inventory.items.length : 0;
+        return ['favorites', 'customs', 'shopping', 'selected', 'history'].every(field => !Array.isArray(data[field]) || !data[field].length) && !items;
+    }
+    function uniqueBy(list, keyOf) {
+        const seen = new Set();
+        return list.filter(item => { const key = keyOf(item); if (seen.has(key)) return false; seen.add(key); return true; });
+    }
+    // Union of two copies of the same account's data; nothing is dropped except duplicates.
+    // `primary` wins where a single value has to be chosen (preferences, a stock quantity).
+    // Notebook rows are de-duplicated by id and by (recipe, time); stock receipts by id.
+    function mergeAccountData(primary, secondary) {
+        const a = primary || {}, b = secondary || {};
+        const arr = value => Array.isArray(value) ? value : [];
+        const strings = (x, y, fold) => uniqueBy([...arr(x), ...arr(y)].filter(item => typeof item === 'string' && item.trim()),
+            item => fold ? item.trim().toLocaleLowerCase('tr-TR') : item.trim()).slice(0, 1000);
+        const merged = {
+            favorites: strings(a.favorites, b.favorites),
+            customs: uniqueBy([...arr(a.customs), ...arr(b.customs)].filter(r => r && typeof r.idDrink === 'string'), r => r.idDrink).slice(0, 300),
+            shopping: strings(a.shopping, b.shopping, true),
+            selected: strings(a.selected, b.selected)
+        };
+        const history = uniqueBy(uniqueBy([...arr(a.history), ...arr(b.history)].filter(row => row && typeof row === 'object'), row => row.id),
+            row => `${row.drinkId}|${row.createdAt}`).sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)).slice(0, 100);
+        if (history.length || a.history !== undefined || b.history !== undefined) merged.history = history;
+        const prefs = [a.preferences, b.preferences].filter(p => p && typeof p === 'object' && !Array.isArray(p));
+        if (prefs.length) merged.preferences = { ...prefs[prefs.length - 1], ...prefs[0], onboardingDone: prefs.some(p => p.onboardingDone === true) };
+        const stocks = [a.inventory, b.inventory].filter(v => v && typeof v === 'object' && Array.isArray(v.items));
+        if (stocks.length) {
+            const receipts = uniqueBy(stocks.flatMap(v => arr(v.receipts)), row => row && row.id).sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)).slice(0, 100);
+            const candidate = {
+                items: uniqueBy(stocks.flatMap(v => v.items).filter(row => row && typeof row.ingredient === 'string'), row => row.ingredient.trim().toLowerCase()).slice(0, 1000),
+                deductions: uniqueBy([...receipts.map(row => row.id), ...stocks.flatMap(v => arr(v.deductions))], id => id).slice(0, 100),
+                receipts
+            };
+            try { merged.inventory = root.BarSecurity ? root.BarSecurity.inventory(candidate) : candidate; } catch { merged.inventory = stocks[0]; }
+        }
+        if (!root.BarSecurity) return merged;
+        try { return root.BarSecurity.backup(merged); } catch {}
+        try { return root.BarSecurity.backup(a); } catch {}
+        return root.BarSecurity.backup(b);
+    }
+
+    // On sign-out the account's data moves to an on-device copy so the next person on this device
+    // does not see it; signing back in to the same account (Google or local) merges it back.
     function stashAccountData(user) {
         if (!user || !user.uid) return;
-        root.localStorage.setItem(LOCAL_BACKUP_PREFIX + user.uid, JSON.stringify({ updatedAt: Date.now(), data: collectCurrentLocalData() }));
+        const current = collectCurrentLocalData();
+        let previous = null;
+        try { previous = JSON.parse(root.localStorage.getItem(LOCAL_BACKUP_PREFIX + user.uid) || 'null'); } catch {}
+        // An older copy that was never restored is merged, not overwritten.
+        const data = previous && previous.data ? mergeAccountData(current, previous.data) : current;
+        root.localStorage.setItem(LOCAL_BACKUP_PREFIX + user.uid, JSON.stringify({ updatedAt: Date.now(), data }));
         for (const key of ['favoriteCocktails', 'customRecipes', 'shoppingList', 'selectedIngredients']) root.localStorage.setItem(key, '[]');
+        // The personal notebook and stock are personal too; preferences keep only "onboarding done".
+        const prefs = current.preferences && typeof current.preferences === 'object' ? current.preferences : {};
+        try {
+            root.localStorage.setItem('personalPreferences', JSON.stringify({ alcohol: 'all', tastes: [], onboardingDone: prefs.onboardingDone === true }));
+            root.localStorage.removeItem('preparationHistory');
+            root.localStorage.removeItem('barInventory');
+        } catch {}
     }
-    function restoreStashedData(uid) {
+    function readStash(uid) {
         try {
             const stash = JSON.parse(root.localStorage.getItem(LOCAL_BACKUP_PREFIX + uid) || 'null');
-            if (!stash || !stash.data) return false;
-            const keys = { favorites: 'favoriteCocktails', customs: 'customRecipes', shopping: 'shoppingList', selected: 'selectedIngredients' };
-            for (const [field, key] of Object.entries(keys)) {
-                const current = JSON.parse(root.localStorage.getItem(key) || '[]');
-                if (Array.isArray(stash.data[field]) && (!Array.isArray(current) || !current.length)) root.localStorage.setItem(key, JSON.stringify(stash.data[field]));
-            }
+            return stash && stash.data && typeof stash.data === 'object' ? stash.data : null;
+        } catch { return null; }
+    }
+    // Merges the on-device copy of this account into the current lists and removes the copy only
+    // after the merged data is stored. Never empties a list.
+    function restoreStashedData(uid) {
+        const stash = readStash(uid);
+        if (!stash) return false;
+        try {
+            const merged = mergeAccountData(collectCurrentLocalData(), stash);
+            writeLocalData(merged, uid);
+            root.localStorage.removeItem(LOCAL_BACKUP_PREFIX + uid);
             return true;
         } catch { return false; }
+    }
+    // Writes validated account data to local storage (all or nothing) and redraws the app from it.
+    function writeLocalData(valid, uid) {
+        const previous = {};
+        for (const key of Object.values(DATA_KEYS)) previous[key] = root.localStorage.getItem(key);
+        try {
+            for (const [field, key] of Object.entries(DATA_KEYS)) if (valid[field] !== undefined) root.localStorage.setItem(key, JSON.stringify(valid[field]));
+            if (uid) root.localStorage.setItem('barcepte_data_owner', uid);
+        } catch (error) {
+            for (const [key, value] of Object.entries(previous)) { try { if (value === null) root.localStorage.removeItem(key); else root.localStorage.setItem(key, value); } catch {} }
+            throw error;
+        }
+        reloadAppState();
+    }
+    // game.js keeps the lists in memory; after storage changes underneath it, it must re-read them,
+    // otherwise the old account's lists stay visible and the next edit writes them back.
+    function reloadAppState() {
+        if (typeof root.applyCloudBackup !== 'function') return;
+        try { root.applyCloudBackup(collectCurrentLocalData()); } catch {}
     }
 
     function getSessionToken() {return sessionToken;}
@@ -258,10 +342,11 @@
     }
     // The account server's answer is authoritative for an account-bound subscription. "No subscription
     // for this account" is not proof that a device-bound key is invalid, so that case re-checks the key.
+    // Subscriptions from the account server belong to the Google account, not to this device.
     function applyServerSubscription(subscription) {
         const user=getCurrentUser();if(!user)return;
         if(root.BarReserve) {
-            if(subscription && root.BarReserve.acceptServerSubscription)root.BarReserve.acceptServerSubscription(subscription);
+            if(subscription && root.BarReserve.acceptServerSubscription)root.BarReserve.acceptServerSubscription(subscription,{binding:'account'});
             else if(!subscription && root.BarReserve.revalidate)root.BarReserve.revalidate({force:true}).catch(()=>{});
         }
         saveUser(getCurrentUser());
@@ -281,7 +366,7 @@
         }
         if(typeof root.applyCloudBackup==='function')root.applyCloudBackup(valid);
     }
-    async function syncToCloud() {
+    async function syncToCloud(options={}) {
         const user=getCurrentUser();
         if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:getCurrentLang()==='en'?'Sign in with Google to use cloud backup.':'Bulut yedeği için Google ile giriş yapınız.'};
         if(cloudRevision===null)return {success:false,reason:'Önce bulut yedeğini geri yükleyiniz.'};
@@ -296,12 +381,14 @@
                 if(personalDataVersion!==1 || inventoryDataVersion!==1)return {success:false,reason:getCurrentLang()==='en'?'Backup server is updating. Your local data is safe.':'Yedek sunucusu güncelleniyor. Yerel verilerin korunuyor.'};
             }
             const data=root.BarSecurity.backup(collectCurrentLocalData());
+            // An empty device must not silently replace an existing backup (e.g. right after sign-out/in).
+            if(cloudRevision>0 && isEmptyData(data) && !options.allowEmpty)return {success:false,emptyRefused:true,reason:getCurrentLang()==='en'?'Your lists on this device are empty, so the cloud backup was not replaced.':'Bu cihazdaki listelerin boş; bulut yedeğinin üzerine yazılmadı.'};
             const result=await accountRequest('/api/account/backup',{method:'PUT',body:JSON.stringify({data,revision:cloudRevision})});
             if(result.success){rememberRevision(result.revision);user.lastSync=result.updatedAt;saveUser(user);root.localStorage.setItem('barcepte_data_owner',user.uid);}
             return result;
         }catch {return {success:false,reason:'Yerel veriler okunamadı; yedek gönderilmedi.'};}
     }
-    async function syncFromCloud() {
+    async function syncFromCloud(options={}) {
         const user=getCurrentUser();
         if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:'Google ile giriş yapınız.'};
         const result=await accountRequest('/api/account/backup');
@@ -312,8 +399,12 @@
         applyServerSubscription(result.subscription);
         if(!result.backup){rememberRevision(0);return {success:false,notFound:true,reason:'Bulutta henüz yedek yok.'};}
         try {
-            const valid=root.BarSecurity.backup(result.backup.data);
+            const cloud=root.BarSecurity.backup(result.backup.data);
+            // On sign-in the cloud copy is merged with what is on this device (including the copy
+            // kept at sign-out), so neither side's lists are silently lost.
+            const valid=options.merge?mergeAccountData(cloud,collectCurrentLocalData()):cloud;
             applyCloudData(valid,user);rememberRevision(result.backup.revision);
+            if(options.merge && JSON.stringify(valid)!==JSON.stringify(cloud))return {success:true,data:valid,merged:true};
             const current=getCurrentUser();current.lastSync=result.backup.updatedAt;saveUser(current);
             return {success:true,data:valid};
         }catch {return {success:false,reason:'Yedek geri yüklenemedi. Yerel veriler korunuyor.'};}
@@ -329,18 +420,29 @@
         const googleUser=saveUser({...result.user,isReserve:false,createdAt:Date.now()});
         try {
             const owner=root.localStorage.getItem('barcepte_data_owner');
-            if(owner && owner!==googleUser.uid)applyCloudData({favorites:[],customs:[],shopping:[],selected:[]},googleUser);
+            if(owner && owner!==googleUser.uid) {
+                // Another account's lists are still here (no sign-out): keep them for that account.
+                try {stashAccountData({uid:owner});} catch {}
+                applyCloudData(EMPTY_DATA(),googleUser);
+            }
         } catch {showAlert(getCurrentLang()==='en'?'Could not switch local account data.':'Yerel hesap verileri değiştirilemedi.');return;}
+        // Lists kept on this device at sign-out come back first; the cloud copy is merged in next.
+        restoreStashedData(googleUser.uid);
         applyServerSubscription(result.subscription);
-        const restore=await syncFromCloud();
+        const restore=await syncFromCloud({merge:true});
         if(attempt!==loginAttempt)return;
         if(restore.notFound) {
             try {
                 const owner=root.localStorage.getItem('barcepte_data_owner');
-                if(owner && owner!==googleUser.uid)applyCloudData({favorites:[],customs:[],shopping:[],selected:[]},googleUser);
+                if(owner && owner!==googleUser.uid)applyCloudData(EMPTY_DATA(),googleUser);
+                else root.localStorage.setItem('barcepte_data_owner',googleUser.uid);
             }catch {}
-            // The first upload needs explicit consent; later uploads only happen when the user syncs.
+            // The first upload needs explicit consent. There is no backup yet, so nothing can be overwritten.
             if(askCloudConsent())await syncToCloud();
+        } else if(restore.merged) {
+            // The merged lists are a superset of the cloud copy; upload them only with earlier consent.
+            let consent=null;try {consent=root.localStorage.getItem(CLOUD_CONSENT_KEY);}catch {}
+            if(consent==='granted')await syncToCloud();
         }
         closeAuthModal();
         showAlert(getCurrentLang()==='en'?`Welcome, ${googleUser.name}!`: `Hoş geldin, ${googleUser.name}!`);
@@ -376,7 +478,10 @@
 
     // --- Demo / Misafir Girişi (Test & Hızlı Kullanım) ---
     function loginAsDemoUser() {
+        const previous = getCurrentUser();
+        if (previous && previous.uid !== 'demo_user_barmen') { try { stashAccountData(previous); } catch {} }
         clearSession();
+        if (previous && previous.provider === 'google') { currentUser = null; try { root.localStorage.removeItem(AUTH_USER_KEY); } catch {} releaseAccountReserve(); }
         const demoUser = {
             uid: 'demo_user_barmen',
             name: getCurrentLang() === 'en' ? 'Guest Bartender' : 'Demo Barmen',
@@ -391,6 +496,7 @@
         };
         saveUser(demoUser);
         restoreStashedData(demoUser.uid);
+        reloadAppState();
         closeAuthModal();
         showAlert(getCurrentLang() === 'en'
             ? 'Guest Bartender mode: data stays on this device.'
@@ -405,17 +511,23 @@
         try {root.sessionStorage.removeItem(SESSION_KEY);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
         googleCredential=null;
         if(token && root.fetch)root.fetch(API_ORIGIN+'/api/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}).catch(()=>{});
-        if(getCurrentUser()?.provider==='google' && root.BarReserve?.deactivateReserve)root.BarReserve.deactivateReserve(false);
+    }
+    // Only Reserve that belongs to the Google account leaves with it; a key bound to this device
+    // (activated without an account, or by an older version) stays. Unknown bindings are re-checked
+    // with the server as this device once signed out.
+    function releaseAccountReserve() {
+        if(root.BarReserve?.releaseAccountEntitlement)root.BarReserve.releaseAccountEntitlement();
+        else if(root.BarReserve?.deactivateReserve)root.BarReserve.deactivateReserve(false);
     }
     function logout() {
         try {stashAccountData(getCurrentUser());} catch {}
         clearSession();
-        // Signing out removes this device's Reserve state too; signing in again restores it from the server.
-        if(root.BarReserve?.deactivateReserve)root.BarReserve.deactivateReserve(false);
         currentUser = null;
         try {
             root.localStorage.removeItem(AUTH_USER_KEY);
         } catch {}
+        releaseAccountReserve();
+        reloadAppState();
         updateAuthUI();
         closeAuthModal();
         showAlert(getCurrentLang() === 'en' ? 'Successfully signed out.' : 'Başarıyla çıkış yapıldı.');
@@ -641,7 +753,10 @@
         if (syncNowBtn) {
             syncNowBtn.addEventListener('click', async () => {
                 syncNowBtn.disabled=true;
-                const result = await syncToCloud();
+                let result = await syncToCloud();
+                if (result.emptyRefused && confirm(getCurrentLang() === 'en'
+                    ? 'Your lists on this device are empty. Replace the cloud backup with empty lists?'
+                    : 'Bu cihazdaki listelerin boş. Bulut yedeği boş listelerle değiştirilsin mi?')) result = await syncToCloud({ allowEmpty: true });
                 syncNowBtn.disabled=false;
                 if (result.success) {
                     alert(getCurrentLang() === 'en' ? 'Cloud sync completed! All your data is safe.' : 'Bulut senkronizasyonu tamamlandı! Tüm verileriniz güvende.');
@@ -722,6 +837,7 @@
         markLicenseClaimedLocally,
         syncToCloud,
         syncFromCloud,
+        mergeAccountData,
         handleGoogleCredentialResponse,
         loginAsDemoUser,
         sanitizeText,

@@ -78,7 +78,34 @@ test('CI checks full dependencies and built APK contents without hiding Gradle f
     const android = read('.github/workflows/build-apk.yml');
     assert.match(android, /set -euo pipefail/);
     assert.match(android, /check-assets\.cjs "\$RUNNER_TEMP\/apk-check\/assets"/);
+    assert.doesNotMatch(android, /match the canonical allowlist/);
     const security = read('.github/workflows/security-checks.yml');
     assert.match(security, /npm audit --audit-level=moderate/);
     assert.doesNotMatch(security, /--omit=optional/);
+});
+
+test('APK asset check requires every canonical asset but tolerates SDK files merged into assets/', t => {
+    const os = require('node:os');
+    const { readAssetNames, checkBundle } = require('../scripts/check-assets.cjs');
+    const bundle = fs.mkdtempSync(path.join(os.tmpdir(), 'bar-cepte-apk-assets-'));
+    t.after(() => fs.rmSync(bundle, { recursive: true, force: true }));
+    const names = readAssetNames(root);
+    for (const name of names) fs.copyFileSync(path.join(root, name), path.join(bundle, name));
+    // What an ad SDK AAR may add: a sub-directory and non-web root files.
+    fs.mkdirSync(path.join(bundle, 'startio'));
+    fs.writeFileSync(path.join(bundle, 'startio', 'config.json'), '{}');
+    fs.writeFileSync(path.join(bundle, 'sdk-fonts.ttf'), 'x');
+    fs.writeFileSync(path.join(bundle, 'ad_template.dat'), 'x');
+    assert.doesNotThrow(() => checkBundle(root, bundle, names));
+    // A root-level web file outside web-assets.json, or a dotfile, is still rejected.
+    for (const extra of ['debug.html', 'leftover.js', 'old.css', 'license-state.json', '.env']) {
+        fs.writeFileSync(path.join(bundle, extra), 'x');
+        assert.throws(() => checkBundle(root, bundle, names), new RegExp('unexpected \\[' + extra.replace('.', '\\.')));
+        fs.unlinkSync(path.join(bundle, extra));
+    }
+    // A missing or stale canonical asset is rejected.
+    fs.unlinkSync(path.join(bundle, 'reserve.js'));
+    assert.throws(() => checkBundle(root, bundle, names), /missing \[reserve\.js\]/);
+    fs.writeFileSync(path.join(bundle, 'reserve.js'), 'stale');
+    assert.throws(() => checkBundle(root, bundle, names), /Stale bundled asset: reserve\.js/);
 });

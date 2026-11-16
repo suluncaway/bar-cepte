@@ -19,10 +19,23 @@
     function plan(guests, perGuest, recipes) {
         return window.BarSmart.planParty({ guests, drinksPerGuest: perGuest, recipes, measureToCl, owned, cost: perServingCost });
     }
+    // Custom recipes keep "50 ml Votka" lines; the planner reads strIngredientN/strMeasureN.
+    function plannable(drink) {
+        if (!drink || !drink.isCustom || !Array.isArray(drink.customIngredients)) return drink;
+        const copy = { idDrink: drink.idDrink, strDrink: drink.strDrink, isCustom: true };
+        drink.customIngredients.slice(0, 15).forEach((line, index) => {
+            const { measure, name } = splitMeasureAndName(line);
+            copy[`strIngredient${index + 1}`] = name;
+            copy[`strMeasure${index + 1}`] = measure;
+        });
+        return copy;
+    }
     function findRecipe(name) {
         const key = String(name || '').trim().toLocaleLowerCase('tr-TR');
         if (!key) return null;
-        return allCocktails.find(d => String(d.strDrink || '').toLocaleLowerCase('tr-TR') === key) || null;
+        const same = d => String(d && d.strDrink || '').trim().toLocaleLowerCase('tr-TR') === key;
+        const custom = typeof customRecipes !== 'undefined' && Array.isArray(customRecipes) ? customRecipes : [];
+        return allCocktails.find(same) || plannable(custom.find(same)) || null;
     }
 
     function note() {
@@ -70,7 +83,7 @@
             <input id="party-recipe-${i + 1}" type="text" list="cocktail-suggestions" autocomplete="off" value="${esc(state.recipes[i])}" ${i === 0 ? 'required' : ''}></div>`).join('');
         return `<form id="party-form" class="party-form" novalidate>
             <div class="party-field"><label for="party-guests">${t('Misafir sayısı (10–50)', 'Guests (10–50)')}</label>
-                <input id="party-guests" type="number" inputmode="numeric" min="10" max="50" step="1" value="${state.guests}" required></div>
+                <input id="party-guests" type="number" inputmode="numeric" min="10" max="50" step="1" value="${esc(state.guests)}" required></div>
             <div class="party-field"><label for="party-per-guest">${t('Kişi başı içki', 'Drinks per guest')}</label>
                 <select id="party-per-guest">${options}</select></div>
             ${recipeInputs}
@@ -78,6 +91,16 @@
             <button type="submit" class="party-btn party-primary">${t('Hesapla', 'Calculate')}</button>
         </form>
         <div id="party-result" class="party-result" aria-live="polite">${lastPlan ? resultMarkup(lastPlan, false) : ''}</div>${note()}`;
+    }
+
+    // Keeps what was typed (even if not yet valid) when the panel is re-drawn, e.g. after a language change.
+    function captureForm() {
+        const form = host && host.querySelector('#party-form');
+        if (!form) return;
+        const guests = form.querySelector('#party-guests')?.value ?? state.guests;
+        const perGuest = Number(form.querySelector('#party-per-guest')?.value) || state.perGuest;
+        const recipes = [1, 2, 3].map(i => form.querySelector(`#party-recipe-${i}`)?.value ?? '');
+        state = { guests: String(guests).slice(0, 6), perGuest, recipes: recipes.map(r => String(r).slice(0, 120)) };
     }
 
     function refresh() {
@@ -88,6 +111,7 @@
         const key = `${active}|${en()}|${allCocktails.length > 0}`;
         if (key === renderedKey && host.firstChild) return;
         renderedKey = key;
+        captureForm();
         const focused = host.contains(document.activeElement) ? document.activeElement.id : '';
         host.innerHTML = `<h2 id="party-title">${t('Parti planlayıcısı', 'Party planner')} <span class="party-badge">Reserve</span></h2>
             ${active ? formMarkup() : lockedMarkup()}`;
@@ -148,5 +172,5 @@
         else if (control.dataset.party === 'shop') addMissing(control);
     });
 
-    window.BarPartyUI = { refresh };
+    window.BarPartyUI = { refresh, findRecipe };
 })();

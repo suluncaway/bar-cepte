@@ -42,7 +42,8 @@ test('Production API protects issued licenses, admin data and webhook requests',
     assert.equal(alice.status, 200);
     assert.equal(alice.data.plan, 'monthly');
     const bob = await claim({ key: testKey, deviceId: 'bob-phone' });
-    assert.equal(bob.status, 409);
+    assert.equal(bob.status, 400);
+    assert.equal(bob.data.code, 'not_issued');
     const restored = await claim({ key: testKey, deviceId: 'alice-phone' });
     assert.equal(restored.data.restored, true);
     assert.equal(restored.data.expiresAt, alice.data.expiresAt);

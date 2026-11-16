@@ -66,6 +66,11 @@ test('privacy notice covers the real data flows and links the static pages', () 
         assert.ok(html.includes(term), term);
     }
     assert.match(html, /kullanim-kosullari\.html/);
+    // Retention wording follows scripts/rate-limit.js (IPv6 /64, timed deletion) and allowBackup=false.
+    assert.match(html, /IPv6'da yalnızca ilk 64 bitlik öneki/);
+    assert.match(html, /son hatalı denemeden en geç 24 saat sonra otomatik silinir/);
+    assert.match(html, /Android uygulaması verilerini Android\/Google cihaz yedeğine dahil etmez/);
+    assert.match(html, /excludes its data from Android\/Google device backup/);
     assert.match(read('privacy.js'), /privacy-content-en/);
 });
 
@@ -83,6 +88,21 @@ test('Android wrapper honours Reserve, clears migration history, exports files a
     assert.match(manifest, /android:allowBackup="false"/);
     assert.match(manifest, /androidx\.core\.content\.FileProvider/);
     assert.match(read('android/app/src/main/res/xml/export_paths.xml'), /cache-path name="exports" path="exports\/"/);
+    // The bridge only acts for the bundled app page; exports are typed and short-lived.
+    assert.match(activity, /APP_ORIGIN = "https:\/\/appassets\.androidplatform\.net"/);
+    assert.match(activity, /WebViewCompat\.addWebMessageListener\(webView, NATIVE_CHANNEL, Collections\.singleton\(APP_ORIGIN\)/);
+    assert.match(activity, /if \(!isMainFrame \|\| sourceOrigin == null \|\| !APP_ORIGIN\.equals\(sourceOrigin\.toString\(\)\)\) return;/);
+    assert.match(activity, /public void setReserveActive\(boolean active\) \{\s+if \(reserveActive == active\) return;\s+if \(!callerIsApp\(\)\) return;/);
+    assert.match(activity, /if \(nativeChannelReady \|\| !callerIsApp\(\)\) return;/);
+    assert.match(activity, /runOnUiThread\(\(\) -> \{\s+try \{\s+url\.set\(webView\.getUrl\(\)\);/);
+    const extensions = activity.match(/private static String exportExtension\(String mime\) \{([\s\S]*?)\n    \}/)[1];
+    assert.deepEqual([...extensions.matchAll(/"([a-z]+\/[a-z]+)"\.equals\(mime\)\) return "(\.[a-z]+)"/g)].map(m => m[1] + m[2]),
+        ['image/png.png', 'image/jpeg.jpg', 'text/csv.csv', 'application/json.json']);
+    assert.match(activity, /if \(extension == null\) \{/);
+    assert.doesNotMatch(activity, /"\.bin"|application\/octet-stream/);
+    assert.match(activity, /String name = base \+ extension;/);
+    assert.match(activity, /EXPORT_MAX_AGE_MS = 24L \* 60 \* 60 \* 1000/);
+    assert.match(activity, /new Thread\(this::deleteOldExports/);
     // reserve.js still reports the state through the bridge.
     assert.match(read('reserve.js'), /AndroidBridge\.setReserveActive\(isReserveActive\(\)\)/);
 });

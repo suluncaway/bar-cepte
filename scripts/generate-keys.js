@@ -134,7 +134,7 @@ if (require.main === module) {
     }
 
     const finish = async () => {
-        if (!shouldExport) return;
+        if (!shouldExport) return false;
         // Keys that are not in the sales registry can never be activated, so --save registers them.
         const { createLicenseStore } = require('./license-store');
         const store = createLicenseStore();
@@ -152,9 +152,16 @@ if (require.main === module) {
         } finally {
             if (store.close) await store.close();
         }
+        return true;
     };
-    finish().then(() => {
-        console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
+    finish().then(saved => {
+        if (saved) {
+            console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
+        } else {
+            // Keys outside the sales registry are rejected by the server (not_issued) and never activate.
+            console.warn('\n⚠️  UYARI: --save verilmedi; bu anahtarlar sunucu siciline KAYDEDİLMEDİ ve asla etkinleşmez.' +
+                '\n   Kimseye göndermeyin. Dağıtılacak anahtarları --save ile üretin.\n');
+        }
     }).catch(() => {
         console.error('Anahtarlar sunucu siciline kaydedilemedi; hiçbir anahtarı dağıtmayın.');
         process.exitCode = 1;

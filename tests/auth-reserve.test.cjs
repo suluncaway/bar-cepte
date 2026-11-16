@@ -106,18 +106,115 @@ for (const [label, response, ok] of [
     });
 }
 
-test('logout clears verified entitlement without a DOM and preserves account backup', async () => {
+// This test used to assert that logout removes Reserve. That locked in a bug: a key activated
+// without a Google session is bound to this device on the server (it cannot follow the account),
+// so signing out must not remove it. Account-bound Reserve is still removed (next test).
+test('logout keeps device-bound Reserve, moves the lists to an on-device copy and preserves account backup', async () => {
     const app = setup();
     app.auth.saveUser({ uid: 'alice', provider: 'local' });
     app.storage.set('favoriteCocktails', '["recipe-1"]');
     app.respond({ success: true, plan: 'lifetime', expiresAt: 0 });
     assert.equal((await app.reserve.verifyAndActivateLicense(app.key)).success, true);
+    assert.equal(JSON.parse(app.storage.get('barcepte_reserve_entitlement')).binding, 'device');
     app.auth.logout();
     assert.equal(app.auth.isLoggedIn(), false);
-    assert.equal(app.reserve.isReserveActive(), false);
+    assert.equal(app.reserve.isReserveActive(), true, 'device-bound Reserve survives sign-out');
     assert.equal(app.storage.get('favoriteCocktails'), '[]');
     const backup = JSON.parse(app.storage.get('barcepte_cloud_data_alice'));
     assert.deepEqual(backup.data.favorites, ['recipe-1']);
+});
+
+test('logout removes account-bound Reserve and brings back a device key it had set aside', async () => {
+    const app = setup();
+    const { reserve, auth, key } = app;
+    auth.saveUser({ uid: 'alice', provider: 'local' });
+    app.respond({ success: true, plan: 'lifetime', expiresAt: 0 });
+    assert.equal((await reserve.verifyAndActivateLicense(key)).success, true);
+    // The account server then reports the Google account's own (different) subscription.
+    const accountKey = `RESERVE-ANN1-ACCT-${reserve.checksum('ANN1ACCT')}`;
+    assert.equal(reserve.acceptServerSubscription({ key: accountKey, plan: 'annual', expiresAt: app.now() + 86400000 }, { binding: 'account' }), true);
+    assert.equal(reserve.getSubscriptionInfo().key, accountKey);
+    auth.logout();
+    const info = reserve.getSubscriptionInfo();
+    assert.equal(info.active, true);
+    assert.equal(info.key, key, 'the device key is active again');
+    // Without a device key, account-bound Reserve simply goes away.
+    const other = setup();
+    other.auth.saveUser({ uid: 'bob', provider: 'local' });
+    assert.equal(other.reserve.acceptServerSubscription({ key: accountKey, plan: 'lifetime', expiresAt: 0 }, { binding: 'account' }), true);
+    other.auth.logout();
+    assert.equal(other.reserve.isReserveActive(), false);
+});
+
+test('Reserve of unknown binding (older versions) is re-checked as this device after logout', async () => {
+    for (const [status, data, active] of [
+        [409, { success: false, code: 'claimed_elsewhere' }, false],
+        [409, { success: false, reason: 'conflict' }, true],
+        [200, { success: true, plan: 'lifetime', expiresAt: 0, restored: true }, true]
+    ]) {
+        const app = setup();
+        app.auth.saveUser({ uid: 'alice', provider: 'local' });
+        app.storage.set('barcepte_reserve_entitlement', JSON.stringify({ key: app.key, plan: 'lifetime', expiresAt: 0, verifiedAt: app.now() }));
+        app.context.fetch = async (...args) => { app.requests.push(args); return { ok: status < 300, status, json: async () => data }; };
+        app.auth.logout();
+        await app.reserve.revalidate();
+        assert.equal(app.requests.filter(([url]) => url.endsWith('/api/claim-license')).length, 1);
+        const sent = app.requests.find(([url]) => url.endsWith('/api/claim-license'))[1];
+        assert.equal(sent.headers.Authorization, undefined, 'checked as this device, without the old session');
+        assert.equal(app.reserve.isReserveActive(), active, `${status} ${JSON.stringify(data)}`);
+    }
+});
+
+test('only explicit server rejection codes delete a key; a bare 409 is retried', async () => {
+    const app = setup();
+    app.respond({ success: true, plan: 'lifetime', expiresAt: 0 });
+    assert.equal((await app.reserve.verifyAndActivateLicense(app.key)).success, true);
+    for (const data of [{ success: false }, { success: false, code: 'conflict' }]) {
+        app.context.fetch = async () => ({ ok: false, status: 409, json: async () => data });
+        assert.equal((await app.reserve.revalidate({ force: true })).status, 'kept');
+        assert.equal(app.reserve.isReserveActive(), true);
+    }
+    app.context.fetch = async () => ({ ok: false, status: 409, json: async () => ({ success: false, code: 'claimed_elsewhere' }) });
+    assert.equal((await app.reserve.revalidate({ force: true })).status, 'removed');
+    assert.equal(app.reserve.isReserveActive(), false);
+});
+
+test('earlier legacy Reserve gets a 14-day grace from the first verification attempt, then needs the server', async () => {
+    const app = setup();
+    const { reserve, storage, key } = app;
+    storage.set('barcepte_reserve_active', 'true');
+    storage.set('barcepte_reserve_license', key);
+    storage.set('barcepte_reserve_plan', 'lifetime');
+    assert.equal(reserve.isReserveActive(), false, 'no grace before any verification attempt');
+    // Offline: the key is kept and the grace period starts.
+    assert.equal((await reserve.revalidate()).status, 'kept');
+    const info = reserve.getSubscriptionInfo();
+    assert.equal(info.active, true);
+    assert.equal(info.grace, true);
+    assert.equal(info.graceUntil, app.now() + 14 * 86400000);
+    // A signed-in Google profile without a live session token also keeps the grace period.
+    app.auth.saveUser({ uid: 'google_alice', provider: 'google' });
+    assert.equal((await reserve.revalidate()).status, 'kept');
+    assert.equal(reserve.isReserveActive(), true);
+    app.advance(14 * 86400000);
+    assert.equal(reserve.isReserveActive(), false, 'grace ends after 14 days');
+    assert.equal(storage.get('barcepte_reserve_license'), key, 'the key itself is not deleted');
+    // Expired legacy plans get no grace.
+    const expired = setup();
+    expired.storage.set('barcepte_reserve_active', 'true');
+    expired.storage.set('barcepte_reserve_license', expired.key);
+    expired.storage.set('barcepte_reserve_plan', 'monthly');
+    expired.storage.set('barcepte_reserve_expires_at', String(expired.now() - 1));
+    await expired.reserve.revalidate();
+    assert.equal(expired.reserve.isReserveActive(), false);
+    // Server confirmation replaces the grace with a verified entitlement; rejection clears it.
+    const confirmed = setup();
+    confirmed.storage.set('barcepte_reserve_active', 'true');
+    confirmed.storage.set('barcepte_reserve_license', confirmed.key);
+    confirmed.context.fetch = async () => ({ ok: false, status: 409, json: async () => ({ success: false, code: 'claimed_elsewhere' }) });
+    assert.equal((await confirmed.reserve.revalidate()).status, 'removed');
+    assert.equal(confirmed.reserve.isReserveActive(), false);
+    assert.equal(confirmed.storage.has('barcepte_reserve_legacy_grace_since'), false);
 });
 
 test('logout during server verification invalidates the pending response', async () => {

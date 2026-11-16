@@ -4,6 +4,13 @@ const path = require('node:path');
 const {recoverLegacyClaim} = require('./legacy-recovery');
 const {createBusinessStore} = require('./business-store');
 
+// True when the caller is a verified Google account whose e-mail is the sale's buyer e-mail.
+function buyerMatches(sale, proposed) {
+    return Boolean(sale && proposed && typeof proposed.uid === 'string' && proposed.uid.startsWith('google_') &&
+        typeof sale.email === 'string' && sale.email.trim() && typeof proposed.email === 'string' &&
+        sale.email.trim().toLowerCase() === proposed.email.trim().toLowerCase());
+}
+
 function createFileStore(directory) {
     const soldFile = path.join(directory, 'sold_licenses.json');
     const claimedFile = path.join(directory, 'claimed_licenses.json');
@@ -57,13 +64,16 @@ function createFileStore(directory) {
             });
             store.pending = task.catch(() => {}); return task;
         },
-        claim: async (key, proposed) => {
+        // options.requireBuyer (legacy short keys): a new claim is only created for the verified buyer
+        // account; otherwise {issued:true, needsAccount:true} is returned and nothing is written.
+        claim: async (key, proposed, options = {}) => {
             // File mode is intended for a single process; serialize through one promise chain.
             const task = store.pending.then(async () => {
                 const sale = (await store.getSold()).find(row => row.licenseKey === key);
                 if (!sale) return {issued: false};
+                const buyerMatch = buyerMatches(sale, proposed);
                 const claimed = await store.getClaimed();
-                if (sale.revoked) return {issued: true, revoked: true, existing: claimed[key] || null};
+                if (sale.revoked) return {issued: true, revoked: true, buyerMatch, existing: claimed[key] || null};
                 if (claimed[key]) {
                     let existing=claimed[key];
                     if(existing.needsReview) {
@@ -75,10 +85,11 @@ function createFileStore(directory) {
                         (existing.expiresAt===0 || existing.expiresAt>Date.now())) {
                         claimed[key]={...existing,uid:proposed.uid,email:proposed.email};write(claimedFile,claimed);
                     }
-                    return {issued:true,existing:claimed[key]};
+                    return {issued:true,buyerMatch,existing:claimed[key]};
                 }
+                if (options.requireBuyer && !buyerMatch) return {issued: true, needsAccount: true, buyerMatch};
                 write(claimedFile, {...claimed, [key]: proposed});
-                return {issued: true, created: true, record: proposed};
+                return {issued: true, created: true, buyerMatch, record: proposed};
             });
             store.pending = task.catch(() => {});
             return task;
@@ -325,7 +336,7 @@ function createPostgresStore(connectionString) {
                 throw error;
             } finally {client.release();}
         },
-        async claim(key, proposed) {
+        async claim(key, proposed, options = {}) {
             await store.ready();
             const client = await pool.connect();
             try {
@@ -333,8 +344,9 @@ function createPostgresStore(connectionString) {
                 // Lock the issued sale, so competing instances cannot claim the same key.
                 const sold = await client.query('SELECT license_key,payload FROM barcepte_sales WHERE license_key=$1 FOR UPDATE', [key]);
                 if (!sold.rowCount) {await client.query('ROLLBACK'); return {issued: false};}
+                const buyerMatch = buyerMatches(sold.rows[0].payload, proposed);
                 const {rows} = await client.query('SELECT payload FROM barcepte_claims WHERE license_key=$1', [key]);
-                if (sold.rows[0].payload.revoked === true) {await client.query('ROLLBACK'); return {issued: true, revoked: true, existing: rows[0]?.payload || null};}
+                if (sold.rows[0].payload.revoked === true) {await client.query('ROLLBACK'); return {issued: true, revoked: true, buyerMatch, existing: rows[0]?.payload || null};}
                 if (rows.length) {
                     let existing=rows[0].payload;
                     if(existing.needsReview) {
@@ -346,11 +358,12 @@ function createPostgresStore(connectionString) {
                         existing={...existing,uid:proposed.uid,email:proposed.email};
                         await client.query('UPDATE barcepte_claims SET payload=$2::jsonb WHERE license_key=$1',[key,JSON.stringify(existing)]);
                     }
-                    await client.query('COMMIT'); return {issued:true,existing};
+                    await client.query('COMMIT'); return {issued:true,buyerMatch,existing};
                 }
+                if (options.requireBuyer && !buyerMatch) {await client.query('ROLLBACK'); return {issued: true, needsAccount: true, buyerMatch};}
                 await client.query('INSERT INTO barcepte_claims(license_key,payload) VALUES($1,$2::jsonb)', [key, JSON.stringify(proposed)]);
                 await client.query('COMMIT');
-                return {issued: true, created: true, record: proposed};
+                return {issued: true, created: true, buyerMatch, record: proposed};
             } catch (error) {
                 await client.query('ROLLBACK').catch(() => {});
                 throw error;
@@ -366,4 +379,4 @@ function createLicenseStore(options = {}) {
     if (process.env.NODE_ENV === 'production') throw new Error('DATABASE_URL is required in production');
     return createFileStore(options.directory || process.env.LICENSE_DATA_DIR || path.resolve(__dirname, '..', 'keys'));
 }
-module.exports = {createLicenseStore, createPostgresStore, createFileStore};
+module.exports = {createLicenseStore, createPostgresStore, createFileStore, buyerMatches};

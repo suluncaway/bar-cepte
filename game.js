@@ -214,14 +214,14 @@ const I18N = {
         mixNext: "Sonraki Adım →",
         mixFinish: "Tamamla & Kapat",
         reserveExclusiveClub: "RESERVE ÜYELİĞİ",
-        reserveBullet1: "<strong>Reklamsız deneyim:</strong> Web'de reklam alanları, Android uygulamasında banner ve geçiş reklamları gösterilmez; satış ortaklığı bandı da gizlenir.",
+        reserveBullet1: "<strong>Uygulama içinde reklamsız:</strong> Web uygulamasında ve Android uygulamasında reklam alanları, banner ve geçiş reklamları gösterilmez; satış ortaklığı bandı da gizlenir. Tarif ve rehber içerik sayfalarında reklam görünebilir.",
         reserveBullet2: "<strong>Parti planlayıcısı:</strong> 10–50 misafir için toplam malzeme (cl), şişe sayısı ve eksiklerin alışveriş listesine eklenmesi.",
         reserveBullet3: "<strong>Reserve rozeti:</strong> Logonun yanında ve hesabında görünür.",
         reserveBullet4: "<strong>Bağımsız geliştirmeye destek:</strong> Tüm tarif ve rehberlerin ücretsiz kalmasına katkı sağlar.",
         reserveHaveKey: "Zaten bir aktivasyon kodun var mı?",
         reserveActivateBtn: "Aktive Et",
         reserveActiveHeading: "Reserve Üyeliğiniz Aktif!",
-        reserveActiveDesc: "Reklamsız deneyim ve parti planlayıcısı bu cihazda açık.",
+        reserveActiveDesc: "Uygulama içi reklamsız deneyim ve parti planlayıcısı bu cihazda açık.",
         reserveActiveNote: "Keyifli akşamlar dileriz. Tezgâhın kontrolü sizde!",
         reserveDeactivateBtn: "Bu cihazdan üyeliği kaldır",
         authH3: "BARMEN KULÜBÜ",
@@ -400,14 +400,14 @@ const I18N = {
         mixNext: "Next Step →",
         mixFinish: "Finish",
         reserveExclusiveClub: "RESERVE MEMBERSHIP",
-        reserveBullet1: "<strong>Ad-free experience:</strong> No ad slots on the web, no banner or interstitial ads in the Android app; the affiliate banner is hidden too.",
+        reserveBullet1: "<strong>Ad-free in the app:</strong> No ad slots, banners or interstitials in the web app and the Android app; the affiliate banner is hidden too. Ads may still appear on recipe and guide content pages.",
         reserveBullet2: "<strong>Party planner:</strong> Total ingredients (cl), bottle counts and missing items added to your shopping list for 10–50 guests.",
         reserveBullet3: "<strong>Reserve badge:</strong> Shown next to the logo and on your account.",
         reserveBullet4: "<strong>Support independent work:</strong> Helps keep every recipe and guide free.",
         reserveHaveKey: "Already have an activation code?",
         reserveActivateBtn: "Activate",
         reserveActiveHeading: "Your Reserve Membership is Active!",
-        reserveActiveDesc: "The ad-free experience and the party planner are active on this device.",
+        reserveActiveDesc: "The ad-free app experience and the party planner are active on this device.",
         reserveActiveNote: "Enjoy your evening. You run the bar tonight!",
         reserveDeactivateBtn: "Remove membership from this device",
         authH3: "BARTENDER CLUB",
@@ -1291,11 +1291,86 @@ const INGREDIENT_BLOCKING_PREFIXES_BY_HEAD = {
     beer: ['ginger', 'root'], ale: ['ginger'],
     water: ['tonic', 'soda', 'carbonated', 'sparkling', 'coconut', 'rose', 'orange', 'flower'],
     milk: ['coconut', 'condensed', 'evaporated', 'almond', 'oat', 'soy', 'chocolate'],
-    cream: ['irish', 'baileys', 'coconut'], gin: ['sloe'], salt: ['celery'], pepper: ['dr']
+    cream: ['irish', 'baileys', 'coconut'], gin: ['sloe'], salt: ['celery'], pepper: ['dr'],
+    rum: ['malibu', 'coconut']
 };
 
+// Yazım farkları aynı sözcük sayılır ("Scotch whisky" = "whiskey").
+const INGREDIENT_TOKEN_ALIASES = { whisky: 'whiskey', viskisi: 'viski' };
 function ingredientTokens(text) {
-    return String(text || '').toLowerCase().split(/[\s\-\/]+/).map(w => w.replace(/[^\p{L}\p{N}]+/gu, '')).filter(Boolean);
+    return String(text || '').toLowerCase().split(/[\s\-\/]+/).map(w => w.replace(/[^\p{L}\p{N}]+/gu, '')).filter(Boolean)
+        .map(w => INGREDIENT_TOKEN_ALIASES[w] || w);
+}
+
+// Ters yön: kullanıcının barındaki DAHA ÖZEL ürün tarifteki genel malzemeyi karşılar
+// ("Light rum" → "Rum", "Sweet Vermouth" → "Vermouth", "Heavy cream" → "Cream").
+// Öndeki sözcükler yalnızca o ana ürünü daraltan niteleyiciler olabilir; liste baş sözcüğe göre
+// tutulur, çünkü bir sözcük bir üründe daraltıcı, diğerinde ürün değiştiricidir
+// ("Irish whiskey" bir viskidir ama "Irish cream" bir likördür, krema değildir).
+// "Malibu rum", "Lime vodka", "Coconut milk", "151 proof rum" gibi ürünler bilinçli olarak dışarıda.
+const INGREDIENT_GENERAL_QUALIFIERS = new Set(['fresh', 'freshly', 'squeezed', 'taze', 'sıkılmış']);
+const INGREDIENT_NARROWING_QUALIFIERS = {
+    rum: ['light', 'dark', 'white', 'gold', 'golden', 'spiced', 'aged', 'añejo', 'anejo', 'blackstrap', 'silver', 'black', 'bacardi', 'havana', 'club'],
+    rom: ['açık', 'koyu', 'beyaz', 'siyah', 'altın', 'baharatlı', 'yıllanmış'],
+    whiskey: ['irish', 'blended', 'scotch', 'tennessee', 'rye', 'bourbon', 'canadian', 'japanese', 'american', 'single', 'malt', 'islay'],
+    scotch: ['blended', 'single', 'malt', 'islay'],
+    viski: ['irlanda', 'harman', 'iskoç', 'burbon', 'çavdar'],
+    vermouth: ['sweet', 'dry', 'rosso', 'bianco', 'red', 'white', 'extra'],
+    vermut: ['tatlı', 'sek', 'kırmızı', 'beyaz'],
+    vodka: ['absolut', 'smirnoff', 'stolichnaya', 'premium'],
+    votka: [],
+    gin: ['london', 'dry', 'plymouth', 'beefeater', 'tanqueray', 'bombay', 'sapphire'],
+    cin: [],
+    tequila: ['blanco', 'silver', 'reposado', 'añejo', 'anejo', 'gold', 'white'],
+    tekila: [],
+    cream: ['heavy', 'double', 'light', 'single', 'whipping', 'fresh'],
+    krema: ['koyu', 'yoğun', 'sıvı', 'çırpma'],
+    wine: ['red', 'white', 'dry', 'sweet'],
+    şarap: ['kırmızı', 'beyaz', 'sek'],
+    port: ['ruby', 'tawny'],
+    cacao: ['dark', 'white'],
+    menthe: ['green', 'white'],
+    sugar: ['brown', 'white', 'demerara', 'cane', 'caster', 'powdered'],
+    şeker: ['esmer', 'toz'],
+    pepper: ['black', 'white'],
+    salt: ['sea', 'kosher'],
+    milk: ['whole', 'skim', 'skimmed', 'fresh'],
+    // "Bitters" tek başına aromatik bitter demektir; portakal/şeftali bitter ise değildir.
+    bitters: ['angostura', 'aromatic'],
+    // Tarifteki "Cherry" çoğunlukla süsleme kirazıdır.
+    cherry: ['maraschino', 'cocktail'],
+    lillet: ['blanc'],
+    liqueur: ['midori', 'chambord']
+};
+// Şeker/bal tarifte zaten eritilir; şurubu barmenin standart biçimidir ("Sugar syrup" → "Sugar").
+// Ters yön ("Sugar" → "Sugar syrup") eşleşme sayılmaz; o durum ikame önerisiyle (BarSmart) gösterilir.
+const INGREDIENT_SYRUP_WORDS = new Set(['syrup', 'şurubu', 'şurup']);
+const INGREDIENT_SYRUP_BASES = new Set(['sugar', 'şeker', 'honey', 'bal']);
+// Yalnızca meyve suyu tek başına, aynı meyvenin genel adını karşılar ("Lime Juice" → "Lime").
+// "Egg White" / "Egg yolk" → "Egg" kabul EDİLMEZ: tarif bütün yumurta istiyorsa (flip, eggnog)
+// yalnızca akı ya da yalnızca sarısı yetmez. Tersi geçerli: "Egg" barda varsa "Egg white" yapılır.
+const INGREDIENT_JUICE_WORDS = new Set(['juice', 'suyu']);
+
+function ingredientIsNarrowerThan(recipeTokens, userTokens) {
+    const n = recipeTokens.length;
+    if (!n || userTokens.length <= n) return false;
+    for (let start = 0; start + n <= userTokens.length; start++) {
+        if (!recipeTokens.every((w, i) => userTokens[start + i] === w)) continue;
+        const prefix = userTokens.slice(0, start);
+        const suffix = userTokens.slice(start + n);
+        let allowed;
+        const narrowing = INGREDIENT_NARROWING_QUALIFIERS[recipeTokens[n - 1]] || [];
+        // Daraltıcı niteleyici sonda da olabilir ("Lillet Blanc", "Vermouth Rosso").
+        if (suffix.every(w => narrowing.includes(w))) {
+            allowed = narrowing;
+        } else if (suffix.length === 1 && INGREDIENT_JUICE_WORDS.has(suffix[0]) && !recipeTokens.some(w => INGREDIENT_JUICE_WORDS.has(w) || INGREDIENT_QUALIFIER_WORDS.has(w))) {
+            allowed = [];
+        } else if (suffix.length === 1 && INGREDIENT_SYRUP_WORDS.has(suffix[0]) && n === 1 && INGREDIENT_SYRUP_BASES.has(recipeTokens[0])) {
+            allowed = [];
+        } else continue;
+        if (prefix.every(w => INGREDIENT_GENERAL_QUALIFIERS.has(w) || allowed.includes(w))) return true;
+    }
+    return false;
 }
 
 function ingredientHeadMatches(recipeTokens, candTokens) {
@@ -1330,7 +1405,10 @@ function checkIngredientMatch(recipeIng, userIngId) {
 
     const recipeTokens = ingredientTokens(r);
     for (const cand of wordNames) {
-        if (ingredientHeadMatches(recipeTokens, ingredientTokens(cand))) return true;
+        const candTokens = ingredientTokens(cand);
+        if (ingredientHeadMatches(recipeTokens, candTokens)) return true;
+        // Parantez içi açıklamalar ("Yıllanmış Rom (Añejo)") ürünü değiştirmez.
+        if (ingredientIsNarrowerThan(recipeTokens, ingredientTokens(cand.replace(/\([^)]*\)/g, ' ')))) return true;
     }
     return false;
 }
@@ -4510,7 +4588,7 @@ function applyLanguage() {
 
     const btnReserve = document.getElementById('btn-open-reserve');
     if (btnReserve) {
-        btnReserve.title = currentLang === 'en' ? 'Pocket Bar Reserve — Ad-free & party planner' : 'Bar Cepte Reserve — Reklamsız & parti planlayıcısı';
+        btnReserve.title = currentLang === 'en' ? 'Pocket Bar Reserve — Ad-free app & party planner' : 'Bar Cepte Reserve — Uygulamada reklamsız & parti planlayıcısı';
     }
 
     const btnAuth = document.getElementById('btn-auth-user');
@@ -4609,7 +4687,7 @@ function applyLanguage() {
     if (reserveDesc) {
         reserveDesc.innerText = currentLang === 'en'
             ? 'Use Pocket Bar without ads, unlock the party planner and support its independent development.'
-            : 'Bar Cepte\'yi reklamsız kullan, parti planlayıcısını aç ve bağımsız gelişimine destek ol.';
+            : 'Bar Cepte uygulamasını reklamsız kullan, parti planlayıcısını aç ve bağımsız gelişimine destek ol.';
     }
     const reserveActiveH4 = document.querySelector('#reserve-status-active h4');
     if (reserveActiveH4) reserveActiveH4.innerText = t.reserveActiveHeading;

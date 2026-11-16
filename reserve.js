@@ -8,8 +8,17 @@
     const KEY_STORAGE = 'barcepte_reserve_license';
     const PLAN_STORAGE = 'barcepte_reserve_plan';
     const EXPIRES_STORAGE = 'barcepte_reserve_expires_at';
-    // Server-confirmed entitlement: {key, plan, expiresAt, verifiedAt}.
+    // Server-confirmed entitlement: {key, plan, expiresAt, verifiedAt, binding}. binding is 'account'
+    // (claimed with a Google session or returned by the account server), 'device' (claimed without an
+    // account) or absent (stored by an older version: unknown).
     const ENTITLEMENT_STORAGE = 'barcepte_reserve_entitlement';
+    // A device-bound entitlement set aside while a Google account's own Reserve is shown.
+    const DEVICE_ENTITLEMENT_STORAGE = 'barcepte_reserve_device_entitlement';
+    // Legacy flags written before server-only activation get a short offline grace period from the
+    // first verification attempt, so a returning member is not silently downgraded while offline or
+    // signed out. They are never upgraded to a verified entitlement without the server.
+    const LEGACY_GRACE_STORAGE = 'barcepte_reserve_legacy_grace_since';
+    const LEGACY_GRACE_MS = 14 * 24 * 60 * 60 * 1000;
     const API_ORIGIN = 'https://bar-cepte-webhook.onrender.com';
     const REVALIDATE_MS = 24 * 60 * 60 * 1000;
     // Only these server answers mean "this key is not (or no longer) yours"; anything else is retried.
@@ -18,23 +27,23 @@
 
     const PLANS_CONFIG = {
         monthly: {
-            title: 'Aylık Abonelik (Monthly Pass)',
+            title: 'Aylık Geçiş (30 Gün)',
             price: '40 ₺',
             period: '/ ay',
             badge: 'AYLIK PLAN',
             subtitle: '30 Gün Kesintisiz',
-            desc: 'Esnek aylık yenilenen barmenlik keyfi. İstediğin zaman uzat.',
-            checkoutLabel: 'Shopier ile Aylık Abone Ol',
+            desc: 'Tek seferlik ödeme: 30 gün geçerli, otomatik yenilenmez. Süre bitince istersen yeni bir geçiş alırsın.',
+            checkoutLabel: 'Shopier ile 30 Günlük Geçiş Al',
             shopierUrl: 'https://www.shopier.com/Anawin/51736039'
         },
         annual: {
-            title: 'Yıllık Abonelik',
+            title: 'Yıllık Geçiş (365 Gün)',
             price: '400 ₺',
             period: '/ yıl (33,33 ₺/ay)',
             badge: '%17 tasarruf',
             subtitle: '365 gün erişim',
-            desc: 'Ayda 33,33 ₺. Bir yıl boyunca reklamsız kullanım ve Reserve rozeti.',
-            checkoutLabel: 'Shopier ile Yıllık Abone Ol',
+            desc: 'Ayda 33,33 ₺. Tek seferlik ödeme; bir yıl boyunca uygulamada reklamsız kullanım ve Reserve rozeti, otomatik yenilenmez.',
+            checkoutLabel: 'Shopier ile Yıllık Geçiş Al',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
         }
     };
@@ -46,7 +55,7 @@
             period: '/ month',
             badge: 'MONTHLY PASS',
             subtitle: '30 Days Full Access',
-            desc: 'Flexible monthly home bartending enjoyment. Cancel anytime.',
+            desc: 'One-time payment: valid for 30 days and does not renew automatically. Buy a new pass whenever you like.',
             checkoutLabel: 'Secure Checkout via Shopier ($2.99)',
             shopierUrl: 'https://www.shopier.com/Anawin/51736039'
         },
@@ -56,7 +65,7 @@
             period: '/ year ($1.25/mo)',
             badge: 'Save 58%',
             subtitle: '365 days of access',
-            desc: '$1.25 a month. One year ad-free, with the Reserve badge.',
+            desc: '$1.25 a month. One-time payment: one year ad-free in the app, with the Reserve badge. Does not renew automatically.',
             checkoutLabel: 'Secure Checkout via Shopier ($14.99)',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
         }
@@ -69,7 +78,7 @@
             period: '/ month',
             badge: 'MONTHLY PASS',
             subtitle: '30 Days Full Access',
-            desc: 'Flexible monthly home bartending enjoyment. Cancel anytime.',
+            desc: 'One-time payment: valid for 30 days and does not renew automatically. Buy a new pass whenever you like.',
             checkoutLabel: 'Secure Checkout via Shopier (€2.99)',
             shopierUrl: 'https://www.shopier.com/Anawin/51736039'
         },
@@ -79,7 +88,7 @@
             period: '/ year (€1.16/mo)',
             badge: 'Save 60%',
             subtitle: '365 days of access',
-            desc: '€1.16 a month. One year ad-free, with the Reserve badge.',
+            desc: '€1.16 a month. One-time payment: one year ad-free in the app, with the Reserve badge. Does not renew automatically.',
             checkoutLabel: 'Secure Checkout via Shopier (€13.99)',
             shopierUrl: 'https://www.shopier.com/Anawin/51735632'
         }
@@ -168,7 +177,8 @@
         try {
             const value = JSON.parse(root.localStorage.getItem(ENTITLEMENT_STORAGE) || 'null');
             if (!value || typeof value.key !== 'string' || !isValidSubscription(value.plan, value.expiresAt)) return null;
-            return { key: value.key, plan: value.plan, expiresAt: value.expiresAt, verifiedAt: Number(value.verifiedAt) || 0 };
+            return { key: value.key, plan: value.plan, expiresAt: value.expiresAt, verifiedAt: Number(value.verifiedAt) || 0,
+                ...(value.binding === 'account' || value.binding === 'device' ? { binding: value.binding } : {}) };
         } catch {
             return null;
         }
@@ -184,15 +194,44 @@
     }
 
     function clearStoredReserve() {
-        for (const key of [ENTITLEMENT_STORAGE, STORAGE_KEY, KEY_STORAGE, PLAN_STORAGE, EXPIRES_STORAGE]) {
+        for (const key of [ENTITLEMENT_STORAGE, DEVICE_ENTITLEMENT_STORAGE, STORAGE_KEY, KEY_STORAGE, PLAN_STORAGE, EXPIRES_STORAGE, LEGACY_GRACE_STORAGE]) {
             try { root.localStorage.removeItem(key); } catch {}
         }
     }
 
-    // Only a server-confirmed entitlement counts; legacy flags, backups and local registries do not.
+    // Legacy flags within their grace period (started by the first verification attempt).
+    function legacyGrace() {
+        const key = readLegacyKey();
+        if (!key || !validateLicenseKey(key)) return null;
+        let since = 0, plan = '', expiresAt = 0;
+        try {
+            since = Number(root.localStorage.getItem(LEGACY_GRACE_STORAGE)) || 0;
+            plan = root.localStorage.getItem(PLAN_STORAGE) || '';
+            expiresAt = Number(root.localStorage.getItem(EXPIRES_STORAGE)) || 0;
+        } catch { return null; }
+        const now = Date.now();
+        if (!since || since > now || now - since >= LEGACY_GRACE_MS) return null;
+        if (!['monthly', 'annual', 'lifetime'].includes(plan)) plan = getPlanFromKey(key);
+        if (plan === 'lifetime') expiresAt = 0;
+        if (expiresAt > 0 && now >= expiresAt) return null;
+        return { key, plan, expiresAt, graceUntil: since + LEGACY_GRACE_MS };
+    }
+    function startLegacyGrace() {
+        try { if (!root.localStorage.getItem(LEGACY_GRACE_STORAGE)) root.localStorage.setItem(LEGACY_GRACE_STORAGE, String(Date.now())); } catch {}
+    }
+
+    // Only a server-confirmed entitlement counts; backups and local registries do not. Legacy flags
+    // count only during their grace period (see legacyGrace), marked with grace: true.
     function getSubscriptionInfo() {
         const entitlement = readEntitlement();
-        if (!entitlement) return { active: false, expired: false, plan: null, key: null, expiresAt: 0, daysLeft: null };
+        if (!entitlement) {
+            const grace = legacyGrace();
+            if (grace) {
+                const daysLeft = grace.expiresAt > 0 ? Math.max(0, Math.ceil((grace.expiresAt - Date.now()) / 86400000)) : null;
+                return { active: true, expired: false, plan: grace.plan, key: grace.key, expiresAt: grace.expiresAt, daysLeft, grace: true, graceUntil: grace.graceUntil };
+            }
+            return { active: false, expired: false, plan: null, key: null, expiresAt: 0, daysLeft: null };
+        }
         const { key, plan, expiresAt } = entitlement;
         if (expiresAt > 0 && Date.now() >= expiresAt) {
             return { active: false, expired: true, plan, key, expiresAt, daysLeft: 0 };
@@ -233,21 +272,38 @@
 
     // Stores a subscription that came from the license/account server. Returns false if invalid
     // or if it cannot be persisted (then nothing is granted).
-    function acceptServerSubscription(subscription) {
+    function acceptServerSubscription(subscription, options = {}) {
         if (!subscription || typeof subscription.key !== 'string' || !validateLicenseKey(subscription.key)) return false;
         const { plan, expiresAt } = subscription;
         if (!isValidSubscription(plan, expiresAt) || (expiresAt > 0 && expiresAt <= Date.now())) return false;
+        const key = subscription.key.trim().toUpperCase();
+        const previous = readEntitlement();
+        // Same key re-confirmed without new information keeps what we already know about its binding.
+        const binding = options.binding === 'account' || options.binding === 'device' ? options.binding
+            : (previous && previous.key === key ? previous.binding : undefined);
         try {
+            // An account's Reserve must not erase a different key bound to this device: set it aside.
+            if (binding === 'account' && previous && previous.key !== key && previous.binding === 'device') {
+                root.localStorage.setItem(DEVICE_ENTITLEMENT_STORAGE, JSON.stringify(previous));
+            }
             root.localStorage.setItem(ENTITLEMENT_STORAGE, JSON.stringify({
-                key: subscription.key.trim().toUpperCase(), plan, expiresAt, verifiedAt: Date.now()
+                key, plan, expiresAt, verifiedAt: Date.now(), ...(binding ? { binding } : {})
             }));
-            for (const key of [STORAGE_KEY, KEY_STORAGE, PLAN_STORAGE, EXPIRES_STORAGE]) root.localStorage.removeItem(key);
+            for (const key of [STORAGE_KEY, KEY_STORAGE, PLAN_STORAGE, EXPIRES_STORAGE, LEGACY_GRACE_STORAGE]) root.localStorage.removeItem(key);
         } catch {
             try { root.localStorage.removeItem(ENTITLEMENT_STORAGE); } catch {}
             return false;
         }
         applyReserveUI();
         return isReserveActive();
+    }
+
+    // Without a session the server only accepts a key bound to this device. With a session a new
+    // claim binds to the account, but a "restored" answer may be either binding.
+    function claimBinding(withAccount, data) {
+        if (data && (data.boundTo === 'account' || data.boundTo === 'device')) return data.boundTo;
+        if (!withAccount) return 'device';
+        return data && data.restored ? undefined : 'account';
     }
 
     // One claim request. Resolves to {status:'ok', data} | {status:'rejected', data} | {status:'retry', reason}.
@@ -257,6 +313,7 @@
         const token = auth && typeof auth.getSessionToken === 'function' ? auth.getSessionToken() : '';
         // A Google profile without a live session would silently bind the key to this device instead of the account.
         if (user && user.provider === 'google' && !token) return { status: 'retry', session: true };
+        const withAccount = Boolean(token);
         const deviceId = auth && typeof auth.getDeviceId === 'function' ? auth.getDeviceId() : getLocalDeviceId();
         const controller = typeof AbortController === 'function' ? new AbortController() : null;
         const timeout = controller ? setTimeout(() => controller.abort(), 65000) : null;
@@ -270,10 +327,12 @@
             // Render can answer a cold start with an HTML error page; never let that surface as a network error.
             let data = {};
             try { data = await resp.json(); } catch { data = {}; }
-            if (resp.ok && data && data.success === true) return { status: 'ok', data };
+            if (resp.ok && data && data.success === true) return { status: 'ok', data, binding: claimBinding(withAccount, data) };
+            // Only the server's explicit rejection codes remove a key; any other 409 (conflict,
+            // proxy or deployment error) is retried like a network failure.
             const explicit = (resp.status === 400 || resp.status === 409 || resp.status === 410) &&
                 data && REJECTION_CODES.includes(data.code);
-            return { status: explicit || resp.status === 409 ? 'rejected' : 'retry', data, httpStatus: resp.status };
+            return { status: explicit ? 'rejected' : 'retry', data, httpStatus: resp.status };
         } catch {
             return { status: 'retry' };
         } finally {
@@ -302,7 +361,7 @@
         }
         if (result.status === 'ok') {
             const { plan, expiresAt } = result.data;
-            if (acceptServerSubscription({ key: cleanKey, plan, expiresAt })) {
+            if (acceptServerSubscription({ key: cleanKey, plan, expiresAt }, { binding: result.binding })) {
                 return { success: true, plan, expiresAt, message: result.data.message };
             }
             return { success: false, reason: isEn
@@ -340,13 +399,14 @@
         const key = entitlement ? entitlement.key : readLegacyKey();
         if (!key) return Promise.resolve({ status: 'none' });
         if (entitlement && !options.force && Date.now() - entitlement.verifiedAt < REVALIDATE_MS) return Promise.resolve({ status: 'fresh' });
+        if (!entitlement) { startLegacyGrace(); applyReserveUI(); }
         if (root.navigator && root.navigator.onLine === false) return Promise.resolve({ status: 'offline' });
         const generation = entitlementGeneration;
         const owner = ownerScope();
         revalidating = requestClaim(key).then(result => {
             if (generation !== entitlementGeneration || owner !== ownerScope()) return { status: 'stale' };
             if (result.status === 'ok') {
-                acceptServerSubscription({ key, plan: result.data.plan, expiresAt: result.data.expiresAt });
+                acceptServerSubscription({ key, plan: result.data.plan, expiresAt: result.data.expiresAt }, { binding: result.binding });
                 return { status: 'confirmed' };
             }
             if (result.status === 'rejected') {
@@ -355,9 +415,31 @@
                 applyReserveUI();
                 return { status: 'removed', code: result.data && result.data.code };
             }
-            return { status: 'kept' };
+            return { status: 'kept', session: Boolean(result.session) };
         }).finally(() => { revalidating = null; });
         return revalidating;
+    }
+
+    // Called by auth.js after sign-out (the account is already cleared). Account-bound Reserve is
+    // removed (a device-bound key set aside for it comes back); device-bound Reserve stays; an
+    // entitlement of unknown binding is re-checked with the server as this device and, until that
+    // succeeds, marked as due for re-checking.
+    function releaseAccountEntitlement() {
+        entitlementGeneration++;
+        const entitlement = readEntitlement();
+        let parked = null;
+        try { parked = JSON.parse(root.localStorage.getItem(DEVICE_ENTITLEMENT_STORAGE) || 'null'); } catch {}
+        try { root.localStorage.removeItem(DEVICE_ENTITLEMENT_STORAGE); } catch {}
+        if (entitlement && entitlement.binding === 'account') {
+            try { root.localStorage.removeItem(ENTITLEMENT_STORAGE); } catch {}
+            if (parked && typeof parked.key === 'string' && validateLicenseKey(parked.key) && isValidSubscription(parked.plan, parked.expiresAt)) {
+                try { root.localStorage.setItem(ENTITLEMENT_STORAGE, JSON.stringify({ ...parked, binding: 'device', verifiedAt: 0 })); } catch {}
+            }
+        } else if (entitlement && !entitlement.binding) {
+            try { root.localStorage.setItem(ENTITLEMENT_STORAGE, JSON.stringify({ ...entitlement, verifiedAt: 0 })); } catch {}
+            revalidate({ force: true }).catch(() => {});
+        }
+        applyReserveUI();
     }
 
     function deactivateReserve(reload = true) {
@@ -409,6 +491,30 @@
         if (checkoutLabel) checkoutLabel.textContent = config.checkoutLabel;
     }
 
+    // A gentle, once-per-session hint when earlier Reserve cannot be verified (offline/signed out).
+    function verificationNotice(info, isEn) {
+        if (info.grace) {
+            const days = Math.max(1, Math.ceil((info.graceUntil - Date.now()) / 86400000));
+            return isEn
+                ? `We could not verify your Reserve yet. Connect to the internet (and sign in with Google if you linked it to your account) within ${days} days to keep it.`
+                : `Reserve üyeliğini henüz doğrulayamadık. Korumak için ${days} gün içinde internete bağlan (hesabına bağladıysan Google ile giriş yap).`;
+        }
+        if (!info.active && readLegacyKey() && !readEntitlement()) {
+            return isEn
+                ? 'Your earlier Reserve could not be verified. Connect to the internet or sign in with Google to restore it.'
+                : 'Önceki Reserve üyeliğin doğrulanamadı. Geri yüklemek için internete bağlan ya da Google ile giriş yap.';
+        }
+        return '';
+    }
+    function showVerificationNotice(message) {
+        if (!message) return;
+        try {
+            if (root.sessionStorage && root.sessionStorage.getItem('barcepte_reserve_notice') === message) return;
+            if (root.sessionStorage) root.sessionStorage.setItem('barcepte_reserve_notice', message);
+        } catch {}
+        if (typeof root.showToast === 'function') { try { root.showToast(message, 'info'); } catch {} }
+    }
+
     function applyReserveUI() {
         if (root.AndroidBridge && typeof root.AndroidBridge.setReserveActive === 'function') {
             try { root.AndroidBridge.setReserveActive(isReserveActive()); } catch {}
@@ -416,6 +522,10 @@
         if (typeof document === 'undefined') return;
         const active = isReserveActive();
         const isEn = getCurrentLang() === 'en';
+        const notice = verificationNotice(getSubscriptionInfo(), isEn);
+        showVerificationNotice(notice);
+        const msgEl = document.getElementById('reserve-key-msg');
+        if (msgEl && notice && !msgEl.textContent) { msgEl.textContent = notice; msgEl.className = 'text-xs text-amber-300 font-medium'; }
         
         // Reklam alanlarını ve sponsor kartlarını gizle / göster
         const adSlots = document.querySelectorAll('.ad-slot-container');
@@ -455,7 +565,7 @@
                 reserveBtnLabel.textContent = 'Reserve';
                 reserveBtn.classList.remove('border-amber-400', 'bg-amber-500/20');
             }
-            reserveBtn.title = isEn ? 'Pocket Bar Reserve — Ad-free experience' : 'Bar Cepte Reserve — Reklamsız deneyim';
+            reserveBtn.title = isEn ? 'Pocket Bar Reserve — Ad-free app experience' : 'Bar Cepte Reserve — Uygulamada reklamsız deneyim';
         }
 
         // Modal başlık & üst rozet
@@ -472,8 +582,8 @@
         const reserveDesc = document.querySelector('#reserve-modal .space-y-1 p');
         if (reserveDesc) {
             reserveDesc.innerText = isEn
-                ? 'Use Pocket Bar without ads, unlock the party planner and support its independent development.'
-                : 'Bar Cepte\'yi reklamsız kullan, parti planlayıcısını aç ve bağımsız gelişimine destek ol.';
+                ? 'Use the Pocket Bar app without ads, unlock the party planner and support its independent development.'
+                : 'Bar Cepte uygulamasını reklamsız kullan, parti planlayıcısını aç ve bağımsız gelişimine destek ol.';
         }
 
         // Avantajlar listesi (4 Bullets)
@@ -481,8 +591,8 @@
         if (reserveBullets.length >= 4) {
             // Only benefits the code actually delivers (see applyReserveUI and the Android bridge).
             reserveBullets[0].innerHTML = isEn
-                ? '<strong>Ad-free experience:</strong> No ad slots on the web, no banner or interstitial ads in the Android app; the affiliate banner is hidden too.'
-                : "<strong>Reklamsız deneyim:</strong> Web'de reklam alanları, Android uygulamasında banner ve geçiş reklamları gösterilmez; satış ortaklığı bandı da gizlenir.";
+                ? '<strong>Ad-free in the app:</strong> No ad slots, banners or interstitials in the web app and the Android app; the affiliate banner is hidden too. Ads may still appear on recipe and guide content pages.'
+                : "<strong>Uygulama içinde reklamsız:</strong> Web uygulamasında ve Android uygulamasında reklam alanları, banner ve geçiş reklamları gösterilmez; satış ortaklığı bandı da gizlenir. Tarif ve rehber içerik sayfalarında reklam görünebilir.";
             reserveBullets[1].innerHTML = isEn
                 ? '<strong>Party planner:</strong> Total ingredients (cl), bottle counts and missing items added to your shopping list for 10–50 guests.'
                 : '<strong>Parti planlayıcısı:</strong> 10–50 misafir için toplam malzeme (cl), şişe sayısı ve eksiklerin alışveriş listesine eklenmesi.';
@@ -543,9 +653,9 @@
                 const durationEl = document.getElementById('reserve-active-duration');
                 const activeDesc = document.querySelector('#reserve-status-active p.text-xs');
                 if (activeDesc) {
-                    activeDesc.innerText = isEn
-                        ? 'The ad-free experience and your Reserve badge are active on this device.'
-                        : 'Reklamsız deneyim ve Reserve rozetin bu cihazda devrede.';
+                    activeDesc.innerText = notice || (isEn
+                        ? 'The ad-free app experience and your Reserve badge are active on this device.'
+                        : 'Uygulama içi reklamsız deneyim ve Reserve rozetin bu cihazda devrede.');
                 }
                 const activeNote = document.querySelector('#reserve-status-active .bg-white\\/5');
                 if (activeNote) {
@@ -754,6 +864,7 @@
         acceptServerSubscription,
         revalidate,
         deactivateReserve,
+        releaseAccountEntitlement,
         validateLicenseKey,
         checksum,
         getSubscriptionInfo,

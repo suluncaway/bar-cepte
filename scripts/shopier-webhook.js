@@ -18,8 +18,8 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { timingSafeEqual } = require('crypto');
-const { generateKey, isValidKeyFormat } = require('./generate-keys');
-const { clientIp, createWindowLimiter, createFailureBackoff, createDailyCap, positiveInt } = require('./rate-limit');
+const { generateKey, isValidKeyFormat, isLegacyKey } = require('./generate-keys');
+const { clientIp, trustProxyHops, createWindowLimiter, createFailureBackoff, createDailyCap, positiveInt } = require('./rate-limit');
 
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
@@ -60,8 +60,12 @@ const LIMITS = {
     authPerIp: positiveInt(process.env.AUTH_RATE_LIMIT_PER_IP, 30),
     authGlobal: positiveInt(process.env.AUTH_RATE_LIMIT_GLOBAL, 3000),
     aiPerIp: 12,
-    aiDaily: positiveInt(process.env.AI_DAILY_REQUEST_LIMIT, 300)
+    aiDaily: positiveInt(process.env.AI_DAILY_REQUEST_LIMIT, 300),
+    // Hard cap on addresses held by each in-memory limiter (oldest dropped first).
+    maxKeys: positiveInt(process.env.RATE_LIMIT_MAX_KEYS, 100000)
 };
+// Minimum response time for rejected claims, so unknown and someone else's keys look the same.
+const CLAIM_REJECTION_FLOOR_MS = 250;
 
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
@@ -278,23 +282,36 @@ function json(res, status, value, headers = {}) {
     res.end(JSON.stringify(value));
 }
 
-// options.store / options.now / options.limits / options.verifyGoogle / options.aiAssistant are for tests and tools.
+// options.store / options.now / options.limits / options.verifyGoogle / options.aiAssistant /
+// options.trustProxyHops / options.rejectionFloorMs are for tests and tools.
 function createServer(options = {}) {
     const licenseStore = options.store || defaultLicenseStore;
     const now = options.now || Date.now;
     const limits = {...LIMITS, ...(options.limits || {})};
+    const hops = options.trustProxyHops ?? trustProxyHops();
+    const ipOf = req => clientIp(req, hops);
+    const rejectionFloorMs = options.rejectionFloorMs ?? CLAIM_REJECTION_FLOOR_MS;
     const accounts = createAccountService({store: licenseStore, clock: now,
         verifyGoogle: options.verifyGoogle || createGoogleVerifier({clientId: googleClientId})});
     const businesses = require('./business-service').createBusinessService({store: licenseStore, authenticate: accounts.authenticate});
     const aiAssistant = options.aiAssistant || createAIAssistant();
     const orderFulfillment = options.store ? createFulfillmentService({store: licenseStore, products: PRODUCT_PLANS, generateKey, sendEmail, now}) : fulfillment;
-    const aiLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.aiPerIp, now});
+    const maxKeys = limits.maxKeys;
+    const aiLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.aiPerIp, now, maxKeys});
     const aiDailyCap = createDailyCap({limit: limits.aiDaily, now});
-    const metricsLimiter = createWindowLimiter({windowMs: HOUR, perKey: 60, now});
+    const metricsLimiter = createWindowLimiter({windowMs: HOUR, perKey: 60, now, maxKeys});
     // Claim and check share one budget: both accept a guessed key.
-    const licenseLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.licensePerIp, global: limits.licenseGlobal, now});
-    const licenseBackoff = createFailureBackoff({now});
-    const authLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.authPerIp, global: limits.authGlobal, now});
+    const licenseLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.licensePerIp, global: limits.licenseGlobal, now, maxKeys});
+    const licenseBackoff = createFailureBackoff({now, maxKeys});
+    const authLimiter = createWindowLimiter({windowMs: HOUR, perKey: limits.authPerIp, global: limits.authGlobal, now, maxKeys});
+    const limiters = {ai: aiLimiter, metrics: metricsLimiter, license: licenseLimiter, backoff: licenseBackoff, auth: authLimiter};
+
+    // Pads a rejected claim to a fixed minimum duration (wall clock, not the injectable test clock).
+    async function rejectClaim(res, startedAt, status, body) {
+        const wait = rejectionFloorMs - (Date.now() - startedAt);
+        if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+        return json(res, status, body);
+    }
     const getSoldLicenses = () => licenseStore.getSold();
     const getClaimedLicenses = () => licenseStore.getClaimed();
     const saveSoldLicense = record => licenseStore.saveSold(record);
@@ -328,7 +345,7 @@ async function handleRequest(req, res) {
 
     const requestPath = new URL(req.url, 'http://localhost').pathname;
     if (requestPath === '/api/auth/google' && req.method === 'POST') {
-        const allowed = authLimiter.take(clientIp(req));
+        const allowed = authLimiter.take(ipOf(req));
         if (!allowed.ok) return json(res, 429, {success: false, reason: 'Çok fazla giriş denemesi. Lütfen biraz sonra tekrar deneyiniz.'}, {'Retry-After': String(allowed.retryAfter || 60)});
     }
     if(await accounts.handle(req,res,requestPath,readJsonBody)) return;
@@ -359,7 +376,7 @@ async function handleRequest(req, res) {
 
     // Anonymous usage counters: only allow-listed event names and counts, nothing that identifies a person.
     if (req.method === 'POST' && requestPath === '/api/metrics') {
-        if (!metricsLimiter.take(clientIp(req)).ok) {
+        if (!metricsLimiter.take(ipOf(req)).ok) {
             res.writeHead(429); return res.end();
         }
         try {
@@ -385,7 +402,7 @@ async function handleRequest(req, res) {
 
     // AI kokteyl asistanı: anahtar yalnızca sunucuda tutulur; istekler IP başına sınırlandırılır.
     if (req.method === 'POST' && requestPath === '/api/ai-assistant') {
-        if (!aiLimiter.take(clientIp(req)).ok) {
+        if (!aiLimiter.take(ipOf(req)).ok) {
             return json(res, 429, {success:false,reason:'Saatlik AI kullanım sınırına ulaştın. Bir saat sonra tekrar dene.'});
         }
         // Global daily ceiling protects the paid AI budget from distributed abuse.
@@ -486,8 +503,14 @@ async function handleRequest(req, res) {
     // Merkezi Lisans Kullanma / Mühürleme Endpoint'i (Single-Use Anti-Reuse Enforcement)
     // Failure responses carry a machine-readable `code`; clients drop a stored entitlement only for
     // not_issued / claimed_elsewhere / expired / revoked / invalid_format, never for 429/5xx/network errors.
+    // - Anonymous callers get one answer (400 not_issued, same backoff and minimum delay) for unknown
+    //   keys, keys bound to someone else and revoked keys they do not own.
+    // - Legacy short keys (~20 random bits, guessable) are only restored for their sealed owner or
+    //   first claimed by the signed-in Google account whose verified e-mail is the sale's buyer e-mail;
+    //   everyone else gets 403 legacy_requires_account (whether or not the key exists).
     if (req.method === 'POST' && requestPath === '/api/claim-license') {
-        const ip = clientIp(req);
+        const startedAt = Date.now();
+        const ip = ipOf(req);
         if (!admitLicenseRequest(req, res, ip)) return;
         try {
             let params;
@@ -514,6 +537,7 @@ async function handleRequest(req, res) {
             }
             if (!uid && !deviceId) return json(res, 400, {success: false, reason: 'Kullanıcı veya cihaz kimliği gerekli.'});
 
+            const legacy = isLegacyKey(cleanKey);
             const time = now();
             const proposedPlan = cleanKey.includes('-MTH1-') ? 'monthly' :
                 /-(ANN1|YIL1)-/.test(cleanKey) ? 'annual' : 'lifetime';
@@ -521,20 +545,31 @@ async function handleRequest(req, res) {
             const proposed = {key: cleanKey, plan: proposedPlan, duration: proposedDuration,
                 claimedAt: time, expiresAt: proposedDuration ? time + proposedDuration : 0,
                 uid, email, deviceId};
-            const result = await licenseStore.claim(cleanKey, proposed);
-            if (!result.issued) {
-                licenseBackoff.fail(ip);
-                return json(res, 400, {success: false, code: 'not_issued', reason: 'Bu lisans sunucu tarafından verilmemiş.'});
-            }
+            const result = await licenseStore.claim(cleanKey, proposed, legacy ? {requireBuyer: true} : undefined);
             const existing = result.existing;
             const isOwner = Boolean(existing) && !existing.needsReview && (existing.uid ? uid===existing.uid : Boolean(deviceId && existing.deviceId===deviceId));
+            if (legacy && !isOwner && !result.buyerMatch) {
+                licenseBackoff.fail(ip);
+                return rejectClaim(res, startedAt, 403, {success: false, code: 'legacy_requires_account',
+                    reason: 'Bu eski biçimli kod yalnızca satın alırken kullandığın Google hesabıyla giriş yapılarak etkinleştirilebilir. Giriş yap ya da destekle iletişime geç.'});
+            }
+            const foreign = !result.issued || (existing && !isOwner) || (result.revoked && !existing);
+            if (foreign && !uid) {
+                licenseBackoff.fail(ip);
+                return rejectClaim(res, startedAt, 400, {success: false, code: 'not_issued',
+                    reason: '❌ Bu kod bu cihazda etkinleştirilemedi: kod tanınmadı ya da başka bir hesapta/cihazda kullanılıyor. Satın alırken kullandığın Google hesabıyla giriş yapıp tekrar dene.'});
+            }
+            if (!result.issued) {
+                licenseBackoff.fail(ip);
+                return rejectClaim(res, startedAt, 400, {success: false, code: 'not_issued', reason: 'Bu lisans sunucu tarafından verilmemiş.'});
+            }
             if (result.revoked && (!existing || isOwner)) {
                 return json(res, 410, {success: false, code: 'revoked', reason: 'Bu lisans, siparişin iadesi veya iptali nedeniyle geçersiz kılındı.'});
             }
             if (existing) {
                 if (!isOwner) {
                     licenseBackoff.fail(ip);
-                    return json(res, 409, {success: false, code: 'claimed_elsewhere',
+                    return rejectClaim(res, startedAt, 409, {success: false, code: 'claimed_elsewhere',
                         reason: '❌ Bu lisans anahtarı daha önce başka bir kullanıcı/cihaz tarafından kullanılmış! Lisanslar tek kullanımlıktır.'});
                 }
                 if (existing.expiresAt > 0 && time > existing.expiresAt) {
@@ -544,6 +579,12 @@ async function handleRequest(req, res) {
                 licenseBackoff.succeed(ip);
                 return json(res, 200, {success: true, plan: existing.plan, expiresAt: existing.expiresAt, restored: true,
                     message: 'Aboneliğiniz bu cihazda doğrulandı.'});
+            }
+            if (!result.record) {
+                // Defensive: a store that neither created nor found a claim.
+                licenseBackoff.fail(ip);
+                return rejectClaim(res, startedAt, 403, {success: false, code: 'legacy_requires_account',
+                    reason: 'Bu kod yalnızca satın alırken kullandığın Google hesabıyla giriş yapılarak etkinleştirilebilir.'});
             }
             licenseBackoff.succeed(ip);
             const {plan, expiresAt} = result.record;
@@ -558,7 +599,7 @@ async function handleRequest(req, res) {
     // Unknown, unclaimed and someone else's keys all get the same answer, so the endpoint cannot be
     // used to find issued-but-unused keys.
     if (req.method === 'POST' && requestPath === '/api/check-license') {
-        const ip = clientIp(req);
+        const ip = ipOf(req);
         if (!admitLicenseRequest(req, res, ip)) return;
         try {
             let params;
@@ -754,7 +795,7 @@ async function handleRequest(req, res) {
                 return res.end(JSON.stringify({success:false,reason:'Order ID required'}));
             }
             const result = await orderFulfillment.fulfill(await shopier.getOrder(String(orderId)));
-            const ok = ['delivered','already_processed','delivery_pending','revoked','already_revoked'].includes(result.status);
+            const ok = ['delivered','already_processed','delivery_pending','revoked','already_revoked','refund_needs_review'].includes(result.status);
             res.writeHead(ok?200:422, {'Content-Type':'application/json'});
             return res.end(JSON.stringify({success:ok,status:result.status}));
         } catch {
@@ -823,12 +864,16 @@ async function handleRequest(req, res) {
     res.writeHead(404);
     res.end('Bulunamadı');
 }
-    return http.createServer((req, res) => {
+    const server = http.createServer((req, res) => {
         handleRequest(req, res).catch(() => {
             if (!res.headersSent) res.writeHead(503, {'Content-Type': 'application/json'});
             res.end(JSON.stringify({success: false, reason: 'Veritabanına ulaşılamıyor. Tekrar deneyiniz.'}));
         });
     });
+    // Exposed for tests and diagnostics; the limiter sweep timers are unref'd and stop on close.
+    server.limiters = limiters;
+    server.on('close', () => {for (const limiter of Object.values(limiters)) limiter.stop();});
+    return server;
 }
 const server = createServer();
 

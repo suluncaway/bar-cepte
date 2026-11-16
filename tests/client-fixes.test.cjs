@@ -27,17 +27,76 @@ test('ingredient matching rejects product-changing qualifiers and reverse matche
         ['Soda water', 'Water'], ['Dr. Pepper', 'Pepper'], ['Coconut milk', 'Milk'], ['Sloe gin', 'Gin'],
         ['Ginger ale', 'Gin'], ['Lime vodka', 'Lime'], ['Orange bitters', 'Orange'], ['Orange Curacao', 'Orange'],
         ['Cherry brandy', 'Cherry'], ['Sugar syrup', 'Sugar'], ['Irish cream', 'Cream'], ['Lemon-lime soda', 'Lemon'],
-        // reverse direction: having soda water does not mean the recipe's plain "Water" is covered
-        ['Water', 'Soda Water'], ['Lime', 'Lime Juice'], ['Rum', 'Dark rum']
+        // reverse direction: a more specific bar item only covers the generic recipe ingredient when the
+        // extra words merely narrow the same product. Soda water is not "Water", lime vodka is not "Lime".
+        ['Water', 'Soda Water'], ['Water', 'Tonic water'], ['Lime', 'Lime vodka'], ['Rum', 'Malibu rum'],
+        ['Rum', '151 proof rum'], ['Cream', 'Irish cream'], ['Cream', 'Whipped cream'], ['Vodka', 'Lime vodka'],
+        ['Egg', 'Egg White'], ['Egg', 'Egg yolk'], ['Lime', 'Lime peel'], ['Sugar syrup', 'Sugar']
     ];
     for (const [recipe, user] of wrong) assert.equal(match(recipe, user), false, `${user} must not satisfy ${recipe}`);
     const right = [
         ['Lime juice', 'Lime'], ['Fresh Lime Juice', 'Lime Juice'], ['Dark rum', 'Rum'], ['Light rum', 'Rum'],
         ['Lemon peel', 'Lemon'], ['Egg white', 'Egg White'], ['Heavy cream', 'Cream'], ['Angostura bitters', 'Bitters'],
         ['Ice', 'Ice'], ['Ice', 'Buz'], ['Gin', 'Gin'], ['Club soda', 'Soda Water'], ['Irish whiskey', 'Whiskey'],
-        ['50 ml Votka', 'Vodka'], ['4,5 cl Votka', 'Vodka'], ['25 ml Limon Suyu', 'Lemon Juice']
+        ['50 ml Votka', 'Vodka'], ['4,5 cl Votka', 'Vodka'], ['25 ml Limon Suyu', 'Lemon Juice'],
+        // reverse direction (previously locked as false by mistake): the specific bar item covers the generic one
+        ['Lime', 'Lime Juice'], ['Rum', 'Dark rum']
     ];
     for (const [recipe, user] of right) assert.equal(match(recipe, user), true, `${user} should satisfy ${recipe}`);
+});
+
+// Two-way table: [recipe ingredient, bar ingredient, generic-in-bar satisfies specific recipe?,
+// specific-in-bar satisfies generic recipe?]. Each row is checked in both directions so a change to
+// either rule shows up here. Egg White/Egg yolk deliberately do not cover a whole "Egg" (flips and
+// eggnog need both parts); a whole egg does cover "Egg white". "Sugar syrup" covers "Sugar" (it is
+// dissolved anyway), plain sugar does not count as syrup (that is offered as a substitute instead).
+test('ingredient matching table: narrower bar items cover generic recipe ingredients, not the reverse of product changes', () => {
+    const { checkIngredientMatch: match } = matcher;
+    const rows = [
+        // generic, specific, match(specific recipe, generic bar), match(generic recipe, specific bar)
+        ['Rum', 'Light rum', true, true], ['Rum', 'Dark rum', true, true], ['Rum', 'White rum', true, true],
+        ['Rum', 'Spiced rum', true, true], ['Rum', 'Añejo rum', true, true], ['Rum', 'Gold rum', true, true],
+        ['Whiskey', 'Irish whiskey', true, true], ['Whiskey', 'Blended whiskey', true, true],
+        ['Vermouth', 'Sweet Vermouth', true, true], ['Vermouth', 'Dry Vermouth', true, true],
+        ['Vodka', 'Absolut Vodka', true, true], ['Cream', 'Heavy cream', true, true],
+        ['Lemon juice', 'Fresh Lemon Juice', true, true], ['Lime', 'Lime Juice', true, true],
+        ['Sugar', 'Sugar syrup', false, true], ['Egg', 'Egg White', true, false], ['Egg', 'Egg yolk', true, false],
+        ['Beer', 'Ginger beer', false, false], ['Coffee', 'Coffee liqueur', false, false],
+        ['Lemon', 'Bacardi Limon', false, false], ['Ice', 'Vanilla ice-cream', false, false],
+        ['Water', 'Tonic water', false, false], ['Pepper', 'Dr. Pepper', false, false],
+        ['Milk', 'Coconut milk', false, false], ['Gin', 'Sloe gin', false, false],
+        ['Orange', 'Orange curacao', false, false], ['Orange', 'Orange bitters', false, false],
+        ['Mint', 'Mint syrup', false, false], ['Lime', 'Lime vodka', false, false],
+        ['Cream', 'Irish cream', false, false], ['Rum', 'Malibu rum', false, false]
+    ];
+    for (const [generic, specific, forward, reverse] of rows) {
+        assert.equal(match(specific, generic), forward, `bar "${generic}" for recipe "${specific}"`);
+        assert.equal(match(generic, specific), reverse, `bar "${specific}" for recipe "${generic}"`);
+    }
+    // Turkish custom recipes: the bar item's Turkish name narrows the same product.
+    const trMatch = new Function(`${baseIngredients}
+let popularIngredients = [...baseIngredients, { id: 'Light rum', name: 'Açık Rom', nameEn: 'Light rum' },
+    { id: 'Heavy cream', name: 'Koyu Krema', nameEn: 'Heavy cream' }, { id: 'Malibu rum', name: 'Hindistan Cevizi Romu', nameEn: 'Malibu rum' }];
+${matchBlock}
+return checkIngredientMatch;`)();
+    assert.equal(trMatch('50 ml Rom', 'Light rum'), true);
+    assert.equal(trMatch('100 ml Krema', 'Heavy cream'), true);
+    assert.equal(trMatch('50 ml Rom', 'Malibu rum'), false);
+    assert.equal(trMatch('2 cl Misket Limonu', 'Lime Juice'), true);
+    assert.equal(trMatch('2 cl Limon', 'Lime Juice'), false, 'lime juice is not lemon');
+});
+
+test('Mojito bar (Light rum, Lime Juice, Sugar syrup, Mint, Soda Water) makes Mojito and Frozen Mint Daiquiri', () => {
+    const { checkIngredientMatch: match } = matcher;
+    const drinks = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'cocktails.json'), 'utf8'));
+    const bar = ['Light rum', 'Lime Juice', 'Sugar syrup', 'Mint', 'Soda Water'];
+    const ready = drinks.filter(d => {
+        const reqs = [];
+        for (let i = 1; i <= 15; i++) if (d[`strIngredient${i}`]) reqs.push(d[`strIngredient${i}`]);
+        return reqs.length && reqs.every(r => bar.some(s => match(r, s)));
+    }).map(d => d.strDrink).sort();
+    // The pre-rewrite matcher showed exactly these two; the rewrite must not show fewer.
+    assert.deepEqual(ready, ['Frozen Mint Daiquiri', 'Mojito']);
 });
 
 test('Rum + Beer no longer makes Dark and Stormy ready (ginger beer missing)', () => {

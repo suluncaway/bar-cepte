@@ -26,7 +26,7 @@
 - 🧠 **Akıllı Bar Motoru:** Evindeki malzemeleri seç, anında yapabileceğin kokteylleri listele.
 - ✦ **AI Barmen:** Bar envanterini ve tarif arşivini dikkate alan sohbet asistanı; yeni kokteyl oluşturma, tarifleri kişisel deftere kaydetme ve eksik malzemeleri alışveriş listesine ekleme.
 - 💡 **"Bunu Alırsan +X Tarif":** En az harcamayla en çok kokteyli açacak malzeme önerileri.
-- 👑 **Bar Cepte Reserve:** Reklamsız deneyim, özel speakeasy seçkileri ve parti modu.
+- 👑 **Bar Cepte Reserve:** Uygulama içinde (web uygulaması ve Android) reklamsız kullanım, parti planlayıcısı ve Reserve rozeti. Tarif/rehber içerik sayfalarında reklam görünebilir. Aylık (30 gün) ve yıllık (365 gün) geçişler tek seferlik ödemedir, otomatik yenilenmez.
 - 🍹 **Gelişmiş Filtreler:** Alkollü / alkolsüz, tat profilleri (tatlı, ekşi, sert, ferah).
 - ⏱️ **Barmen Araçları:** Dahili çalkalama / karıştırma sayacı ve ekran açık tutma modu (Wake Lock).
 - ❤️ **Kişisel Bar:** Favori kokteyller, fotoğraflı özel tarif ekleme ve eksik malzeme alışveriş listesi.

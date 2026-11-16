@@ -57,7 +57,7 @@
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <h2 class="text-sm font-bold text-white">2. Cihazında saklanan veriler</h2>
             <p>Barın, favorilerin, özel tariflerin, alışveriş listen, tat tercihlerin, bar stoğun ve son 100 hazırlamana ait değerlendirme ve notların tarayıcının ya da uygulamanın yerel depolamasında (LocalStorage) tutulur. Ayrıca dil ve tema tercihin, rastgele üretilmiş bir cihaz kimliği (lisansı bu cihaza bağlamak için) ve sunucunun onayladığı Reserve durumu saklanır. Google ile giriş yaptığında oturum anahtarı yalnızca açık sekme boyunca (sessionStorage) tutulur.</p>
-            <p>Bu alan şifreli bir kasa değildir; hassas bilgi yazma. Hazırlama geçmişini Barım bölümünden, tüm yerel verileri tarayıcı/uygulama verilerini temizleyerek silebilirsin. Hesaptan çıkış yaptığında listelerin, aynı cihazda yeniden giriş yapabilmen için cihazdaki ayrı bir kopyaya taşınır. Manuel yedek kodu bu verileri içerir; kodu kimseyle paylaşma.</p>
+            <p>Bu alan şifreli bir kasa değildir; hassas bilgi yazma. Hazırlama geçmişini Barım bölümünden, tüm yerel verileri tarayıcı/uygulama verilerini temizleyerek silebilirsin. Hesaptan çıkış yaptığında listelerin, aynı cihazda yeniden giriş yapabilmen için cihazdaki ayrı bir kopyaya taşınır. Manuel yedek kodu bu verileri içerir; kodu kimseyle paylaşma. Android uygulaması verilerini Android/Google cihaz yedeğine dahil etmez; telefon değiştirirken verilerini taşımak için bulut yedeğini veya manuel yedek kodunu kullan.</p>
         </section>
 
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
@@ -98,7 +98,7 @@
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <h2 class="text-sm font-bold text-white">9. Anonim kullanım sayaçları ve güvenlik kayıtları</h2>
             <p>Hangi bölümlerin açıldığı, hangi tariflerin görüntülendiği ve birkaç işlemin kaç kez kullanıldığı günlük toplam sayılar olarak sunucuya gönderilir. Bu sayılar kimliğini, hesabını, cihaz kimliğini, IP adresini, arama metinlerini veya seçtiğin malzemeleri içermez.</p>
-            <p>Kötüye kullanımı önlemek için (ör. lisans kodu tahmin denemeleri, AI ve giriş istek sınırları) IP adresin yalnızca sunucu belleğinde, en fazla 24 saat tutulur ve veritabanına yazılmaz. Barındırma sağlayıcısı kendi altyapısında standart erişim kayıtları tutabilir.</p>
+            <p>Kötüye kullanımı önlemek için (ör. lisans kodu tahmin denemeleri, AI, giriş ve sayaç istek sınırları) IP adresin (IPv6'da yalnızca ilk 64 bitlik öneki) yalnızca sunucu belleğinde tutulur ve veritabanına ya da günlüklere yazılmaz. İstek sınırı kayıtları saatlik pencere bittikten en geç birkaç dakika sonra, hatalı lisans denemesi kayıtları son hatalı denemeden en geç 24 saat sonra otomatik silinir; sunucu yeniden başladığında hepsi silinir. Barındırma sağlayıcısı kendi altyapısında standart erişim kayıtları tutabilir.</p>
         </section>
 
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
@@ -124,7 +124,7 @@
                 <li>Oturumlar: en fazla 30 gün ya da çıkış yapana kadar.</li>
                 <li>Bulut yedeği ve hesap bilgileri: hesabını silene kadar.</li>
                 <li>Satış ve lisans kayıtları: lisans süresi boyunca ve ilgili vergi/ticaret mevzuatının öngördüğü süre kadar.</li>
-                <li>Güvenlik amaçlı IP kayıtları: yalnızca bellekte, en fazla 24 saat.</li>
+                <li>Güvenlik amaçlı IP kayıtları: yalnızca bellekte; istek sınırları için yaklaşık 1 saat, hatalı lisans denemeleri için en fazla 24 saat.</li>
                 <li>Anonim kullanım sayaçları: kişiyle ilişkilendirilemeyen toplam sayılar olarak.</li>
             </ul>
         </section>
@@ -165,7 +165,7 @@
         </section>
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <h2 class="text-sm font-bold text-white">2. Data stored on your device</h2>
-            <p>Your bar, favourites, custom recipes, shopping list, taste preferences, bar stock and the ratings and notes for your last 100 preparations are stored in local storage, together with your language/theme, a random device ID (used to bind a license to this device) and the server-confirmed Reserve status. A Google session token is kept only for the open tab (sessionStorage). Local storage is not an encrypted vault. When you sign out, your lists move to a separate on-device copy so you can sign back in on the same device.</p>
+            <p>Your bar, favourites, custom recipes, shopping list, taste preferences, bar stock and the ratings and notes for your last 100 preparations are stored in local storage, together with your language/theme, a random device ID (used to bind a license to this device) and the server-confirmed Reserve status. A Google session token is kept only for the open tab (sessionStorage). Local storage is not an encrypted vault. When you sign out, your lists move to a separate on-device copy so you can sign back in on the same device. The Android app excludes its data from Android/Google device backup; use cloud backup or a manual backup code to move your data to a new phone.</p>
         </section>
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <h2 class="text-sm font-bold text-white">3. Google sign-in and account</h2>
@@ -194,7 +194,7 @@
         </section>
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <h2 class="text-sm font-bold text-white">9. Anonymous counters and security</h2>
-            <p>Daily totals of sections opened, recipes viewed and a few actions are sent without any identifier, IP address or search text. To prevent abuse (key guessing, AI and sign-in limits) your IP address is kept only in server memory for at most 24 hours and never written to the database. The hosting provider may keep standard access logs.</p>
+            <p>Daily totals of sections opened, recipes viewed and a few actions are sent without any identifier, IP address or search text. To prevent abuse (key guessing, AI, sign-in and counter limits) your IP address (for IPv6 only its first 64 bits) is kept only in server memory and never written to the database or logs. Rate-limit entries are deleted automatically within minutes after their one-hour window ends, failed-key-attempt entries at most 24 hours after the last failed attempt, and all of them when the server restarts. The hosting provider may keep standard access logs.</p>
         </section>
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <h2 class="text-sm font-bold text-white">10. Service providers and international transfers</h2>
@@ -202,7 +202,7 @@
         </section>
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <h2 class="text-sm font-bold text-white">11. Retention</h2>
-            <p>On-device data: until you delete it. Sessions: up to 30 days or until sign-out. Cloud backup and account data: until you delete your account. Sales and license records: for the license term and as long as tax/commercial law requires. Security IP data: in memory, at most 24 hours. Anonymous counters: as aggregate totals.</p>
+            <p>On-device data: until you delete it. Sessions: up to 30 days or until sign-out. Cloud backup and account data: until you delete your account. Sales and license records: for the license term and as long as tax/commercial law requires. Security IP data: in memory only; about 1 hour for rate limits, at most 24 hours for failed key attempts. Anonymous counters: as aggregate totals.</p>
         </section>
         <section class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <h2 class="text-sm font-bold text-white">12. Deleting your account</h2>

@@ -1,7 +1,8 @@
 'use strict';
 
 // node scripts/check-assets.cjs [android/app/build/generated/canonicalWebAssets]
-// With a directory argument, also verify its exact file set and canonical bytes.
+// With a directory argument, also verify that every canonical asset is bundled with canonical bytes
+// and that no other web-root file (html/js/css/json/..., dotfiles) is; dependency files are ignored.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -50,15 +51,25 @@ function checkReferences(projectRoot, names) {
     for (const match of assets[1].matchAll(/['"]([^'"]+)['"]/g)) check(match[1], 'sw.js');
 }
 
+// Root-level names that would be served as part of the web app (or are secrets/dotfiles):
+// any such file in the APK that web-assets.json does not list is an error. Other entries, such as
+// files and directories that dependencies (e.g. the Start.io AAR) merge into assets/, are allowed.
+const WEB_ROOT_FILE = /^\.|\.(?:html?|m?js|cjs|css|json|map|webmanifest|txt|xml|env|pem|key|sqlite|db)$/i;
+
 function checkBundle(projectRoot, bundle, names) {
-    // The canonical list is flat: directories and symlinks are unexpected too.
     const entries = fs.readdirSync(bundle, { withFileTypes: true });
-    assert.deepEqual(entries.map(entry => entry.name).sort(), [...names].sort(),
-        'Bundle has missing or unexpected assets');
-    for (const entry of entries) {
-        assert.ok(entry.isFile(), `Not a regular bundled file: ${entry.name}`);
-        assert.ok(fs.readFileSync(path.join(bundle, entry.name)).equals(
-            fs.readFileSync(path.join(projectRoot, entry.name))), `Stale bundled asset: ${entry.name}`);
+    const present = new Map(entries.map(entry => [entry.name, entry]));
+    const allowed = new Set(names);
+    const missing = names.filter(name => !present.has(name));
+    const unexpected = entries.filter(entry => !allowed.has(entry.name) &&
+        (WEB_ROOT_FILE.test(entry.name) || entry.isSymbolicLink())).map(entry => entry.name);
+    assert.ok(!missing.length && !unexpected.length,
+        `Bundle has missing or unexpected assets: missing [${missing.join(', ')}], unexpected [${unexpected.join(', ')}]`);
+    for (const name of names) {
+        const entry = present.get(name);
+        assert.ok(entry.isFile(), `Not a regular bundled file: ${name}`);
+        assert.ok(fs.readFileSync(path.join(bundle, name)).equals(
+            fs.readFileSync(path.join(projectRoot, name))), `Stale bundled asset: ${name}`);
     }
 }
 
