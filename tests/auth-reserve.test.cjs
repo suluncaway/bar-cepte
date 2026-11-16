@@ -79,8 +79,10 @@ test('server verification activates without a DOM and uses server plan and expir
     assert.equal(options.method, 'POST');
     const payload = JSON.parse(options.body);
     assert.equal(payload.key, app.key);
-    assert.match(payload.deviceId, /^[a-f0-9]{64}$/);
-    assert.equal(`dev_${payload.deviceId}`, app.auth.getDeviceId());
+    // New device IDs carry 256 random bits. The ID is sent verbatim (with its dev_ prefix) because
+    // existing device-bound claims on the server are keyed by the exact string older clients sent.
+    assert.match(payload.deviceId, /^dev_[a-f0-9]{64}$/);
+    assert.equal(payload.deviceId, app.auth.getDeviceId());
     assert.equal('idToken' in payload, false);
     app.advance(86400000);
     assert.equal(app.reserve.isReserveActive(), false);
@@ -140,7 +142,9 @@ test('persisted Google profiles cannot claim without a fresh credential', async 
 
 test('frontend redeems a canonical key through the real local API', async t => {
     const os = require('node:os');
-    const { createStore } = require('../scripts/backend/store');
+    // The production server uses scripts/license-store.js (file store here, PostgreSQL on Render);
+    // scripts/backend/store.js is not wired to any route, so the contract is tested against the real store.
+    const { createFileStore } = require('../scripts/license-store');
     const { createServer } = require('../scripts/shopier-webhook');
     const { execFileSync } = require('node:child_process');
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'bar-cepte-contract-'));
@@ -153,8 +157,9 @@ test('frontend redeems a canonical key through the real local API', async t => {
     execFileSync(process.execPath, ['scripts/generate-keys.js', 'monthly', '1', '--save'], {
         cwd: path.join(__dirname, '..'), env: { ...process.env, LICENSE_DATA_DIR: directory }
     });
-    const store = createStore(directory);
-    const key = store.read().inventory[0].licenseKey;
+    const store = createFileStore(directory);
+    const key = (await store.getSold())[0].licenseKey;
+    assert.match(key, /^RESERVE-MTH1-[A-Z2-9]{26}-[0-9A-F]{4}$/);
     const app = setup();
     server = createServer({ store, now: app.now });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -166,7 +171,7 @@ test('frontend redeems a canonical key through the real local API', async t => {
     assert.equal(app.reserve.getSubscriptionInfo().plan, 'monthly');
     assert.equal(app.reserve.isReserveActive(), true);
     assert.equal((await app.reserve.verifyAndActivateLicense(key)).success, true);
-    assert.equal(Object.keys(store.read().claims).length, 1);
+    assert.equal(Object.keys(await store.getClaimed()).length, 1);
 });
 
 test('storage failure cannot report failed activation while granting entitlement', async () => {

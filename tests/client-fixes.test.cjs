@@ -162,3 +162,90 @@ test('openCocktail opens the card with the requested id, not the first search hi
     assert.deepEqual(clicked, ['Martini']);
     assert.match(src, /card\.dataset\.drinkId = d\.idDrink;/);
 });
+
+const read = name => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
+
+test('favoriting only updates the heart buttons instead of re-rendering the list', () => {
+    const fav = slice('function toggleFavorite', 'function toggleShoppingList');
+    assert.match(fav, /data-action="favorite"/);
+    assert.match(fav, /aria-pressed/);
+    assert.match(fav, /if \(onlyFavoritesFilter && !nowFav\) filterCocktails\(\);/);
+    assert.equal((fav.match(/filterCocktails\(\)/g) || []).length, 1);
+});
+
+test('empty ready list without filters points at near-miss recipes and hides "clear filters"', () => {
+    const block = slice('function hasActiveCocktailFilters', 'function renderLists');
+    assert.match(block, /1-2 eksikle yapabileceklerin aşağıda/);
+    assert.match(slice('function renderLists', 'let currentIndex'), /hasActiveCocktailFilters\(\) \? `<button type="button" data-action="reset-filters"/);
+});
+
+test('recipe cards are keyboard operable and labelled', () => {
+    const card = slice('function createCocktailCardElement', 'const COCKTAIL_PAGE_SIZE');
+    assert.match(card, /<button type="button" class="[^"]*toggle-icon[^"]*" aria-expanded="false" aria-controls="\$\{cardId\}_details">/);
+    assert.match(card, /id="\$\{cardId\}_details"/);
+    assert.match(card, /<img [^>]*alt="\$\{safeDrinkName\}"/);
+    assert.match(card, /data-action="favorite"[^>]*aria-label=/);
+    assert.match(card, /data-action="share"[^>]*aria-label=/);
+    assert.match(card, /data-action="delete"[^>]*aria-label=/);
+    assert.doesNotMatch(card, /cursor-pointer select-none/);
+});
+
+test('modals are dialogs with labelled close buttons; body text stays selectable', () => {
+    const html = read('index.html');
+    for (const id of ['shaker-timer-modal', 'update-modal', 'reserve-modal', 'auth-modal']) {
+        assert.match(html, new RegExp(`id="${id}" role="dialog" aria-modal="true"`), id);
+    }
+    assert.match(html, /data-ui="ui-44" type="button" aria-label="Kapat"/);
+    assert.match(html, /id="btn-close-reserve" type="button" aria-label="Kapat"/);
+    assert.match(html, /id="btn-close-auth" type="button" aria-label="Kapat"/);
+    assert.match(html, /data-ui="ui-30" type="button" aria-label=/);
+    assert.match(html, /data-ui="ui-31" type="button" aria-label=/);
+    assert.doesNotMatch(html.match(/<body[^>]*>/)[0], /select-none/);
+    for (const id of ['custom-name', 'custom-ingredients', 'custom-instructions', 'custom-serving']) {
+        assert.match(html, new RegExp(`id="${id}" aria-label=`), id);
+    }
+    const bindings = read('ui-bindings.js');
+    assert.match(bindings, /manageDialogFocus/);
+    assert.match(bindings, /opener\.|target\.focus/);
+    const apply = slice('function applyLanguage', 'function setLanguage');
+    assert.match(apply, /document\.documentElement\.lang = /);
+    assert.match(apply, /syncThemeToggle\(\)/);
+});
+
+test('service worker update shows a reload toast', () => {
+    assert.match(read('ui-bindings.js'), /showToast\(message, 'info', action\)/);
+});
+
+test('one app version source and no download dialog on the web', () => {
+    const html = read('index.html');
+    assert.doesNotMatch(html, /v1\.[0-9]\.[0-9]/, 'index.html carries no hard-coded version');
+    assert.equal((src.match(/const CURRENT_APP_VERSION = "([\d.]+)"/) || [])[1], JSON.parse(read('package.json')).version);
+    assert.doesNotMatch(src, /\(v1\.1\.0\)|v1\.2\.0/);
+    const update = slice('function getUpdatePlatform', 'function closeUpdateModal');
+    assert.match(update, /if \(platform === 'web'\) return;/);
+    assert.match(update, /platform === 'linux'[\s\S]*\.appimage/);
+});
+
+test('AI assistant requests time out and report offline state', () => {
+    const ai = read('ai-assistant-ui.js');
+    assert.match(ai, /REQUEST_TIMEOUT_MS = 30000/);
+    assert.match(ai, /signal: controller\?\.signal/);
+    assert.match(ai, /navigator\.onLine === false/);
+});
+
+test('manifest uses the product name, scope/id and the design ground colour', () => {
+    const manifest = JSON.parse(read('manifest.json'));
+    assert.equal(manifest.name, 'Bar Cepte');
+    assert.ok(manifest.id && manifest.scope);
+    assert.equal(manifest.theme_color, '#0e131d');
+    assert.equal(manifest.background_color, '#0e131d');
+    assert.match(read('index.html'), /<meta name="theme-color" content="#0e131d">/);
+    assert.match(read('DESIGN.md'), /`--bg-main` \| `#0e131d`/);
+});
+
+test('tailwind scans every script that writes utility classes', () => {
+    const input = read('tailwind.input.css');
+    for (const file of ['reserve.js', 'auth.js', 'personal-ui.js', 'editorial-ui.js', 'ai-assistant-ui.js', 'dynamic-ui.js']) {
+        assert.match(input, new RegExp(`@source "\\./${file.replace('.', '\\.')}"`), file);
+    }
+});

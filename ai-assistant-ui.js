@@ -1,6 +1,7 @@
 (() => {
     'use strict';
     const API_URL = 'https://bar-cepte-webhook.onrender.com/api/ai-assistant';
+    const REQUEST_TIMEOUT_MS = 30000;
     const $ = id => document.getElementById(id);
     const messages = [];
     let busy = false;
@@ -98,12 +99,21 @@
         if (input) input.value = '';
         addMessage('user', message);
         const context = window.BarAIContext?.() || { inventory: [], recipes: [], language: 'tr', unit: 'cl' };
+        const en = context.language === 'en';
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            addMessage('assistant', en ? 'You appear to be offline. Connect to the internet and try again.' : 'Çevrimdışı görünüyorsun. İnternete bağlanıp tekrar dene.');
+            return;
+        }
         const typing = addMessage('assistant', 'Barını ve tarif arşivini inceliyorum…', true);
         const send = $('ai-chat-send');
         busy = true;
         if (send) send.disabled = true;
+        // Yanıt gelmezse istek ~30 sn sonra iptal edilir; kullanıcı sonsuza dek beklemez.
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        const timeout = controller ? setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS) : null;
         try {
             const response = await fetch(API_URL, {
+                signal: controller?.signal,
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -125,8 +135,14 @@
             addRecipeCards(result.recipes || []);
         } catch (error) {
             typing?.remove();
-            addMessage('assistant', error instanceof Error ? error.message : 'Bir bağlantı hatası oluştu.');
+            let text;
+            if (error?.name === 'AbortError') text = en ? 'The assistant took too long to answer. Please try again.' : 'Asistan çok uzun süre yanıt vermedi. Lütfen tekrar dene.';
+            else if (typeof navigator !== 'undefined' && navigator.onLine === false) text = en ? 'Connection lost. Check your internet and try again.' : 'Bağlantı koptu. İnternetini kontrol edip tekrar dene.';
+            else if (error instanceof TypeError) text = en ? 'Could not reach the assistant. Check your connection.' : 'Asistana ulaşılamadı. Bağlantını kontrol et.';
+            else text = error instanceof Error ? error.message : 'Bir bağlantı hatası oluştu.';
+            addMessage('assistant', text);
         } finally {
+            if (timeout) clearTimeout(timeout);
             busy = false;
             if (send) send.disabled = false;
             input?.focus();
