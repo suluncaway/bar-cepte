@@ -202,7 +202,7 @@ test('modals are dialogs with labelled close buttons; body text stays selectable
     assert.match(html, /data-ui="ui-31" type="button" aria-label=/);
     assert.doesNotMatch(html.match(/<body[^>]*>/)[0], /select-none/);
     for (const id of ['custom-name', 'custom-ingredients', 'custom-instructions', 'custom-serving']) {
-        assert.match(html, new RegExp(`id="${id}" aria-label=`), id);
+        assert.match(html, new RegExp(`id="${id}"[^>]*aria-label=`), id);
     }
     const bindings = read('ui-bindings.js');
     assert.match(bindings, /manageDialogFocus/);
