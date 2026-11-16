@@ -102,8 +102,15 @@ test('editorial layout keeps all original UI bindings and local-only hero assets
 });
 test('Bar Cepte Reserve membership module validates keys and updates state', () => {
     const reserve = require('../reserve.js');
-    assert.ok(reserve.validateLicenseKey('RESERVE-SULUNCA-2026'));
-    assert.ok(reserve.validateLicenseKey('BARCEPTE-RESERVE-VIP'));
+    // Former client-side master keys were removed: they no longer pass even the format check
+    // (the license server rejects them too, see license-api.test.cjs).
+    assert.equal(reserve.validateLicenseKey('RESERVE-SULUNCA-2026'), false);
+    assert.equal(reserve.validateLicenseKey('BARCEPTE-RESERVE-VIP'), false);
+    const wellFormed = `RESERVE-ANN1-TEST-${reserve.checksum('ANN1TEST')}`;
+    assert.ok(reserve.validateLicenseKey(wellFormed));
+    // A well-formed key is only a typo check: it can never activate Reserve without the server.
+    assert.equal(reserve.activateReserve(wellFormed), false);
+    assert.equal(reserve.isReserveActive(), false);
     assert.equal(reserve.validateLicenseKey('INVALID-KEY'), false);
     assert.equal(reserve.validateLicenseKey('RESERVE-1111-2222-3333'), false);
     assert.ok(fs.existsSync('reserve.js'));
@@ -212,6 +219,9 @@ test('BarAuth module validates user data and sanitizes against XSS', () => {
 });
 
 test('License keys are strictly single-use and bound to one account', () => {
+    // Single-use and account binding are enforced by the license server (license-api.test.cjs:
+    // a second account gets 409, the owner gets "restored"). On the client, a local claim must
+    // never grant Reserve or mark a key as owned, so a copied key cannot be used offline.
     const storageMap = new Map();
     global.localStorage = {
         getItem: k => storageMap.get(k) || null,
@@ -222,37 +232,30 @@ test('License keys are strictly single-use and bound to one account', () => {
 
     const auth = require('../auth.js');
     const reserve = require('../reserve.js');
-
-    const key = 'RESERVE-ANN1-TEST-5632';
-    // Validate format with real checksum
-    const testPart1 = 'ANN1';
-    const testPart2 = 'TEST';
-    const validKey = `RESERVE-${testPart1}-${testPart2}-${reserve.checksum(testPart1 + testPart2)}`;
+    const validKey = `RESERVE-ANN1-TEST-${reserve.checksum('ANN1TEST')}`;
     assert.ok(reserve.validateLicenseKey(validKey));
 
-    // User A signs in and claims the key
     auth.saveUser({ uid: 'user_alice', name: 'Alice', email: 'alice@gmail.com' });
-    const checkAlice = auth.canUseLicenseKey(validKey);
-    assert.equal(checkAlice.allowed, true);
+    const before = JSON.stringify([...storageMap]);
+    assert.equal(auth.claimLicenseKey(validKey, 'annual', Date.now() + 365 * 24 * 60 * 60 * 1000), false);
+    assert.equal(JSON.stringify([...storageMap]), before, 'a local claim must not write any entitlement');
+    assert.equal(auth.getCurrentUser().isReserve, false);
+    assert.equal(auth.getCurrentUser().reserveKey, undefined);
+    assert.equal(reserve.activateReserve(validKey), false);
+    assert.equal(reserve.isReserveActive(), false);
 
-    auth.claimLicenseKey(validKey, 'annual', Date.now() + 365 * 24 * 60 * 60 * 1000);
-    assert.equal(auth.getCurrentUser().isReserve, true);
-    assert.equal(auth.getCurrentUser().reserveKey, validKey);
+    // A well-formed key only passes the format check and still needs the server.
+    const check = auth.canUseLicenseKey(validKey);
+    assert.equal(check.allowed, true);
+    assert.match(check.reason, /Sunucu doğrulaması gerekli/);
+    assert.equal(check.alreadyClaimed, undefined);
 
-    // Alice on another device can still use her own key
-    const checkAliceAgain = auth.canUseLicenseKey(validKey);
-    assert.equal(checkAliceAgain.allowed, true);
-    assert.equal(checkAliceAgain.alreadyClaimed, true);
-
-    // User B tries to use the same key -> MUST BE REJECTED!
+    // Planting a legacy local claim registry for another account grants nothing either.
+    storageMap.set('barcepte_used_keys', JSON.stringify({ [validKey]: { uid: 'user_alice', plan: 'annual', expiresAt: Date.now() + 1e9 } }));
     auth.saveUser({ uid: 'user_bob', name: 'Bob', email: 'bob@gmail.com' });
-    const checkBob = auth.canUseLicenseKey(validKey);
-    assert.equal(checkBob.allowed, false);
-    assert.match(checkBob.reason, /tek kullanımlıktır/);
-
-    // reserve.activateReserve also rejects User B
-    const reserveResult = reserve.activateReserve(validKey);
-    assert.equal(reserveResult, false);
+    assert.equal(auth.getCurrentUser().isReserve, false);
+    assert.equal(reserve.activateReserve(validKey), false);
+    assert.equal(reserve.isReserveActive(), false);
 });
 
 test('Google Sign-In UI elements, modals, and CSP directives are present in index.html', () => {
@@ -275,6 +278,9 @@ test('Google Sign-In UI elements, modals, and CSP directives are present in inde
 });
 
 test('Expired license keys cannot be reactivated to gain free extra days', () => {
+    // Expiry is decided by the server (license-api.test.cjs: an expired claim gets 400
+    // "süresi dolmuştur"). The client must refuse an expired server subscription and must not
+    // fall back to a local claim.
     const storageMap = new Map();
     global.window = global;
     global.localStorage = {
@@ -289,18 +295,12 @@ test('Expired license keys cannot be reactivated to gain free extra days', () =>
 
     const expiredKey = `RESERVE-MTH1-EXPR-${reserve.checksum('MTH1EXPR')}`;
     assert.ok(reserve.validateLicenseKey(expiredKey));
-
     auth.saveUser({ uid: 'user_david', name: 'David', email: 'david@gmail.com' });
 
-    // Claim key with an expiration date in the past
     const pastTime = Date.now() - 10000;
-    auth.claimLicenseKey(expiredKey, 'monthly', pastTime);
-
-    // David attempts to reactivate using the same expired key
-    const checkExpired = auth.canUseLicenseKey(expiredKey);
-    assert.equal(checkExpired.allowed, false);
-    assert.match(checkExpired.reason, /kullanım süresi dolmuştur/);
-
-    const activateResult = reserve.activateReserve(expiredKey);
-    assert.equal(activateResult, false);
+    assert.equal(auth.claimLicenseKey(expiredKey, 'monthly', pastTime), false);
+    assert.equal(reserve.acceptServerSubscription({ key: expiredKey, plan: 'monthly', expiresAt: pastTime }), false);
+    assert.equal(reserve.activateReserve(expiredKey), false);
+    assert.equal(reserve.isReserveActive(), false);
+    assert.equal(auth.getCurrentUser().isReserve, false);
 });

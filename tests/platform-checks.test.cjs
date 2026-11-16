@@ -49,18 +49,29 @@ test('Electron downloader can bootstrap the updated proxy API', () => {
 });
 
 test('Android source guards secure origin and non-destructive legacy storage migration', () => {
-    const client = read('android/app/src/main/java/com/barcepte/app/LocalAssetClient.java');
+    // MainActivity owns the WebView client and the legacy file:// -> https migration
+    // (LocalAssetClient.java is not referenced by any build source), so the same
+    // guarantees are asserted on the code that actually runs.
     const activity = read('android/app/src/main/java/com/barcepte/app/MainActivity.java');
-    assert.match(client, /WebViewAssetLoader\.AssetsPathHandler/);
-    assert.match(client, /https:\/\/appassets\.androidplatform\.net/);
-    assert.match(client, /localStorage\.getItem\(key\)===null/);
-    assert.match(client, /JSONObject\.quote\(legacyState\)/);
-    assert.doesNotMatch(client, /localStorage\.(?:clear|removeItem)\(/);
+    const migration = read('storage-migration.js');
+    const { restore } = require('../storage-migration.js');
+    assert.match(activity, /WebViewAssetLoader\.AssetsPathHandler/);
+    assert.match(activity, /"https:\/\/appassets\.androidplatform\.net\/assets\/index\.html"/);
+    assert.match(activity, /LEGACY_URL = "file:\/\/\/android_asset\/index\.html"/);
+    assert.match(activity, /webView\.loadUrl\(migrating \? LEGACY_URL : APP_URL\)/);
+    assert.match(activity, /BarStorageMigration\.restore\(localStorage,JSON\.parse\("\s*\+ JSONObject\.quote\(migrationData\)/);
+    assert.doesNotMatch(activity, /localStorage\.(?:clear|removeItem)\(/);
+    assert.match(migration, /storage\.getItem\(entry\[0\]\) === null/);
+    assert.doesNotMatch(migration, /storage\.clear\(/);
+    // Restoring never overwrites a newer value already present in the new origin.
+    const store = new Map([['kept', 'new']]);
+    const storage = { getItem: k => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, v), removeItem: k => store.delete(k) };
+    restore(storage, { version: 1, entries: [['kept', 'old'], ['added', 'legacy']] });
+    assert.deepEqual([...store], [['kept', 'new'], ['added', 'legacy']]);
     assert.match(activity, /setAllowUniversalAccessFromFileURLs\(false\)/);
     assert.match(activity, /setAllowFileAccess\(false\)/);
     assert.match(activity, /setTestAdsEnabled\(BuildConfig\.DEBUG\)/);
-    assert.match(activity, /ActivityNotFoundException/);
-    assert.match(activity, /webView\.loadUrl\(LocalAssetClient\.LEGACY\)/);
+    assert.match(activity, /catch \(ActivityNotFoundException/);
 });
 
 test('CI checks full dependencies and built APK contents without hiding Gradle failures', () => {

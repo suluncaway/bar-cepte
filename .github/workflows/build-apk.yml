@@ -29,11 +29,28 @@ jobs:
       with:
         gradle-version: '8.5'
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
     - name: Build Debug APK
+      shell: bash
       run: |
+        set -euo pipefail
         cd android
         echo "sdk.dir=$ANDROID_HOME" > local.properties
         gradle assembleDebug assembleDebugAndroidTest --no-daemon --stacktrace 2>&1 | tee ../build.log
+
+    - name: Verify APK web assets match the canonical allowlist
+      shell: bash
+      run: |
+        set -euo pipefail
+        apk=$(ls android/app/build/outputs/apk/debug/*.apk | head -n 1)
+        rm -rf "$RUNNER_TEMP/apk-check"
+        mkdir -p "$RUNNER_TEMP/apk-check"
+        unzip -q "$apk" 'assets/*' -d "$RUNNER_TEMP/apk-check"
+        node scripts/check-assets.cjs "$RUNNER_TEMP/apk-check/assets"
 
     - name: Upload Build Log
       if: always()

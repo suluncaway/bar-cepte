@@ -13,14 +13,18 @@ test('canonical allowlist covers page, stylesheet, manifest and precache referen
     checkReferences(root, readAssetNames(root));
 });
 
-test('Gradle replaces legacy assets and wires all merge variants to Sync', () => {
+test('Gradle bundles exactly the canonical web-assets.json list and syncs before every build', () => {
     const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
+    // The Gradle allowlist is web-assets.json itself (parsed with JsonSlurper), the same
+    // file readAssetNames() validates, so the two lists cannot drift apart.
+    assert.match(gradle, /def webAssets = new JsonSlurper\(\)\.parse\(new File\(webRoot, 'web-assets\.json'\)\)/);
     assert.match(gradle, /tasks\.register\('syncWebAssets', Sync\)/);
-    assert.match(gradle, /main\.assets\.setSrcDirs\(\[generatedWebAssets\]\)/);
-    assert.match(gradle, /task\.name ==~ \/merge\.\*Assets\//);
-    assert.match(gradle, /task\.dependsOn\(syncWebAssets\)/);
-    assert.match(gradle, /include webAssetNames/);
-    assert.match(gradle, /Missing canonical web assets/);
+    assert.match(gradle, /from\(webRoot\) \{ include webAssets \}/);
+    assert.match(gradle, /into\(layout\.buildDirectory\.dir\('generated\/webAssets'\)\)/);
+    // Legacy checked-in android assets are replaced: the only asset source is the synced copy.
+    assert.match(gradle, /main\.assets\.srcDirs = \[layout\.buildDirectory\.dir\('generated\/webAssets'\)\]/);
+    assert.match(gradle, /tasks\.named\('preBuild'\)\.configure \{ dependsOn\('syncWebAssets'\) \}/);
+    assert.match(gradle, /throw new GradleException\("Missing web asset: \$\{asset\}"\)/);
 });
 
 test('bundle checker rejects stale bytes, missing dependencies, and secret extras', t => {
