@@ -9,7 +9,8 @@
     <uses-permission android:name="android.permission.AD_ID" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@drawable/ic_launcher"
         android:label="Bar Cepte"
         android:supportsRtl="true"
@@ -26,6 +27,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Paylaşım için geçici dışa aktarım dosyaları (story kartı, CSV/JSON) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.exports"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/export_paths" />
+        </provider>
 
         <!-- Start.io Uygulama Kimliği -->
         <meta-data

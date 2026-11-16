@@ -2,10 +2,13 @@ package com.barcepte.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -18,14 +21,19 @@ import android.webkit.WebView;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebViewClient;
+import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -48,6 +56,28 @@ public class MainActivity extends Activity {
     private String migrationScript;
     private String migrationData;
     private volatile boolean migrating;
+    // After the one-time storage migration the back stack still holds the legacy/migration pages.
+    private boolean clearHistoryAfterLoad;
+    // Reserve (paid, ad-free) state reported by reserve.js; persisted so ads stay off from the first frame.
+    private static final String PREFS = "barcepte_prefs";
+    private static final String PREF_RESERVE_ACTIVE = "reserveActive";
+    private volatile boolean reserveActive;
+    private boolean bannerLoaded;
+    private static final int MAX_EXPORT_BYTES = 20 * 1024 * 1024;
+    // Routes <a download> clicks on blob:/data: URLs (story card PNG, business CSV/JSON) to the bridge,
+    // reading blobs before the page revokes their URL.
+    private static final String DOWNLOAD_HOOK = "(function(){if(window.__barCepteDownloads)return;window.__barCepteDownloads=true;"
+            + "function send(href,name){if(href.indexOf('data:')===0){AndroidBridge.saveDataUrl(href,name);return;}"
+            + "var x=new XMLHttpRequest();x.open('GET',href);x.responseType='blob';"
+            + "x.onload=function(){var r=new FileReader();r.onload=function(){AndroidBridge.saveDataUrl(String(r.result),name);};r.readAsDataURL(x.response);};"
+            + "x.send();}"
+            + "var click=HTMLAnchorElement.prototype.click;"
+            + "HTMLAnchorElement.prototype.click=function(){var h=this.href||'';"
+            + "if(this.hasAttribute('download')&&(h.indexOf('blob:')===0||h.indexOf('data:')===0)){send(h,this.getAttribute('download')||'');return;}"
+            + "return click.apply(this,arguments);};"
+            + "document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[download]'):null;"
+            + "if(!a)return;var h=a.href||'';if(h.indexOf('blob:')===0||h.indexOf('data:')===0){e.preventDefault();send(h,a.getAttribute('download')||'');}},true);"
+            + "})();";
 
 
     // Start.io Uygulama Kimliği
@@ -101,8 +131,9 @@ public class MainActivity extends Activity {
         startAppBanner.setLayoutParams(adParams);
         rootLayout.addView(startAppBanner);
 
-        // Reklamı yükle
-        if (!BuildConfig.DEBUG) startAppBanner.loadAd();
+        // Reserve üyelerine reklam gösterilmez; son bilinen durum ilk açılışta da geçerlidir.
+        reserveActive = getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(PREF_RESERVE_ACTIVE, false);
+        applyAdVisibility();
 
         setContentView(rootLayout);
 
@@ -162,6 +193,14 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageFinished(WebView view, String url) {
+                if (isAppUrl(url)) {
+                    view.evaluateJavascript(DOWNLOAD_HOOK, null);
+                    if (clearHistoryAfterLoad && APP_URL.equals(url)) {
+                        // Back must not return to the empty legacy/migration pages.
+                        clearHistoryAfterLoad = false;
+                        view.clearHistory();
+                    }
+                }
                 if (!migrating) return;
                 if (LEGACY_URL.equals(url)) {
                     view.evaluateJavascript(migrationScript + ";JSON.stringify(BarStorageMigration.snapshot(localStorage));", value -> {
@@ -187,14 +226,28 @@ public class MainActivity extends Activity {
                 if (isAppUrl(url) || (migrating && LEGACY_URL.equals(url))) {
                     return false; // Yerel uygulamada kal
                 }
-                // Harici bağlantıları (http, https, mailto vb.) güvenli varsayılan tarayıcıda aç
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    startActivity(intent);
-                    return true;
-                } catch (Exception e) {
-                    return true;
-                }
+                // Harici bağlantılar: yalnızca http, https, mailto ve tel sistem uygulamalarına iletilir.
+                openExternal(url);
+                return true;
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return shouldOverrideUrlLoading(view, request.getUrl().toString());
+            }
+        });
+
+        // İndirmeler (ör. kullanıcı uzun basıp kaydettiğinde): data: doğrudan, blob: sayfa içinden okunur.
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
+            if (url == null) return;
+            if (url.startsWith("data:")) {
+                saveDataUrl(url, "");
+            } else if (url.startsWith("blob:")) {
+                webView.evaluateJavascript("(function(h){var x=new XMLHttpRequest();x.open('GET',h);x.responseType='blob';"
+                        + "x.onload=function(){var r=new FileReader();r.onload=function(){AndroidBridge.saveDataUrl(String(r.result),'');};"
+                        + "r.readAsDataURL(x.response);};x.send();})(" + JSONObject.quote(url) + ")", null);
+            } else {
+                openExternal(url);
             }
         });
 
@@ -229,6 +282,7 @@ public class MainActivity extends Activity {
         webView.getSettings().setAllowFileAccess(false);
         migrationData = null;
         migrationScript = null;
+        clearHistoryAfterLoad = true;
         if (success) getPreferences(MODE_PRIVATE).edit().putBoolean("httpsStorageMigrated", true).apply();
         else Toast.makeText(this, "Eski veriler korunuyor; aktarım bir sonraki açılışta tekrar denenecek.", Toast.LENGTH_LONG).show();
         webView.loadUrl(APP_URL);
@@ -242,15 +296,108 @@ public class MainActivity extends Activity {
                 && uri.getPath() != null && uri.getPath().startsWith("/assets/");
     }
 
+    private void openExternal(String url) {
+        if (url == null) return;
+        Uri uri = Uri.parse(url);
+        String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
+        if (!"http".equals(scheme) && !"https".equals(scheme) && !"mailto".equals(scheme) && !"tel".equals(scheme)) {
+            return; // intent:, javascript:, file:, content: vb. asla dışarı aktarılmaz
+        }
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, "Bu bağlantıyı açacak uygulama bulunamadı.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void applyAdVisibility() {
+        if (startAppBanner == null) return;
+        if (reserveActive) {
+            startAppBanner.hideBanner();
+            startAppBanner.setVisibility(View.GONE);
+        } else {
+            startAppBanner.setVisibility(View.VISIBLE);
+            if (!BuildConfig.DEBUG) {
+                if (!bannerLoaded) {
+                    startAppBanner.loadAd();
+                    bannerLoaded = true;
+                }
+                startAppBanner.showBanner();
+            }
+        }
+    }
+
+    // Writes a data: URL to the app cache and offers it through the system share sheet.
+    private void saveDataUrl(String dataUrl, String suggestedName) {
+        try {
+            int comma = dataUrl == null ? -1 : dataUrl.indexOf(',');
+            if (comma < 5 || !dataUrl.startsWith("data:")) return;
+            String meta = dataUrl.substring(5, comma);
+            String payload = dataUrl.substring(comma + 1);
+            boolean base64 = meta.endsWith(";base64");
+            String mime = meta.split(";")[0].trim().toLowerCase(Locale.ROOT);
+            if (mime.isEmpty()) mime = "application/octet-stream";
+            if (payload.length() > MAX_EXPORT_BYTES * 2) return;
+            byte[] bytes = base64 ? Base64.decode(payload, Base64.DEFAULT)
+                    : URLDecoder.decode(payload, "UTF-8").getBytes(StandardCharsets.UTF_8);
+            if (bytes.length > MAX_EXPORT_BYTES) return;
+            String name = suggestedName == null ? "" : suggestedName.replaceAll("[^A-Za-z0-9._-]", "_");
+            if (name.isEmpty() || name.startsWith(".")) {
+                String extension = mime.equals("image/png") ? ".png" : mime.equals("image/jpeg") ? ".jpg"
+                        : mime.startsWith("text/csv") ? ".csv" : mime.equals("application/json") ? ".json" : ".bin";
+                name = "bar-cepte-" + System.currentTimeMillis() + extension;
+            }
+            if (name.length() > 120) name = name.substring(name.length() - 120);
+            File directory = new File(getCacheDir(), "exports");
+            if (!directory.isDirectory() && !directory.mkdirs()) return;
+            File file = new File(directory, name);
+            try (FileOutputStream output = new FileOutputStream(file)) {
+                output.write(bytes);
+            }
+            final Uri contentUri = FileProvider.getUriForFile(this, getPackageName() + ".exports", file);
+            final String shareMime = mime;
+            runOnUiThread(() -> {
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType(shareMime);
+                share.putExtra(Intent.EXTRA_STREAM, contentUri);
+                share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                try {
+                    startActivity(Intent.createChooser(share, "Kaydet veya paylaş"));
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(this, "Dosyayı açacak uygulama bulunamadı.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (Exception error) {
+            runOnUiThread(() -> Toast.makeText(this, "Dosya kaydedilemedi.", Toast.LENGTH_SHORT).show());
+        }
+    }
+
     // Web arayüzü ile Android arasındaki akıllı reklam köprüsü
     public class AndroidBridge {
         private int recipeCounter = 0;
         private long lastAdTime = 0;
         private StartAppAd startAppAd;
 
+        // reserve.js reports the server-verified Reserve state on every UI refresh.
+        @JavascriptInterface
+        public void setReserveActive(boolean active) {
+            if (reserveActive == active) return;
+            reserveActive = active;
+            SharedPreferences.Editor editor = getSharedPreferences(PREFS, MODE_PRIVATE).edit();
+            editor.putBoolean(PREF_RESERVE_ACTIVE, active).apply();
+            runOnUiThread(MainActivity.this::applyAdVisibility);
+        }
+
+        @JavascriptInterface
+        public void saveDataUrl(String dataUrl, String fileName) {
+            MainActivity.this.saveDataUrl(dataUrl, fileName);
+        }
+
         @JavascriptInterface
         public void onRecipeOpened() {
-            if (BuildConfig.DEBUG) return;
+            if (BuildConfig.DEBUG || reserveActive) return;
             recipeCounter++;
             long now = System.currentTimeMillis();
 
