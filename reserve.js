@@ -369,6 +369,19 @@
                 : 'Lisans doğrulaması tamamlanamadı. Lütfen tekrar deneyiniz.' };
         }
         const data = result.data || {};
+        // Older-format keys can only be activated from the buyer's Google account. This is not a
+        // rejection of anything already stored: the saved entitlement stays untouched.
+        if (result.httpStatus === 403 && data.code === 'legacy_requires_account') {
+            return { success: false, code: data.code, reason: isEn
+                ? 'To activate this key, sign in with the Google account you used for the purchase, or contact support.'
+                : 'Bu anahtarı etkinleştirmek için satın alırken kullandığın Google hesabıyla giriş yap ya da destekle iletişime geç.' };
+        }
+        // Without an account the server gives one answer for unknown keys and keys used elsewhere.
+        if (result.status === 'rejected' && data.code === 'not_issued') {
+            return { success: false, code: data.code, reason: isEn
+                ? 'This code could not be activated on this device: it was not recognised or it is in use on another account or device. Sign in with the Google account you used for the purchase and try again.'
+                : 'Bu kod bu cihazda etkinleştirilemedi: kod tanınmadı ya da başka bir hesapta/cihazda kullanılıyor. Satın alırken kullandığın Google hesabıyla giriş yapıp tekrar dene.' };
+        }
         if (result.status === 'rejected') {
             if (result.httpStatus === 409) {
                 return { success: false, reason: data.reason || (isEn

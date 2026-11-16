@@ -279,3 +279,20 @@ test('storage failure cannot report failed activation while granting entitlement
     assert.equal((await app.reserve.verifyAndActivateLicense(app.key)).success, false);
     assert.equal(app.reserve.isReserveActive(), false);
 });
+
+test('legacy_requires_account asks for the buyer\'s Google account and keeps the stored entitlement', async () => {
+    const app = setup();
+    app.respond({ success: true, plan: 'lifetime', expiresAt: 0 });
+    assert.equal((await app.reserve.verifyAndActivateLicense(app.key)).success, true);
+    const legacy = `RESERVE-MTH1-AB2C-${app.reserve.checksum('MTH1AB2C')}`;
+    app.context.fetch = async () => ({ ok: false, status: 403, json: async () => ({ success: false, code: 'legacy_requires_account', reason: 'x' }) });
+    const result = await app.reserve.verifyAndActivateLicense(legacy);
+    assert.equal(result.success, false);
+    assert.match(result.reason, /satın alırken kullandığın Google hesabıyla giriş yap ya da destekle iletişime geç/);
+    assert.equal(app.reserve.getSubscriptionInfo().key, app.key, 'existing Reserve is untouched');
+    assert.equal((await app.reserve.revalidate({ force: true })).status, 'kept', 'a 403 during re-validation is not a rejection');
+    assert.equal(app.reserve.isReserveActive(), true);
+    // Anonymous not_issued also covers keys used elsewhere; the message says so.
+    app.context.fetch = async () => ({ ok: false, status: 400, json: async () => ({ success: false, code: 'not_issued' }) });
+    assert.match((await app.reserve.verifyAndActivateLicense(legacy)).reason, /başka bir hesapta\/cihazda/);
+});
