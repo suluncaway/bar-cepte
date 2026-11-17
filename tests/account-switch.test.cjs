@@ -12,9 +12,9 @@ function storage(initial = {}) {
     return { map, getItem: k => map.has(k) ? map.get(k) : null, setItem: (k, v) => map.set(k, String(v)), removeItem: k => map.delete(k) };
 }
 // `reuse` reloads the page on the same device: same localStorage and sessionStorage, fresh scripts.
-function client(service, initial = {}, reuse = null) {
+function client(service, initial = {}, reuse = null, extra = {}) {
     const local = reuse ? reuse.local : storage(initial);
-    const sandbox = { module: { exports: {} }, console, setTimeout, clearTimeout, AbortController, URL,
+    const sandbox = { ...extra, module: { exports: {} }, console, setTimeout, clearTimeout, AbortController, URL,
         localStorage: local, sessionStorage: reuse ? reuse.context.sessionStorage : storage(), BarSecurity: security, alert() {}, applied: [],
         applyCloudBackup: data => { sandbox.applied.push(JSON.parse(JSON.stringify(data))); },
         fetch: async (url, options = {}) => {
@@ -250,33 +250,38 @@ test('no data leaks between two accounts or from signed-out use into either of t
     assert.ok(!bobCloud.includes('11000') && !bobCloud.includes('12345'));
 });
 
+function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
+const until = async check => { while (!check()) await new Promise(resolve => setImmediate(resolve)); };
+
 test('a reload while the question is open does not make the data the account\'s; the question comes back', async t => {
     const { service: svc, store } = service(t);
     const c = await aliceWithBackup(svc); // alice: 11000 in the cloud; 12345 added without an account
     let asked = 0;
     c.api.setLocalDataPrompt(() => { asked++; return new Promise(() => {}); }); // never answered
     c.api.handleGoogleCredentialResponse({ credential: 'alice' });
-    while (!asked) await new Promise(resolve => setImmediate(resolve));
+    await until(() => asked);
     assert.equal(c.local.getItem('barcepte_data_owner'), 'pending:google_alice');
     // Reload: alice looks signed in, the lists on screen are still the ones without an account.
     c.context.sessionStorage.setItem('barcepte_cloud_revision', '1');
     const reloaded = client(svc, {}, c);
     assert.equal(reloaded.api.getCurrentUser().uid, 'google_alice');
     assert.deepEqual(reloaded.list('favoriteCocktails'), ['12345']);
-    // "Sync now" and "restore" refuse while the question is open; nothing reaches alice's backup.
-    const sync = await reloaded.api.syncToCloud();
-    assert.equal(sync.success, false);
-    assert.equal(sync.pendingLocalData, true);
-    assert.equal((await reloaded.api.syncFromCloud()).pendingLocalData, true);
-    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+    // "Sync now" and "restore" ask the question again (one shared question) and wait for it.
+    const answer = deferred(), again = [];
+    reloaded.api.setLocalDataPrompt(summary => { again.push(summary); return answer.promise; });
+    const syncing = reloaded.api.syncToCloud(), restoring = reloaded.api.syncFromCloud();
+    await until(() => again.length);
+    for (let i = 0; i < 20; i++) await new Promise(resolve => setImmediate(resolve));
+    assert.equal(again.length, 1, 'one question, not two');
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000'], 'nothing uploaded while it is open');
     assert.deepEqual(reloaded.list('favoriteCocktails'), ['12345']);
-    // The page asks again after the reload; "don't add" then finishes the sign-in.
-    const again = asking(reloaded, false);
-    assert.equal(await reloaded.api.resumePendingSignIn(), true);
-    assert.equal(again.length, 1);
+    answer.resolve(false); // "don't add"
+    assert.equal((await syncing).success, true);
+    assert.equal((await restoring).success, true);
     assert.deepEqual(reloaded.list('favoriteCocktails'), ['11000']);
     assert.equal(reloaded.local.getItem('barcepte_data_owner'), 'google_alice');
     assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+    assert.equal(await reloaded.api.resumePendingSignIn(), false, 'settled: nothing left to ask');
     reloaded.api.logout();
     assert.deepEqual(reloaded.list('favoriteCocktails'), ['12345']);
     assert.ok(!reloaded.local.getItem('barcepte_cloud_data_google_alice').includes('12345'));
@@ -312,9 +317,6 @@ test('signing out of a Google account without an owner mark sets the lists aside
     // A signed-in state whose lists carry no owner mark (as after an interrupted older sign-in).
     c.local.removeItem('barcepte_data_owner');
     c.local.setItem('favoriteCocktails', '["99902"]');
-    const sync = await c.api.syncToCloud();
-    assert.equal(sync.success, false, '"sync now" refuses unmarked lists');
-    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
     let movedToGuest = null;
     const realSet = c.local.setItem;
     c.local.setItem = (k, v) => { if (k === 'barcepte_guest_data') movedToGuest = JSON.parse(v).data.favorites; realSet(k, v); };
@@ -322,6 +324,104 @@ test('signing out of a Google account without an owner mark sets the lists aside
     assert.deepEqual(movedToGuest, ['99902'], 'set aside as data without an account');
     assert.deepEqual(c.list('favoriteCocktails'), ['99902'], 'and back on the signed-out device');
     assert.equal(c.local.getItem('barcepte_cloud_data_google_alice'), null, 'nothing went into alice\'s device copy');
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+});
+
+// A Google sign-in made by an older version: signed in, session alive, but no owner mark.
+async function olderVersionSignIn(svc) {
+    const c = client(svc, { barcepte_cloud_backup_consent: 'denied' });
+    asking(c, true);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    c.local.setItem('favoriteCocktails', '["11000"]');
+    assert.equal((await c.api.syncToCloud()).success, true);
+    c.local.removeItem('barcepte_data_owner');
+    c.local.setItem('favoriteCocktails', '["55555"]');
+    return client(svc, {}, c); // reload with the new version
+}
+
+test('an older unmarked sign-in is asked on page load; "don\'t add" sets the list aside', async t => {
+    const { service: svc, store } = service(t);
+    const c = await olderVersionSignIn(svc);
+    const asked = asking(c, false);
+    assert.equal(await c.api.resumePendingSignIn(), true);
+    assert.deepEqual(asked.map(a => a.favorites), [['55555']]);
+    assert.deepEqual(c.list('favoriteCocktails'), ['11000']);
+    assert.equal(c.local.getItem('barcepte_data_owner'), 'google_alice');
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+    c.api.logout();
+    assert.deepEqual(c.list('favoriteCocktails'), ['55555']);
+});
+
+test('restoring the backup after an older unmarked sign-in asks first and never silently replaces the local list', async t => {
+    const { service: svc, store } = service(t);
+    const c = await olderVersionSignIn(svc);
+    const asked = asking(c, true); // "add"
+    const restored = await c.api.syncFromCloud();
+    assert.equal(restored.success, true);
+    assert.equal(asked.length, 1);
+    assert.deepEqual(c.list('favoriteCocktails').sort(), ['11000', '55555'], 'merged, not replaced');
+    // "Sync now" then uploads what the user chose to add.
+    assert.equal((await c.api.syncToCloud()).success, true);
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites.sort(), ['11000', '55555']);
+    // An empty unmarked device is marked as the account's without a question.
+    const d = await olderVersionSignIn(svc);
+    d.local.setItem('favoriteCocktails', '[]');
+    const none = asking(d, false);
+    assert.equal((await d.api.syncToCloud()).success, true);
+    assert.equal(none.length, 0);
+    assert.equal(d.local.getItem('barcepte_data_owner'), 'google_alice');
+});
+
+test('"sync now" with another account\'s lists on the device explains that, and uploads nothing', async t => {
+    const { service: svc, store } = service(t);
+    const c = client(svc, { barcepte_cloud_backup_consent: 'granted' });
+    asking(c, true);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    c.local.setItem('favoriteCocktails', '["11000"]');
+    await c.api.syncToCloud();
+    c.local.setItem('barcepte_data_owner', 'google_bob');
+    const result = await c.api.syncToCloud();
+    assert.equal(result.success, false);
+    assert.match(result.reason, /başka bir hesaba ait/);
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+});
+
+// The real <dialog> path with a fake DOM whose close() fires "close" asynchronously, like browsers.
+function fakeDialogDom() {
+    const listeners = {}, texts = {};
+    const button = merge => ({ dataset: { merge }, textContent: '', focus() {}, closest() { return this; } });
+    const buttons = { add: button('add'), keep: button('keep') };
+    const dialog = {
+        open: false, shown: 0,
+        addEventListener: (type, fn) => (listeners[type] = listeners[type] || []).push(fn),
+        removeEventListener: (type, fn) => { listeners[type] = (listeners[type] || []).filter(f => f !== fn); },
+        showModal() { this.open = true; this.shown++; },
+        close() { if (!this.open) return; this.open = false; setTimeout(() => (listeners.close || []).slice().forEach(fn => fn({}))); },
+        querySelector: sel => sel.startsWith('#') ? (texts[sel] = texts[sel] || { textContent: '' }) : buttons[sel.match(/"(\w+)"/)[1]],
+        click: merge => (listeners.click || []).slice().forEach(fn => fn({ target: buttons[merge] }))
+    };
+    return { dialog, texts, document: { readyState: 'complete', activeElement: null, addEventListener() {}, getElementById: id => id === 'auth-merge-dialog' ? dialog : null } };
+}
+
+test('a second question right after the first is not answered by the first one\'s close event', async t => {
+    const { service: svc } = service(t);
+    const dom = fakeDialogDom();
+    const c = client(svc, { barcepte_cloud_backup_consent: 'denied', favoriteCocktails: '["12345"]' }, null, { document: dom.document });
+    assert.equal(typeof c.context.BarAuth.setLocalDataPrompt, 'undefined');
+    c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    await until(() => dom.dialog.open);
+    // Before answering alice's question, bob signs in (e.g. from a second tab's credential).
+    const bob = c.api.handleGoogleCredentialResponse({ credential: 'bob' });
+    await until(() => dom.dialog.shown === 2);
+    for (let i = 0; i < 5; i++) await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(dom.dialog.open, true, 'bob\'s question is still open');
+    assert.deepEqual(c.list('favoriteCocktails'), ['12345'], 'and unanswered');
+    assert.equal(c.local.getItem('barcepte_data_owner'), 'pending:google_bob');
+    dom.dialog.click('add');
+    await bob;
+    assert.deepEqual(c.list('favoriteCocktails'), ['12345'], 'bob chose to add it');
+    assert.equal(c.local.getItem('barcepte_data_owner'), 'google_bob');
+    assert.equal(c.local.getItem('barcepte_guest_data'), null);
 });
 
 test('the question cannot be answered by page scripts: the test hook is not on BarAuth', () => {

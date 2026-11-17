@@ -13,7 +13,7 @@ const AFTER = DEFAULT_VERIFIED_SINCE + 5 * 86400000;
 const BEFORE = DEFAULT_VERIFIED_SINCE - 86400000;
 const DAY = 86400000;
 const key = tail => `RESERVE-LIFE-MIGR-${tail}`;
-const keyId = k => require('node:crypto').createHash('sha256').update(k).digest('hex').slice(0, 10);
+const {createHash} = require('node:crypto');
 
 // One record per class/reason. Emails are uppercase in places to check case-insensitive matching.
 function fixture() {
@@ -59,11 +59,13 @@ const options = (argv, backupDir) => ({...parseArgs(argv), backupDir});
 // The full scenario, shared by the file and PostgreSQL stores.
 async function scenario(store, data, backupDir) {
     const lines = [];
-    const dry = await run(store, options([]), {now: NOW, log: line => lines.push(line)});
-    const ids = Object.fromEntries(dry.records.map(r => [r.keyId, r]));
-    const byTail = Object.fromEntries(Object.keys(EXPECTED).map(tail => [tail, ids[keyId(key(tail))]]));
+    const dry = await run(store, options(['--map'], backupDir), {now: NOW, log: line => lines.push(line)});
+    // Rows are matched to keys only through the private map file.
+    const refs = JSON.parse(fs.readFileSync(dry.mapFile, 'utf8')).refs;
+    const byTail = Object.fromEntries(dry.records.map(r => [refs[r.ref].slice(-4), r]));
     for (const [tail, cls] of Object.entries(EXPECTED)) assert.equal(byTail[tail].class, cls, tail);
-    for (const r of dry.records) {assert.match(r.keyId, /^[0-9a-f]{10}$/); assert.equal('keyTail' in r, false);}
+    assert.deepEqual(dry.records.map(r => r.ref), dry.records.map((r, i) => i + 1));
+    fs.rmSync(dry.mapFile);
     assert.equal(byTail.AMB1.reason, 'email-mismatch');
     assert.equal(byTail.PRE1.reason, 'claimed-before-verified-sessions');
     assert.equal(byTail.DEL1.reason, 'claim-email-missing');
@@ -124,6 +126,46 @@ test('file store: classify, dry-run, apply, ambiguous flag and idempotency', asy
     await scenario(store, data, backupDir);
 });
 
+test('the report cannot be used to recover keys: no key substrings or hash prefixes; map file is private', async t => {
+    const data = fixture();
+    const legacy = 'RESERVE-Q7K2-M9X4-B3F8'; // old short format: 4 random characters, visible checksum
+    data.sold.push({orderId: 'order-legacy', licenseKey: legacy, email: 'l@example.com', planType: 'lifetime'});
+    data.claimed[legacy] = {key: legacy, plan: 'lifetime', expiresAt: 0, claimedAt: AFTER, uid: 'google_l', email: 'other@example.com', deviceId: 'dev-device-0010'};
+    const {dir, store} = fileStoreWith(data);
+    const mapDir = path.join(dir, 'private', 'maps');
+    const jsonFile = path.join(dir, 'report.json');
+    t.after(() => fs.rmSync(dir, {recursive: true, force: true}));
+    const lines = [];
+    const report = await run(store, {...options(['--map=' + mapDir]), json: jsonFile}, {now: NOW, log: line => lines.push(line)});
+    const texts = {json: fs.readFileSync(jsonFile, 'utf8'), console: lines.join('\n')};
+    for (const k of Object.keys(data.claimed)) {
+        const material = new Set([k.slice('RESERVE-'.length)]);
+        for (let i = 0; i < k.length; i++) for (let j = i + 4; j <= k.length; j++) if (!'RESERVE-'.includes(k.slice(i, j))) material.add(k.slice(i, j));
+        for (const algorithm of ['sha256', 'sha1', 'md5']) for (const input of [k, k.toLowerCase(), k.replace(/-/g, '')]) {
+            const digest = createHash(algorithm).update(input).digest();
+            material.add(digest.toString('hex').slice(0, 8)); material.add(digest.toString('hex').slice(0, 8).toUpperCase());
+            material.add(digest.toString('base64').slice(0, 8)); material.add(digest.toString('base64url').slice(0, 8));
+        }
+        for (const [where, text] of Object.entries(texts)) for (const piece of material) assert.equal(text.includes(piece), false, `${where} contains ${piece}`);
+    }
+    for (const record of report.records) assert.deepEqual(Object.keys(record).filter(name => /key/i.test(name)), []);
+    // Every row maps back to its key only through the map file, which only its owner can read.
+    assert.equal(report.mapFile.startsWith(mapDir), true);
+    assert.equal(texts.json.includes(report.mapFile), true);
+    assert.equal(fs.statSync(report.mapFile).mode & 0o777, 0o600);
+    assert.equal(fs.statSync(mapDir).mode & 0o777, 0o700);
+    const refs = JSON.parse(fs.readFileSync(report.mapFile, 'utf8')).refs;
+    assert.deepEqual(Object.values(refs).sort(), Object.keys(data.claimed).sort());
+    assert.equal(report.records.find(r => refs[r.ref] === legacy).class, 'ambiguous');
+    // Without --map nothing with key material is written at all.
+    const plain = await run(store, options([]), quiet);
+    assert.equal(plain.mapFile, undefined);
+    assert.equal(fs.readdirSync(mapDir).length, 1);
+    // An existing directory others can read is refused.
+    const open = path.join(dir, 'open'); fs.mkdirSync(open, {mode: 0o755}); fs.chmodSync(open, 0o755);
+    await assert.rejects(run(store, options(['--map=' + open]), quiet), /0700/);
+});
+
 test('file store: dry-run writes nothing; orphan claims are reported, not changed', async t => {
     const data = fixture();
     data.claimed['RESERVE-LIFE-ORPH-ZZ99'] = {key: 'RESERVE-LIFE-ORPH-ZZ99', plan: 'lifetime', expiresAt: 0, uid: 'google_o', email: 'o@example.com'};
@@ -167,7 +209,8 @@ test('CLI: help, usage errors and a dry run on a data directory', async t => {
     fs.writeFileSync(path.join(partial, 'claimed_licenses.json'), '{}');
     const empty = cli('--data-dir=' + partial);
     assert.equal(empty.status, 0, empty.stderr); assert.match(empty.stdout, /Kayıt: 0/);
-    assert.match(help.stdout, /keyId/);
+    assert.match(help.stdout, /--map/); assert.doesNotMatch(help.stdout, /keyId|node -e/);
+    assert.equal(cli('--map=', '--data-dir=' + dir).status, 2);
     const before = snapshot(dir);
     const dry = cli('--data-dir=' + dir);
     assert.equal(dry.status, 0, dry.stderr);

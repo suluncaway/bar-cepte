@@ -33,6 +33,8 @@ Depo seçimi sunucuyla aynıdır: DATABASE_URL varsa PostgreSQL, yoksa dosya dep
 Seçenekler:
   --dry-run                  Varsayılan. Hiçbir şey yazmaz, yalnızca rapor üretir.
   --json=<dosya>             Raporu JSON olarak da yaz (tam anahtar ve e-posta içermez).
+  --map[=<klasör>]           Rapor sıra numarası -> tam anahtar eşleme dosyasını yaz (0600, klasör 0700;
+                             değer verilmezse --backup-dir). Varsayılan: yazılmaz.
   --data-dir=<klasör>        Dosya deposu klasörü (DATABASE_URL yokken).
   --apply=<sınıf,...>        Yalnızca bu sınıflara binding yaz: device, unverified-uid, account-confirmed.
   --ambiguous=device|account 'ambiguous' kayıtlara da bu binding'i yaz (ayrıca belirtilmedikçe dokunulmaz).
@@ -60,12 +62,13 @@ Sınıflar ve önerilen eylem:
                      cihazda çalışır, o uid'nin /api/account aboneliğinden düşer (gerçek alıcı başka bir
                      cihazında hesapla kullanıyorsa orada kaybeder; destek alıcı e-postasıyla çözer).
 
-Rapor: anahtar yerine keyId (tam anahtarın sha256 özetinin ilk 10 hanesi; eski kısa anahtarlarda son
-karakterler sağlama toplamı olduğundan anahtarın hiçbir parçası yazılmaz), uid yerine sha256 özetinin ilk
-12 hanesi. sessionHint yalnızca bilgi içindir (çıkış yapılan oturumlar silindiği için kanıt değildir).
-Bir keyId'yi tam anahtara eşlemek için (yedek ya da export dosyasıyla, yalnızca yerelde):
-  node -e "const d=require(process.argv[1]),h=k=>require('crypto').createHash('sha256').update(k).digest('hex').slice(0,10);
-    for(const k of Object.keys(d.claimed))if(h(k)===process.argv[2])console.log(k)" ./yedek.json <keyId>
+Rapor: anahtardan türetilmiş hiçbir değer (parça, özet) içermez; her kayıt yalnızca bu rapora özgü bir
+sıra numarası (ref, #1, #2…) taşır. Eski kısa anahtarların uzayı küçük olduğundan bir özet bile tüm uzay
+taranarak geri çevrilebilirdi. Bir satırı gerçek kayda eşlemek için aynı çalıştırmada --map ver: eşleme
+dosyası (ref -> tam anahtar) yalnızca sahibin okuyabileceği izinlerle yazılır, raporda yalnızca yolu geçer;
+işin bitince sil. Numaralar çalıştırmalar arasında değişebilir; eşlemeyi yalnızca aynı çalıştırmanın
+raporuyla kullan. uid yerine sha256 özetinin ilk 12 hanesi yazılır. sessionHint yalnızca bilgi içindir
+(çıkış yapılan oturumlar silindiği için kanıt değildir).
 
 Canlıda:
   1. Sunucu çalışırken dry-run güvenlidir (salt-okuma işlem):
@@ -80,7 +83,7 @@ Canlıda:
 class UsageError extends Error {}
 
 function parseArgs(argv) {
-    const options = {apply: null, ambiguous: null, json: null, dataDir: null, backupDir: null,
+    const options = {apply: null, ambiguous: null, json: null, map: null, dataDir: null, backupDir: null,
         verifiedSince: DEFAULT_VERIFIED_SINCE, help: false};
     for (const arg of argv) {
         const [name, ...rest] = arg.split('='); const value = rest.length ? rest.join('=') : null;
@@ -89,6 +92,7 @@ function parseArgs(argv) {
         else if (name === '--apply') options.apply = value === null ? [] : value.split(',').map(s => s.trim()).filter(Boolean);
         else if (name === '--ambiguous' && ['device', 'account'].includes(value)) options.ambiguous = value;
         else if (name === '--json' && value) options.json = value;
+        else if (name === '--map' && value !== '') options.map = value === null ? true : value;
         else if (name === '--data-dir' && value) options.dataDir = value;
         else if (name === '--backup-dir' && value) options.backupDir = value;
         else if (name === '--verified-since' && value && Number.isFinite(Date.parse(value))) options.verifiedSince = Date.parse(value);
@@ -105,7 +109,6 @@ function parseArgs(argv) {
     return options;
 }
 
-const keyId = key => createHash('sha256').update(String(key)).digest('hex').slice(0, 10);
 const uidHash = uid => createHash('sha256').update(String(uid)).digest('hex').slice(0, 12);
 const normalEmail = value => typeof value === 'string' ? value.trim().toLowerCase() : '';
 
@@ -138,7 +141,7 @@ function buildReport(data, options, now) {
     const records = [];
     for (const [key, claim] of Object.entries(data.claimed)) {
         const result = classify(claim, sales.get(key), options.verifiedSince);
-        const record = {keyId: keyId(key), class: result.class, reason: result.reason};
+        const record = {ref: records.length + 1, class: result.class, reason: result.reason};
         if (claim && claim.uid) record.uidHash = uidHash(claim.uid);
         if (claim) {
             record.plan = claim.plan;
@@ -164,13 +167,20 @@ function targetBinding(className, options) {
     return options.apply.includes(className) ? WRITABLE[className] : null;
 }
 
+// Writes a file holding full keys: owner-only file (0600) in an owner-only directory (0700).
+function writePrivate(directory, prefix, value, now) {
+    fs.mkdirSync(directory, {recursive: true, mode: 0o700});
+    if (fs.statSync(directory).mode & 0o077) throw new Error(`Klasör başkalarınca erişilebilir, 0700 olmalı: ${directory}`);
+    const file = path.join(directory, `${prefix}-${new Date(now).toISOString().replace(/[:.]/g, '-')}-${randomBytes(3).toString('hex')}.json`);
+    const fd = fs.openSync(file, 'wx', 0o600);
+    try {fs.writeSync(fd, JSON.stringify(value, null, 2)); fs.fsyncSync(fd);} finally {fs.closeSync(fd);}
+    return file;
+}
+
 function writeBackup(backup, directory, now) {
     let validation = 'ok';
     try {validate(backup);} catch (error) {validation = 'license-backup doğrulaması geçmedi (' + error.message + '); ham yedek yine yazıldı';}
-    fs.mkdirSync(directory, {recursive: true, mode: 0o700});
-    const file = path.join(directory, `claim-bindings-backup-${new Date(now).toISOString().replace(/[:.]/g, '-')}-${randomBytes(3).toString('hex')}.json`);
-    const fd = fs.openSync(file, 'wx', 0o600);
-    try {fs.writeSync(fd, JSON.stringify(backup, null, 2)); fs.fsyncSync(fd);} finally {fs.closeSync(fd);}
+    const file = writePrivate(directory, 'claim-bindings-backup', backup, now);
     const check = JSON.parse(fs.readFileSync(file, 'utf8'));
     if (Object.keys(check.claimed).length !== Object.keys(backup.claimed).length) throw new Error('Yedek doğrulanamadı');
     return {file, validation};
@@ -190,7 +200,7 @@ async function run(store, options, {now = Date.now(), log = console.log} = {}) {
     log('Gerekçeler: ' + Object.entries(reasons).map(([reason, n]) => `${reason}=${n}`).join(', '));
     for (const {record} of records) {
         if (record.class === 'bound') continue;
-        log(`  key#${record.keyId} ${record.class}/${record.reason} uid#${record.uidHash || '-'} plan=${record.plan || '-'}` +
+        log(`  #${record.ref} ${record.class}/${record.reason} uid#${record.uidHash || '-'} plan=${record.plan || '-'}` +
             ` claimedAt=${record.claimedAt || '-'}${record.expired ? ' expired' : ''}${record.revoked ? ' revoked' : ''}` +
             `${record.sessionHint ? ' ' + record.sessionHint : ''}`);
     }
@@ -217,7 +227,15 @@ async function run(store, options, {now = Date.now(), log = console.log} = {}) {
             report.applied = result.applied.length; report.skipped = result.skipped.length;
             log(`Yazıldı: ${result.applied.length}, atlandı (kayıt değişmiş/binding almış): ${result.skipped.length}`);
         }
-    } else log('Dry-run: hiçbir şey yazılmadı.');
+    } else log('Dry-run: depoya hiçbir şey yazılmadı.');
+
+    if (options.map) {
+        const directory = options.map === true ? options.backupDir : options.map;
+        report.mapFile = writePrivate(directory, 'claim-bindings-map', {generatedAt: report.generatedAt,
+            note: 'ref -> tam lisans anahtarı; yalnızca bu çalıştırmanın raporu için. Gizli tut, işin bitince sil.',
+            refs: Object.fromEntries(records.map(({record, key}) => [record.ref, key]))}, now);
+        log(`Eşleme dosyası (tam anahtarlar, 0600): ${report.mapFile}`);
+    } else log('Satırları gerçek kayıtlara eşlemek için --map ile yeniden çalıştır.');
 
     if (options.json) {
         fs.writeFileSync(options.json, JSON.stringify(report, null, 2));
@@ -242,6 +260,7 @@ async function main(argv = process.argv.slice(2)) {
         options.dataDir = directory;
     }
     options.backupDir = path.resolve(options.backupDir || path.resolve(__dirname, '..', 'keys', 'migration-backups'));
+    if (typeof options.map === 'string') options.map = path.resolve(options.map);
     const store = createLicenseStore(options.dataDir ? {directory: path.resolve(options.dataDir)} : {});
     try {await run(store, options);}
     finally {await store.close();}

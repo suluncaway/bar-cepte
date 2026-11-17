@@ -361,7 +361,9 @@
             };
             // Escape means "don't add": the data stays on this device.
             const onCancel = event => { event.preventDefault(); finish(false); };
-            const onClose = () => finish(false);
+            // A close event from an earlier question (dialog.close() fires it asynchronously, possibly
+            // after this question reopened the dialog) must not answer this one.
+            const onClose = () => { if (!dialog.open) finish(false); };
             function finish(add) {
                 if (closeOpenMergeDialog !== finish) return;
                 closeOpenMergeDialog = null;
@@ -451,12 +453,17 @@
     async function syncToCloud(options={}) {
         const user=getCurrentUser();
         if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:getCurrentLang()==='en'?'Sign in with Google to use cloud backup.':'Bulut yedeği için Google ile giriş yapınız.'};
+        // Lists not yet settled for this account (question open, or a sign-in from an older version
+        // that never marked them): ask first, then sync what the user chose.
+        if(isUnsettled(user)) {
+            if(!await resumePendingSignIn() || isUnsettled(user))return {success:false,pendingLocalData:true,reason:getCurrentLang()==='en'?'First choose whether to add the data on this device to your account.':'Önce bu cihazdaki verilerin hesabına eklenip eklenmeyeceğini seç.'};
+            return syncToCloud(options);
+        }
         if(cloudRevision===null)return {success:false,reason:'Önce bulut yedeğini geri yükleyiniz.'};
         try {
             const owner=readOwner();
             if(isPendingOwner(owner))return {success:false,pendingLocalData:true,reason:getCurrentLang()==='en'?'First choose whether to add the data on this device to your account.':'Önce bu cihazdaki verilerin hesabına eklenip eklenmeyeceğini seç.'};
-            // Lists without an owner mark are not this account's; they are never uploaded to it.
-            if(owner!==user.uid)return {success:false,reason:'Bu cihazdaki veriler başka hesaba ait. Önce kendi bulut yedeğinizi açınız.'};
+            if(owner!==user.uid)return {success:false,reason:getCurrentLang()==='en'?'The lists on this device belong to another account. Sign in to that account or sign out first.':'Bu cihazdaki listeler başka bir hesaba ait. Önce o hesapla giriş yap ya da çıkış yap.'};
             if(personalDataVersion!==1 || inventoryDataVersion!==1) {
                 const capability=await accountRequest('/api/account/backup');
                 if(!capability.success)return capability;
@@ -475,8 +482,14 @@
     async function syncFromCloud(options={}) {
         const user=getCurrentUser();
         if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:'Google ile giriş yapınız.'};
-        // While the sign-in question is open the device's lists are undecided: neither merged nor replaced.
-        if(isPendingOwner(readOwner()))return {success:false,pendingLocalData:true,reason:getCurrentLang()==='en'?'First choose whether to add the data on this device to your account.':'Önce bu cihazdaki verilerin hesabına eklenip eklenmeyeceğini seç.'};
+        // While the device's lists are undecided they are neither merged nor replaced: a restore asks
+        // the question first, and the sign-in it completes already merges the cloud copy in, so the
+        // local lists are never silently swapped for the backup.
+        if(isPendingOwner(readOwner()) && !isUnsettled(user))return {success:false,pendingLocalData:true,reason:getCurrentLang()==='en'?'First choose whether to add the data on this device to your account.':'Önce bu cihazdaki verilerin hesabına eklenip eklenmeyeceğini seç.'};
+        if(isUnsettled(user)) {
+            if(options.merge || !await resumePendingSignIn() || isUnsettled(user))return {success:false,pendingLocalData:true,reason:getCurrentLang()==='en'?'First choose whether to add the data on this device to your account.':'Önce bu cihazdaki verilerin hesabına eklenip eklenmeyeceğini seç.'};
+            return {success:true,merged:true,data:collectCurrentLocalData()};
+        }
         const result=await accountRequest('/api/account/backup');
         if(!result.success)return result;
         personalDataVersion=result.personalDataVersion||0;
@@ -538,8 +551,16 @@
     async function settleLocalData(user,attempt) {
         const local=collectCurrentLocalData();
         if(!isEmptyData(local)) {
-            const add=await askAddLocalData(local);
-            if(attempt!==loginAttempt || !currentUser || currentUser.uid!==user.uid || readOwner()!==PENDING_OWNER_PREFIX+user.uid)return false;
+            let add;
+            if(openQuestion && openQuestion.uid===user.uid)add=await openQuestion.promise;
+            else {
+                const promise=askAddLocalData(local);openQuestion={uid:user.uid,promise};
+                try {add=await promise;} finally {if(openQuestion && openQuestion.promise===promise)openQuestion=null;}
+            }
+            if(attempt!==loginAttempt || !currentUser || currentUser.uid!==user.uid)return false;
+            // Another caller waiting on the same question already applied the answer.
+            if(readOwner()===user.uid)return true;
+            if(readOwner()!==PENDING_OWNER_PREFIX+user.uid)return false;
             if(!add) {
                 try {moveLocalDataTo(GUEST_DATA_KEY);reloadAppState();}
                 catch {showAlert(getCurrentLang()==='en'?'Could not set aside the data on this device.':'Bu cihazdaki veriler ayrılamadı.');return false;}
@@ -569,10 +590,20 @@
         }
         return true;
     }
-    // A reload (or crash) while the sign-in question was open: ask again, then finish the sign-in.
+    let openQuestion=null;
+    // The lists on the device are not settled for this signed-in account: the question is open
+    // (pending mark), or a Google sign-in from an older version never marked them.
+    function isUnsettled(user) {
+        if(!user)return false;
+        const owner=readOwner();
+        return owner===PENDING_OWNER_PREFIX+user.uid || (owner===null && user.provider==='google');
+    }
+    // A reload (or crash) while the sign-in question was open, or an unmarked older sign-in: ask
+    // (only if there is something to ask about), then finish the sign-in.
     async function resumePendingSignIn() {
         const user=getCurrentUser();
-        if(!user || readOwner()!==PENDING_OWNER_PREFIX+user.uid)return false;
+        if(!isUnsettled(user))return false;
+        try {if(readOwner()===null)root.localStorage.setItem(OWNER_KEY,PENDING_OWNER_PREFIX+user.uid);}catch {return false;}
         const attempt=loginAttempt;
         if(!await settleLocalData(user,attempt))return false;
         return completeSignIn(user,attempt);
