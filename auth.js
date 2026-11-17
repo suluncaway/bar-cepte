@@ -24,6 +24,7 @@
     let googleCredential = null;
     const CLOUD_CONSENT_KEY = 'barcepte_cloud_backup_consent';
     const LOCAL_BACKUP_PREFIX = 'barcepte_cloud_data_';
+    const GUEST_DATA_KEY = 'barcepte_guest_data';
 
     // --- Güvenlik & Doğrulama Yardımcıları ---
     function showAlert(msg) {
@@ -266,12 +267,17 @@
     // does not see it; signing back in to the same account (Google or local) merges it back.
     function stashAccountData(user) {
         if (!user || !user.uid) return;
+        moveLocalDataTo(LOCAL_BACKUP_PREFIX + user.uid);
+    }
+    // Moves the current lists into an on-device copy under `storageKey` (merged with an older copy
+    // there, never overwriting it) and empties the live lists.
+    function moveLocalDataTo(storageKey) {
         const current = collectCurrentLocalData();
         let previous = null;
-        try { previous = JSON.parse(root.localStorage.getItem(LOCAL_BACKUP_PREFIX + user.uid) || 'null'); } catch {}
+        try { previous = JSON.parse(root.localStorage.getItem(storageKey) || 'null'); } catch {}
         // An older copy that was never restored is merged, not overwritten.
         const data = previous && previous.data ? mergeAccountData(current, previous.data) : current;
-        root.localStorage.setItem(LOCAL_BACKUP_PREFIX + user.uid, JSON.stringify({ updatedAt: Date.now(), data }));
+        root.localStorage.setItem(storageKey, JSON.stringify({ updatedAt: Date.now(), data }));
         for (const key of ['favoriteCocktails', 'customRecipes', 'shoppingList', 'selectedIngredients']) root.localStorage.setItem(key, '[]');
         // The personal notebook and stock are personal too; preferences keep only "onboarding done".
         const prefs = current.preferences && typeof current.preferences === 'object' ? current.preferences : {};
@@ -281,23 +287,96 @@
             root.localStorage.removeItem('barInventory');
         } catch {}
     }
-    function readStash(uid) {
+    function readCopy(storageKey) {
         try {
-            const stash = JSON.parse(root.localStorage.getItem(LOCAL_BACKUP_PREFIX + uid) || 'null');
+            const stash = JSON.parse(root.localStorage.getItem(storageKey) || 'null');
             return stash && stash.data && typeof stash.data === 'object' ? stash.data : null;
         } catch { return null; }
     }
-    // Merges the on-device copy of this account into the current lists and removes the copy only
-    // after the merged data is stored. Never empties a list.
-    function restoreStashedData(uid) {
-        const stash = readStash(uid);
+    function readStash(uid) { return readCopy(LOCAL_BACKUP_PREFIX + uid); }
+    // Merges an on-device copy into the current lists and removes the copy only after the merged
+    // data is stored. Never empties a list. `uid` marks the result as that account's data.
+    function restoreCopy(storageKey, uid) {
+        const stash = readCopy(storageKey);
         if (!stash) return false;
         try {
             const merged = mergeAccountData(collectCurrentLocalData(), stash);
             writeLocalData(merged, uid);
-            root.localStorage.removeItem(LOCAL_BACKUP_PREFIX + uid);
+            root.localStorage.removeItem(storageKey);
             return true;
         } catch { return false; }
+    }
+    function restoreStashedData(uid) { return restoreCopy(LOCAL_BACKUP_PREFIX + uid, uid); }
+    // Data made on this device without an account that the user chose not to add to an account
+    // waits here and returns to the signed-out device on sign-out.
+    function restoreGuestData() { return restoreCopy(GUEST_DATA_KEY); }
+
+    // --- Hesapsız verinin hesaba eklenmesi (yalnızca kullanıcı onayıyla) ---
+    function describeLocalData(data) {
+        const en = getCurrentLang() === 'en';
+        const count = value => Array.isArray(value) ? value.length : 0;
+        const parts = [
+            [count(data.favorites), 'favori', 'favourite', 'favourites'],
+            [count(data.selected), 'malzeme', 'ingredient', 'ingredients'],
+            [count(data.shopping), 'alışveriş öğesi', 'shopping item', 'shopping items'],
+            [count(data.customs), 'özel tarif', 'custom recipe', 'custom recipes'],
+            [count(data.history), 'defter kaydı', 'notebook entry', 'notebook entries'],
+            [count(data.inventory && data.inventory.items), 'stok kalemi', 'stock item', 'stock items']
+        ].filter(([n]) => n > 0).map(([n, tr, one, many]) => `${n} ${en ? (n === 1 ? one : many) : tr}`);
+        return parts.join(', ');
+    }
+    let localDataPrompt = null;
+    // Lets a page or a test answer the question itself: fn(summary, data) -> true (add) / false (keep apart).
+    function setLocalDataPrompt(fn) { localDataPrompt = typeof fn === 'function' ? fn : null; }
+    let closeOpenMergeDialog = null;
+    function askAddLocalData(data) {
+        const summary = describeLocalData(data);
+        if (localDataPrompt) return Promise.resolve().then(() => localDataPrompt(summary, data)).then(answer => answer === true, () => false);
+        // No page at all (automation without a DOM): keep the earlier behaviour.
+        if (typeof document === 'undefined') return Promise.resolve(true);
+        const dialog = document.getElementById('auth-merge-dialog');
+        // A page without the dialog cannot ask, so nothing is added.
+        if (!dialog || typeof dialog.showModal !== 'function') return Promise.resolve(false);
+        if (closeOpenMergeDialog) closeOpenMergeDialog(false);
+        const en = getCurrentLang() === 'en';
+        const setText = (selector, text) => { const el = dialog.querySelector(selector); if (el) el.textContent = text; };
+        setText('#auth-merge-title', en ? 'Data on this device' : 'Bu cihazdaki veriler');
+        setText('#auth-merge-text', en
+            ? `This device has data that does not belong to your account (${summary}). Add it to your account?`
+            : `Bu cihazda hesabına ait olmayan veriler var (${summary}). Hesabına eklensin mi?`);
+        setText('#auth-merge-note', en
+            ? 'If you don\'t add it, nothing is deleted: it stays on this device and comes back when you sign out.'
+            : 'Eklemezsen hiçbir şey silinmez: bu cihazda kalır ve çıkış yaptığında geri gelir.');
+        const addBtn = dialog.querySelector('[data-merge="add"]'), keepBtn = dialog.querySelector('[data-merge="keep"]');
+        if (addBtn) addBtn.textContent = en ? 'Add' : 'Ekle';
+        if (keepBtn) keepBtn.textContent = en ? 'Don\'t add' : 'Ekleme';
+        const returnFocus = document.activeElement;
+        return new Promise(resolve => {
+            const onClick = event => {
+                const choice = event.target.closest && event.target.closest('[data-merge]');
+                if (choice) finish(choice.dataset.merge === 'add');
+            };
+            // Escape means "don't add": the data stays on this device.
+            const onCancel = event => { event.preventDefault(); finish(false); };
+            const onClose = () => finish(false);
+            function finish(add) {
+                if (closeOpenMergeDialog !== finish) return;
+                closeOpenMergeDialog = null;
+                dialog.removeEventListener('click', onClick);
+                dialog.removeEventListener('cancel', onCancel);
+                dialog.removeEventListener('close', onClose);
+                if (dialog.open) dialog.close();
+                try { if (returnFocus && returnFocus.isConnected && typeof returnFocus.focus === 'function') returnFocus.focus(); } catch {}
+                resolve(add);
+            }
+            closeOpenMergeDialog = finish;
+            dialog.addEventListener('click', onClick);
+            dialog.addEventListener('cancel', onCancel);
+            dialog.addEventListener('close', onClose);
+            try { dialog.showModal(); } catch { finish(false); return; }
+            // The choice that changes nothing gets the first focus.
+            if (keepBtn) try { keepBtn.focus(); } catch {}
+        });
     }
     // Writes validated account data to local storage (all or nothing) and redraws the app from it.
     function writeLocalData(valid, uid) {
@@ -417,15 +496,32 @@
         if(!result.success){showAlert(result.reason);return;}
         sessionToken=result.token;rememberRevision(null);googleCredential=response.credential;
         try {root.sessionStorage.setItem(SESSION_KEY,sessionToken);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
+        // Whose are the lists on this device? While someone is signed in they belong to that account;
+        // after sign-out (or before any sign-in) they belong to no account, whatever an older owner mark says.
+        const previousUser=getCurrentUser();
+        let storedOwner=null;try {storedOwner=root.localStorage.getItem('barcepte_data_owner');}catch {}
+        const liveOwner=previousUser?(storedOwner||previousUser.uid):null;
         const googleUser=saveUser({...result.user,isReserve:false,createdAt:Date.now()});
         try {
-            const owner=root.localStorage.getItem('barcepte_data_owner');
-            if(owner && owner!==googleUser.uid) {
+            if(liveOwner && liveOwner!==googleUser.uid) {
                 // Another account's lists are still here (no sign-out): keep them for that account.
-                try {stashAccountData({uid:owner});} catch {}
+                try {stashAccountData({uid:liveOwner});} catch {}
                 applyCloudData(EMPTY_DATA(),googleUser);
             }
         } catch {showAlert(getCurrentLang()==='en'?'Could not switch local account data.':'Yerel hesap verileri değiştirilemedi.');return;}
+        if(!liveOwner) {
+            // Lists made on this device without an account join the account only if the user says so.
+            const local=collectCurrentLocalData();
+            if(!isEmptyData(local)) {
+                const add=await askAddLocalData(local);
+                if(attempt!==loginAttempt)return;
+                if(!add) {
+                    try {moveLocalDataTo(GUEST_DATA_KEY);reloadAppState();}
+                    catch {showAlert(getCurrentLang()==='en'?'Could not set aside the data on this device.':'Bu cihazdaki veriler ayrılamadı.');return;}
+                }
+            }
+            try {root.localStorage.setItem('barcepte_data_owner',googleUser.uid);}catch {}
+        }
         // Lists kept on this device at sign-out come back first; the cloud copy is merged in next.
         restoreStashedData(googleUser.uid);
         applyServerSubscription(result.subscription);
@@ -520,12 +616,18 @@
         else if(root.BarReserve?.deactivateReserve)root.BarReserve.deactivateReserve(false);
     }
     function logout() {
-        try {stashAccountData(getCurrentUser());} catch {}
+        let stashed=true;
+        try {stashAccountData(getCurrentUser());} catch {stashed=false;}
         clearSession();
         currentUser = null;
         try {
             root.localStorage.removeItem(AUTH_USER_KEY);
+            // What is on the device from now on belongs to no account.
+            root.localStorage.removeItem('barcepte_data_owner');
         } catch {}
+        // Lists kept apart at sign-in ("don't add") come back to the signed-out device, but never
+        // mixed into account data that could not be put away.
+        if(stashed)restoreGuestData();
         releaseAccountReserve();
         reloadAppState();
         updateAuthUI();
@@ -844,6 +946,7 @@
         syncToCloud,
         syncFromCloud,
         mergeAccountData,
+        setLocalDataPrompt,
         handleGoogleCredentialResponse,
         loginAsDemoUser,
         sanitizeText,

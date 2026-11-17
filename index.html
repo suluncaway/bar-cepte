@@ -11,8 +11,8 @@
     <link rel="dns-prefetch" href="https://www.thecocktaildb.com">
     <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
     <script src="theme.js"></script>
-    <link rel="stylesheet" href="tailwind.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="tailwind.css?v=1">
+    <link rel="stylesheet" href="style.css?v=1">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
     <link rel="stylesheet" href="vivid.css?v=18">
     <link rel="stylesheet" href="icons.css?v=1">
@@ -875,9 +875,20 @@
             <button type="button" data-tour="next" class="primary-action"></button>
         </div>
     </dialog>
+    <!-- Girişte, hesapsız eklenmiş veriler için onay (metni auth.js dile göre doldurur) -->
+    <dialog id="auth-merge-dialog" class="tutorial-dialog" aria-labelledby="auth-merge-title" aria-describedby="auth-merge-text auth-merge-note">
+        <h2 id="auth-merge-title">Bu cihazdaki veriler</h2>
+        <p id="auth-merge-text"></p>
+        <p id="auth-merge-note"></p>
+        <div class="tutorial-actions">
+            <span></span>
+            <button type="button" data-merge="keep" class="text-action">Ekleme</button>
+            <button type="button" data-merge="add" class="primary-action">Ekle</button>
+        </div>
+    </dialog>
     <script src="security.js?v=45"></script>
     <script src="firebase-config.js"></script>
-    <script src="auth.js?v=45"></script>
+    <script src="auth.js?v=46"></script>
     <script src="personal-bar.js?v=43"></script>
     <script src="inventory.js?v=43"></script>
     <script src="smart-bar.js?v=2"></script>
@@ -890,7 +901,7 @@
     <script src="ui-bindings.js?v=44"></script>
     <script src="support.js"></script>
     <script src="ads.js"></script>
-    <script src="reserve.js"></script>
+    <script src="reserve.js?v=1"></script>
     <script src="ai-assistant-ui.js?v=4"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>

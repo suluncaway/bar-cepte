@@ -126,3 +126,125 @@ test('mergeAccountData never drops entries and keeps the result valid', () => {
     assert.deepEqual(merged.inventory.items.map(r => [r.ingredient, r.quantity]), [['Gin', 40], ['Rum', 70]]);
     assert.doesNotThrow(() => security.backup(merged));
 });
+
+// --- Data added without an account joins an account only with the user's consent ---
+function asking(c, answer) {
+    const asked = [];
+    c.api.setLocalDataPrompt((summary, data) => { asked.push({ summary, favorites: [...data.favorites] }); return answer; });
+    return asked;
+}
+async function aliceWithBackup(svc) {
+    const c = client(svc, { barcepte_cloud_backup_consent: 'granted' });
+    asking(c, true);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    c.local.setItem('favoriteCocktails', '["11000"]');
+    assert.equal((await c.api.syncToCloud()).success, true);
+    c.api.logout();
+    // Signed out: something is added on this device without an account.
+    c.local.setItem('favoriteCocktails', '["12345"]');
+    c.local.setItem('selectedIngredients', '["Rum"]');
+    return c;
+}
+
+test('"don\'t add": data added without an account stays out of the account and its backup, and returns on sign-out', async t => {
+    const { service: svc, store } = service(t);
+    const c = await aliceWithBackup(svc);
+    const asked = asking(c, false);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    assert.equal(asked.length, 1, 'the user is asked once');
+    assert.equal(asked[0].summary, '1 favori, 1 malzeme');
+    assert.deepEqual(c.list('favoriteCocktails'), ['11000'], 'only the account\'s own list is shown');
+    assert.deepEqual(c.list('selectedIngredients'), []);
+    assert.deepEqual(c.context.applied.at(-1).favorites, ['11000'], 'the app re-reads the account\'s lists');
+    // Even an explicit sync afterwards cannot carry it to the cloud.
+    assert.equal((await c.api.syncToCloud()).success, true);
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+    assert.ok(c.local.getItem('barcepte_guest_data').includes('12345'), 'kept on this device, not deleted');
+    c.api.logout();
+    assert.deepEqual(c.list('favoriteCocktails'), ['12345'], 'back in signed-out mode');
+    assert.deepEqual(c.list('selectedIngredients'), ['Rum']);
+    assert.equal(c.local.getItem('barcepte_guest_data'), null);
+    assert.ok(!c.local.getItem('barcepte_cloud_data_google_alice').includes('12345'), 'not in the account\'s device copy either');
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+});
+
+test('"add": data added without an account joins the account and, with earlier consent, its backup', async t => {
+    const { service: svc, store } = service(t);
+    const c = await aliceWithBackup(svc);
+    const asked = asking(c, true);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    assert.equal(asked.length, 1);
+    assert.deepEqual(c.list('favoriteCocktails').sort(), ['11000', '12345']);
+    assert.deepEqual(c.list('selectedIngredients'), ['Rum']);
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites.sort(), ['11000', '12345']);
+    assert.equal(c.local.getItem('barcepte_guest_data'), null);
+    c.api.logout();
+    assert.deepEqual(c.list('favoriteCocktails'), [], 'it left with the account');
+});
+
+test('the account\'s own device copy and cloud backup come back without a question', async t => {
+    const { service: svc } = service(t);
+    const c = client(svc, { barcepte_cloud_backup_consent: 'granted' });
+    const asked = asking(c, false);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    c.local.setItem('favoriteCocktails', '["11000"]');
+    await c.api.syncToCloud();
+    c.local.setItem('shoppingList', '["Nane"]'); // not yet in the cloud: only in the device copy
+    c.api.logout();
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    assert.deepEqual(c.list('favoriteCocktails'), ['11000']);
+    assert.deepEqual(c.list('shoppingList'), ['Nane']);
+    // Signing in again while still signed in to the same account does not ask either.
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    assert.deepEqual(c.list('favoriteCocktails'), ['11000']);
+    assert.equal(asked.length, 0);
+});
+
+test('a first sign-in on a device used without an account asks before adding its data', async t => {
+    const { service: svc, store } = service(t);
+    const c = client(svc, { barcepte_cloud_backup_consent: 'granted', favoriteCocktails: '["11007"]',
+        personalPreferences: JSON.stringify({ alcohol: 'all', tastes: ['Ferah'], onboardingDone: true }) });
+    const asked = asking(c, false);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    assert.deepEqual(asked.map(a => a.favorites), [['11007']]);
+    assert.deepEqual(c.list('favoriteCocktails'), []);
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, []);
+    assert.equal(JSON.parse(c.local.getItem('personalPreferences')).onboardingDone, true, 'onboarding is not shown again');
+    c.api.logout();
+    assert.deepEqual(c.list('favoriteCocktails'), ['11007']);
+    // Only onboarding preferences and no lists: nothing to ask about.
+    const fresh = client(svc, { personalPreferences: JSON.stringify({ alcohol: 'all', tastes: [], onboardingDone: true }) });
+    const none = asking(fresh, true);
+    await fresh.api.handleGoogleCredentialResponse({ credential: 'bob' });
+    assert.equal(none.length, 0);
+});
+
+test('no data leaks between two accounts or from signed-out use into either of them', async t => {
+    const { service: svc, store } = service(t);
+    const c = await aliceWithBackup(svc); // alice: 11000; signed out with 12345 on the device
+    let asked = asking(c, false);
+    await c.api.handleGoogleCredentialResponse({ credential: 'bob' });
+    assert.equal(asked.length, 1);
+    assert.deepEqual(c.list('favoriteCocktails'), [], 'bob sees neither alice\'s nor the signed-out lists');
+    c.local.setItem('favoriteCocktails', '["22222"]');
+    c.api.logout();
+    assert.deepEqual(c.list('favoriteCocktails'), ['12345'], 'only the signed-out list is back');
+    asked = asking(c, false);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    assert.deepEqual(c.list('favoriteCocktails'), ['11000']);
+    // Switching account without signing out keeps each account's lists for it.
+    asked = asking(c, true);
+    await c.api.handleGoogleCredentialResponse({ credential: 'bob' });
+    assert.equal(asked.length, 0, 'alice\'s lists are hers, not data without an account');
+    assert.deepEqual(c.list('favoriteCocktails'), ['22222']);
+    c.api.logout();
+    assert.deepEqual(c.list('favoriteCocktails'), ['12345']);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    assert.deepEqual(c.list('favoriteCocktails').sort(), ['11000', '12345'], 'alice added the signed-out list herself');
+    assert.equal(asked.length, 1);
+    assert.ok(!c.local.getItem('barcepte_cloud_data_google_bob').includes('11000'));
+    assert.ok(!c.local.getItem('barcepte_cloud_data_google_bob').includes('12345'));
+    assert.ok(!(await store.getBackup('google_alice')).data.favorites.includes('22222'));
+    const bobCloud = (await store.getBackup('google_bob')).data.favorites;
+    assert.ok(!bobCloud.includes('11000') && !bobCloud.includes('12345'));
+});

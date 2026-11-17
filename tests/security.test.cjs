@@ -120,7 +120,13 @@ test('Reserve UI elements and modal are present in index.html', () => {
     const html = fs.readFileSync('index.html', 'utf8');
     assert.match(html, /id="btn-open-reserve"/);
     assert.match(html, /id="reserve-modal"/);
-    assert.match(html, /src="reserve\.js"/);
+    // reserve.js is loaded once, with a cache-busting version like the other app scripts, after
+    // auth.js (it reads BarAuth) and after the modal it drives.
+    const tags = html.match(/<script src="reserve\.js[^"]*"><\/script>/g) || [];
+    assert.equal(tags.length, 1, 'reserve.js is loaded exactly once');
+    assert.match(tags[0], /^<script src="reserve\.js\?v=\d+"><\/script>$/);
+    assert.ok(html.indexOf(tags[0]) > html.indexOf('src="auth.js'), 'reserve.js loads after auth.js');
+    assert.ok(html.indexOf(tags[0]) > html.indexOf('id="reserve-modal"'), 'reserve.js loads after the Reserve modal markup');
 });
 test('Reserve UI elements and modal are responsive on mobile without overflow', () => {
     const html = fs.readFileSync('index.html', 'utf8');

@@ -26,6 +26,7 @@
     "build:css": "tailwindcss -i tailwind.input.css -o tailwind.css --minify",
     "test": "node --test tests/*.test.cjs scripts/check-assets.test.cjs",
     "import:licenses": "node scripts/import-licenses.js",
+    "migrate:claim-bindings": "node scripts/migrate-claim-bindings.js",
     "build:recipes": "node scripts/build-recipe-pages.js"
   },
   "devDependencies": {

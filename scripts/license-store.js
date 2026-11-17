@@ -95,7 +95,9 @@ function createFileStore(directory) {
         putSession: async (token, data) => {const all=read(path.join(directory,'sessions.json'),{});all[token]=data;write(path.join(directory,'sessions.json'),all);},
         getSession: async token => read(path.join(directory,'sessions.json'),{})[token] || null,
         revokeSession: async token => {const file=path.join(directory,'sessions.json');const all=read(file,{});delete all[token];write(file,all);},
-        getSubscription: async (uid,now) => Object.values(await store.getClaimed()).filter(c=>c.uid===uid && !c.needsReview && !c.revoked &&
+        // Claims bound to a device (binding 'device') never follow an account, even if an older
+        // server version attached a uid to them.
+        getSubscription: async (uid,now) => Object.values(await store.getClaimed()).filter(c=>c.uid===uid && c.binding!=='device' && !c.needsReview && !c.revoked &&
             (c.plan==='lifetime' && c.expiresAt===0 || c.expiresAt>now)).sort((a,b)=>(b.claimedAt||0)-(a.claimedAt||0))[0] || null,
         getBackup: async uid => read(path.join(directory,'backups.json'),{})[uid] || null,
         saveBackup: (uid,data,revision,updatedAt) => {
@@ -106,6 +108,26 @@ function createFileStore(directory) {
             });store.pending=task.catch(()=>{});return task;
         },
         exportBackup: async () => ({version: 1, sold: read(soldFile, []), claimed: read(claimedFile, {})}),
+        // One-off claim binding migration (scripts/migrate-claim-bindings.js). Read-only snapshot:
+        // sales, claims and session lifetimes (uid + expiresAt only).
+        readBindingMigrationData: async () => ({sold: await store.getSold(), claimed: await store.getClaimed(),
+            sessions: Object.values(read(path.join(directory, 'sessions.json'), {}))
+                .map(row => ({uid: row?.user?.uid, expiresAt: Number(row?.expiresAt)})).filter(row => row.uid)}),
+        // changes: [{key, expected, patch}]. A patch is merged only into a claim that is still exactly
+        // `expected` and has no binding yet; everything is written in one atomic file replace.
+        applyClaimBindings: changes => {
+            const task = store.pending.then(async () => {
+                const claimed = await store.getClaimed(); const applied = [], skipped = [];
+                for (const {key, expected, patch} of changes) {
+                    const current = claimed[key];
+                    if (!current || 'binding' in current || JSON.stringify(current) !== JSON.stringify(expected)) {skipped.push(key); continue;}
+                    claimed[key] = {...current, ...patch}; applied.push(key);
+                }
+                if (applied.length) write(claimedFile, claimed);
+                return {applied, skipped};
+            });
+            store.pending = task.catch(() => {}); return task;
+        },
         // Single-key lookup used by the public license endpoints.
         getLicense: async key => {
             const sale = (await store.getSold()).find(row => row.licenseKey === key);
@@ -288,6 +310,7 @@ function createPostgresStore(connectionString) {
         },
         async getSubscription(uid,now) {
             await store.ready();return (await pool.query(`SELECT payload FROM barcepte_claims WHERE payload->>'uid'=$1
+                AND COALESCE(payload->>'binding','')<>'device'
                 AND COALESCE(payload->>'needsReview','false')<>'true'
                 AND COALESCE(payload->>'revoked','false')<>'true'
                 AND ((payload->>'plan'='lifetime' AND (payload->>'expiresAt')::bigint=0) OR (payload->>'expiresAt')::bigint>$2)
@@ -330,6 +353,44 @@ function createPostgresStore(connectionString) {
                 return {version: 1, sold: sold.rows.map(row => row.payload),
                     claimed: Object.fromEntries(claimed.rows.map(row => [row.license_key,row.payload]))};
             } catch(error) {
+                await client.query('ROLLBACK').catch(() => {});
+                throw error;
+            } finally {client.release();}
+        },
+        // One-off claim binding migration: a consistent read-only snapshot. It does not call ready(),
+        // so a dry run never creates tables; the tables must already exist.
+        async readBindingMigrationData() {
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+                const sold = await client.query('SELECT payload FROM barcepte_sales ORDER BY order_id');
+                const claimed = await client.query('SELECT license_key,payload FROM barcepte_claims');
+                const sessions = await client.query('SELECT uid,expires_at FROM barcepte_sessions');
+                await client.query('COMMIT');
+                return {sold: sold.rows.map(row => row.payload),
+                    claimed: Object.fromEntries(claimed.rows.map(row => [row.license_key, row.payload])),
+                    sessions: sessions.rows.map(row => ({uid: row.uid, expiresAt: Number(row.expires_at)}))};
+            } catch (error) {
+                await client.query('ROLLBACK').catch(() => {});
+                throw error;
+            } finally {client.release();}
+        },
+        // changes: [{key, expected, patch}], applied in one transaction. A row is only updated while its
+        // payload still equals `expected` and has no binding, so a rerun or a concurrent change is skipped.
+        async applyClaimBindings(changes) {
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                const applied = [], skipped = [];
+                for (const {key, expected, patch} of changes) {
+                    const result = await client.query(`UPDATE barcepte_claims SET payload=payload || $2::jsonb
+                        WHERE license_key=$1 AND payload=$3::jsonb AND NOT (payload ? 'binding')`,
+                    [key, JSON.stringify(patch), JSON.stringify(expected)]);
+                    (result.rowCount ? applied : skipped).push(key);
+                }
+                await client.query('COMMIT');
+                return {applied, skipped};
+            } catch (error) {
                 await client.query('ROLLBACK').catch(() => {});
                 throw error;
             } finally {client.release();}
