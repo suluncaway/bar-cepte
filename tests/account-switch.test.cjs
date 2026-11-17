@@ -11,10 +11,11 @@ function storage(initial = {}) {
     const map = new Map(Object.entries(initial));
     return { map, getItem: k => map.has(k) ? map.get(k) : null, setItem: (k, v) => map.set(k, String(v)), removeItem: k => map.delete(k) };
 }
-function client(service, initial = {}) {
-    const local = storage(initial);
+// `reuse` reloads the page on the same device: same localStorage and sessionStorage, fresh scripts.
+function client(service, initial = {}, reuse = null) {
+    const local = reuse ? reuse.local : storage(initial);
     const sandbox = { module: { exports: {} }, console, setTimeout, clearTimeout, AbortController, URL,
-        localStorage: local, sessionStorage: storage(), BarSecurity: security, alert() {}, applied: [],
+        localStorage: local, sessionStorage: reuse ? reuse.context.sessionStorage : storage(), BarSecurity: security, alert() {}, applied: [],
         applyCloudBackup: data => { sandbox.applied.push(JSON.parse(JSON.stringify(data))); },
         fetch: async (url, options = {}) => {
             let status, value;
@@ -247,4 +248,85 @@ test('no data leaks between two accounts or from signed-out use into either of t
     assert.ok(!(await store.getBackup('google_alice')).data.favorites.includes('22222'));
     const bobCloud = (await store.getBackup('google_bob')).data.favorites;
     assert.ok(!bobCloud.includes('11000') && !bobCloud.includes('12345'));
+});
+
+test('a reload while the question is open does not make the data the account\'s; the question comes back', async t => {
+    const { service: svc, store } = service(t);
+    const c = await aliceWithBackup(svc); // alice: 11000 in the cloud; 12345 added without an account
+    let asked = 0;
+    c.api.setLocalDataPrompt(() => { asked++; return new Promise(() => {}); }); // never answered
+    c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    while (!asked) await new Promise(resolve => setImmediate(resolve));
+    assert.equal(c.local.getItem('barcepte_data_owner'), 'pending:google_alice');
+    // Reload: alice looks signed in, the lists on screen are still the ones without an account.
+    c.context.sessionStorage.setItem('barcepte_cloud_revision', '1');
+    const reloaded = client(svc, {}, c);
+    assert.equal(reloaded.api.getCurrentUser().uid, 'google_alice');
+    assert.deepEqual(reloaded.list('favoriteCocktails'), ['12345']);
+    // "Sync now" and "restore" refuse while the question is open; nothing reaches alice's backup.
+    const sync = await reloaded.api.syncToCloud();
+    assert.equal(sync.success, false);
+    assert.equal(sync.pendingLocalData, true);
+    assert.equal((await reloaded.api.syncFromCloud()).pendingLocalData, true);
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+    assert.deepEqual(reloaded.list('favoriteCocktails'), ['12345']);
+    // The page asks again after the reload; "don't add" then finishes the sign-in.
+    const again = asking(reloaded, false);
+    assert.equal(await reloaded.api.resumePendingSignIn(), true);
+    assert.equal(again.length, 1);
+    assert.deepEqual(reloaded.list('favoriteCocktails'), ['11000']);
+    assert.equal(reloaded.local.getItem('barcepte_data_owner'), 'google_alice');
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+    reloaded.api.logout();
+    assert.deepEqual(reloaded.list('favoriteCocktails'), ['12345']);
+    assert.ok(!reloaded.local.getItem('barcepte_cloud_data_google_alice').includes('12345'));
+});
+
+test('signing out after a reload with the question unanswered keeps the data out of the account', async t => {
+    const { service: svc, store } = service(t);
+    const c = await aliceWithBackup(svc);
+    let asked = 0;
+    c.api.setLocalDataPrompt(() => { asked++; return new Promise(() => {}); });
+    c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    while (!asked) await new Promise(resolve => setImmediate(resolve));
+    const reloaded = client(svc, {}, c);
+    reloaded.api.logout();
+    assert.deepEqual(reloaded.list('favoriteCocktails'), ['12345'], 'back as data without an account');
+    assert.equal(reloaded.local.getItem('barcepte_data_owner'), null);
+    assert.ok(!reloaded.local.getItem('barcepte_cloud_data_google_alice').includes('12345'), 'not in alice\'s device copy');
+    // The next sign-in to alice asks again instead of merging it silently.
+    const next = asking(reloaded, false);
+    await reloaded.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    assert.equal(next.length, 1);
+    assert.deepEqual(reloaded.list('favoriteCocktails'), ['11000']);
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+});
+
+test('signing out of a Google account without an owner mark sets the lists aside as data without an account', async t => {
+    const { service: svc, store } = service(t);
+    const c = client(svc, { barcepte_cloud_backup_consent: 'granted' });
+    asking(c, true);
+    await c.api.handleGoogleCredentialResponse({ credential: 'alice' });
+    c.local.setItem('favoriteCocktails', '["11000"]');
+    assert.equal((await c.api.syncToCloud()).success, true);
+    // A signed-in state whose lists carry no owner mark (as after an interrupted older sign-in).
+    c.local.removeItem('barcepte_data_owner');
+    c.local.setItem('favoriteCocktails', '["99902"]');
+    const sync = await c.api.syncToCloud();
+    assert.equal(sync.success, false, '"sync now" refuses unmarked lists');
+    assert.deepEqual((await store.getBackup('google_alice')).data.favorites, ['11000']);
+    let movedToGuest = null;
+    const realSet = c.local.setItem;
+    c.local.setItem = (k, v) => { if (k === 'barcepte_guest_data') movedToGuest = JSON.parse(v).data.favorites; realSet(k, v); };
+    c.api.logout();
+    assert.deepEqual(movedToGuest, ['99902'], 'set aside as data without an account');
+    assert.deepEqual(c.list('favoriteCocktails'), ['99902'], 'and back on the signed-out device');
+    assert.equal(c.local.getItem('barcepte_cloud_data_google_alice'), null, 'nothing went into alice\'s device copy');
+});
+
+test('the question cannot be answered by page scripts: the test hook is not on BarAuth', () => {
+    const c = client({ handle: async () => {} });
+    assert.equal(c.context.BarAuth.setLocalDataPrompt, undefined);
+    assert.equal(c.context.BarAuth.resumePendingSignIn, undefined);
+    assert.equal(typeof c.api.setLocalDataPrompt, 'function', 'only the CommonJS test export has it');
 });

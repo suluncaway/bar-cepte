@@ -453,8 +453,10 @@
         if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:getCurrentLang()==='en'?'Sign in with Google to use cloud backup.':'Bulut yedeği için Google ile giriş yapınız.'};
         if(cloudRevision===null)return {success:false,reason:'Önce bulut yedeğini geri yükleyiniz.'};
         try {
-            const owner=root.localStorage.getItem('barcepte_data_owner');
-            if(owner && owner!==user.uid)return {success:false,reason:'Bu cihazdaki veriler başka hesaba ait. Önce kendi bulut yedeğinizi açınız.'};
+            const owner=readOwner();
+            if(isPendingOwner(owner))return {success:false,pendingLocalData:true,reason:getCurrentLang()==='en'?'First choose whether to add the data on this device to your account.':'Önce bu cihazdaki verilerin hesabına eklenip eklenmeyeceğini seç.'};
+            // Lists without an owner mark are not this account's; they are never uploaded to it.
+            if(owner!==user.uid)return {success:false,reason:'Bu cihazdaki veriler başka hesaba ait. Önce kendi bulut yedeğinizi açınız.'};
             if(personalDataVersion!==1 || inventoryDataVersion!==1) {
                 const capability=await accountRequest('/api/account/backup');
                 if(!capability.success)return capability;
@@ -473,6 +475,8 @@
     async function syncFromCloud(options={}) {
         const user=getCurrentUser();
         if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:'Google ile giriş yapınız.'};
+        // While the sign-in question is open the device's lists are undecided: neither merged nor replaced.
+        if(isPendingOwner(readOwner()))return {success:false,pendingLocalData:true,reason:getCurrentLang()==='en'?'First choose whether to add the data on this device to your account.':'Önce bu cihazdaki verilerin hesabına eklenip eklenmeyeceğini seç.'};
         const result=await accountRequest('/api/account/backup');
         if(!result.success)return result;
         personalDataVersion=result.personalDataVersion||0;
@@ -505,16 +509,15 @@
         const liveOwner=previousUser && storedOwner && !isPendingOwner(storedOwner)?storedOwner:null;
         // The lists are marked "undecided" before the user and session are stored, so a reload or a
         // crash while the question is open can never make them this account's.
+        const incoming=sanitizeUser(result.user);
+        if(!incoming){showAlert(getCurrentLang()==='en'?'Sign-in failed.':'Giriş yapılamadı.');return;}
         if(!liveOwner) {
-            try {root.localStorage.setItem(OWNER_KEY,PENDING_OWNER_PREFIX+'google_'+String(result.user&&result.user.uid||'').replace(/^google_/,''));}
+            try {root.localStorage.setItem(OWNER_KEY,PENDING_OWNER_PREFIX+incoming.uid);}
             catch {showAlert(getCurrentLang()==='en'?'Could not switch local account data.':'Yerel hesap verileri değiştirilemedi.');return;}
         }
         sessionToken=result.token;rememberRevision(null);googleCredential=response.credential;
         try {root.sessionStorage.setItem(SESSION_KEY,sessionToken);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
         const googleUser=saveUser({...result.user,isReserve:false,createdAt:Date.now()});
-        if(!liveOwner) {
-            try {root.localStorage.setItem(OWNER_KEY,PENDING_OWNER_PREFIX+googleUser.uid);}catch {}
-        }
         try {
             if(liveOwner && liveOwner!==googleUser.uid) {
                 // Another account's lists are still here (no sign-out): keep them for that account.
@@ -591,7 +594,7 @@
         if(!sessionToken || !user || user.provider!=='google')return {success:false,reason:getCurrentLang()==='en'?'Sign in with Google first.':'Önce Google ile giriş yapınız.'};
         const result=await accountRequest('/api/account',{method:'DELETE'});
         if(!result.success)return result;
-        try {root.localStorage.removeItem(CLOUD_CONSENT_KEY);root.localStorage.removeItem('barcepte_data_owner');}catch {}
+        try {root.localStorage.removeItem(CLOUD_CONSENT_KEY);}catch {}
         sessionToken='';cloudRevision=null;
         try {root.sessionStorage.removeItem(SESSION_KEY);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
         logout();
@@ -623,6 +626,8 @@
         };
         saveUser(demoUser);
         restoreStashedData(demoUser.uid);
+        // The guest account keeps what is on the device now (as before), marked as its own.
+        try { root.localStorage.setItem(OWNER_KEY, demoUser.uid); } catch {}
         reloadAppState();
         closeAuthModal();
         showAlert(getCurrentLang() === 'en'
@@ -634,6 +639,8 @@
         personalDataVersion=0;
         inventoryDataVersion=0;
         loginAttempt++;
+        // An unanswered "add this device's data?" question belongs to the sign-in that just ended.
+        if(closeOpenMergeDialog)closeOpenMergeDialog(false);
         const token=sessionToken;sessionToken='';cloudRevision=null;
         try {root.sessionStorage.removeItem(SESSION_KEY);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
         googleCredential=null;
@@ -648,7 +655,16 @@
     }
     function logout() {
         let stashed=true;
-        try {stashAccountData(getCurrentUser());} catch {stashed=false;}
+        try {
+            const user=getCurrentUser(),owner=readOwner();
+            // Only lists marked as the account's leave with it. Still-undecided lists (the sign-in
+            // question was never answered) and unmarked lists under a Google account are data
+            // without an account. A local (device-only) account never had a question to answer.
+            if(user && owner===user.uid)stashAccountData(user);
+            else if(owner && !isPendingOwner(owner))stashAccountData({uid:owner});
+            else if(user && !owner && user.provider!=='google')stashAccountData(user);
+            else moveLocalDataTo(GUEST_DATA_KEY);
+        } catch {stashed=false;}
         clearSession();
         currentUser = null;
         try {
@@ -838,6 +854,8 @@
         loadStoredUser();
         updateAuthUI();
         restoreSession();
+        // The page was reloaded while the "add this device's data?" question was open: ask again.
+        resumePendingSignIn().catch(() => {});
 
         // Buton dinleyicileri
         const authBtn = document.getElementById('btn-auth-user');
@@ -977,7 +995,6 @@
         syncToCloud,
         syncFromCloud,
         mergeAccountData,
-        setLocalDataPrompt,
         handleGoogleCredentialResponse,
         loginAsDemoUser,
         sanitizeText,
@@ -989,5 +1006,6 @@
     };
 
     root.BarAuth = api;
-    if (typeof module !== 'undefined') module.exports = api;
+    // Test-only hooks: available to CommonJS/vm test harnesses, never on window.BarAuth in a page.
+    if (typeof module !== 'undefined') module.exports = { ...api, setLocalDataPrompt, resumePendingSignIn };
 })(typeof window !== 'undefined' ? window : globalThis);
