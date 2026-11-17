@@ -167,10 +167,15 @@ function targetBinding(className, options) {
     return options.apply.includes(className) ? WRITABLE[className] : null;
 }
 
-// Writes a file holding full keys: owner-only file (0600) in an owner-only directory (0700).
-function writePrivate(directory, prefix, value, now) {
+// Creates (0700) or checks an owner-only directory for files that hold full keys.
+function ensurePrivateDir(directory) {
     fs.mkdirSync(directory, {recursive: true, mode: 0o700});
     if (fs.statSync(directory).mode & 0o077) throw new Error(`Klasör başkalarınca erişilebilir, 0700 olmalı: ${directory}`);
+}
+
+// Writes a file holding full keys: owner-only file (0600) in an owner-only directory (0700).
+function writePrivate(directory, prefix, value, now) {
+    ensurePrivateDir(directory);
     const file = path.join(directory, `${prefix}-${new Date(now).toISOString().replace(/[:.]/g, '-')}-${randomBytes(3).toString('hex')}.json`);
     const fd = fs.openSync(file, 'wx', 0o600);
     try {fs.writeSync(fd, JSON.stringify(value, null, 2)); fs.fsyncSync(fd);} finally {fs.closeSync(fd);}
@@ -188,6 +193,11 @@ function writeBackup(backup, directory, now) {
 
 // Runs the migration against an open store. Returns the report object; `log` receives text lines.
 async function run(store, options, {now = Date.now(), log = console.log} = {}) {
+    // Check every output directory before anything is written, so a bad --map or --backup-dir
+    // cannot leave an --apply half done (bindings written, map/report missing).
+    const mapDir = options.map ? (options.map === true ? options.backupDir : options.map) : null;
+    if (options.apply) ensurePrivateDir(options.backupDir);
+    if (mapDir) ensurePrivateDir(mapDir);
     const data = await store.readBindingMigrationData();
     const {records, counts, reasons} = buildReport(data, options, now);
     const mode = options.apply ? 'apply' : 'dry-run';
@@ -230,8 +240,7 @@ async function run(store, options, {now = Date.now(), log = console.log} = {}) {
     } else log('Dry-run: depoya hiçbir şey yazılmadı.');
 
     if (options.map) {
-        const directory = options.map === true ? options.backupDir : options.map;
-        report.mapFile = writePrivate(directory, 'claim-bindings-map', {generatedAt: report.generatedAt,
+        report.mapFile = writePrivate(mapDir, 'claim-bindings-map', {generatedAt: report.generatedAt,
             note: 'ref -> tam lisans anahtarı; yalnızca bu çalıştırmanın raporu için. Gizli tut, işin bitince sil.',
             refs: Object.fromEntries(records.map(({record, key}) => [record.ref, key]))}, now);
         log(`Eşleme dosyası (tam anahtarlar, 0600): ${report.mapFile}`);

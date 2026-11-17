@@ -166,6 +166,23 @@ test('the report cannot be used to recover keys: no key substrings or hash prefi
     await assert.rejects(run(store, options(['--map=' + open]), quiet), /0700/);
 });
 
+test('apply refuses before writing anything when the --map or backup directory is not private', async t => {
+    const data = fixture();
+    const {dir, store} = fileStoreWith(data);
+    t.after(() => fs.rmSync(dir, {recursive: true, force: true}));
+    const openDir = path.join(dir, 'open-map');
+    fs.mkdirSync(openDir, {mode: 0o755});
+    fs.chmodSync(openDir, 0o755);
+    // Only files matter: the preflight may create an empty 0700 backup directory, but no data,
+    // backup or map file may be written.
+    const files = () => Object.fromEntries(Object.entries(snapshot(dir)).filter(([, v]) => v !== 'dir'));
+    const before = files();
+    await assert.rejects(run(store, options(['--apply=device', `--map=${openDir}`], path.join(dir, 'backups')), quiet), /0700/);
+    assert.deepEqual(files(), before, 'no backup, binding or map was written');
+    await assert.rejects(run(store, options(['--apply=device'], openDir), quiet), /0700/);
+    assert.deepEqual(files(), before, 'an open backup directory is refused before writing');
+});
+
 test('file store: dry-run writes nothing; orphan claims are reported, not changed', async t => {
     const data = fixture();
     data.claimed['RESERVE-LIFE-ORPH-ZZ99'] = {key: 'RESERVE-LIFE-ORPH-ZZ99', plan: 'lifetime', expiresAt: 0, uid: 'google_o', email: 'o@example.com'};
