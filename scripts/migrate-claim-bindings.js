@@ -60,8 +60,12 @@ Sınıflar ve önerilen eylem:
                      cihazda çalışır, o uid'nin /api/account aboneliğinden düşer (gerçek alıcı başka bir
                      cihazında hesapla kullanıyorsa orada kaybeder; destek alıcı e-postasıyla çözer).
 
-Rapor: anahtarın yalnızca son 4 karakteri, uid'nin sha256 özetinin ilk 12 hanesi. sessionHint yalnızca
-bilgi içindir (çıkış yapılan oturumlar silindiği için kanıt değildir).
+Rapor: anahtar yerine keyId (tam anahtarın sha256 özetinin ilk 10 hanesi; eski kısa anahtarlarda son
+karakterler sağlama toplamı olduğundan anahtarın hiçbir parçası yazılmaz), uid yerine sha256 özetinin ilk
+12 hanesi. sessionHint yalnızca bilgi içindir (çıkış yapılan oturumlar silindiği için kanıt değildir).
+Bir keyId'yi tam anahtara eşlemek için (yedek ya da export dosyasıyla, yalnızca yerelde):
+  node -e "const d=require(process.argv[1]),h=k=>require('crypto').createHash('sha256').update(k).digest('hex').slice(0,10);
+    for(const k of Object.keys(d.claimed))if(h(k)===process.argv[2])console.log(k)" ./yedek.json <keyId>
 
 Canlıda:
   1. Sunucu çalışırken dry-run güvenlidir (salt-okuma işlem):
@@ -101,6 +105,7 @@ function parseArgs(argv) {
     return options;
 }
 
+const keyId = key => createHash('sha256').update(String(key)).digest('hex').slice(0, 10);
 const uidHash = uid => createHash('sha256').update(String(uid)).digest('hex').slice(0, 12);
 const normalEmail = value => typeof value === 'string' ? value.trim().toLowerCase() : '';
 
@@ -133,7 +138,7 @@ function buildReport(data, options, now) {
     const records = [];
     for (const [key, claim] of Object.entries(data.claimed)) {
         const result = classify(claim, sales.get(key), options.verifiedSince);
-        const record = {keyTail: String(key).slice(-4), class: result.class, reason: result.reason};
+        const record = {keyId: keyId(key), class: result.class, reason: result.reason};
         if (claim && claim.uid) record.uidHash = uidHash(claim.uid);
         if (claim) {
             record.plan = claim.plan;
@@ -185,7 +190,7 @@ async function run(store, options, {now = Date.now(), log = console.log} = {}) {
     log('Gerekçeler: ' + Object.entries(reasons).map(([reason, n]) => `${reason}=${n}`).join(', '));
     for (const {record} of records) {
         if (record.class === 'bound') continue;
-        log(`  …${record.keyTail} ${record.class}/${record.reason} uid#${record.uidHash || '-'} plan=${record.plan || '-'}` +
+        log(`  key#${record.keyId} ${record.class}/${record.reason} uid#${record.uidHash || '-'} plan=${record.plan || '-'}` +
             ` claimedAt=${record.claimedAt || '-'}${record.expired ? ' expired' : ''}${record.revoked ? ' revoked' : ''}` +
             `${record.sessionHint ? ' ' + record.sessionHint : ''}`);
     }
@@ -228,6 +233,14 @@ async function main(argv = process.argv.slice(2)) {
         console.error(error.message + '\n\n' + HELP); process.exitCode = 2; return;
     }
     if (options.help) {console.log(HELP); return;}
+    if (!process.env.DATABASE_URL) {
+        // A mistyped data directory must not look like an empty store.
+        const directory = path.resolve(options.dataDir || process.env.LICENSE_DATA_DIR || path.resolve(__dirname, '..', 'keys'));
+        const missing = ['sold_licenses.json', 'claimed_licenses.json'].filter(name => !fs.existsSync(path.join(directory, name)));
+        if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) throw new UsageError(`Veri klasörü bulunamadı: ${directory}`);
+        if (missing.length) throw new UsageError(`Veri klasöründe eksik dosya: ${missing.join(', ')} (${directory})`);
+        options.dataDir = directory;
+    }
     options.backupDir = path.resolve(options.backupDir || path.resolve(__dirname, '..', 'keys', 'migration-backups'));
     const store = createLicenseStore(options.dataDir ? {directory: path.resolve(options.dataDir)} : {});
     try {await run(store, options);}

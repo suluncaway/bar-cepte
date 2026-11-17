@@ -13,6 +13,7 @@ const AFTER = DEFAULT_VERIFIED_SINCE + 5 * 86400000;
 const BEFORE = DEFAULT_VERIFIED_SINCE - 86400000;
 const DAY = 86400000;
 const key = tail => `RESERVE-LIFE-MIGR-${tail}`;
+const keyId = k => require('node:crypto').createHash('sha256').update(k).digest('hex').slice(0, 10);
 
 // One record per class/reason. Emails are uppercase in places to check case-insensitive matching.
 function fixture() {
@@ -38,7 +39,8 @@ function fixture() {
 }
 const EXPECTED = {DEV1: 'device', ACC1: 'account-confirmed', AMB1: 'ambiguous', BND1: 'bound', REV1: 'needs-review',
     UNV1: 'unverified-uid', PRE1: 'ambiguous', LEG1: 'account-confirmed', DEL1: 'ambiguous', NOS1: 'ambiguous'};
-const SECRETS = data => [...data.sold.map(s => s.licenseKey), ...data.sold.map(s => s.email).filter(Boolean),
+// Key tails too: in old short keys the last characters are the checksum.
+const SECRETS = data => [...data.sold.map(s => s.licenseKey), ...data.sold.map(s => s.licenseKey.slice(-4)), ...data.sold.map(s => s.email).filter(Boolean),
     ...Object.values(data.claimed).map(c => c.email).filter(Boolean), 'google_friend', 'google_buyer', 'dev-device-0003'];
 
 function fileStoreWith(data) {
@@ -58,8 +60,10 @@ const options = (argv, backupDir) => ({...parseArgs(argv), backupDir});
 async function scenario(store, data, backupDir) {
     const lines = [];
     const dry = await run(store, options([]), {now: NOW, log: line => lines.push(line)});
-    const byTail = Object.fromEntries(dry.records.map(r => [r.keyTail, r]));
-    for (const [tail, cls] of Object.entries(EXPECTED)) assert.equal(byTail[tail.slice(-4)].class, cls, tail);
+    const ids = Object.fromEntries(dry.records.map(r => [r.keyId, r]));
+    const byTail = Object.fromEntries(Object.keys(EXPECTED).map(tail => [tail, ids[keyId(key(tail))]]));
+    for (const [tail, cls] of Object.entries(EXPECTED)) assert.equal(byTail[tail].class, cls, tail);
+    for (const r of dry.records) {assert.match(r.keyId, /^[0-9a-f]{10}$/); assert.equal('keyTail' in r, false);}
     assert.equal(byTail.AMB1.reason, 'email-mismatch');
     assert.equal(byTail.PRE1.reason, 'claimed-before-verified-sessions');
     assert.equal(byTail.DEL1.reason, 'claim-email-missing');
@@ -151,6 +155,19 @@ test('CLI: help, usage errors and a dry run on a data directory', async t => {
     for (const args of [['--apply=ambiguous'], ['--ambiguous=device'], ['--apply'], ['--apply=nope'], ['--dry-run', '--apply=device'], ['--ambiguous=maybe']]) {
         assert.equal(cli(...args, '--data-dir=' + dir).status, 2, args.join(' '));
     }
+    // A mistyped or incomplete data directory is an error, not an empty report.
+    const missingDir = cli('--data-dir=' + dir + '-typo');
+    assert.notEqual(missingDir.status, 0); assert.match(missingDir.stderr, /Veri klasörü bulunamadı/);
+    assert.doesNotMatch(missingDir.stdout, /Kayıt: 0/);
+    const partial = fs.mkdtempSync(path.join(os.tmpdir(), 'bar-migrate-partial-'));
+    t.after(() => fs.rmSync(partial, {recursive: true, force: true}));
+    fs.writeFileSync(path.join(partial, 'sold_licenses.json'), '[]');
+    const noClaims = cli('--data-dir=' + partial);
+    assert.notEqual(noClaims.status, 0); assert.match(noClaims.stderr, /eksik dosya: claimed_licenses\.json/);
+    fs.writeFileSync(path.join(partial, 'claimed_licenses.json'), '{}');
+    const empty = cli('--data-dir=' + partial);
+    assert.equal(empty.status, 0, empty.stderr); assert.match(empty.stdout, /Kayıt: 0/);
+    assert.match(help.stdout, /keyId/);
     const before = snapshot(dir);
     const dry = cli('--data-dir=' + dir);
     assert.equal(dry.status, 0, dry.stderr);

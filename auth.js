@@ -25,6 +25,9 @@
     const CLOUD_CONSENT_KEY = 'barcepte_cloud_backup_consent';
     const LOCAL_BACKUP_PREFIX = 'barcepte_cloud_data_';
     const GUEST_DATA_KEY = 'barcepte_guest_data';
+    const OWNER_KEY = 'barcepte_data_owner';
+    // Owner mark while the "add this device's data to your account?" question is unanswered.
+    const PENDING_OWNER_PREFIX = 'pending:';
 
     // --- Güvenlik & Doğrulama Yardımcıları ---
     function showAlert(msg) {
@@ -494,14 +497,24 @@
         const result=await accountRequest('/api/auth/google',{method:'POST',body:JSON.stringify({credential:response.credential})});
         if(attempt!==loginAttempt)return;
         if(!result.success){showAlert(result.reason);return;}
+        // Whose are the lists on this device? Only an explicit owner mark makes them an account's.
+        // After sign-out (or before any sign-in), or while a sign-in question is unanswered, they
+        // belong to no account, whatever an older mark or the signed-in user says.
+        const previousUser=getCurrentUser();
+        const storedOwner=readOwner();
+        const liveOwner=previousUser && storedOwner && !isPendingOwner(storedOwner)?storedOwner:null;
+        // The lists are marked "undecided" before the user and session are stored, so a reload or a
+        // crash while the question is open can never make them this account's.
+        if(!liveOwner) {
+            try {root.localStorage.setItem(OWNER_KEY,PENDING_OWNER_PREFIX+'google_'+String(result.user&&result.user.uid||'').replace(/^google_/,''));}
+            catch {showAlert(getCurrentLang()==='en'?'Could not switch local account data.':'Yerel hesap verileri değiştirilemedi.');return;}
+        }
         sessionToken=result.token;rememberRevision(null);googleCredential=response.credential;
         try {root.sessionStorage.setItem(SESSION_KEY,sessionToken);root.sessionStorage.removeItem(REVISION_KEY);}catch {}
-        // Whose are the lists on this device? While someone is signed in they belong to that account;
-        // after sign-out (or before any sign-in) they belong to no account, whatever an older owner mark says.
-        const previousUser=getCurrentUser();
-        let storedOwner=null;try {storedOwner=root.localStorage.getItem('barcepte_data_owner');}catch {}
-        const liveOwner=previousUser?(storedOwner||previousUser.uid):null;
         const googleUser=saveUser({...result.user,isReserve:false,createdAt:Date.now()});
+        if(!liveOwner) {
+            try {root.localStorage.setItem(OWNER_KEY,PENDING_OWNER_PREFIX+googleUser.uid);}catch {}
+        }
         try {
             if(liveOwner && liveOwner!==googleUser.uid) {
                 // Another account's lists are still here (no sign-out): keep them for that account.
@@ -509,29 +522,40 @@
                 applyCloudData(EMPTY_DATA(),googleUser);
             }
         } catch {showAlert(getCurrentLang()==='en'?'Could not switch local account data.':'Yerel hesap verileri değiştirilemedi.');return;}
-        if(!liveOwner) {
-            // Lists made on this device without an account join the account only if the user says so.
-            const local=collectCurrentLocalData();
-            if(!isEmptyData(local)) {
-                const add=await askAddLocalData(local);
-                if(attempt!==loginAttempt)return;
-                if(!add) {
-                    try {moveLocalDataTo(GUEST_DATA_KEY);reloadAppState();}
-                    catch {showAlert(getCurrentLang()==='en'?'Could not set aside the data on this device.':'Bu cihazdaki veriler ayrılamadı.');return;}
-                }
-            }
-            try {root.localStorage.setItem('barcepte_data_owner',googleUser.uid);}catch {}
-        }
-        // Lists kept on this device at sign-out come back first; the cloud copy is merged in next.
-        restoreStashedData(googleUser.uid);
+        if(!liveOwner && !await settleLocalData(googleUser,attempt))return;
         applyServerSubscription(result.subscription);
+        if(!await completeSignIn(googleUser,attempt))return;
+        closeAuthModal();
+        showAlert(getCurrentLang()==='en'?`Welcome, ${googleUser.name}!`: `Hoş geldin, ${googleUser.name}!`);
+    }
+    function readOwner() {try {return root.localStorage.getItem(OWNER_KEY);}catch {return null;}}
+    function isPendingOwner(owner) {return typeof owner==='string' && owner.startsWith(PENDING_OWNER_PREFIX);}
+    // Lists made on this device without an account join the account only if the user says so.
+    // Until then the owner mark stays "pending". Returns false when the sign-in was superseded.
+    async function settleLocalData(user,attempt) {
+        const local=collectCurrentLocalData();
+        if(!isEmptyData(local)) {
+            const add=await askAddLocalData(local);
+            if(attempt!==loginAttempt || !currentUser || currentUser.uid!==user.uid || readOwner()!==PENDING_OWNER_PREFIX+user.uid)return false;
+            if(!add) {
+                try {moveLocalDataTo(GUEST_DATA_KEY);reloadAppState();}
+                catch {showAlert(getCurrentLang()==='en'?'Could not set aside the data on this device.':'Bu cihazdaki veriler ayrılamadı.');return false;}
+            }
+        }
+        try {root.localStorage.setItem(OWNER_KEY,user.uid);}catch {return false;}
+        return true;
+    }
+    // The account's own device copy comes back first; the cloud copy is merged in next.
+    async function completeSignIn(googleUser,attempt) {
+        restoreStashedData(googleUser.uid);
+        if(!sessionToken)return true;
         const restore=await syncFromCloud({merge:true});
-        if(attempt!==loginAttempt)return;
+        if(attempt!==loginAttempt)return false;
         if(restore.notFound) {
             try {
-                const owner=root.localStorage.getItem('barcepte_data_owner');
+                const owner=readOwner();
                 if(owner && owner!==googleUser.uid)applyCloudData(EMPTY_DATA(),googleUser);
-                else root.localStorage.setItem('barcepte_data_owner',googleUser.uid);
+                else root.localStorage.setItem(OWNER_KEY,googleUser.uid);
             }catch {}
             // The first upload needs explicit consent. There is no backup yet, so nothing can be overwritten.
             if(askCloudConsent())await syncToCloud();
@@ -540,8 +564,15 @@
             let consent=null;try {consent=root.localStorage.getItem(CLOUD_CONSENT_KEY);}catch {}
             if(consent==='granted')await syncToCloud();
         }
-        closeAuthModal();
-        showAlert(getCurrentLang()==='en'?`Welcome, ${googleUser.name}!`: `Hoş geldin, ${googleUser.name}!`);
+        return true;
+    }
+    // A reload (or crash) while the sign-in question was open: ask again, then finish the sign-in.
+    async function resumePendingSignIn() {
+        const user=getCurrentUser();
+        if(!user || readOwner()!==PENDING_OWNER_PREFIX+user.uid)return false;
+        const attempt=loginAttempt;
+        if(!await settleLocalData(user,attempt))return false;
+        return completeSignIn(user,attempt);
     }
     function askCloudConsent() {
         let stored=null;
