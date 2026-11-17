@@ -134,4 +134,4 @@ jobs:
             legacy-persistence.log
             upgrade-test.log
             android-logcat.log
-        if-no-files-found: error
+          if-no-files-found: error
