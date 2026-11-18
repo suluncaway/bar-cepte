@@ -512,3 +512,44 @@ html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-sl
 #smart-recommendation-banner .acrylic-card::before { display:none; }
 #smart-recommendation-banner .text-emerald-300,#smart-recommendation-banner .text-emerald-400 { display:inline-block; padding:1px 10px 1px 12px; border-radius:999px 4px 4px 999px; background:var(--citrus); color:var(--on-citrus)!important; font-weight:700; box-shadow:inset 6px 0 0 var(--cherry); }
 .cocktail-card :is([class*="bg-rose-"],[class*="bg-amber-"],[class*="bg-black/"]):not(button):not(span):not(a):not(:first-child) { background:transparent!important; border:0!important; border-top:2px solid var(--keyline)!important; border-radius:0!important; }
+/* Home: your bar at a glance. Live count + up to four coasters + one matchbox striker.
+   Same coaster language as the landing page (landing.css). */
+.hero-copy > p { max-width:40ch; }
+.home-bar { margin:24px 0 4px; }
+.home-bar:empty { display:none; }
+.home-bar-empty { margin:0; padding:14px 16px; border:2px dashed var(--keyline-strong); border-radius:var(--r-md); color:var(--muted); font-size:15px; max-width:46ch; }
+.home-tally { display:flex; align-items:baseline; gap:14px; margin:0 0 20px; padding-top:18px; border-top:2px solid var(--keyline); }
+.home-tally strong { font:800 80px/.8 var(--font-display); font-variant-numeric:tabular-nums; color:var(--mint); }
+.home-tally span { display:flex; flex-direction:column; gap:4px; font-weight:600; font-size:18px; line-height:1.2; }
+.home-tally small { color:var(--muted); font-size:14px; font-weight:500; }
+.home-coasters { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0; padding:0; list-style:none; max-width:560px; }
+.home-bar .coaster { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:100%; aspect-ratio:1; padding:12%; border:2px dashed var(--cherry); border-radius:50%; background:transparent; color:var(--ink); text-align:center; cursor:pointer; transition:border-color .2s var(--ease-out),background .2s var(--ease-out); }
+.home-bar .coaster:hover { border-style:solid; }
+.home-bar .coaster-name { font:800 clamp(15px,1.5vw,20px)/.95 var(--font-display); text-transform:uppercase; overflow-wrap:anywhere; }
+.home-bar .coaster-status { color:var(--muted); font-size:12px; line-height:1.2; }
+.home-bar .coaster.is-ready { border:2px solid var(--mint); background:var(--mint); color:var(--on-mint); }
+.home-bar .coaster.is-ready .coaster-status { color:var(--on-mint); font-weight:700; }
+.home-bar .stamp { position:absolute; top:-3px; right:-1px; display:grid; place-items:center; width:28px; height:28px; border:3px solid var(--surface); border-radius:50%; background:var(--ink); transform:rotate(-14deg); }
+.home-bar .stamp svg { width:15px; height:15px; fill:none; stroke:var(--surface); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.home-see-all { margin-top:14px; padding:6px 0; background:none; border:0; color:var(--ink); font-weight:600; font-size:14px; text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:6px; text-decoration-color:var(--mint); cursor:pointer; }
+.home-striker { position:relative; display:flex; align-items:center; justify-content:space-between; gap:12px; max-width:560px; margin-top:18px; padding:12px 12px 12px 26px; border:2px solid var(--keyline); border-radius:var(--r-md); background:var(--surface-sunk); overflow:hidden; }
+.home-striker::before { content:""; position:absolute; inset:0 auto 0 0; width:10px; background:repeating-linear-gradient(0deg,var(--clay) 0 3px,#7a3b1c 3px 6px); }
+.home-striker p { margin:0; font-size:14px; }
+.home-striker b { color:var(--ink); }
+.home-striker .match { display:inline-flex; align-items:center; margin-right:6px; padding:1px 8px 1px 6px; border-radius:3px; background:var(--citrus); color:var(--on-citrus); font:800 16px/1.2 var(--font-display); }
+.home-striker .match::before { content:""; width:9px; height:9px; margin-right:5px; border-radius:50%; background:var(--cherry); }
+.home-striker button { flex:none; min-height:40px; padding:0 14px; border:1.5px solid var(--clay); border-radius:var(--r-sm); background:transparent; color:var(--ink); font-weight:600; font-size:13px; cursor:pointer; }
+.home-striker button:hover { background:var(--clay); color:#200d03; }
+.editorial-hero .hero-actions { margin-top:24px; }
+@media (max-width:767px) {
+  .home-tally strong { font-size:64px; }
+  .home-coasters { gap:8px; }
+  .home-bar .coaster { padding:8%; }
+  .home-bar .coaster-name { font-size:14px; }
+  .home-bar .coaster-status { font-size:11px; }
+  .home-striker { flex-direction:column; align-items:flex-start; }
+}
+@media (max-width:560px) { .home-coasters { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; max-width:250px; } .home-bar .coaster-name { font-size:16px; } .home-bar .coaster-status { font-size:12px; } .home-bar .stamp { width:26px; height:26px; } }
+html[data-theme="light"] .home-bar .coaster.is-ready { --mint:#2f9e72; }
+html[data-theme="light"] .home-tally strong { color:#2f9e72; }
+html[data-theme="light"] .hero-video-control { color:#f3ead8!important; }
