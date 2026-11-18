@@ -553,3 +553,49 @@ html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-sl
 html[data-theme="light"] .home-bar .coaster.is-ready { --mint:#2f9e72; }
 html[data-theme="light"] .home-tally strong { color:#2f9e72; }
 html[data-theme="light"] .hero-video-control { color:#f3ead8!important; }
+
+/* Tarifler + Malzemelerim pass: labels in sentence case, data in Onest tabular figures,
+   stamps never cover text, selected ingredients wear mint, the shelf is a grid you can scan. */
+/* Recipe cards: stamp sits on the photo's lower-right corner, clear of "Detay" */
+#recipes-ready .cocktail-card::after { top:6.6rem; right:1.5rem; width:52px; height:52px; box-shadow:0 0 0 4px var(--surface),0 0 0 6px var(--mint); }
+#recipes-missing .cocktail-card::after { top:7.4rem; right:1.6rem; width:40px; height:40px; background:color-mix(in srgb,var(--surface) 70%,transparent); }
+.cocktail-card .uppercase.tracking-wider { text-transform:none; letter-spacing:0; font-size:12px; }
+.cocktail-card .font-mono, #count-ready, #count-missing { font-family:var(--font-body)!important; font-variant-numeric:tabular-nums; }
+.cocktail-card .toggle-icon { font-size:13px; }
+/* Discovery bar */
+.filter-caption { text-transform:none!important; letter-spacing:0!important; font-size:13px!important; font-weight:600; color:var(--muted)!important; }
+#discovery-controls .vibe-label { color:var(--muted); font-size:13px; font-weight:600; }
+#discovery-controls [data-ui="ui-15"] { background:transparent!important; border:1.5px solid var(--keyline-strong)!important; color:var(--ink)!important; }
+#discovery-controls [data-ui="ui-15"]:hover { border-color:var(--ink)!important; }
+@media (max-width:767px) {
+  #discovery-controls .space-y-2 > .flex { flex-wrap:wrap; }
+  #discovery-controls .space-y-2 > .flex > .relative { flex:1 1 100%; }
+  #discovery-controls .space-y-2 > .flex > button { flex:1 1 0; justify-content:center; }
+}
+/* Smart advice: the same matchbox striker as home — band on the leading edge, label in sentence case */
+#smart-recommendation-banner .acrylic-card { padding-top:16px; padding-left:30px; }
+#smart-recommendation-banner .acrylic-card::before { inset:0 auto 0 0; width:12px; height:auto; background:repeating-linear-gradient(0deg,var(--clay) 0 3px,#7a3a1c 3px 6px); }
+#smart-recommendation-banner .uppercase { text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink)!important; }
+/* Malzemelerim: the bar tray is mint (what you own), not citrus */
+#selected-ingredients-tray { background:var(--surface)!important; border:2px solid color-mix(in srgb,var(--mint) 55%,transparent)!important; border-radius:var(--r-lg)!important; box-shadow:none!important; padding:14px 16px!important; }
+#selected-ingredients-tray > div:first-child > span:first-child { color:var(--mint)!important; font-size:14px; }
+#selected-chips-container > span { background:transparent!important; border:1.5px solid var(--mint)!important; color:var(--ink)!important; border-radius:var(--r-sm)!important; min-height:34px; box-shadow:none!important; }
+#selected-chips-container > span button { color:var(--muted)!important; width:24px!important; height:24px!important; }
+#selected-chips-container > span button:hover { color:var(--cherry)!important; }
+#ingredients-section .section-aside { color:var(--muted); }
+/* Desktop shelf: a wrapping grid instead of a carousel with arrow buttons */
+@media (min-width:768px) {
+  .ingredient-shelf { padding:16px; }
+  .ingredient-shelf > [data-ui="ui-30"],.ingredient-shelf > [data-ui="ui-31"] { display:none!important; }
+  #ingredients-container { display:grid!important; grid-template-columns:repeat(auto-fill,minmax(124px,1fr)); gap:10px!important; padding:0!important; overflow:visible!important; min-height:0!important; }
+  #ingredients-container > div[role="button"] { width:auto!important; min-height:136px!important; }
+}
+#ingredients-container .ingredient-group-tag { background:transparent!important; border:0!important; color:var(--muted)!important; font-weight:500!important; font-size:11px!important; padding:0!important; }
+#ingredients-container > div[aria-pressed="true"] .ingredient-group-tag { border:0!important; color:var(--on-mint)!important; opacity:.8; }
+/* Shelf CTA stays in reach on phones, above the tab bar */
+@media (max-width:767px) {
+  .ingredients-cta { position:sticky; bottom:84px; z-index:15; padding:12px 0; pointer-events:none; }
+  .ingredients-cta .primary-action { pointer-events:auto; width:100%; max-width:360px; display:flex; justify-content:center; box-shadow:0 10px 28px rgba(3,6,12,.55); }
+}
+#ingredients-container > div[role="button"][aria-pressed="false"] { border-color:var(--keyline)!important; }
+#ingredients-container > div[role="button"][aria-pressed="false"]:hover { border-color:var(--ink)!important; }

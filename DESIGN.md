@@ -60,6 +60,10 @@ No emoji in the UI. Icons are 24×24 line drawings (2px stroke, round caps) in `
 
 The hero shows the user's own bar: `#home-bar` (rendered by `renderHomeBar` in game.js from the same results as the recipe lists, skipped while a search or favourites filter is active) holds a mint tabular count of ready drinks, up to four coasters (ready first, then one-missing as cherry rings) that open the recipe, a "see all" link to Tarifler, and a matchbox striker whose button is the existing `data-action="ingredient"`. Empty bar = a dashed note. Headline is one colour; no eyebrow, no hero note, no arrows in button text. Phones show the coasters 2×2. Styles live at the end of vivid.css.
 
+## Tarifler & Malzemelerim
+
+Tarifler is titled "Barınla neler yapabilirsin?" (Malzemelerim keeps "Senin barında ne var?"). Filter captions and the "Ortam" label are sentence case; "Rastgele" is a neutral outline (citrus stays for the primary action and selected filters). Card stamps sit on the photo's lower-right corner so they never cover "Detay"; taste tags are sentence case and data badges use Onest tabular figures, not mono. The smart-advice banner uses the same leading-edge matchbox striker as home. On Malzemelerim the bar tray and its chips are mint (owned), the desktop shelf is a wrapping grid with no arrow buttons, unselected tiles carry a neutral keyline, and the CTA reads "N hazır tarifi gör" (set by `renderHomeBar`), sticky above the tab bar on phones.
+
 ## Landing (landing.html / landing.css)
 
 One loud thing: the hero is a live mini-bar. Bottle chips (`aria-pressed`, mint when owned) drive 11 real coasters from cocktails.json (ice, sugar, garnish ignored): makeable = mint disc + cream check stamp, missing = cherry dashed ring naming what's missing. A tabular mint numeral counts what's ready; a matchbox striker names the one bottle that unlocks the most and can add it. Everything below is quiet: 2px keyline rows, no cards, no eyebrows, no stats strip, no testimonials, no arrows in link text. Section headings are Big Shoulders in sentence case; only the hero headline is uppercase.

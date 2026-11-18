@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="visual-refresh.css?v=44">
-    <link rel="stylesheet" href="vivid.css?v=18">
+    <link rel="stylesheet" href="vivid.css?v=19">
     <link rel="stylesheet" href="icons.css?v=1">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -163,7 +163,7 @@
         </section>
         <section id="discovery-controls" class="hidden discovery-controls" aria-labelledby="discovery-heading">
             <div class="section-intro">
-                <div><span class="eyebrow">KEŞİF TEZGÂHI</span><h2 id="discovery-heading">Senin barında ne var?</h2></div>
+                <div><span class="eyebrow">KEŞİF TEZGÂHI</span><h2 id="discovery-heading">Barınla neler yapabilirsin?</h2></div>
                 <div class="flex items-center gap-2">
                     <span id="selection-summary" class="selection-summary">Malzemelerini seçerek başla</span>
                     <button id="btn-clear-selection-header" data-action="clear-all-ingredients" class="hidden pill-btn text-[11px] font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl transition-all active:scale-95" title="Seçili malzemeleri temizle">
@@ -208,7 +208,7 @@
 
         <!-- Ortam & Ruh Hali Filtresi (Vibe Matcher) -->
         <div class="filter-extra vibe-filters flex items-center gap-1.5 overflow-x-auto pt-1 pb-1 text-[11px] font-medium no-scrollbar">
-            <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider shrink-0 mr-1">Ortam:</span>
+            <span class="vibe-label shrink-0 mr-1">Ortam</span>
             <button data-action="vibe" data-vibe="all" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 font-bold">Tümü</button>
             <button data-action="vibe" data-vibe="summer" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">Yaz & Havuz</button>
             <button data-action="vibe" data-vibe="romantic" class="vibe-btn pill-btn px-3 py-1 rounded-full bg-slate-900/80 text-slate-300 border border-white/10 shrink-0 hover:border-amber-500/40">Romantik Akşam</button>
@@ -311,7 +311,7 @@
                 <div id="ingredients-container" class="flex gap-3 overflow-x-auto custom-scroll px-12 py-2 scroll-smooth snap-x w-full min-h-[168px]"></div>
                 <button data-ui="ui-31" class="absolute right-2 z-20 bg-slate-900 border border-white/10 text-amber-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-xl active:scale-90 hover:border-amber-400 transition-all">▶</button>
             </div>
-            <div class="ingredients-cta"><button id="btn-ingredients-to-recipes" type="button" class="primary-action">Tarifleri gör <span aria-hidden="true">→</span></button></div>
+            <div class="ingredients-cta"><button id="btn-ingredients-to-recipes" type="button" class="primary-action">Tarifleri gör</button></div>
         </section>
 
         <!-- 3. Yeni Tarif Oluşturma Paneli -->
@@ -862,7 +862,7 @@
     <script src="auth.js?v=43"></script>
     <script src="personal-bar.js?v=43"></script>
     <script src="inventory.js?v=43"></script>
-    <script src="game.js?v=62"></script>
+    <script src="game.js?v=63"></script>
     <script src="personal-ui.js?v=44"></script>
     <script src="tutorial.js?v=1"></script>
     <script src="dynamic-ui.js?v=48"></script>

@@ -79,7 +79,7 @@ const I18N = {
         heroCaptionSpan: 'BAR CEPTE SEÇKİSİ',
         heroCaptionStrong: 'İyi bir akşamın<br>küçük ritüeli.',
         discoveryEyebrow: 'KEŞİF TEZGÂHI',
-        discoveryHeading: 'Senin barında ne var?',
+        discoveryHeading: 'Barınla neler yapabilirsin?',
         startChoosing: 'Malzemelerini seçerek başla',
         clear: 'Temizle',
         searchIngPlaceholder: 'Malzeme ara: cin, nane, limon…',
@@ -94,7 +94,7 @@ const I18N = {
         tasteSweet: 'Tatlı',
         tasteSour: 'Ekşi',
         tasteFresh: 'Ferah',
-        vibeLabel: 'Ortam:',
+        vibeLabel: 'Ortam',
         vibeAll: 'Tümü',
         vibeSummer: 'Yaz & Havuz',
         vibeRomantic: 'Romantik Akşam',
@@ -260,7 +260,7 @@ const I18N = {
         heroCaptionSpan: 'POCKET BAR SELECTION',
         heroCaptionStrong: 'A little ritual<br>for a great evening.',
         discoveryEyebrow: 'DISCOVERY COUNTER',
-        discoveryHeading: 'What\'s in your bar?',
+        discoveryHeading: 'What can you make?',
         startChoosing: 'Start by choosing your ingredients',
         clear: 'Clear',
         searchIngPlaceholder: 'Search ingredients: gin, mint, lime…',
@@ -275,7 +275,7 @@ const I18N = {
         tasteSweet: 'Sweet',
         tasteSour: 'Sour',
         tasteFresh: 'Fresh',
-        vibeLabel: 'Vibe:',
+        vibeLabel: 'Vibe',
         vibeAll: 'All',
         vibeSummer: 'Summer & Pool',
         vibeRomantic: 'Romantic Night',
@@ -2490,7 +2490,7 @@ function updateSmartAdvice(missingMatches) {
         const inShop = shoppingList.includes(bestIng);
         const safeBestIng = escapeHTML(currentLang === 'en' ? bestIng : translateIngredientName(bestIng));
 
-        const tipTitle = currentLang === 'en' ? 'SMART BAR TIP' : 'AKILLI BAR ÖNERİSİ';
+        const tipTitle = currentLang === 'en' ? 'Smart bar tip' : 'Akıllı bar önerisi';
         const tipBody = currentLang === 'en'
             ? `Add just <b class="text-amber-400 font-bold">${safeBestIng}</b> to your bar to unlock <b class="text-emerald-400 font-bold">+${maxVotes} new cocktails</b> right away!`
             : `Barına sadece <b class="text-amber-400 font-bold">${safeBestIng}</b> eklersen hemen <b class="text-emerald-400 font-bold">+${maxVotes} yeni kokteyl</b> yapabileceksin!`;
@@ -3280,6 +3280,8 @@ function renderHomeBar(readyMatches, missingMatches) {
     const ingName = i => escapeHTML(en ? i : translateIngredientName(i));
     if (selectedIngredients.length === 0) {
         homeBarDrinks = [];
+        const cta = document.getElementById('btn-ingredients-to-recipes');
+        if (cta) cta.textContent = I18N[currentLang].seeRecipes;
         box.innerHTML = `<p class="home-bar-empty">${en
             ? 'Your bar is empty. Pick the bottles you have and this is where you will see what you can make.'
             : 'Barın henüz boş. Elindeki şişeleri seç; neyi hemen yapabileceğini burada görürsün.'}</p>`;
@@ -3302,6 +3304,8 @@ function renderHomeBar(readyMatches, missingMatches) {
             ? `Add <b>${ingName(best[0])}</b> to unlock ${best[1] === 1 ? 'one more cocktail' : `${best[1]} more cocktails`}`
             : `<b>${ingName(best[0])}</b> alırsan ${best[1]} tarif daha açılır`}</p>
         <button type="button" data-action="ingredient" data-value="${escapeHTML(encodeURIComponent(best[0]))}">${en ? 'Add to bar' : 'Bara ekle'}</button></div>` : '';
+    const cta = document.getElementById('btn-ingredients-to-recipes');
+    if (cta) cta.textContent = n ? (en ? `See ${n} ready ${n === 1 ? 'recipe' : 'recipes'}` : `${n} hazır tarifi gör`) : I18N[currentLang].seeRecipes;
     box.innerHTML = `
         <p class="home-tally"><strong>${n}</strong><span>${en ? (n === 1 ? 'cocktail ready now' : 'cocktails ready now') : 'kokteyl şu an hazır'}<small>${en
             ? `${selectedIngredients.length} ingredients in your bar`
@@ -4115,7 +4119,7 @@ function applyLanguage() {
         ingIntro.querySelector('.section-aside').textContent = t.ingredientsAside;
     }
     const seeRecipesBtn = document.getElementById('btn-ingredients-to-recipes');
-    if (seeRecipesBtn && t.seeRecipes) seeRecipesBtn.innerHTML = `${t.seeRecipes} <span aria-hidden="true">→</span>`;
+    if (seeRecipesBtn && t.seeRecipes) seeRecipesBtn.textContent = t.seeRecipes;
     const moreBtn = document.getElementById('tab-more');
     if (moreBtn) moreBtn.textContent = `${t.moreTabs} ${moreBtn.getAttribute('aria-expanded') === 'true' ? '▴' : '▾'}`;
     refreshHomeDaily();
@@ -4181,8 +4185,8 @@ function applyLanguage() {
     if (tasteBtnFresh) tasteBtnFresh.innerText = t.tasteFresh;
 
     // Vibe filter label & buttons
-    const vibeLabel = document.querySelector('#discovery-controls .vibe-label, #discovery-controls span.uppercase');
-    if (vibeLabel && vibeLabel.innerText.includes('Ortam')) vibeLabel.innerText = t.vibeLabel;
+    const vibeLabel = document.querySelector('#discovery-controls .vibe-label');
+    if (vibeLabel) vibeLabel.textContent = t.vibeLabel;
     const vibeAll = document.querySelector('[data-vibe="all"]');
     if (vibeAll) vibeAll.innerText = t.vibeAll;
     const vibeSummer = document.querySelector('[data-vibe="summer"]');
