@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#0d1917">
-  <meta name="description" content="Bar Cepte ile evindeki malzemelerden yapabileceğin 440'tan fazla kokteyli keşfet.">
+  <meta name="theme-color" content="#0e131d">
+  <meta name="description" content="Evindeki şişeleri seç, Bar Cepte hangi kokteylleri hemen yapabileceğini ve hangisinde neyin eksik olduğunu göstersin. 440'tan fazla tarif, ücretsiz.">
   <link rel="canonical" href="https://barcepte.com.tr/">
   <title>Bar Cepte — Bu akşam, barmen sensin.</title>
   <meta property="og:title" content="Bar Cepte — Akıllı Bar & Kokteyl Asistanı">
@@ -19,102 +19,183 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script src="theme.js"></script>
-  <link rel="stylesheet" href="landing.css?v=7">
-    <link rel="stylesheet" href="icons.css?v=1">
+  <link rel="stylesheet" href="landing.css?v=8">
 </head>
 <body>
+  <a class="skip" href="#icerik">İçeriğe geç</a>
   <header class="site-header">
     <a class="brand" href="landing.html" aria-label="Bar Cepte ana sayfa">
-      <span class="brand-mark" aria-hidden="true"><svg viewBox="10 -2 100 134"><line x1="66" y1="26" x2="80" y2="4" stroke="#a5c6b3" stroke-width="5" stroke-linecap="round"/><circle cx="66" cy="27" r="7" fill="#a5c6b3"/><g fill="none" stroke="#d9b77d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M55 44 L30 14 H90 L65 44"/><path d="M18 44 H102 V86 Q102 112 60 124 Q18 112 18 86 Z"/></g></svg></span><span>Bar Cepte<span class="gold">.</span></span>
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="10 -2 100 134"><line x1="66" y1="26" x2="80" y2="4" stroke="#a5c6b3" stroke-width="5" stroke-linecap="round"/><circle cx="66" cy="27" r="7" fill="#a5c6b3"/><g fill="none" stroke="#d9b77d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M55 44 L30 14 H90 L65 44"/><path d="M18 44 H102 V86 Q102 112 60 124 Q18 112 18 86 Z"/></g></svg></span><span>Bar Cepte</span>
     </a>
     <nav aria-label="Ana menü">
-      <a href="#nasil">Nasıl çalışır</a><a href="#ozellikler">Özellikler</a><a href="#platformlar">Platformlar</a><a href="#sss">SSS</a>
+      <a href="#nasil">Nasıl çalışır</a><a href="#ozellikler">Özellikler</a><a href="#platformlar">İndir</a><a href="#sss">SSS</a>
     </nav>
-    <div class="header-actions">
-      <a class="text-link" href="https://github.com/suluncaway/bar-cepte">GitHub</a>
-      <a class="button button-small" href="index.html">Ücretsiz dene</a>
-    </div>
+    <a class="button button-small" href="index.html">Uygulamayı aç</a>
   </header>
 
-  <main>
-    <section class="hero shell">
+  <main id="icerik">
+    <section class="hero shell" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow"><span></span> Evdeki barın, bir adım ötede</p>
-        <h1>Bu akşam,<br><em>barmen sensin.</em></h1>
-        <p class="lede">Elindeki malzemeleri seç. Bar Cepte, 440+ tarif arasından tam sana göre olanları anında bulsun.</p>
-        <div class="actions"><a class="button" href="index.html">Barımı oluştur <span>↗</span></a><a class="underlined" href="#nasil">Nasıl çalışır? →</a></div>
-        <p class="trust"><i></i> Alkollü &amp; alkolsüz <b></b> Kurulum gerektirmez <b></b> Çevrimdışı çalışır</p>
+        <h1 id="hero-title">Bu akşam, barmen sensin.</h1>
+        <p class="lede">Evindeki şişeleri işaretle. Bar Cepte hangi kokteylleri hemen yapabileceğini, hangisinde neyin eksik olduğunu söylesin.</p>
+
+        <fieldset class="shelf">
+          <legend>Rafında ne var?</legend>
+          <div class="shelf-chips" id="shelf"></div>
+        </fieldset>
+
+        <p class="tally" id="tally" aria-live="polite"><strong id="tally-count">0</strong><span id="tally-text">kokteyl şu an hazır</span></p>
+
+        <div class="actions">
+          <a class="button" href="index.html">Kendi barını kur</a>
+          <a class="text-link" href="https://barcepte.com.tr/tarif/">Tüm tariflere göz at</a>
+        </div>
       </div>
-      <figure class="hero-visual">
-        <img src="editorial-cocktails.webp" alt="Loş bir barda amber renkli kokteyl">
-        <figcaption><small>Bar Cepte seçkisi</small><strong>İyi bir akşamın<br>küçük ritüeli.</strong></figcaption>
-        <span class="edition">THE HOME BAR EDITION / 01</span>
-      </figure>
-    </section>
 
-    <section class="stats" aria-label="Bar Cepte öne çıkan bilgiler">
-      <div><strong>400<span>+</span></strong><small>Kokteyl tarifi</small></div>
-      <div><strong>PWA</strong><small>Çevrimdışı kullanım</small></div>
-      <div><strong>4</strong><small>Web · Windows · Android · Linux</small></div>
-    </section>
-
-    <section class="section shell" id="nasil">
-      <div class="section-heading"><p class="eyebrow">Üç küçük adım</p><h2>Barından bardağına.</h2><p>Ne içeceğine karar vermek için saatlerce tarif aramana gerek yok.</p></div>
-      <div class="steps">
-        <article><span>01</span><div class="line-icon">⌗</div><h3>Barını kur</h3><p>Evindeki içki ve malzemeleri birkaç dokunuşla seç.</p></article>
-        <article><span>02</span><div class="line-icon">◇</div><h3>Zevkini söyle</h3><p>Tatlı, ekşi, sert veya ferah—o an ne istiyorsan.</p></article>
-        <article><span>03</span><div class="line-icon">↗</div><h3>Tarifini bul</h3><p>Yapabileceklerini ve eksiklerini anında gör.</p></article>
-      </div>
-    </section>
-
-    <section class="section shell" id="ozellikler">
-      <div class="section-heading split"><div><p class="eyebrow">Akıllı bar asistanı</p><h2>Her şey elinin altında.</h2></div><p>İlk şişeden son garnitüre kadar evde kokteyl hazırlamanın en zahmetsiz yolu.</p></div>
-      <div class="bento">
-        <article class="feature feature-wide"><span class="tag">Keşfet</span><h3>Akıllı Bar Motoru</h3><p>Elindeki malzemelerle hemen yapabileceğin kokteylleri öne çıkarır.</p><div class="mini-ui"><span>Cin</span><span>Limon</span><span>Tonik</span><b>12 tarif hazır →</b></div></article>
-        <article class="feature gold-card"><span class="tag">Akıllı öneri</span><h3>Bunu alırsan<br><em>+18 tarif</em></h3><p>En az alışverişle en çok yeni tarifi aç.</p></article>
-        <article class="feature"><span class="feature-icon"><i class="bci bci-sparkle" aria-hidden="true"></i></span><h3>Kişisel Defter</h3><p>Son hazırlamalarını, favorilerini ve kendi notlarını sakla.</p></article>
-        <article class="feature"><span class="feature-icon">1×</span><h3>Parti Modu</h3><p>Tarifleri 2×, 4× veya 8× porsiyona tek dokunuşla uyarla.</p></article>
-        <article class="feature"><span class="feature-icon">◷</span><h3>Barmen Araçları</h3><p>Çalkalama sayacı ve ekran açık tutma modu mutfakta yanında.</p></article>
-        <article class="feature reserve"><span class="tag">Reserve</span><h3>Özel seçkiler,<br>kesintisiz deneyim.</h3><p>Reklamsız kullanım ve speakeasy tarifleri.</p></article>
+      <div class="counter">
+        <ul class="coasters" id="coasters" aria-label="Örnek kokteyller"></ul>
+        <div class="striker" id="striker" hidden>
+          <p><span class="match" id="striker-gain">+1</span> <span id="striker-text"></span></p>
+          <button type="button" class="striker-add" id="striker-add">Rafa ekle</button>
+        </div>
+        <p class="footnote">Burada 11 klasik var; uygulamada 440'tan fazla tarif aynı şekilde çalışır. Buz, şeker ve süslemeler hesaba katılmadı.</p>
+        <noscript><p class="footnote">Bu örnek JavaScript ile çalışır. Uygulamayı açmak için <a href="index.html">buraya dokun</a>.</p></noscript>
       </div>
     </section>
 
-    <section class="showcase shell">
-      <div class="app-preview">
-        <div class="preview-top"><strong>Bar Cepte<span>.</span></strong><small>Tarifler hazır</small></div>
-        <label>Malzeme ara<input value="cin, limon" readonly aria-label="Örnek malzeme araması"></label>
-        <div class="chips"><span class="active">Tüm tatlar</span><span>Sert</span><span>Tatlı</span><span>Ekşi</span><span>Ferah</span></div>
-        <div class="drink-list"><article><img src="editorial-cocktails.webp" alt=""><div><small>Elindekilerle hazır</small><h3>Negroni</h3></div></article><article><img src="editorial-cocktails.webp" alt=""><div><small>1 eksik</small><h3>Mojito</h3></div></article><article><img src="editorial-cocktails.webp" alt=""><div><small>Elindekilerle hazır</small><h3>Espresso Martini</h3></div></article></div>
-      </div>
-      <div class="showcase-copy"><p class="eyebrow">Gecenin tarifini bul</p><h2>Malzemelerini seç,<br><em>gerisini bize bırak.</em></h2><p>Bar Cepte sadece tarif vermez. Elindekileri tanır, damak zevkini öğrenir ve o an gerçekten hazırlayabileceğin seçenekleri gösterir.</p><a class="button" href="index.html">Hemen keşfet ↗</a></div>
+    <section class="section shell" id="nasil" aria-labelledby="nasil-title">
+      <h2 id="nasil-title">Üç adımda bardağa</h2>
+      <ol class="steps">
+        <li><h3>Barını kur</h3><p>Evindeki şişeleri ve malzemeleri bir kez seç; Bar Cepte hatırlar.</p></li>
+        <li><h3>Yapabileceklerini gör</h3><p>Hazır olanlar önde durur. Diğerlerinde neyin eksik olduğu açıkça yazar.</p></li>
+        <li><h3>Tarifi takip et</h3><p>Ölçüler, adımlar ve çalkalama sayacı ekranda; hazırlarken ekran kararmaz.</p></li>
+      </ol>
     </section>
 
-    <section class="section shell" id="platformlar">
-      <div class="section-heading centered"><p class="eyebrow">Her yerde seninle</p><h2>Her cihazda, her akşam yanında.</h2></div>
-      <div class="platforms">
-        <article><span>◎</span><h3>Web / PWA</h3><p>Kurulum gerektirmez</p></article><article><span>⊞</span><h3>Windows</h3><p>Kurulum veya portable</p></article><article><span>⌁</span><h3>Android</h3><p>Doğrudan APK</p></article><article><span>◫</span><h3>Linux</h3><p>AppImage ve DEB</p></article>
-      </div>
-      <div class="center-actions"><a class="button" href="index.html">Web'de aç ↗</a><a class="underlined" href="https://github.com/suluncaway/bar-cepte/releases/latest">Tüm indirmeler →</a></div>
+    <section class="section shell" id="ozellikler" aria-labelledby="ozellikler-title">
+      <h2 id="ozellikler-title">Uygulamada başka neler var</h2>
+      <dl class="features">
+        <div><dt>Alışveriş önerisi</dt><dd>Hangi şişeyi alırsan en çok yeni tarifin açılacağını gösterir.</dd></div>
+        <div><dt>Kişisel defter</dt><dd>Son 100 hazırlaman, beğendiklerin ve tariflere düştüğün notlar.</dd></div>
+        <div><dt>Parti modu</dt><dd>Ölçüleri tek dokunuşla 2, 4 veya 8 kişilik yapar.</dd></div>
+        <div><dt>Çalkalama sayacı</dt><dd>Süre dolunca haber verir; elin meşgulken ekrana dokunman gerekmez.</dd></div>
+        <div><dt>AI Barmen</dt><dd>Elindekilere göre soru sor, ikame malzeme ya da yeni fikir iste.</dd></div>
+        <div><dt>Alkolsüz tarifler</dt><dd>Alkolsüz seçenekleri tek dokunuşla ayır.</dd></div>
+        <div><dt>Çevrimdışı</dt><dd>Tarifler ve barın internet olmadan da açılır.</dd></div>
+        <div><dt>Reserve</dt><dd>İsteğe bağlı üyelik: reklamsız kullanım ve speakeasy seçkileri. Temel özellikler ücretsiz kalır.</dd></div>
+      </dl>
     </section>
 
-    <section class="quote shell"><span>“</span><blockquote>Dolapta ne varsa seçiyorum; Bar Cepte o akşam gerçekten yapabileceğim tarifleri gösteriyor.</blockquote><p>— Evde kokteyl sevenler için</p></section>
+    <section class="section shell" id="platformlar" aria-labelledby="platformlar-title">
+      <h2 id="platformlar-title">Telefonda da, bilgisayarda da</h2>
+      <ul class="platforms">
+        <li><div><h3>Web</h3><p>Tarayıcıda açılır, ana ekrana eklenir.</p></div><a class="button button-small" href="index.html">Web'de aç</a></li>
+        <li><div><h3>Android</h3><p>APK dosyası</p></div><a class="text-link" href="https://github.com/suluncaway/bar-cepte/releases/latest">İndir</a></li>
+        <li><div><h3>Windows</h3><p>Kurulum ya da taşınabilir sürüm</p></div><a class="text-link" href="https://github.com/suluncaway/bar-cepte/releases/latest">İndir</a></li>
+        <li><div><h3>Linux</h3><p>AppImage ve DEB</p></div><a class="text-link" href="https://github.com/suluncaway/bar-cepte/releases/latest">İndir</a></li>
+      </ul>
+    </section>
 
-    <section class="section faq shell" id="sss">
-      <div class="section-heading"><p class="eyebrow">Merak ettiklerin</p><h2>Sıkça sorulanlar.</h2></div>
+    <section class="section faq shell" id="sss" aria-labelledby="sss-title">
+      <h2 id="sss-title">Sık sorulanlar</h2>
       <div class="faq-list">
-        <details open><summary>Kullanmak ücretsiz mi?<span>+</span></summary><p>Evet. Bar Cepte'nin temel özelliklerini web'de ve desteklenen cihazlarda ücretsiz kullanabilirsin.</p></details>
-        <details><summary>Üyelik gerekiyor mu?<span>+</span></summary><p>Hayır. Hemen başlayabilir, hesabı yalnızca verilerini cihazlar arasında taşımak istediğinde kullanabilirsin.</p></details>
-        <details><summary>Çevrimdışı çalışır mı?<span>+</span></summary><p>Evet. PWA desteği sayesinde tariflere ve kişisel barına internet olmadan da erişebilirsin.</p></details>
-        <details><summary>Alkolsüz tarifler var mı?<span>+</span></summary><p>Evet. Alkolsüz tarifleri tek dokunuşla filtreleyebilir ve damak zevkine göre keşfedebilirsin.</p></details>
+        <details open><summary>Kullanmak ücretsiz mi?</summary><p>Evet. Bar Cepte'nin temel özelliklerini web'de ve desteklenen cihazlarda ücretsiz kullanabilirsin.</p></details>
+        <details><summary>Üyelik gerekiyor mu?</summary><p>Hayır. Hemen başlayabilirsin; hesap yalnızca verilerini cihazlar arasında taşımak istediğinde gerekir.</p></details>
+        <details><summary>Çevrimdışı çalışır mı?</summary><p>Evet. Bir kez açtıktan sonra tariflere ve kendi barına internet olmadan da ulaşırsın.</p></details>
+        <details><summary>Alkolsüz tarifler var mı?</summary><p>Evet. Alkolsüz tarifleri tek dokunuşla filtreleyebilir, zevkine göre keşfedebilirsin.</p></details>
       </div>
     </section>
 
-    <section class="contact shell" id="iletisim">
-      <p class="eyebrow">Birlikte daha iyi</p><h2>Bir fikrin, iş birliği teklifin<br>veya sorun mu var?</h2><p>Bar Cepte ekibine ulaş; geri bildirimlerin ürünü daha iyi yapıyor.</p>
-      <div class="actions centered-actions"><a class="button dark-button" href="https://github.com/suluncaway/bar-cepte/issues">GitHub'da iletişime geç ↗</a><a class="underlined dark-link" href="https://barcepte.com.tr">Siteyi ziyaret et →</a></div>
+    <section class="contact shell" id="iletisim" aria-labelledby="iletisim-title">
+      <h2 id="iletisim-title">Bir fikrin ya da sorun mu var?</h2>
+      <p>İş birliği teklifleri, hata bildirimleri ve öneriler GitHub'da okunuyor.</p>
+      <a class="text-link" href="https://github.com/suluncaway/bar-cepte/issues">GitHub'da yaz</a>
     </section>
   </main>
 
-  <footer class="site-footer shell"><div><a class="brand" href="landing.html"><span class="brand-mark" aria-hidden="true"><svg viewBox="10 -2 100 134"><line x1="66" y1="26" x2="80" y2="4" stroke="#a5c6b3" stroke-width="5" stroke-linecap="round"/><circle cx="66" cy="27" r="7" fill="#a5c6b3"/><g fill="none" stroke="#d9b77d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M55 44 L30 14 H90 L65 44"/><path d="M18 44 H102 V86 Q102 112 60 124 Q18 112 18 86 Z"/></g></svg></span><span>Bar Cepte<span class="gold">.</span></span></a><p>Elindeki malzemelerden yeni favorine.</p></div><nav><a href="index.html">Ürün</a><a href="https://github.com/suluncaway/bar-cepte">GitHub</a><a href="https://barcepte.com.tr/tarif/">Tarifler</a><a href="https://barcepte.com.tr/rehber/">Rehberler</a><a href="https://barcepte.com.tr/hakkimizda.html">Hakkımızda</a><a href="privacy.html">Gizlilik</a><a href="https://barcepte.com.tr/iletisim.html">İletişim</a></nav><small>© 2026 Bar Cepte. Tüm hakları saklıdır.</small></footer>
+  <footer class="site-footer shell"><div><a class="brand" href="landing.html"><span class="brand-mark" aria-hidden="true"><svg viewBox="10 -2 100 134"><line x1="66" y1="26" x2="80" y2="4" stroke="#a5c6b3" stroke-width="5" stroke-linecap="round"/><circle cx="66" cy="27" r="7" fill="#a5c6b3"/><g fill="none" stroke="#d9b77d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M55 44 L30 14 H90 L65 44"/><path d="M18 44 H102 V86 Q102 112 60 124 Q18 112 18 86 Z"/></g></svg></span><span>Bar Cepte</span></a><p>Elindeki malzemelerden yeni favorine.</p></div><nav aria-label="Alt menü"><a href="index.html">Uygulama</a><a href="https://barcepte.com.tr/tarif/">Tarifler</a><a href="https://barcepte.com.tr/rehber/">Rehberler</a><a href="https://barcepte.com.tr/hakkimizda.html">Hakkımızda</a><a href="privacy.html">Gizlilik</a><a href="https://barcepte.com.tr/iletisim.html">İletişim</a><a href="https://github.com/suluncaway/bar-cepte">GitHub</a></nav><small>© 2026 Bar Cepte. Alkollü içecek tarifleri 18 yaş ve üzeri içindir.</small></footer>
+
+  <script>
+  (function () {
+    // Ingredients follow cocktails.json; ice, sugar and garnishes are left out.
+    var BOTTLES = ['Cin', 'Rom', 'Votka', 'Tekila', 'Viski', 'Kampari', 'Tatlı vermut', 'Triple sec', 'Kahve likörü', 'Limon', 'Nane', 'Soda', 'Tonik', 'Zencefil birası'];
+    var DRINKS = [
+      ['Negroni', 'negroni', ['Cin', 'Kampari', 'Tatlı vermut']],
+      ['Cin Tonik', 'gin-tonic', ['Cin', 'Tonik']],
+      ['Gimlet', 'gimlet', ['Cin', 'Limon']],
+      ['Tom Collins', 'tom-collins', ['Cin', 'Limon', 'Soda']],
+      ['Americano', 'americano', ['Kampari', 'Tatlı vermut', 'Soda']],
+      ['Daiquiri', 'daiquiri', ['Rom', 'Limon']],
+      ['Mojito', 'mojito', ['Rom', 'Limon', 'Nane', 'Soda']],
+      ['Margarita', 'margarita', ['Tekila', 'Triple sec', 'Limon']],
+      ['Moscow Mule', 'moscow-mule', ['Votka', 'Limon', 'Zencefil birası']],
+      ['Espresso Martini', 'espresso-martini', ['Votka', 'Kahve likörü']],
+      ['Whiskey Sour', 'whiskey-sour', ['Viski', 'Limon']]
+    ];
+    var owned = new Set(['Cin', 'Limon', 'Soda', 'Tonik']);
+    var shelf = document.getElementById('shelf');
+    var list = document.getElementById('coasters');
+    var striker = document.getElementById('striker');
+    var suggestion = null;
+    var firstRender = true;
+
+    BOTTLES.forEach(function (name) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.textContent = name;
+      b.dataset.name = name;
+      b.addEventListener('click', function () {
+        owned.has(name) ? owned.delete(name) : owned.add(name);
+        render();
+      });
+      shelf.appendChild(b);
+    });
+
+    var items = DRINKS.map(function (d) {
+      var li = document.createElement('li');
+      li.innerHTML = '<a class="coaster" href="https://barcepte.com.tr/tarif/' + d[1] + '.html"><span class="coaster-name"></span><span class="coaster-status"></span><span class="stamp" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></a>';
+      li.querySelector('.coaster-name').textContent = d[0];
+      list.appendChild(li);
+      return li;
+    });
+
+    function missing(d) { return d[2].filter(function (i) { return !owned.has(i); }); }
+
+    function render() {
+      var ready = 0;
+      shelf.querySelectorAll('.chip').forEach(function (b) { b.setAttribute('aria-pressed', owned.has(b.dataset.name)); });
+      DRINKS.forEach(function (d, i) {
+        var miss = missing(d), a = items[i].firstChild, ok = miss.length === 0;
+        if (ok) ready++;
+        var was = a.classList.contains('is-ready');
+        a.classList.toggle('is-ready', ok);
+        a.classList.toggle('just-ready', ok && !was && !firstRender);
+        a.querySelector('.coaster-status').textContent = ok ? 'Hazır' : 'Eksik: ' + miss.join(', ');
+        a.setAttribute('aria-label', d[0] + (ok ? ', hazır' : ', eksik: ' + miss.join(', ')));
+      });
+      document.getElementById('tally-count').textContent = ready;
+      document.getElementById('tally-text').textContent = ready === 0 ? 'kokteyl hazır değil, bir şişe daha seç' : 'kokteyl şu an hazır';
+
+      // One bottle that unlocks the most drinks that are a single ingredient away.
+      var gains = {};
+      DRINKS.forEach(function (d) { var m = missing(d); if (m.length === 1) (gains[m[0]] = gains[m[0]] || []).push(d[0]); });
+      suggestion = null;
+      Object.keys(gains).forEach(function (k) { if (!suggestion || gains[k].length > gains[suggestion].length) suggestion = k; });
+      striker.hidden = !suggestion;
+      if (suggestion) {
+        document.getElementById('striker-gain').textContent = '+' + gains[suggestion].length;
+        document.getElementById('striker-text').textContent = suggestion + ' alırsan açılır: ' + gains[suggestion].join(', ');
+        document.getElementById('striker-add').textContent = 'Rafa ekle: ' + suggestion;
+      }
+      firstRender = false;
+    }
+
+    document.getElementById('striker-add').addEventListener('click', function () {
+      if (suggestion) { owned.add(suggestion); render(); }
+    });
+    render();
+  })();
+  </script>
 </body>
 </html>

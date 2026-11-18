@@ -55,3 +55,7 @@ Exponential ease-out `cubic-bezier(.16,1,.3,1)`. Page-in 300ms fade/rise; stamp 
 ## Icons
 
 No emoji in the UI. Icons are 24×24 line drawings (2px stroke, round caps) in `icons.css`, used as `<i class="bci bci-NAME" aria-hidden="true"></i>` and drawn in `currentColor` via CSS mask. Plain-text contexts (toasts, alerts, `<option>`, textContent) carry no icon.
+
+## Landing (landing.html / landing.css)
+
+One loud thing: the hero is a live mini-bar. Bottle chips (`aria-pressed`, mint when owned) drive 11 real coasters from cocktails.json (ice, sugar, garnish ignored): makeable = mint disc + cream check stamp, missing = cherry dashed ring naming what's missing. A tabular mint numeral counts what's ready; a matchbox striker names the one bottle that unlocks the most and can add it. Everything below is quiet: 2px keyline rows, no cards, no eyebrows, no stats strip, no testimonials, no arrows in link text. Section headings are Big Shoulders in sentence case; only the hero headline is uppercase.
