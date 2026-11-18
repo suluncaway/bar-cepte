@@ -71,15 +71,15 @@ const I18N = {
         dailyCocktail: 'BUGÜNÜN KOKTEYLİ',
         openRecipe: 'Tarifi aç',
         moreTabs: 'Daha fazla',
-        heroHeading: 'Bu akşam,<br><span>barmen sensin.</span>',
-        heroDesc: 'Elindeki malzemelerden yeni favorine.<br>Barını oluştur, zevkine göre keşfet ve güzel bir şeyler hazırla.',
+        heroHeading: 'Bu akşam, barmen sensin.',
+        heroDesc: 'Elindeki şişeleri seç; neyi hemen yapabileceğini, neyin eksik olduğunu gör.',
         heroBuildBar: 'Barımı oluştur',
         heroSurprise: 'Bana bir tarif öner',
         heroNote: '<span class="status-dot"></span> Alkollü & alkolsüz tarifler <span class="note-divider"></span> Tamamen senin zevkin',
         heroCaptionSpan: 'BAR CEPTE SEÇKİSİ',
         heroCaptionStrong: 'İyi bir akşamın<br>küçük ritüeli.',
         discoveryEyebrow: 'KEŞİF TEZGÂHI',
-        discoveryHeading: 'Senin barında ne var?',
+        discoveryHeading: 'Barınla neler yapabilirsin?',
         startChoosing: 'Malzemelerini seçerek başla',
         clear: 'Temizle',
         searchIngPlaceholder: 'Malzeme ara: cin, nane, limon…',
@@ -94,7 +94,7 @@ const I18N = {
         tasteSweet: 'Tatlı',
         tasteSour: 'Ekşi',
         tasteFresh: 'Ferah',
-        vibeLabel: 'Ortam:',
+        vibeLabel: 'Ortam',
         vibeAll: 'Tümü',
         vibeSummer: 'Yaz & Havuz',
         vibeRomantic: 'Romantik Akşam',
@@ -139,7 +139,7 @@ const I18N = {
         footerTitle: 'Bar Cepte — Akıllı Bar & Kokteyl Asistanı',
         footerBarware: 'Bar Ekipmanları',
         footerPrivacy: 'Gizlilik & 18+ Yasal Uyarı',
-        footer18Title: '18+ YASAL BİLGİLENDİRME & SORUMLU TÜKETİM',
+        footer18Title: 'Yasal bilgilendirme ve sorumlu tüketim',
         footer18Text: 'Bar Cepte içerisindeki tüm kokteyl tarifleri, rehberler ve yayınlanan reklamlar yalnızca <strong>18 yaş ve üzeri</strong> yetişkinler içindir. 18 yaşından küçüklerin alkol tüketimi ve satın alması yasalara aykırıdır. Sağlığınız için lütfen ölçülü ve sorumlu tüketiniz.',
         emptyBarDesc: "Henüz barına malzeme eklemedin. 'Kokteyl keşfet' veya 'Mutfak' sekmesinden malzeme seçebilirsin.",
         alcoholsLiquors: "Alkoller & Likörler",
@@ -252,15 +252,15 @@ const I18N = {
         dailyCocktail: "TODAY'S COCKTAIL",
         openRecipe: 'Open recipe',
         moreTabs: 'More',
-        heroHeading: 'Tonight,<br><span>you\'re the bartender.</span>',
-        heroDesc: 'From ingredients on hand to your new favorite drink.<br>Build your bar, explore your taste, and mix something great.',
+        heroHeading: 'Tonight, you\'re the bartender.',
+        heroDesc: 'Pick the bottles you have; see what you can make now and what is missing.',
         heroBuildBar: 'Build My Bar',
         heroSurprise: 'Surprise Me',
         heroNote: '<span class="status-dot"></span> Alcoholic & non-alcoholic recipes <span class="note-divider"></span> Crafted for your taste',
         heroCaptionSpan: 'POCKET BAR SELECTION',
         heroCaptionStrong: 'A little ritual<br>for a great evening.',
         discoveryEyebrow: 'DISCOVERY COUNTER',
-        discoveryHeading: 'What\'s in your bar?',
+        discoveryHeading: 'What can you make?',
         startChoosing: 'Start by choosing your ingredients',
         clear: 'Clear',
         searchIngPlaceholder: 'Search ingredients: gin, mint, lime…',
@@ -275,7 +275,7 @@ const I18N = {
         tasteSweet: 'Sweet',
         tasteSour: 'Sour',
         tasteFresh: 'Fresh',
-        vibeLabel: 'Vibe:',
+        vibeLabel: 'Vibe',
         vibeAll: 'All',
         vibeSummer: 'Summer & Pool',
         vibeRomantic: 'Romantic Night',
@@ -320,7 +320,7 @@ const I18N = {
         footerTitle: 'Pocket Bar — Smart Home Bar & Cocktail Assistant',
         footerBarware: 'Bar Tools & Equipment',
         footerPrivacy: 'Privacy & 21+ Notice',
-        footer18Title: '21+ LEGAL NOTICE & RESPONSIBLE DRINKING',
+        footer18Title: 'Legal notice and responsible drinking',
         footer18Text: 'All cocktail recipes and contents in Pocket Bar are strictly intended for adults of legal drinking age (21+ in the US). Please enjoy responsibly and in moderation.',
         emptyBarDesc: "No ingredients in your bar yet. Select ingredients from 'Explore Drinks' or 'Kitchen' tab.",
         alcoholsLiquors: "Spirits & Liqueurs",
@@ -2490,7 +2490,7 @@ function updateSmartAdvice(missingMatches) {
         const inShop = shoppingList.includes(bestIng);
         const safeBestIng = escapeHTML(currentLang === 'en' ? bestIng : translateIngredientName(bestIng));
 
-        const tipTitle = currentLang === 'en' ? 'SMART BAR TIP' : 'AKILLI BAR ÖNERİSİ';
+        const tipTitle = currentLang === 'en' ? 'Smart bar tip' : 'Akıllı bar önerisi';
         const tipBody = currentLang === 'en'
             ? `Add just <b class="text-amber-400 font-bold">${safeBestIng}</b> to your bar to unlock <b class="text-emerald-400 font-bold">+${maxVotes} new cocktails</b> right away!`
             : `Barına sadece <b class="text-amber-400 font-bold">${safeBestIng}</b> eklersen hemen <b class="text-emerald-400 font-bold">+${maxVotes} yeni kokteyl</b> yapabileceksin!`;
@@ -3142,6 +3142,7 @@ function filterCocktails() {
         if(titleMissing) titleMissing.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> ${I18N[currentLang].missingTitle} <span id="count-missing" class="text-[10px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">0</span>`;
 
         updateSmartAdvice([]);
+        if (!cocktailSearch && !onlyFavoritesFilter) renderHomeBar([], []);
         if (currentTab === 'bar') renderDashboard();
         return;
     }
@@ -3264,9 +3265,60 @@ function filterCocktails() {
     renderLists(missingMatches, missingContainer, true);
     
     updateSmartAdvice(missingMatches);
+    if (!cocktailSearch && !onlyFavoritesFilter) renderHomeBar(readyMatches, missingMatches);
 
     if (currentTab === 'bar') renderDashboard();
 }
+
+// Home: the user's own bar at a glance — how many drinks are ready, a few as coasters,
+// and the one bottle that would unlock the most. Same results as the recipe lists.
+let homeBarDrinks = [];
+function renderHomeBar(readyMatches, missingMatches) {
+    const box = document.getElementById('home-bar');
+    if (!box) return;
+    const en = currentLang === 'en';
+    const ingName = i => escapeHTML(en ? i : translateIngredientName(i));
+    if (selectedIngredients.length === 0) {
+        homeBarDrinks = [];
+        const cta = document.getElementById('btn-ingredients-to-recipes');
+        if (cta) cta.textContent = I18N[currentLang].seeRecipes;
+        box.innerHTML = `<p class="home-bar-empty">${en
+            ? 'Your bar is empty. Pick the bottles you have and this is where you will see what you can make.'
+            : 'Barın henüz boş. Elindeki şişeleri seç; neyi hemen yapabileceğini burada görürsün.'}</p>`;
+        return;
+    }
+    const near = missingMatches.filter(m => m.missingList.length === 1);
+    const shown = [...readyMatches.slice(0, 4).map(d => ({ drink: d, missing: [] })),
+        ...near.map(m => ({ drink: m.drink, missing: m.missingList }))].slice(0, 4);
+    homeBarDrinks = shown.map(x => x.drink);
+    const votes = Object.create(null);
+    near.forEach(m => { votes[m.missingList[0]] = (votes[m.missingList[0]] || 0) + 1; });
+    const best = Object.entries(votes).sort((a, b) => b[1] - a[1])[0];
+    const n = readyMatches.length;
+    const coasters = shown.map((x, i) => {
+        const ready = x.missing.length === 0;
+        const status = ready ? (en ? 'Ready' : 'Hazır') : `${en ? 'Missing' : 'Eksik'}: ${x.missing.map(ingName).join(', ')}`;
+        return `<li><button type="button" class="coaster${ready ? ' is-ready' : ''}" data-home-drink="${i}"><span class="coaster-name">${escapeHTML(x.drink.strDrink)}</span><span class="coaster-status">${status}</span>${ready ? '<span class="stamp" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' : ''}</button></li>`;
+    }).join('');
+    const striker = best ? `<div class="home-striker"><p><span class="match">+${best[1]}</span> ${en
+            ? `Add <b>${ingName(best[0])}</b> to unlock ${best[1] === 1 ? 'one more cocktail' : `${best[1]} more cocktails`}`
+            : `<b>${ingName(best[0])}</b> alırsan ${best[1]} tarif daha açılır`}</p>
+        <button type="button" data-action="ingredient" data-value="${escapeHTML(encodeURIComponent(best[0]))}">${en ? 'Add to bar' : 'Bara ekle'}</button></div>` : '';
+    const cta = document.getElementById('btn-ingredients-to-recipes');
+    if (cta) cta.textContent = n ? (en ? `See ${n} ready ${n === 1 ? 'recipe' : 'recipes'}` : `${n} hazır tarifi gör`) : I18N[currentLang].seeRecipes;
+    box.innerHTML = `
+        <p class="home-tally"><strong>${n}</strong><span>${en ? (n === 1 ? 'cocktail ready now' : 'cocktails ready now') : 'kokteyl şu an hazır'}<small>${en
+            ? `${selectedIngredients.length} ingredients in your bar`
+            : `Barında ${selectedIngredients.length} malzeme var`}</small></span></p>
+        ${shown.length ? `<ul class="home-coasters">${coasters}</ul>` : ''}
+        ${n > shown.filter(x => !x.missing.length).length ? `<button type="button" class="home-see-all" data-home-all>${en ? `See all ${n}` : `${n} tarifin hepsini gör`}</button>` : ''}
+        ${striker}`;
+}
+document.getElementById('home-bar')?.addEventListener('click', e => {
+    const coaster = e.target.closest('[data-home-drink]');
+    if (coaster) { const d = homeBarDrinks[Number(coaster.dataset.homeDrink)]; if (d) openCocktail(d); return; }
+    if (e.target.closest('[data-home-all]')) switchTab('alkol');
+});
 
 function renderMyRecipes() {
     const container = document.getElementById('my-recipes-container');
@@ -3910,7 +3962,7 @@ function renderDailyCocktail() {
     box.querySelector('#home-daily-title').textContent = drink.strDrink;
     box.querySelector('#home-daily-meta').textContent = [drink.strGlass, drink.strCategory].filter(Boolean).join(' · ');
     box.querySelector('#home-daily-eyebrow').textContent = t.dailyCocktail;
-    box.querySelector('#home-daily-open').innerHTML = `${t.openRecipe} <span aria-hidden="true">→</span>`;
+    box.querySelector('#home-daily-open').textContent = t.openRecipe;
     return true;
 }
 
@@ -4067,7 +4119,7 @@ function applyLanguage() {
         ingIntro.querySelector('.section-aside').textContent = t.ingredientsAside;
     }
     const seeRecipesBtn = document.getElementById('btn-ingredients-to-recipes');
-    if (seeRecipesBtn && t.seeRecipes) seeRecipesBtn.innerHTML = `${t.seeRecipes} <span aria-hidden="true">→</span>`;
+    if (seeRecipesBtn && t.seeRecipes) seeRecipesBtn.textContent = t.seeRecipes;
     const moreBtn = document.getElementById('tab-more');
     if (moreBtn) moreBtn.textContent = `${t.moreTabs} ${moreBtn.getAttribute('aria-expanded') === 'true' ? '▴' : '▾'}`;
     refreshHomeDaily();
@@ -4080,9 +4132,9 @@ function applyLanguage() {
     const heroDesc = document.querySelector('#editorial-hero p');
     if (heroDesc) heroDesc.innerHTML = t.heroDesc;
     const heroBuildBar = document.getElementById('hero-build-bar');
-    if (heroBuildBar) heroBuildBar.innerHTML = `${t.heroBuildBar} <span aria-hidden="true">↗</span>`;
+    if (heroBuildBar) heroBuildBar.textContent = t.heroBuildBar;
     const heroSurprise = document.getElementById('hero-surprise');
-    if (heroSurprise) heroSurprise.innerHTML = `${t.heroSurprise} <span aria-hidden="true">→</span>`;
+    if (heroSurprise) heroSurprise.textContent = t.heroSurprise;
     const heroBusiness = document.getElementById('hero-business-entry');
     if (heroBusiness) heroBusiness.textContent = currentLang === 'en' ? 'Run a bar? Open the business panel →' : 'Bir bar mı yönetiyorsun? İşletme panelini aç →';
     const heroNote = document.querySelector('#editorial-hero .hero-note');
@@ -4133,8 +4185,8 @@ function applyLanguage() {
     if (tasteBtnFresh) tasteBtnFresh.innerText = t.tasteFresh;
 
     // Vibe filter label & buttons
-    const vibeLabel = document.querySelector('#discovery-controls .vibe-label, #discovery-controls span.uppercase');
-    if (vibeLabel && vibeLabel.innerText.includes('Ortam')) vibeLabel.innerText = t.vibeLabel;
+    const vibeLabel = document.querySelector('#discovery-controls .vibe-label');
+    if (vibeLabel) vibeLabel.textContent = t.vibeLabel;
     const vibeAll = document.querySelector('[data-vibe="all"]');
     if (vibeAll) vibeAll.innerText = t.vibeAll;
     const vibeSummer = document.querySelector('[data-vibe="summer"]');
