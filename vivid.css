@@ -599,3 +599,66 @@ html[data-theme="light"] .hero-video-control { color:#f3ead8!important; }
 }
 #ingredients-container > div[role="button"][aria-pressed="false"] { border-color:var(--keyline)!important; }
 #ingredients-container > div[role="button"][aria-pressed="false"]:hover { border-color:var(--ink)!important; }
+
+/* Other panels (Barım, Tarif ekle, Tariflerim, Alışveriş, Yedekleme, AI Barmen) and the footer:
+   one width, display headings like every other screen, no boxes inside boxes. */
+:is(#bar-dashboard,#custom-recipe-panel,#my-recipes-panel,#shopping-list-panel,#sync-panel,#ai-assistant-panel):not(.hidden) { width:100%; max-width:920px; margin-inline:auto; }
+:is(#custom-recipe-panel,#my-recipes-panel,#shopping-list-panel,#sync-panel) > .acrylic-card h2:first-of-type,
+#bar-dashboard > .acrylic-card > div:first-child h2 {
+  font:800 clamp(30px,3.4vw,40px)/1 var(--font-display)!important; text-transform:uppercase!important; letter-spacing:0!important; color:var(--ink)!important; display:block;
+}
+:is(#custom-recipe-panel,#my-recipes-panel,#shopping-list-panel,#sync-panel,#bar-dashboard) > .acrylic-card h2 .bci,
+#bar-dashboard > .acrylic-card > div:first-child h2 > span:first-child { display:none; }
+:is(#shopping-list-panel,#bar-dashboard) > .acrylic-card > div:first-child { border-bottom:2px solid var(--keyline)!important; padding-bottom:16px!important; gap:16px; }
+#bar-dashboard > .acrylic-card > div:first-child > .font-mono { display:none; }
+#sync-panel > .acrylic-card > p:first-of-type { font-size:15px; color:var(--muted); max-width:60ch; }
+/* Alışveriş: rows separated by keylines, not boxed; "Hepsini sil" is a real control */
+#shopping-list-panel [data-ui="ui-33"] { flex:none; min-height:40px; padding:0 14px; border:1.5px solid color-mix(in srgb,var(--cherry) 60%,transparent); border-radius:var(--r-sm); color:var(--cherry)!important; text-decoration:none!important; }
+#shopping-list-panel [data-ui="ui-33"]:hover { background:color-mix(in srgb,var(--cherry) 14%,transparent); }
+#shopping-list-container { display:flex; flex-direction:column; gap:0!important; }
+#shopping-list-container > div { background:transparent!important; border:0!important; border-bottom:2px solid var(--keyline)!important; border-radius:0!important; box-shadow:none!important; padding:14px 0!important; margin:0!important; }
+#shopping-list-container > div .bci-cart { color:var(--clay); }
+#shopping-list-container > div span.capitalize { font-size:16px!important; color:var(--ink)!important; }
+#shopping-list-container [data-action="purchased"] { min-height:40px; padding:0 14px!important; border-radius:var(--r-sm)!important; background:var(--mint)!important; color:var(--on-mint)!important; border:0!important; font-size:13px!important; }
+#shopping-list-container [data-action="shopping"] { min-height:40px; padding:0 12px!important; color:var(--muted)!important; font-size:13px!important; }
+#shopping-list-container [data-action="shopping"]:hover { color:var(--cherry)!important; }
+/* Barım: stat tiles are sunk fills (no second border), numbers in display figures; owned = mint */
+#bar-dashboard .grid > div { background:var(--surface-sunk)!important; border:0!important; }
+#bar-fill-rate,#ready-count { font:800 44px/1 var(--font-display)!important; font-variant-numeric:tabular-nums; }
+#bar-fill-rate { color:var(--ink)!important; } #ready-count { color:var(--mint)!important; }
+#bar-advice-box { position:relative; overflow:hidden; background:var(--surface-sunk)!important; border:2px solid var(--keyline)!important; border-radius:var(--r-md)!important; padding-left:28px!important; }
+#bar-advice-box::before { content:""; position:absolute; inset:0 auto 0 0; width:12px; background:repeating-linear-gradient(0deg,var(--clay) 0 3px,#7a3a1c 3px 6px); }
+#bar-advice-box > p:first-child { color:var(--ink)!important; font-size:14px!important; }
+#bar-advice-box > p:first-child .bci { display:none; }
+#bar-advice-text { font-size:14px!important; color:var(--muted)!important; }
+#top-ingredients .uppercase { text-transform:none; letter-spacing:0; font-size:14px; color:var(--ink)!important; }
+#top-ingredients .uppercase .bci { color:var(--mint); }
+#top-ingredients .flex-wrap > span { background:transparent!important; border:1.5px solid var(--mint)!important; color:var(--ink)!important; border-radius:var(--r-sm)!important; box-shadow:none!important; }
+#top-ingredients .flex-wrap > span .bci:not(.bci-x) { display:none; }
+#top-ingredients .flex-wrap > span [class*="text-amber-400/70"],#top-ingredients .flex-wrap > span [class*="text-emerald-400/70"] { color:var(--muted)!important; }
+#top-ingredients .flex-wrap > span button { color:var(--muted)!important; }
+#top-ingredients .flex-wrap > span button:hover { color:var(--cherry)!important; }
+.personal-mini h4 { margin:12px 0 6px; font:800 24px/1 var(--font-display); text-transform:uppercase; }
+/* Inside Barım the inventory card speaks at the same size as its sibling panels */
+#bar-dashboard > .acrylic-card > div:first-child h2 { font-size:clamp(26px,2.6vw,32px)!important; text-transform:none!important; }
+#my-recipes-container > :only-child:not(.cocktail-card) { text-align:left!important; font-size:15px!important; padding:8px 0!important; color:var(--muted); }
+/* Tarif ekle: file picker matches the other fields */
+#custom-recipe-panel input[type=file] { background:var(--surface-sunk)!important; border:1.5px solid var(--keyline-strong)!important; color:var(--muted); }
+#custom-recipe-panel input[type=file]::file-selector-button { margin-right:12px; min-height:36px; padding:0 14px; border:1.5px solid var(--keyline-strong); border-radius:var(--r-sm); background:transparent; color:var(--ink); font:600 13px var(--font-body); cursor:pointer; }
+#custom-recipe-panel input[type=file]::file-selector-button:hover { border-color:var(--ink); }
+#custom-recipe-panel .space-y-3 > div:has(input[type=file]) { background:transparent!important; border:0!important; padding:0!important; }
+/* AI Barmen: no kicker; the textarea is part of the composer (one outline, on focus-within) */
+.ai-kicker { display:none!important; }
+.ai-chat-composer textarea { border:0!important; outline:0!important; background:transparent!important; box-shadow:none!important; min-height:44px; padding:10px 0!important; font-size:15px!important; }
+.ai-chat-composer:focus-within { outline:2px solid var(--citrus); outline-offset:1px; }
+.ai-quick-prompts button { min-height:40px; font-size:13px!important; }
+/* Footer legal note: quiet board + keyline, sentence case */
+.app-footer .mt-4.rounded-2xl { background:transparent!important; border:2px solid var(--keyline)!important; border-radius:var(--r-lg)!important; padding:16px!important; }
+.app-footer .mt-4.rounded-2xl > div:first-child { color:var(--ink)!important; letter-spacing:0!important; font-size:13px!important; }
+.app-footer .mt-4.rounded-2xl > div:first-child > span:first-child { background:transparent!important; border:1.5px solid var(--cherry)!important; color:var(--cherry)!important; }
+html[data-theme="light"] #top-ingredients .flex-wrap > span, html[data-theme="light"] #selected-chips-container > span { border-color:#2f9e72!important; }
+@media (max-width:767px) {
+  .app-footer > div.flex-wrap { flex-direction:row!important; gap:4px 16px!important; }
+  .app-footer > div.flex-wrap > a { min-height:40px; font-size:13px; }
+  .app-footer { padding-bottom:96px; }
+}
