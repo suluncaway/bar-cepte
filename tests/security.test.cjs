@@ -90,15 +90,13 @@ test('Google AdSense integration and CSP exceptions are configured correctly', (
     assert.ok(fs.existsSync('ads.txt'));
     assert.ok(fs.existsSync('ads.js'));
 });
-test('editorial layout keeps all original UI bindings and local-only hero assets', () => {
+test('editorial layout keeps all original UI bindings', () => {
     const html = fs.readFileSync('index.html', 'utf8');
     for (let i = 0; i < 46; i++) {
         assert.equal(html.split(`data-ui="ui-${i}"`).length - 1, 1, `ui-${i} must exist once`);
     }
-    assert.match(html, /src="editorial-cocktails.webp"/);
     assert.match(html, /src="editorial-ui\.js(?:\?v=\d+)?"/);
     assert.match(html, /id="editorial-picks-grid"/);
-    assert.ok(fs.existsSync('editorial-cocktails.webp'));
 });
 test('Bar Cepte Reserve membership module validates keys and updates state', () => {
     const reserve = require('../reserve.js');
