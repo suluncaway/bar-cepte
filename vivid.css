@@ -529,6 +529,18 @@ html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-sl
 .home-bar .coaster-status { color:var(--muted); font-size:12px; line-height:1.2; }
 .home-bar .coaster.is-ready { border:2px solid var(--mint); background:var(--mint); color:var(--on-mint); }
 .home-bar .coaster.is-ready .coaster-status { color:var(--on-mint); font-weight:700; }
+/* Drink photo behind the coaster text, darkened so the label stays readable in both themes */
+.home-bar .coaster.has-photo { isolation:isolate; color:#fff; background:#111; }
+.home-bar .coaster-photo { position:absolute; inset:0; z-index:-2; width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.home-bar .coaster.has-photo::before { content:""; position:absolute; inset:0; z-index:-1; border-radius:50%; background:radial-gradient(circle at 50% 50%,rgba(10,12,18,.72) 0%,rgba(10,12,18,.55) 70%,rgba(10,12,18,.35) 100%); transition:background .2s var(--ease-out); }
+.home-bar .coaster.has-photo:hover::before { background:radial-gradient(circle at 50% 50%,rgba(10,12,18,.62) 0%,rgba(10,12,18,.42) 70%,rgba(10,12,18,.2) 100%); }
+.home-bar .coaster.has-photo .coaster-name,
+.home-bar .coaster.has-photo .coaster-status { color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.8); }
+.home-bar .coaster.has-photo .coaster-status { color:#f3ead8; }
+.home-bar .coaster.has-photo.is-ready { border-width:3px; background:#111; }
+.home-bar .coaster.has-photo.is-ready .coaster-status { color:var(--mint); }
+.home-bar .coaster.has-photo .stamp { z-index:1; }
+.home-bar .coaster-photo.image-fallback { display:none!important; }
 .home-bar .stamp { position:absolute; top:-3px; right:-1px; display:grid; place-items:center; width:28px; height:28px; border:3px solid var(--surface); border-radius:50%; background:var(--ink); transform:rotate(-14deg); }
 .home-bar .stamp svg { width:15px; height:15px; fill:none; stroke:var(--surface); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
 .home-see-all { margin-top:14px; padding:6px 0; background:none; border:0; color:var(--ink); font-weight:600; font-size:14px; text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:6px; text-decoration-color:var(--mint); cursor:pointer; }

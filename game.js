@@ -3298,7 +3298,9 @@ function renderHomeBar(readyMatches, missingMatches) {
     const coasters = shown.map((x, i) => {
         const ready = x.missing.length === 0;
         const status = ready ? (en ? 'Ready' : 'Hazır') : `${en ? 'Missing' : 'Eksik'}: ${x.missing.map(ingName).join(', ')}`;
-        return `<li><button type="button" class="coaster${ready ? ' is-ready' : ''}" data-home-drink="${i}"><span class="coaster-name">${escapeHTML(x.drink.strDrink)}</span><span class="coaster-status">${status}</span>${ready ? '<span class="stamp" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' : ''}</button></li>`;
+        const thumb = x.drink.strDrinkThumb && safeImageSrc(x.drink.strDrinkThumb)
+            ? `<img class="coaster-photo" src="${escapeHTML(BarSecurity.displayImage(x.drink.strDrinkThumb))}" alt="" loading="lazy" decoding="async" data-image-fallback>` : '';
+        return `<li><button type="button" class="coaster${ready ? ' is-ready' : ''}${thumb ? ' has-photo' : ''}" data-home-drink="${i}">${thumb}<span class="coaster-name">${escapeHTML(x.drink.strDrink)}</span><span class="coaster-status">${status}</span>${ready ? '<span class="stamp" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' : ''}</button></li>`;
     }).join('');
     const striker = best ? `<div class="home-striker"><p><span class="match">+${best[1]}</span> ${en
             ? `Add <b>${ingName(best[0])}</b> to unlock ${best[1] === 1 ? 'one more cocktail' : `${best[1]} more cocktails`}`
