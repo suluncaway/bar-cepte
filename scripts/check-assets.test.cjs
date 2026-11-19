@@ -13,14 +13,14 @@ test('canonical allowlist covers page, stylesheet, manifest and precache referen
     checkReferences(root, readAssetNames(root));
 });
 
-test('Gradle replaces legacy assets and wires all merge variants to Sync', () => {
+test('Gradle bundles exactly web-assets.json through the Sync task before every build', () => {
     const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
+    assert.match(gradle, /new File\(webRoot, 'web-assets\.json'\)/);
     assert.match(gradle, /tasks\.register\('syncWebAssets', Sync\)/);
-    assert.match(gradle, /main\.assets\.setSrcDirs\(\[generatedWebAssets\]\)/);
-    assert.match(gradle, /task\.name ==~ \/merge\.\*Assets\//);
-    assert.match(gradle, /task\.dependsOn\(syncWebAssets\)/);
-    assert.match(gradle, /include webAssetNames/);
-    assert.match(gradle, /Missing canonical web assets/);
+    assert.match(gradle, /include webAssets/);
+    assert.match(gradle, /main\.assets\.srcDirs = \[layout\.buildDirectory\.dir\('generated\/webAssets'\)\]/);
+    assert.match(gradle, /dependsOn\('syncWebAssets'\)/);
+    assert.match(gradle, /Missing web asset/);
 });
 
 test('bundle checker rejects stale bytes, missing dependencies, and secret extras', t => {
