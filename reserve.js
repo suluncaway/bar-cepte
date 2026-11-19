@@ -150,41 +150,40 @@
         }
         switch (plan) {
             case 'monthly': return 'Aylık Abonelik (Monthly Pass)';
-            case 'annual': return 'Yıllık Abonelik';
+            case 'annual': return 'Yıllık Abonelik (Annual Pass)';
             case 'lifetime': return 'Ömür Boyu VIP (Lifetime Pass)';
             default: return 'Reserve Üyeliği';
         }
     }
 
+    // Entitlement lives in memory and comes only from a successful server verification in this
+    // session. localStorage keeps the key so it can be re-verified on the next start; it is never proof.
+    let verifiedSubscription = null;
+    let entitlementGeneration = 0;
+    let expiryTimer = null;
+    const EMPTY_SUBSCRIPTION = { active: false, expired: false, plan: null, key: null, expiresAt: 0, daysLeft: null };
+
+    function monotonicNow() {
+        return root.performance && typeof root.performance.now === 'function' ? root.performance.now() : Date.now();
+    }
+
+    function ownerScope() {
+        const user = root.BarAuth && typeof root.BarAuth.getCurrentUser === 'function' ? root.BarAuth.getCurrentUser() : null;
+        return user ? user.uid : null;
+    }
+
     function getSubscriptionInfo() {
-        try {
-            const activeStored = root.localStorage.getItem(STORAGE_KEY) === 'true';
-            const key = root.localStorage.getItem(KEY_STORAGE) || '';
-            const plan = root.localStorage.getItem(PLAN_STORAGE) || 'lifetime';
-            const expiresAt = Number(root.localStorage.getItem(EXPIRES_STORAGE)) || 0;
-
-            if (activeStored && expiresAt > 0 && Date.now() > expiresAt) {
-                // Abonelik süresi doldu
-                root.localStorage.removeItem(STORAGE_KEY);
-                return { active: false, expired: true, plan, key, expiresAt, daysLeft: 0 };
-            }
-
-            let daysLeft = null;
-            if (activeStored && expiresAt > 0) {
-                daysLeft = Math.max(0, Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)));
-            }
-
-            return {
-                active: activeStored,
-                expired: false,
-                plan: activeStored ? plan : null,
-                key: activeStored ? key : null,
-                expiresAt: activeStored ? expiresAt : 0,
-                daysLeft: activeStored ? daysLeft : null
-            };
-        } catch {
-            return { active: false, expired: false, plan: null, key: null, expiresAt: 0, daysLeft: null };
-        }
+        const sub = verifiedSubscription;
+        if (!sub || sub.owner !== ownerScope()) return { ...EMPTY_SUBSCRIPTION };
+        const now = Date.now();
+        // A clock moved backwards cannot extend a subscription: wall time and monotonic time must both agree.
+        const expired = sub.expiresAt > 0 && (now >= sub.expiresAt || now < sub.observedAt ||
+            monotonicNow() - sub.monotonicStart >= sub.remainingMs);
+        if (expired) return { ...EMPTY_SUBSCRIPTION, expired: true, plan: sub.plan, key: sub.key, expiresAt: sub.expiresAt, daysLeft: 0 };
+        return {
+            active: true, expired: false, plan: sub.plan, key: sub.key, expiresAt: sub.expiresAt,
+            daysLeft: sub.expiresAt > 0 ? Math.max(0, Math.ceil((sub.expiresAt - now) / 86400000)) : null
+        };
     }
 
     function isReserveActive() {
@@ -195,167 +194,142 @@
         try {
             let id = root.localStorage.getItem('barcepte_device_id');
             if (!id) {
-                id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+                const bytes = new Uint8Array(32);
+                root.crypto.getRandomValues(bytes);
+                id = 'dev_' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
                 root.localStorage.setItem('barcepte_device_id', id);
             }
             return id;
         } catch {
-            return 'dev_unknown';
+            return null;
         }
     }
 
-    function activateReserve(key) {
-        if (!validateLicenseKey(key)) return false;
-        try {
-            const cleanKey = key.trim().toUpperCase();
-
-            // Tek kullanımlık lisans koruması (BarAuth kontrolü)
-            let existingExpiresAt = 0;
-            if (root.BarAuth && typeof root.BarAuth.canUseLicenseKey === 'function') {
-                const check = root.BarAuth.canUseLicenseKey(cleanKey);
-                if (!check.allowed) {
-                    const msgEl = typeof document !== 'undefined' ? document.getElementById('reserve-key-msg') : null;
-                    if (msgEl) {
-                        msgEl.textContent = check.reason;
-                        msgEl.className = 'text-xs text-rose-400 font-semibold';
-                    }
-                    return false;
-                }
-                if (check.alreadyClaimed) {
-                    const registry = root.BarAuth.getClaimedLicenses ? root.BarAuth.getClaimedLicenses() : {};
-                    if (registry[cleanKey] && registry[cleanKey].expiresAt) {
-                        existingExpiresAt = registry[cleanKey].expiresAt;
-                    }
-                }
-            }
-
-            const plan = getPlanFromKey(cleanKey);
-            const duration = getDurationForPlan(plan);
-            // Daha önce bu hesaba mühürlenmişse orijinal süresini koru, sıfırdan süre ekleme!
-            const expiresAt = existingExpiresAt > 0 ? existingExpiresAt : (duration > 0 ? (Date.now() + duration) : 0);
-
-            root.localStorage.setItem(STORAGE_KEY, 'true');
-            root.localStorage.setItem(KEY_STORAGE, cleanKey);
-            root.localStorage.setItem(PLAN_STORAGE, plan);
-            root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
-
-            // Lisansı kullanıcı hesabına bağla ve tek kullanımlık olarak kaydet
-            if (root.BarAuth && typeof root.BarAuth.claimLicenseKey === 'function') {
-                root.BarAuth.claimLicenseKey(cleanKey, plan, expiresAt);
-            }
-
-            applyReserveUI();
-            return true;
-        } catch {
-            return false;
-        }
+    // New ids are "dev_" + 64 hex and the API receives the hex part. Ids created before that format
+    // are sent unchanged, so licences already bound to them keep matching on the server.
+    function deviceIdForServer(id) {
+        if (typeof id !== 'string') return null;
+        const match = /^dev_([a-f0-9]{64})$/.exec(id);
+        return match ? match[1] : id;
     }
 
-    async function verifyAndActivateLicense(key) {
+    // Legacy synchronous entry points: they cannot reach the server, so they never grant Reserve.
+    function activateReserve() { return false; }
+    function activateFromCloud() { return false; }
+
+    async function verifyAndActivateLicense(key, options = {}) {
         const isEn = getCurrentLang() === 'en';
+        const fail = reason => ({ success: false, reason });
         if (!key || typeof key !== 'string') {
-            return { success: false, reason: isEn ? 'Please enter an activation key.' : 'Lütfen bir aktivasyon kodu giriniz.' };
+            return fail(isEn ? 'Please enter an activation key.' : 'Lütfen bir aktivasyon kodu giriniz.');
         }
         const cleanKey = key.trim().toUpperCase();
-
-        // 1. Format ve sağlama toplamı kontrolü
         if (!validateLicenseKey(cleanKey)) {
-            return { success: false, reason: isEn ? 'Invalid activation key. Please check again.' : 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
+            return fail(isEn ? 'Invalid activation key. Please check again.' : 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.');
         }
 
-        // 4. Merkezi Sunucu (Render Webhook) Doğrulaması
-        const user = root.BarAuth && typeof root.BarAuth.getCurrentUser === 'function' ? root.BarAuth.getCurrentUser() : null;
-        const deviceId = (root.BarAuth && typeof root.BarAuth.getDeviceId === 'function') ? root.BarAuth.getDeviceId() : getLocalDeviceId();
-        const payload = {
-            key: cleanKey,
-            uid: user && root.BarAuth.getSessionToken && root.BarAuth.getSessionToken() ? user.uid : null,
-            email: user ? user.email : '',
-            deviceId: deviceId
-        };
+        const auth = root.BarAuth;
+        const user = auth && typeof auth.getCurrentUser === 'function' ? auth.getCurrentUser() : null;
+        const headers = { 'Content-Type': 'application/json' };
+        if (user && user.provider === 'google') {
+            // The server binds Google licences to the account; without a live session it cannot confirm ownership.
+            const token = typeof auth.getIdToken === 'function' ? auth.getIdToken() : null;
+            if (!token) return fail(isEn ? 'Sign in with Google again to confirm your membership.' : 'Üyeliğini doğrulamak için Google ile tekrar giriş yap.');
+            headers.Authorization = 'Bearer ' + token;
+        }
+        const deviceId = deviceIdForServer(auth && typeof auth.getDeviceId === 'function' ? auth.getDeviceId() : getLocalDeviceId());
+        const generation = entitlementGeneration;
+        const owner = ownerScope();
 
         const controller = typeof AbortController === 'function' ? new AbortController() : null;
-        const timeout = controller ? setTimeout(() => controller.abort(), 65000) : null;
+        const timeout = controller && root.setTimeout ? root.setTimeout(() => controller.abort(), 65000) : null;
         try {
-            const resp = await fetch('https://bar-cepte-webhook.onrender.com/api/claim-license', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...(root.BarAuth && root.BarAuth.getSessionToken && root.BarAuth.getSessionToken()?{Authorization:'Bearer '+root.BarAuth.getSessionToken()}: {}) },
-                body: JSON.stringify(payload),
+            const resp = await root.fetch('https://bar-cepte-webhook.onrender.com/api/claim-license', {
+                method: 'POST', headers,
+                body: JSON.stringify({ key: cleanKey, deviceId }),
                 signal: controller ? controller.signal : undefined
             });
             // Render can answer a cold start with an HTML error page; never let that surface as a network error.
             let data = {};
             try { data = await resp.json(); } catch { data = {}; }
-            if (!resp.ok || !data.success) {
+            // A logout or account switch while waiting makes the answer belong to someone else.
+            if (generation !== entitlementGeneration || owner !== ownerScope()) {
+                return fail(isEn ? 'Your account changed during verification. Please try again.' : 'Doğrulama sırasında hesap değişti. Lütfen tekrar dene.');
+            }
+            if (!resp.ok || data.success !== true) {
                 if (resp.status === 409) {
-                    if (root.BarAuth && typeof root.BarAuth.markLicenseClaimedLocally === 'function') {
-                        root.BarAuth.markLicenseClaimedLocally(cleanKey, data.claimedBy || 'external_user');
-                    }
-                    return { success: false, reason: data.reason || (isEn
+                    return fail(isEn
                         ? 'This license key was already claimed by another user or device. Licenses are single-use.'
-                        : 'Bu lisans anahtarı başka bir kullanıcı ya da cihazda kullanılmış. Lisanslar tek kullanımlıktır.') };
+                        : 'Bu lisans anahtarı başka bir kullanıcı ya da cihazda kullanılmış. Lisanslar tek kullanımlıktır.');
                 }
-                // Only a 409 means "already claimed". Anything else is a server problem: the key is still valid, retry.
-                return { success: false, reason: (resp.ok && data.reason) || (isEn
+                // Anything but a 409 is a server problem or an expired key: say what the server said, else ask to retry.
+                return fail((typeof data.reason === 'string' && data.reason) || (isEn
                     ? 'The license server could not confirm your key right now. Your key is safe; please try again in a minute.'
-                    : 'Lisans sunucusu şu an kodunu doğrulayamadı. Kodun geçerli kalır; bir dakika sonra tekrar dene.') };
+                    : 'Lisans sunucusu şu an kodunu doğrulayamadı. Kodun geçerli kalır; bir dakika sonra tekrar dene.'));
             }
 
-            // Sunucu onayladı! Lisansı bu cihaza kaydet
-            const plan = data.plan;
-            const expiresAt = data.expiresAt;
+            const { plan, expiresAt } = data;
             if (!['monthly', 'annual', 'lifetime'].includes(plan) ||
                 typeof expiresAt !== 'number' || !Number.isFinite(expiresAt) ||
                 (plan === 'lifetime' ? expiresAt !== 0 : expiresAt <= Date.now())) {
                 throw new Error('Invalid subscription response');
             }
 
-            root.localStorage.setItem(STORAGE_KEY, 'true');
+            // Remember the key for re-verification first; if storage fails, nothing is granted.
             root.localStorage.setItem(KEY_STORAGE, cleanKey);
             root.localStorage.setItem(PLAN_STORAGE, plan);
             root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
-
-            if (root.BarAuth && typeof root.BarAuth.claimLicenseKey === 'function') {
-                root.BarAuth.claimLicenseKey(cleanKey, plan, expiresAt);
-            }
-
+            const now = Date.now();
+            verifiedSubscription = { key: cleanKey, plan, expiresAt, owner, observedAt: now,
+                monotonicStart: monotonicNow(), remainingMs: expiresAt > 0 ? expiresAt - now : Infinity };
+            scheduleExpiryCheck();
             applyReserveUI();
             return { success: true, plan, expiresAt, message: data.message };
         } catch (err) {
-            console.warn('Merkezi lisans doğrulaması tamamlanamadı:', err);
-            return { success: false, reason: isEn
+            if (!options.silent && root.console) root.console.warn('Merkezi lisans doğrulaması tamamlanamadı:', err);
+            return fail(isEn
                 ? 'License verification is unavailable. Please connect to the internet and try again.'
-                : 'Lisans doğrulaması yapılamadı. İnternet bağlantınızı kontrol edip tekrar deneyiniz.' };
+                : 'Lisans doğrulaması yapılamadı. İnternet bağlantınızı kontrol edip tekrar deneyiniz.');
         } finally {
-            if (timeout !== null) clearTimeout(timeout);
+            if (timeout !== null) root.clearTimeout(timeout);
         }
     }
 
-    function activateFromCloud(reserveData) {
-        if (!reserveData || !reserveData.active) return false;
-        try {
-            const expiresAt = Number(reserveData.expiresAt) || 0;
-            if (expiresAt > 0 && Date.now() > expiresAt) return false;
+    // On start, a key saved by an earlier successful verification is checked with the server again.
+    function reverifyStoredLicense() {
+        let stored = null;
+        try { stored = root.localStorage.getItem(KEY_STORAGE); } catch {}
+        if (!stored || isReserveActive()) return Promise.resolve({ success: isReserveActive() });
+        return verifyAndActivateLicense(stored, { silent: true });
+    }
 
-            root.localStorage.setItem(STORAGE_KEY, 'true');
-            if (reserveData.key) root.localStorage.setItem(KEY_STORAGE, reserveData.key);
-            if (reserveData.plan) root.localStorage.setItem(PLAN_STORAGE, reserveData.plan);
-            root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
+    function scheduleExpiryCheck() {
+        if (expiryTimer) root.clearTimeout(expiryTimer);
+        expiryTimer = null;
+        if (!verifiedSubscription || !(verifiedSubscription.expiresAt > 0) || !root.setTimeout) return;
+        expiryTimer = root.setTimeout(() => {
             applyReserveUI();
-            return true;
-        } catch {
-            return false;
-        }
+            if (isReserveActive()) scheduleExpiryCheck();
+        }, Math.min(60000, Math.max(1000, verifiedSubscription.expiresAt - Date.now())));
+        if (expiryTimer && expiryTimer.unref) expiryTimer.unref();
     }
 
-    function deactivateReserve(reload = true) {
+    // Ends the entitlement for this session and invalidates any verification still in flight.
+    // forget=true also drops the saved key (the "remove membership from this device" button).
+    function deactivateReserve(forget = false) {
+        entitlementGeneration++;
+        verifiedSubscription = null;
+        if (expiryTimer) root.clearTimeout(expiryTimer);
+        expiryTimer = null;
         try {
             root.localStorage.removeItem(STORAGE_KEY);
-            root.localStorage.removeItem(KEY_STORAGE);
-            root.localStorage.removeItem(PLAN_STORAGE);
-            root.localStorage.removeItem(EXPIRES_STORAGE);
-            if(reload)root.location.reload();
-            else applyReserveUI();
+            if (forget === true) {
+                root.localStorage.removeItem(KEY_STORAGE);
+                root.localStorage.removeItem(PLAN_STORAGE);
+                root.localStorage.removeItem(EXPIRES_STORAGE);
+            }
         } catch {}
+        applyReserveUI();
     }
 
     function selectPlan(planKey) {
@@ -566,6 +540,9 @@
     function init() {
         applyReserveUI();
         selectPlan(currentSelectedPlan);
+        // A Google session is restored by auth.js, which then asks the server itself.
+        const user = root.BarAuth && root.BarAuth.getCurrentUser ? root.BarAuth.getCurrentUser() : null;
+        if (!user || user.provider !== 'google') reverifyStoredLicense();
 
         // Para birimi butonları tıklamaları (USD / EUR)
         document.querySelectorAll('.reserve-currency-btn').forEach(btn => {
@@ -697,7 +674,7 @@
                 if (confirm(isEn
                     ? 'Are you sure you want to remove your Reserve membership from this device?'
                     : 'Reserve üyeliğinizi bu cihazdan kaldırmak istediğinize emin misiniz?')) {
-                    deactivateReserve();
+                    deactivateReserve(true);
                 }
             });
         }
@@ -730,6 +707,7 @@
         verifyAndActivateLicense,
         activateFromCloud,
         deactivateReserve,
+        reverifyStoredLicense,
         validateLicenseKey,
         checksum,
         getSubscriptionInfo,

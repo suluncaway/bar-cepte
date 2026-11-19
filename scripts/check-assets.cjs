@@ -8,14 +8,15 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 
 function readAssetNames(projectRoot = root) {
+    // web-assets.json is the one allowlist: Gradle, desktop and the preview server all read it.
     const gradle = fs.readFileSync(path.join(projectRoot, 'android/app/build.gradle'), 'utf8');
-    const block = gradle.match(/def webAssetNames = \[([\s\S]*?)\]/);
-    assert.ok(block, 'Gradle must declare the explicit webAssetNames allowlist');
-    const names = [...block[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
-    assert.ok(names.length > 0, 'Asset allowlist is empty');
+    assert.match(gradle, /web-assets\.json/, 'Gradle must bundle the web-assets.json allowlist');
+    const names = JSON.parse(fs.readFileSync(path.join(projectRoot, 'web-assets.json'), 'utf8'));
+    assert.ok(Array.isArray(names) && names.length > 0, 'Asset allowlist is empty');
+    assert.ok(names.every(name => typeof name === 'string'), 'Asset allowlist must list file names');
     assert.equal(new Set(names).size, names.length, 'Duplicate assets');
     for (const name of names) {
-        assert.match(name, /^[a-z0-9][a-z0-9.-]*\.(?:html|css|js|json|png|webp|mp4)$/, `Unsafe asset: ${name}`);
+        assert.match(name, /^[a-z0-9][a-z0-9.-]*\.(?:html|css|js|json|png|webp|mp4|svg|txt)$/, `Unsafe asset: ${name}`);
         assert.doesNotMatch(name, /(?:secret|private|credentials|service-account|package|main\.js)/i,
             `Non-client asset: ${name}`);
     }

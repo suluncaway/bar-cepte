@@ -211,7 +211,9 @@ test('BarAuth module validates user data and sanitizes against XSS', () => {
     assert.equal(auth.isLoggedIn(), false);
 });
 
-test('License keys are strictly single-use and bound to one account', () => {
+// Single use and expiry are enforced by the license server (see license-api.test.cjs: 409 for a
+// second account, 400 for an expired key). The client keeps no registry that could grant Reserve.
+test('Local license registries cannot grant Reserve; ownership is decided by the server', () => {
     const storageMap = new Map();
     global.localStorage = {
         getItem: k => storageMap.get(k) || null,
@@ -222,37 +224,19 @@ test('License keys are strictly single-use and bound to one account', () => {
 
     const auth = require('../auth.js');
     const reserve = require('../reserve.js');
-
-    const key = 'RESERVE-ANN1-TEST-5632';
-    // Validate format with real checksum
-    const testPart1 = 'ANN1';
-    const testPart2 = 'TEST';
-    const validKey = `RESERVE-${testPart1}-${testPart2}-${reserve.checksum(testPart1 + testPart2)}`;
+    const validKey = `RESERVE-ANN1-TEST-${reserve.checksum('ANN1TEST')}`;
     assert.ok(reserve.validateLicenseKey(validKey));
 
-    // User A signs in and claims the key
     auth.saveUser({ uid: 'user_alice', name: 'Alice', email: 'alice@gmail.com' });
-    const checkAlice = auth.canUseLicenseKey(validKey);
-    assert.equal(checkAlice.allowed, true);
+    // Format check only: it neither reserves nor rejects the key.
+    assert.equal(auth.canUseLicenseKey(validKey).allowed, true);
+    assert.equal(auth.canUseLicenseKey('RESERVE-ANN1-TEST-0000').allowed, false);
 
-    auth.claimLicenseKey(validKey, 'annual', Date.now() + 365 * 24 * 60 * 60 * 1000);
-    assert.equal(auth.getCurrentUser().isReserve, true);
-    assert.equal(auth.getCurrentUser().reserveKey, validKey);
-
-    // Alice on another device can still use her own key
-    const checkAliceAgain = auth.canUseLicenseKey(validKey);
-    assert.equal(checkAliceAgain.allowed, true);
-    assert.equal(checkAliceAgain.alreadyClaimed, true);
-
-    // User B tries to use the same key -> MUST BE REJECTED!
-    auth.saveUser({ uid: 'user_bob', name: 'Bob', email: 'bob@gmail.com' });
-    const checkBob = auth.canUseLicenseKey(validKey);
-    assert.equal(checkBob.allowed, false);
-    assert.match(checkBob.reason, /tek kullanımlıktır/);
-
-    // reserve.activateReserve also rejects User B
-    const reserveResult = reserve.activateReserve(validKey);
-    assert.equal(reserveResult, false);
+    assert.equal(auth.claimLicenseKey(validKey, 'annual', Date.now() + 365 * 86400000), false);
+    assert.equal(auth.getCurrentUser().isReserve, false);
+    storageMap.set('barcepte_claimed_licenses', JSON.stringify({ [validKey]: { uid: 'user_alice' } }));
+    assert.equal(reserve.activateReserve(validKey), false);
+    assert.equal(reserve.isReserveActive(), false);
 });
 
 test('Google Sign-In UI elements, modals, and CSP directives are present in index.html', () => {
@@ -274,7 +258,7 @@ test('Google Sign-In UI elements, modals, and CSP directives are present in inde
     assert.match(html, /src="https:\/\/accounts\.google\.com\/gsi\/client"/);
 });
 
-test('Expired license keys cannot be reactivated to gain free extra days', () => {
+test('Expired license keys cannot be reactivated locally to gain free extra days', () => {
     const storageMap = new Map();
     global.window = global;
     global.localStorage = {
@@ -286,21 +270,17 @@ test('Expired license keys cannot be reactivated to gain free extra days', () =>
 
     const auth = require('../auth.js');
     const reserve = require('../reserve.js');
-
     const expiredKey = `RESERVE-MTH1-EXPR-${reserve.checksum('MTH1EXPR')}`;
     assert.ok(reserve.validateLicenseKey(expiredKey));
 
     auth.saveUser({ uid: 'user_david', name: 'David', email: 'david@gmail.com' });
-
-    // Claim key with an expiration date in the past
-    const pastTime = Date.now() - 10000;
-    auth.claimLicenseKey(expiredKey, 'monthly', pastTime);
-
-    // David attempts to reactivate using the same expired key
-    const checkExpired = auth.canUseLicenseKey(expiredKey);
-    assert.equal(checkExpired.allowed, false);
-    assert.match(checkExpired.reason, /kullanım süresi dolmuştur/);
-
-    const activateResult = reserve.activateReserve(expiredKey);
-    assert.equal(activateResult, false);
+    // Saved key, plan and a future expiry from an earlier session are not proof of a subscription.
+    storageMap.set('barcepte_reserve_active', 'true');
+    storageMap.set('barcepte_reserve_license', expiredKey);
+    storageMap.set('barcepte_reserve_plan', 'monthly');
+    storageMap.set('barcepte_reserve_expires_at', String(Date.now() + 30 * 86400000));
+    assert.equal(reserve.isReserveActive(), false);
+    assert.equal(reserve.activateReserve(expiredKey), false);
+    assert.equal(reserve.activateFromCloud({ active: true, plan: 'monthly', key: expiredKey, expiresAt: Date.now() + 86400000 }), false);
+    assert.equal(reserve.isReserveActive(), false);
 });

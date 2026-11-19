@@ -89,7 +89,8 @@
             name: sanitizeText(raw.name || 'Barmen Kulübü Üyesi', 100),
             email: sanitizeText(raw.email || '', 150),
             picture: safeAvatar(raw.picture || ''),
-            isReserve: Boolean(raw.isReserve),
+            // Entitlement is decided by BarReserve from a server answer, never by a stored profile.
+            isReserve: false,
             plan: ['monthly', 'annual', 'lifetime'].includes(raw.plan) ? raw.plan : null,
             reserveKey: sanitizeText(raw.reserveKey || '', 50),
             reserveExpiresAt: Number(raw.reserveExpiresAt) || 0,
@@ -140,7 +141,9 @@
         try {
             let id = root.localStorage.getItem(DEVICE_ID_KEY);
             if (!id) {
-                id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+                const bytes = new Uint8Array(32);
+                root.crypto.getRandomValues(bytes);
+                id = 'dev_' + Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
                 root.localStorage.setItem(DEVICE_ID_KEY, id);
             }
             return id;
@@ -166,108 +169,16 @@
         } catch {}
     }
 
+    // Format check only. Whether a key is free, owned or expired is decided by the license server.
     function canUseLicenseKey(rawKey) {
-        if (!rawKey || typeof rawKey !== 'string') {
-            return { allowed: false, reason: 'Geçersiz anahtar formatı.' };
-        }
-        const cleanKey = rawKey.trim().toUpperCase();
-
-        // Master geliştirici anahtarları her zaman serbesttir
-        if (cleanKey === 'RESERVE-SULUNCA-2026' || cleanKey === 'BARCEPTE-RESERVE-VIP') {
-            return { allowed: true, reason: 'Master geliştirici anahtarı.' };
-        }
-
-        // 1. Matematiksel Doğruluk Kontrolü
-        if (root.BarReserve && typeof root.BarReserve.validateLicenseKey === 'function') {
-            if (!root.BarReserve.validateLicenseKey(cleanKey)) {
-                return { allowed: false, reason: 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
-            }
-        }
-
-        // 2. Tek Kullanımlık Hesap / Cihaz Bağlantısı Kontrolü
-        const registry = getClaimedLicenses();
-        const existingClaim = registry[cleanKey];
-
-        const user = getCurrentUser();
-        const deviceId = getDeviceId();
-        const currentUid = user ? user.uid : deviceId;
-
-        if (existingClaim) {
-            // Süre dolumu kontrolü: Süresi dolmuş anahtar tekrar KULLANILAMAZ!
-            if (existingClaim.expiresAt > 0 && Date.now() > existingClaim.expiresAt) {
-                return {
-                    allowed: false,
-                    reason: 'Bu lisans anahtarının kullanım süresi dolmuştur! Lisanslar tek kullanımlıktır.'
-                };
-            }
-
-            // Sahip doğrulaması:
-            // 1. Eğer lisans bir hesaba (UID) bağlıysa, farklı bir hesap kesinlikle KULLANAMAZ.
-            // 2. Sadece aynı UID veya misafir durumunda aynı cihaz kabul edilir.
-            let isOwner = false;
-            if (user && user.uid && existingClaim.uid) {
-                isOwner = (existingClaim.uid === user.uid);
-            } else if (!user && existingClaim.deviceId && !existingClaim.uid) {
-                isOwner = (existingClaim.deviceId === deviceId);
-            }
-
-            if (isOwner) {
-                return {
-                    allowed: true,
-                    reason: 'Bu anahtar zaten mevcut hesabınıza tanımlı.',
-                    alreadyClaimed: true
-                };
-            } else {
-                return {
-                    allowed: false,
-                    reason: 'Bu lisans anahtarı daha önce başka bir hesap tarafından kullanılmış! Lisanslar tek kullanımlıktır.'
-                };
-            }
-        }
-
-        return { allowed: true, reason: 'Anahtar kullanılabilir.' };
+        const allowed = Boolean(root.BarReserve && typeof root.BarReserve.validateLicenseKey === 'function' &&
+            root.BarReserve.validateLicenseKey(rawKey));
+        return { allowed, reason: allowed ? 'Sunucu doğrulaması gerekli.' : 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
     }
 
-    function claimLicenseKey(rawKey, plan, expiresAt) {
-        const cleanKey = rawKey.trim().toUpperCase();
-        const user = getCurrentUser();
-        const deviceId = getDeviceId();
-        const currentUid = user ? user.uid : null;
-
-        const registry = getClaimedLicenses();
-        registry[cleanKey] = {
-            uid: currentUid,
-            deviceId: deviceId,
-            email: user ? user.email : '',
-            claimedAt: Date.now(),
-            plan: plan || 'annual',
-            expiresAt: Number(expiresAt) || 0
-        };
-        saveClaimedLicenses(registry);
-
-        if (user) {
-            user.isReserve = true;
-            user.plan = plan || 'annual';
-            user.reserveKey = cleanKey;
-            user.reserveExpiresAt = Number(expiresAt) || 0;
-            saveUser(user);
-            syncToCloud();
-        }
-    }
-
-    function markLicenseClaimedLocally(rawKey, uid) {
-        if (!rawKey) return;
-        const cleanKey = rawKey.trim().toUpperCase();
-        const registry = getClaimedLicenses();
-        if (!registry[cleanKey]) {
-            registry[cleanKey] = {
-                uid: uid || 'external_user',
-                claimedAt: Date.now(),
-                externallyClaimed: true
-            };
-            saveClaimedLicenses(registry);
-        }
-    }
+    // Kept for older callers: a local registry can neither grant nor deny Reserve.
+    function claimLicenseKey() { return false; }
+    function markLicenseClaimedLocally() { return false; }
 
     // --- Bulut Senkronizasyonu (Cloud Sync) ---
     function collectCurrentLocalData() {
@@ -278,9 +189,9 @@
                 customs: sec ? sec.readStored('customRecipes', sec.recipes) : JSON.parse(root.localStorage.getItem('customRecipes') || '[]'),
                 shopping: sec ? sec.readStored('shoppingList', sec.stringList) : JSON.parse(root.localStorage.getItem('shoppingList') || '[]'),
                 selected: sec ? sec.readStored('selectedIngredients', sec.stringList) : JSON.parse(root.localStorage.getItem('selectedIngredients') || '[]'),
-                preferences: sec.preferences({...sec.readStored('personalPreferences',sec.preferences)}),
-                history: sec.readStored('preparationHistory',sec.history),
-                inventory: sec.inventory({...{items:[],deductions:[],receipts:[]},...sec.readStored('barInventory',sec.inventory)})
+                preferences: sec ? sec.preferences({...sec.readStored('personalPreferences',sec.preferences)}) : JSON.parse(root.localStorage.getItem('personalPreferences') || '{}'),
+                history: sec ? sec.readStored('preparationHistory',sec.history) : JSON.parse(root.localStorage.getItem('preparationHistory') || '[]'),
+                inventory: sec ? sec.inventory({...{items:[],deductions:[],receipts:[]},...sec.readStored('barInventory',sec.inventory)}) : JSON.parse(root.localStorage.getItem('barInventory') || '{"items":[],"deductions":[],"receipts":[]}')
             };
         } catch {
             return { favorites: [], customs: [], shopping: [], selected: [] };
@@ -288,6 +199,11 @@
     }
 
     function getSessionToken() {return sessionToken;}
+    // The credential the license server checks for a Google account; null without a live session.
+    function getIdToken() {
+        const user=getCurrentUser();
+        return user && user.provider==='google' && sessionToken ? sessionToken : null;
+    }
     function sessionHeaders() {return sessionToken?{Authorization:'Bearer '+sessionToken}:{};}
     async function accountRequest(path,options={}) {
         const requestToken=sessionToken;
@@ -309,16 +225,10 @@
         cloudRevision=revision;try {root.sessionStorage.setItem(REVISION_KEY,String(revision));}catch {}
     }
     function applyServerSubscription(subscription) {
-        const user=getCurrentUser();if(!user)return;
-        user.isReserve=Boolean(subscription);
-        user.plan=subscription?subscription.plan:null;
-        user.reserveKey=subscription?subscription.key:'';
-        user.reserveExpiresAt=subscription?subscription.expiresAt:0;
-        saveUser(user);
-        if(root.BarReserve) {
-            if(subscription)root.BarReserve.activateFromCloud({...subscription,active:true});
-            else if(root.BarReserve.deactivateReserve)root.BarReserve.deactivateReserve(false);
-        }
+        const user=getCurrentUser();if(!user || !root.BarReserve)return;
+        if(subscription && typeof subscription.key==='string' && subscription.key) {
+            root.BarReserve.verifyAndActivateLicense(subscription.key,{silent:true}).then(()=>updateAuthUI());
+        } else if(root.BarReserve.deactivateReserve)root.BarReserve.deactivateReserve(false);
     }
     function applyCloudData(valid,user) {
         valid={...valid,preferences:valid.preferences||root.BarSecurity.preferences({}),history:valid.history||[],inventory:valid.inventory||{items:[],deductions:[],receipts:[]}};
@@ -420,6 +330,7 @@
             reserveExpiresAt: 0
         };
         saveUser(demoUser);
+        restoreAccountData(demoUser);
         syncToCloud();
         closeAuthModal();
         showAlert(getCurrentLang() === 'en'
@@ -436,8 +347,27 @@
         if(token && root.fetch)root.fetch(API_ORIGIN+'/api/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}).catch(()=>{});
         if(getCurrentUser()?.provider==='google' && root.BarReserve?.deactivateReserve)root.BarReserve.deactivateReserve(false);
     }
+    // The signed-out device keeps no account data; the account's copy stays in a local backup.
+    function stashAccountData(user) {
+        if (!user) return;
+        root.localStorage.setItem('barcepte_cloud_data_' + user.uid, JSON.stringify({ updatedAt: Date.now(), data: collectCurrentLocalData() }));
+        for (const key of ['favoriteCocktails', 'customRecipes', 'shoppingList', 'selectedIngredients']) root.localStorage.setItem(key, '[]');
+    }
+    function restoreAccountData(user) {
+        try {
+            const saved = JSON.parse(root.localStorage.getItem('barcepte_cloud_data_' + user.uid) || 'null');
+            if (!saved || !saved.data) return;
+            const keys = { favorites: 'favoriteCocktails', customs: 'customRecipes', shopping: 'shoppingList', selected: 'selectedIngredients' };
+            for (const [field, key] of Object.entries(keys)) {
+                if (Array.isArray(saved.data[field]) && (root.localStorage.getItem(key) || '[]') === '[]') root.localStorage.setItem(key, JSON.stringify(saved.data[field]));
+            }
+        } catch {}
+    }
     function logout() {
+        const user = getCurrentUser();
         clearSession();
+        if (root.BarReserve && root.BarReserve.deactivateReserve) root.BarReserve.deactivateReserve(false);
+        try { if (user && user.provider !== 'google') stashAccountData(user); } catch {}
         currentUser = null;
         try {
             root.localStorage.removeItem(AUTH_USER_KEY);
@@ -448,6 +378,9 @@
     }
 
     // --- UI Güncelleme & Etkileşimler ---
+    function reserveActive() {
+        return Boolean(root.BarReserve && typeof root.BarReserve.isReserveActive === 'function' && root.BarReserve.isReserveActive());
+    }
     function updateAuthUI() {
         if (typeof document === 'undefined') return;
         const user = getCurrentUser();
@@ -461,7 +394,7 @@
             const firstName = user.name.split(' ')[0] || (getCurrentLang() === 'en' ? 'My Account' : 'Hesabım');
             if (authBtnLabel) authBtnLabel.textContent = firstName;
             if (authBtnIcon) {
-                if (user.isReserve) {
+                if (reserveActive()) {
                     authBtnIcon.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg>';
                 } else if (user.picture) {
                     authBtnIcon.innerHTML = `<img src="${user.picture}" alt="" class="w-4 h-4 rounded-full object-cover">`;
@@ -469,7 +402,7 @@
                     authBtnIcon.innerHTML = '<i class="bci bci-martini" aria-hidden="true"></i>';
                 }
             }
-            authBtn.className = user.isReserve
+            authBtn.className = reserveActive()
                 ? "pill-btn px-2.5 py-1.5 rounded-xl border border-amber-400/50 bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/10 text-[11px] font-black text-amber-300 flex items-center gap-1.5 hover:border-amber-400 shrink-0 whitespace-nowrap"
                 : "pill-btn px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-[11px] font-bold text-emerald-300 flex items-center gap-1.5 hover:bg-emerald-500/20 shrink-0 whitespace-nowrap";
         } else {
@@ -510,10 +443,11 @@
             }
 
             if (tierBadgeEl) {
-                if (user.isReserve) {
-                    const planText = user.plan === 'monthly'
+                if (reserveActive()) {
+                    const activePlan = root.BarReserve.getSubscriptionInfo().plan;
+                    const planText = activePlan === 'monthly'
                         ? (getCurrentLang() === 'en' ? 'MONTHLY' : 'AYLIK')
-                        : (user.plan === 'lifetime'
+                        : (activePlan === 'lifetime'
                             ? (getCurrentLang() === 'en' ? 'LIFETIME' : 'ÖMÜR BOYU')
                             : (getCurrentLang() === 'en' ? 'ANNUAL' : 'YILLIK'));
                     tierBadgeEl.textContent = (getCurrentLang() === 'en' ? 'RESERVE VIP MEMBER (' : 'RESERVE VIP ÜYE (') + planText + ')';
@@ -540,7 +474,7 @@
             // Lisans bağlama kutusunun durumunu ayarla
             const licenseBindBox = document.getElementById('auth-license-bind-section');
             if (licenseBindBox) {
-                licenseBindBox.classList.toggle('hidden', user.isReserve);
+                licenseBindBox.classList.toggle('hidden', reserveActive());
             }
         } else {
             loggedOutView.classList.remove('hidden');
@@ -666,34 +600,16 @@
                 bindLicenseBtn.textContent = getCurrentLang() === 'en' ? 'Checking...' : 'Kontrol ediliyor...';
 
                 try {
-                    if (root.BarReserve && typeof root.BarReserve.verifyAndActivateLicense === 'function') {
-                        const result = await root.BarReserve.verifyAndActivateLicense(rawKey);
-                        if (result.success) {
-                            alert(getCurrentLang() === 'en' ? 'Your license key was successfully linked to your account!' : 'Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
-                            if (input) input.value = '';
-                            renderAuthModalState();
-                            updateAuthUI();
-                        } else {
-                            alert(result.reason || (getCurrentLang() === 'en' ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.'));
-                        }
+                    const result = root.BarReserve && typeof root.BarReserve.verifyAndActivateLicense === 'function'
+                        ? await root.BarReserve.verifyAndActivateLicense(rawKey)
+                        : { success: false };
+                    if (result.success) {
+                        alert(getCurrentLang() === 'en' ? 'Your license key was successfully linked to your account!' : 'Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
+                        if (input) input.value = '';
+                        renderAuthModalState();
+                        updateAuthUI();
                     } else {
-                        const check = canUseLicenseKey(rawKey);
-                        if (!check.allowed) {
-                            alert(check.reason);
-                            return;
-                        }
-
-                        if (root.BarReserve && typeof root.BarReserve.activateReserve === 'function') {
-                            const activated = root.BarReserve.activateReserve(rawKey);
-                            if (activated) {
-                                alert(getCurrentLang() === 'en' ? 'Your license key was successfully linked to your account!' : 'Lisans anahtarınız hesabınıza başarıyla bağlandı ve tek kullanımlık olarak mühürlendi!');
-                                if (input) input.value = '';
-                                renderAuthModalState();
-                                updateAuthUI();
-                            } else {
-                                alert(getCurrentLang() === 'en' ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.');
-                            }
-                        }
+                        alert(result.reason || (getCurrentLang() === 'en' ? 'Activation could not be completed.' : 'Aktivasyon gerçekleştirilemedi.'));
                     }
                 } finally {
                     bindLicenseBtn.disabled = false;
@@ -719,6 +635,7 @@
     const api = {
         getCurrentUser,
         getSessionToken,
+        getIdToken,
         isLoggedIn,
         saveUser,
         logout,

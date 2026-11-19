@@ -2,6 +2,7 @@ package com.barcepte.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -191,10 +192,13 @@ public class MainActivity extends Activity {
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                     startActivity(intent);
-                    return true;
+                } catch (ActivityNotFoundException e) {
+                    // No app can open this link; stay in Bar Cepte instead of crashing.
+                    Toast.makeText(MainActivity.this, "Bu bağlantıyı açacak bir uygulama bulunamadı.", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
-                    return true;
+                    // Malformed or blocked URL: ignore it.
                 }
+                return true;
             }
         });
 
