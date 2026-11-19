@@ -553,6 +553,7 @@ html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-sl
 .home-striker button { flex:none; min-height:40px; padding:0 14px; border:1.5px solid var(--clay); border-radius:var(--r-sm); background:transparent; color:var(--ink); font-weight:600; font-size:13px; cursor:pointer; }
 .home-striker button:hover { background:var(--clay); color:#200d03; }
 .editorial-hero .hero-actions { margin-top:24px; }
+.editorial-hero { grid-template-columns:minmax(0,1fr); }
 @media (max-width:767px) {
   .home-tally strong { font-size:64px; }
   .home-coasters { gap:8px; }
