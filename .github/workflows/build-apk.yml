@@ -30,10 +30,21 @@ jobs:
         gradle-version: '8.5'
 
     - name: Build Debug APK
+      shell: bash
       run: |
+        # pipefail: a Gradle failure must fail this step even though its output goes through tee.
+        set -euo pipefail
         cd android
         echo "sdk.dir=$ANDROID_HOME" > local.properties
         gradle assembleDebug assembleDebugAndroidTest --no-daemon --stacktrace 2>&1 | tee ../build.log
+
+    - name: Verify web assets inside the APK
+      shell: bash
+      run: |
+        set -euo pipefail
+        rm -rf "$RUNNER_TEMP/apk-check" && mkdir -p "$RUNNER_TEMP/apk-check"
+        unzip -q android/app/build/outputs/apk/debug/app-debug.apk 'assets/*' -d "$RUNNER_TEMP/apk-check"
+        node scripts/check-assets.cjs "$RUNNER_TEMP/apk-check/assets"
 
     - name: Upload Build Log
       if: always()
