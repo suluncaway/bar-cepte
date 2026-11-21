@@ -191,6 +191,8 @@
     }
     function refresh() {
         if (!host) return;
+        // The panel lives in the hidden bar dashboard most of the time; switchTab('bar') re-renders it on open.
+        if (host.closest('.hidden')) { if (dialog.open && mode==='guide' && step===3) renderGuide(); return; }
         const stockOpen=host.querySelector('.personal-stock')?.open;
         const records = history();
         host.innerHTML = `<section class="personal-panel" aria-labelledby="personal-welcome-title">

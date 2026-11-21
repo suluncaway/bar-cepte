@@ -3070,6 +3070,18 @@ function quickAddIngredientToBar(ingName, event) {
     }
 }
 
+// The same few search words are checked against every recipe's ingredients; match the shelf once per word.
+const popularMatchCache = new Map();
+function popularIngredientsMatching(tokenNorm) {
+    const key = tokenNorm + '|' + popularIngredients.length;
+    if (!popularMatchCache.has(key)) {
+        if (popularMatchCache.size > 200) popularMatchCache.clear();
+        popularMatchCache.set(key, popularIngredients.filter(pi =>
+            [pi.name, pi.nameEn, pi.id].some(v => normalizeSearchText(v).includes(tokenNorm))));
+    }
+    return popularMatchCache.get(key);
+}
+
 function recipeMatchesSearchToken(d, reqs, token) {
     if (!token) return true;
     const tokenNorm = normalizeSearchText(token);
@@ -3088,12 +3100,7 @@ function recipeMatchesSearchToken(d, reqs, token) {
         const trName = typeof translateIngredientName === 'function' ? normalizeSearchText(translateIngredientName(r)) : '';
         if (trName && trName.includes(tokenNorm)) return true;
 
-        const matchedPopular = popularIngredients.filter(pi => {
-            const piNorm = normalizeSearchText(pi.name);
-            const piEnNorm = normalizeSearchText(pi.nameEn);
-            const piIdNorm = normalizeSearchText(pi.id);
-            return piNorm.includes(tokenNorm) || piEnNorm.includes(tokenNorm) || piIdNorm.includes(tokenNorm);
-        });
+        const matchedPopular = popularIngredientsMatching(tokenNorm);
 
         for (const pi of matchedPopular) {
             if (checkIngredientMatch(r, pi.id) || checkIngredientMatch(r, pi.name)) return true;
@@ -4029,25 +4036,16 @@ document.addEventListener('keydown', event => {
 
 function openCocktail(randomDrink) {
     const searchInput = document.getElementById('cocktail-search');
-    
-    if (searchInput) {
-        switchTab('alkol');
-        searchInput.value = randomDrink.strDrink;
-        filterCocktails();
-        
-        setTimeout(() => {
-            const displaySec = document.getElementById('recipes-display-sections');
-            if (displaySec) displaySec.scrollIntoView({ behavior: 'smooth' });
-            
-            const firstCard = document.querySelector('#recipes-ready > .cocktail-card') || document.querySelector('#recipes-missing > .cocktail-card');
-            if (firstCard) {
-                const details = firstCard.querySelector('.details-section');
-                if (details && !details.classList.contains('open')) {
-                    firstCard.click();
-                }
-            }
-        }, 200);
-    }
+    if (!searchInput) return;
+    // Set the search first so switchTab's own filter pass is the only one; cards render synchronously.
+    searchInput.value = randomDrink.strDrink;
+    switchTab('alkol');
+    const cardId = `card_${String(randomDrink.idDrink).replace(/[^a-zA-Z0-9_]/g, '_')}`;
+    const card = document.getElementById(cardId)
+        || document.querySelector('#recipes-ready > .cocktail-card, #recipes-missing > .cocktail-card');
+    if (!card) return;
+    if (!card.querySelector('.details-section')?.classList.contains('open')) card.click();
+    requestAnimationFrame(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 }
 
 function applyLanguage() {
