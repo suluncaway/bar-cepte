@@ -271,8 +271,8 @@ ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h
 <a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır →</a>`;
         const prep = technique === 'build' ? 'PT3M' : technique === 'blend' ? 'PT5M' : 'PT4M';
         const jsonLd = [{ '@context': 'https://schema.org', '@type': 'Recipe', name: displayName, image: image ? [image] : undefined, description,
-            author: { '@type': 'Organization', name: 'Bar Cepte', url: SITE }, recipeCategory: category || 'Kokteyl', recipeYield: '1 porsiyon',
-            prepTime: prep, totalTime: prep, keywords: [displayName, free ? 'alkolsüz' : 'kokteyl', ...cats.map(c => c.name)].join(', '),
+            author: { '@type': 'Organization', name: 'Bar Cepte', url: SITE }, recipeCategory: category || 'Kokteyl', recipeCuisine: 'Uluslararası', recipeYield: '1 porsiyon',
+            prepTime: prep, totalTime: prep, keywords: [displayName, category, free ? 'alkolsüz' : 'kokteyl', ...cats.map(c => c.name), 'kokteyl tarifi'].filter((k, i, a) => k && a.findIndex(x => x && x.toLocaleLowerCase('tr') === k.toLocaleLowerCase('tr')) === i).join(', '),
             recipeIngredient: rows.map(rowText), recipeInstructions: steps.map(text => ({ '@type': 'HowToStep', text })), inLanguage: 'tr', url },
         { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Tarifler', item: `${SITE}/tarif/` },
