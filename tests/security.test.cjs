@@ -234,9 +234,9 @@ test('License keys are strictly single-use and bound to one account', () => {
     const checkAlice = auth.canUseLicenseKey(validKey);
     assert.equal(checkAlice.allowed, true);
 
+    // Recording the claim locally only feeds the advisory single-use hints; Reserve itself comes from the server.
     auth.claimLicenseKey(validKey, 'annual', Date.now() + 365 * 24 * 60 * 60 * 1000);
-    assert.equal(auth.getCurrentUser().isReserve, true);
-    assert.equal(auth.getCurrentUser().reserveKey, validKey);
+    assert.equal(auth.getCurrentUser().isReserve, false);
 
     // Alice on another device can still use her own key
     const checkAliceAgain = auth.canUseLicenseKey(validKey);
