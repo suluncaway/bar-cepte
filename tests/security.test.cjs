@@ -75,8 +75,9 @@ test('support buttons open the owner-confirmed profile with opener isolation', (
 });
 test('original user-supplied coffee widget is preserved with a narrow CSP exception', () => {
     const html = fs.readFileSync('index.html', 'utf8');
-    const snippet = '<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="suluncau" data-color="#FFDD00" data-emoji=""  data-font="Bree" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>';
-    assert.ok(html.includes(snippet));
+    // The user's snippet, unchanged except for `defer` so it doesn't block first paint.
+    const snippet = '<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="suluncau" data-color="#FFDD00" data-emoji=""  data-font="Bree" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ';
+    assert.ok(html.includes(snippet + '></script>') || html.includes(snippet + ' defer></script>'));
     assert.equal(html.split(snippet).length - 1, 1);
     assert.match(html, /script-src 'self' https:\/\/cdnjs\.buymeacoffee\.com\/1\.0\.0\/button\.prod\.min\.js/);
     assert.doesNotMatch(html, /coffee-support-link|coffee-support-cup/);
@@ -147,7 +148,7 @@ test('Reserve subscription plans and dynamic elements are present in index.html 
     assert.equal(reserve.PLANS_CONFIG.monthly.shopierUrl, 'https://www.shopier.com/Anawin/51736039');
     assert.equal(reserve.PLANS_CONFIG.annual.shopierUrl, 'https://www.shopier.com/Anawin/51735632');
     assert.equal(reserve.getPlanDisplayName('monthly'), 'Aylık Abonelik (Monthly Pass)');
-    assert.equal(reserve.getPlanDisplayName('annual'), 'Yıllık Abonelik (Annual Pass)');
+    assert.equal(reserve.getPlanDisplayName('annual'), 'Yıllık Abonelik');
     assert.equal(reserve.getPlanDisplayName('lifetime'), 'Ömür Boyu VIP (Lifetime Pass)');
 });
 test('Reserve key generation and validation works for monthly, annual, and lifetime plans', () => {

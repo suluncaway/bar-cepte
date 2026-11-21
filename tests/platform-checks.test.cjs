@@ -49,18 +49,20 @@ test('Electron downloader can bootstrap the updated proxy API', () => {
 });
 
 test('Android source guards secure origin and non-destructive legacy storage migration', () => {
-    const client = read('android/app/src/main/java/com/barcepte/app/LocalAssetClient.java');
+    // MainActivity owns the live WebView setup and the file:// -> https storage migration
+    // (exercised on an emulator by the upgrade-test job in build-apk.yml).
     const activity = read('android/app/src/main/java/com/barcepte/app/MainActivity.java');
-    assert.match(client, /WebViewAssetLoader\.AssetsPathHandler/);
-    assert.match(client, /https:\/\/appassets\.androidplatform\.net/);
-    assert.match(client, /localStorage\.getItem\(key\)===null/);
-    assert.match(client, /JSONObject\.quote\(legacyState\)/);
-    assert.doesNotMatch(client, /localStorage\.(?:clear|removeItem)\(/);
+    const migration = read('storage-migration.js');
+    assert.match(activity, /WebViewAssetLoader\.AssetsPathHandler/);
+    assert.match(activity, /"https:\/\/appassets\.androidplatform\.net\/assets\/index\.html"/);
+    assert.match(activity, /JSONObject\.quote\(migrationData\)/);
     assert.match(activity, /setAllowUniversalAccessFromFileURLs\(false\)/);
     assert.match(activity, /setAllowFileAccess\(false\)/);
     assert.match(activity, /setTestAdsEnabled\(BuildConfig\.DEBUG\)/);
-    assert.match(activity, /ActivityNotFoundException/);
-    assert.match(activity, /webView\.loadUrl\(LocalAssetClient\.LEGACY\)/);
+    // A device without a handler for an external link must not crash the app.
+    assert.match(activity, /try \{\s*Intent intent = new Intent\(Intent\.ACTION_VIEW[\s\S]*?startActivity\(intent\);[\s\S]*?\} catch \(Exception/);
+    assert.match(activity, /webView\.loadUrl\(migrating \? LEGACY_URL : APP_URL\)/);
+    for (const source of [activity, migration]) assert.doesNotMatch(source, /localStorage\.(?:clear|removeItem)\(/);
 });
 
 test('CI checks full dependencies and built APK contents without hiding Gradle failures', () => {

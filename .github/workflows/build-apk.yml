@@ -31,9 +31,18 @@ jobs:
 
     - name: Build Debug APK
       run: |
+        set -euo pipefail
         cd android
         echo "sdk.dir=$ANDROID_HOME" > local.properties
         gradle assembleDebug assembleDebugAndroidTest --no-daemon --stacktrace 2>&1 | tee ../build.log
+
+    - name: Check web assets packaged in the APK
+      run: |
+        set -euo pipefail
+        mkdir -p "$RUNNER_TEMP/apk-check/assets"
+        # Extract exactly the canonical web files (a missing one fails unzip) and compare their bytes.
+        unzip -j -o android/app/build/outputs/apk/debug/app-debug.apk $(node -p "require('./web-assets.json').map(n => 'assets/' + n).join(' ')") -d "$RUNNER_TEMP/apk-check/assets"
+        node scripts/check-assets.cjs "$RUNNER_TEMP/apk-check/assets"
 
     - name: Upload Build Log
       if: always()

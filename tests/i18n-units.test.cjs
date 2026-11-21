@@ -7,11 +7,10 @@ const indexHtml = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf
 const gameJs = fs.readFileSync(path.resolve(__dirname, '../game.js'), 'utf8');
 const dynamicUiJs = fs.readFileSync(path.resolve(__dirname, '../dynamic-ui.js'), 'utf8');
 
-test('Language and Unit toggle UI elements are present in index.html with strict CSP compliance', () => {
+// The header cl/oz toggle was removed on purpose (recipes show cl); unit conversion itself is still tested below.
+test('Language toggle UI elements are present in index.html with strict CSP compliance', () => {
     assert.ok(indexHtml.includes('id="btn-lang-toggle"'), 'btn-lang-toggle must exist in index.html');
-    assert.ok(indexHtml.includes('id="btn-unit-toggle"'), 'btn-unit-toggle must exist in index.html');
     assert.ok(indexHtml.includes('data-action="toggle-language"'), 'toggle-language action must be present');
-    assert.ok(indexHtml.includes('data-action="toggle-unit"'), 'toggle-unit action must be present');
     assert.ok(indexHtml.includes('id="brand-title"'), 'brand-title id must exist for dynamic title switching');
 
     // CSP compliance - no inline onclick
