@@ -31,5 +31,23 @@ test('recipe pages are escaped, uniquely named and listed in the sitemap', () =>
     assert.ok(fs.existsSync(path.join(root, '404.html')));
     assert.match(html, /\/kullanim-kosullari\.html/, 'footer links the terms page');
     assert.equal(slugify('Mojito'), 'mojito');
+
+    // Validate Recipe JSON-LD structured data fields (GSC requirements)
+    const ldMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+    assert.ok(ldMatch, 'JSON-LD script tag exists');
+    const parsed = JSON.parse(ldMatch[1]);
+    const recipe = Array.isArray(parsed) ? parsed.find(x => x['@type'] === 'Recipe') : parsed;
+    assert.ok(recipe, 'Recipe schema object exists');
+    assert.equal(recipe.recipeCuisine, 'Uluslararası');
+    assert.ok(typeof recipe.keywords === 'string' && recipe.keywords.trim().length > 0, 'keywords present');
+    assert.ok(typeof recipe.description === 'string' && recipe.description.trim().length > 0, 'description present');
+    assert.match(recipe.prepTime, /^PT\d+M$/, 'prepTime is valid ISO 8601 duration');
+    assert.match(recipe.totalTime, /^PT\d+M$/, 'totalTime is valid ISO 8601 duration');
+    assert.equal(recipe.aggregateRating?.['@type'], 'AggregateRating');
+    assert.ok(typeof recipe.aggregateRating?.ratingValue === 'number' && recipe.aggregateRating.ratingValue >= 1 && recipe.aggregateRating.ratingValue <= 5, 'valid ratingValue');
+    assert.ok(Number.isInteger(recipe.aggregateRating?.ratingCount) && recipe.aggregateRating.ratingCount > 0, 'valid ratingCount');
+    assert.equal(recipe.aggregateRating?.bestRating, 5);
+    assert.equal(recipe.aggregateRating?.worstRating, 1);
+
     fs.rmSync(root, { recursive: true, force: true });
 });

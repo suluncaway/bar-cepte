@@ -111,28 +111,24 @@ a { text-underline-offset:3px; text-decoration-thickness:1px; }
 #ingredients-container > div:hover,#ingredients-container > div[role="button"]:hover { border-color:var(--keyline-strong); transform:translateY(-2px); background:var(--surface-raised); }
 #ingredients-container > div[aria-pressed="true"] { background:var(--mint); border-color:var(--mint); color:var(--on-mint)!important; box-shadow:none; }
 #ingredients-container > div[aria-pressed="true"] * { color:var(--on-mint)!important; }
-#ingredients-container > div[aria-pressed="true"] .ingredient-group-tag { background:transparent!important; border:1.5px solid var(--on-mint); font-size:11px; font-weight:700; }
+#ingredients-container > div[aria-pressed="true"] .ingredient-group-tag { background:transparent!important; border:1.5px solid var(--on-mint); font-size:12px; font-weight:700; }
 #ingredients-container > div[aria-pressed="true"]::after { background:var(--on-mint); color:var(--mint); }
 .ingredient-shelf > button { background:transparent; border:1.5px solid var(--keyline-strong); color:var(--ink); border-radius:var(--r-sm); }
 
-/* Cocktail cards: the photo sits on a round coaster */
-.cocktail-card { position:relative; background:var(--surface); border:2px solid var(--keyline)!important; border-radius:var(--r-lg)!important; box-shadow:none; transition:transform .25s var(--ease-out),border-color .2s; }
-.cocktail-card:hover,:where(.app-main) :is(.recipe-card,.cocktail-card,.ingredient-card):hover { border-color:var(--keyline-strong)!important; box-shadow:var(--shadow-soft); transform:translateY(-3px); }
+/* Cocktail cards: flat Matchbox & coaster board */
+.cocktail-card { position:relative; container-type:inline-size; padding:14px!important; background:var(--surface)!important; border:2px solid var(--keyline)!important; border-radius:var(--r-lg)!important; box-shadow:none!important; gap:0; transition:transform .25s var(--ease-out),border-color .2s,box-shadow .2s; }
+.cocktail-card:hover,:where(.app-main) :is(.recipe-card,.cocktail-card,.ingredient-card):hover { border-color:var(--keyline-strong)!important; box-shadow:var(--shadow-soft)!important; transform:translateY(-2px); }
 :where(.app-main) :is(.recipe-card,.ingredient-card,.panel-card,.surface-card) { border-radius:var(--r-lg); border-color:var(--keyline); }
-.cocktail-card > img,.cocktail-card > div:first-child:not(.flex-col) { width:100%; height:auto!important; aspect-ratio:4 / 3; object-fit:cover!important; display:block; border-radius:12px!important; margin:0 0 14px!important; background:var(--surface-sunk); box-shadow:none; }
-.cocktail-card { padding:14px!important; border:1px solid var(--keyline)!important; border-radius:18px!important; background:linear-gradient(155deg,var(--surface) 0%,var(--surface-sunk) 100%)!important; box-shadow:0 8px 24px rgba(0,0,0,.22)!important; gap:0; }
-.cocktail-card:hover { transform:translateY(-2px); border-color:var(--keyline-strong)!important; box-shadow:0 14px 30px rgba(0,0,0,.28)!important; }
-.cocktail-card h3 { font-size:clamp(25px,6vw,31px)!important; line-height:1.04!important; letter-spacing:.01em!important; margin-top:3px!important; }
-.cocktail-card .toggle-icon { align-self:flex-start; padding-top:5px!important; }
+.cocktail-card > img,.cocktail-card > div:first-child:not(.flex-col) { width:100%; height:auto!important; aspect-ratio:4 / 3; object-fit:cover!important; display:block; border-radius:var(--r-md)!important; margin:0 0 14px!important; background:var(--surface-sunk); box-shadow:none; }
+.cocktail-card h3 { font-size:clamp(24px,2.4vw,30px)!important; line-height:1.04!important; letter-spacing:.01em!important; margin-top:3px!important; text-transform:uppercase; }
+.cocktail-card .toggle-icon { align-self:flex-start; padding-top:5px!important; color:var(--citrus); }
 .cocktail-card .details-section { border-top:1px solid var(--keyline); padding-top:12px; margin-top:14px!important; }
 .cocktail-card > button.pill-btn { top:1.6rem!important; background:rgba(6,26,30,.82)!important; -webkit-backdrop-filter:none; backdrop-filter:none; }
 .cocktail-card > button[data-action="favorite"] { right:.9rem!important; }
 .cocktail-card > button[data-action="share"] { left:.9rem!important; }
 .cocktail-card > button[data-action="delete"] { left:3.9rem!important; }
-.cocktail-card h3 { font-size:1.55rem; line-height:1.05; text-transform:uppercase; }
-.cocktail-card .instruction-text,.cocktail-card > button[data-action] { color:var(--ink); }
-.cocktail-card .instruction-text { background:var(--surface-sunk); font-variant-numeric:tabular-nums; }
-.cocktail-card .toggle-icon { color:var(--citrus); }
+.cocktail-card > button[data-action] { color:#eef5ef; }
+.cocktail-card .instruction-text { color:var(--ink); background:var(--surface-sunk); font-variant-numeric:tabular-nums; }
 /* Signature: makeable drinks carry a mint coaster stamp, missing ones a cherry ring */
 #recipes-ready .cocktail-card::after,#recipes-missing .cocktail-card::after {
   content:""; position:absolute; z-index:3; top:9.6rem; right:1.1rem; width:58px; height:58px; border-radius:50%; pointer-events:none;
@@ -178,7 +174,8 @@ dialog::backdrop,#personal-dialog::backdrop { background:rgba(4,20,23,.84); }
    Content sections sit --section-gap apart; the footer steps further away to read as chrome. */
 :root { --section-gap:40px; }
 @media (max-width:767px) { :root { --section-gap:28px; } }
-.app-main { display:flex; flex-direction:column; gap:var(--section-gap); }
+.app-main { display:flex; flex-direction:column; gap:var(--section-gap); padding-top:24px; }
+@media (max-width:767px) { .app-main { padding-top:16px; } }
 .app-main > * { margin-top:0!important; margin-bottom:0!important; }
 .app-main > .app-footer { margin-top:calc(var(--section-gap) * .6)!important; }
 /* Distill: on phones each filter group is one swipeable strip, so results start higher. */
@@ -403,6 +400,9 @@ dialog::backdrop,#personal-dialog::backdrop { background:rgba(4,20,23,.84); }
 @media (max-width:767px) {
   .tools-toggle { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0!important; }
   .app-header:not(.tools-open) .topbar-tools-ribbon { display:none!important; }
+  .app-header.tools-open .topbar-tools-ribbon { flex-wrap:wrap; overflow-x:visible; padding:6px 0 8px; gap:6px; }
+  .topbar-tools-ribbon button { min-height:36px; height:auto; padding:6px 10px; font-size:12px!important; }
+  .topbar-tools-ribbon span.hidden.sm\:inline { font-size:12px!important; color:var(--ink)!important; }
   .app-header.tools-open .tools-toggle { background:var(--surface-raised)!important; border-color:var(--citrus)!important; }
   .hero-photo { display:none!important; }
   .hero-copy .hero-note { display:none; }
@@ -410,7 +410,9 @@ dialog::backdrop,#personal-dialog::backdrop { background:rgba(4,20,23,.84); }
 
 /* Icon helpers */
 .ui-icon-lg { width:40px; height:40px; stroke-width:1.4; }
-.image-fallback { display:flex!important; align-items:center; justify-content:center; color:var(--faint); }
+.image-fallback { display:flex!important; align-items:center; justify-content:center; color:var(--muted); }
+#ingredients-container .image-fallback { width:46px; height:46px; border-radius:50%; background:var(--surface-sunk); border:1.5px solid var(--keyline); color:var(--muted); }
+#ingredients-container .image-fallback .ui-icon-lg { width:26px; height:26px; stroke-width:1.8; }
 #auth-btn-icon, #btn-open-reserve .ui-icon { display:inline-flex; }
 
 /* Loading skeleton and empty state */
@@ -456,7 +458,7 @@ html[data-theme="light"] {
   --ink:#092328; --muted:#3d5a55; --faint:#5d7a73;
   --keyline:rgba(9,35,40,.22); --keyline-strong:rgba(9,35,40,.4);
   --citrus:#2a835f; --mint:#8bbb92; --cherry:#b8433d; --night:#12544f; --clay:#8bbb92;
-  --on-citrus:#ffffff; --on-mint:#092328;
+  --on-citrus:#ffffff; --on-mint:#092328; --on-cherry:#ffffff;
   --shadow-soft:0 10px 24px rgba(9,35,40,.12); color-scheme:light;
 }
 html[data-theme="light"] body { background:var(--bg-main)!important; color:var(--ink); }
@@ -470,13 +472,20 @@ html[data-theme="light"] :is(.text-rose-300,.text-rose-400,[class*="text-rose-30
 html[data-theme="light"] :is(.text-emerald-300,.text-emerald-400) { color:#1d6b4b!important; }
 html[data-theme="light"] :is([class*="bg-rose-950"],[class*="bg-rose-500/"]) { background-color:#f6dcdc!important; }
 html[data-theme="light"] :is([class*="bg-emerald-950"],[class*="bg-emerald-500/"]) { background-color:#d4e9d6!important; }
-html[data-theme="light"] :is([class*="bg-amber-950"],[class*="bg-amber-500/"]) { background-color:#d4e9d6!important; }
+html[data-theme="light"] :is([class*="bg-amber-950"],[class*="bg-amber-500/"]):not([aria-current="page"]) { background-color:#d4e9d6!important; }
+html[data-theme="light"] .main-navigation > button[aria-current="page"],
+html[data-theme="light"] .main-navigation > button[aria-current="page"]:hover { background:var(--hue,var(--citrus))!important; color:#ffffff!important; }
+html[data-theme="light"] .main-navigation > :is(#tab-ingredients,#tab-bar,#tab-mutfak,#tab-shop)[aria-current="page"],
+html[data-theme="light"] .main-navigation > :is(#tab-ingredients,#tab-bar,#tab-mutfak,#tab-shop)[aria-current="page"]:hover { color:#092328!important; }
+html[data-theme="light"] .main-navigation:not(.show-more):has(> [data-nav-secondary][aria-current="page"]) > .nav-more { color:#ffffff!important; }
+html[data-theme="light"] .main-navigation:not(.show-more):has(> #tab-bar[aria-current="page"],> #tab-mutfak[aria-current="page"],> #tab-shop[aria-current="page"]) > .nav-more { color:#092328!important; }
+html[data-theme="light"] .cocktail-card > button.pill-btn { background:rgba(244,249,244,.92)!important; border-color:var(--keyline-strong)!important; color:var(--ink)!important; }
 html[data-theme="light"] .ai-message-bubble { color:var(--ink)!important; }
 @media (max-width:767px) { html[data-theme="light"] .main-navigation { box-shadow:0 10px 28px rgba(9,35,40,.18)!important; } }
 
 /* Recipe detail: an opened card becomes a reading window */
 .cocktail-card:has(.details-section.open) {
-  position:fixed!important; z-index:70; top:12px; bottom:12px; left:0; right:0; margin:0 auto!important;
+  position:fixed!important; container-type:normal; z-index:70; top:12px; bottom:12px; left:0; right:0; margin:0 auto!important;
   width:min(560px, calc(100% - 24px)); height:calc(100dvh - 24px)!important; max-height:none; overflow-y:auto!important; overscroll-behavior:contain;
   transform:none!important; background:var(--surface)!important; box-shadow:0 0 0 100vmax rgba(4,20,23,.78), 0 24px 60px rgba(0,0,0,.5)!important;
 }
@@ -513,11 +522,7 @@ html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-sl
 /* Review fixes: kickers off, real section headings, striker signature, no card-in-card */
 #home-daily-eyebrow { display:none!important; }
 #ready-section h2,#missing-section h2 { font-size:1.6rem!important; letter-spacing:.01em!important; color:var(--ink)!important; text-transform:uppercase; }
-#smart-recommendation-banner { position:relative; padding-left:16px; }
 #smart-recommendation-banner > * { border-color:var(--keyline)!important; }
-#smart-recommendation-banner .acrylic-card { padding-top:inherit; }
-#smart-recommendation-banner::before { content:""; position:absolute; inset:0 auto 0 0; width:12px; border-radius:6px; background:repeating-linear-gradient(170deg,var(--clay) 0 2px,#12544f 2px 4px); }
-#smart-recommendation-banner .acrylic-card::before { display:none; }
 #smart-recommendation-banner .text-emerald-300,#smart-recommendation-banner .text-emerald-400 { display:inline-block; padding:1px 10px 1px 12px; border-radius:999px 4px 4px 999px; background:var(--citrus); color:var(--on-citrus)!important; font-weight:700; box-shadow:inset 6px 0 0 var(--cherry); }
 .cocktail-card :is([class*="bg-rose-"],[class*="bg-amber-"],[class*="bg-black/"]):not(button):not(span):not(a):not(:first-child) { background:transparent!important; border:0!important; border-top:2px solid var(--keyline)!important; border-radius:0!important; }
 /* Home: your bar at a glance. Live count + up to four coasters + one matchbox striker.
@@ -567,7 +572,7 @@ html[data-theme="light"] #reserve-modal :is(.text-white,.text-slate-200,.text-sl
   .home-coasters { gap:8px; }
   .home-bar .coaster { padding:8%; }
   .home-bar .coaster-name { font-size:14px; }
-  .home-bar .coaster-status { font-size:11px; }
+  .home-bar .coaster-status { font-size:12px; }
   .home-striker { flex-direction:column; align-items:flex-start; }
 }
 @media (max-width:560px) { .home-coasters { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; max-width:250px; } .home-bar .coaster-name { font-size:16px; } .home-bar .coaster-status { font-size:12px; } .home-bar .stamp { width:26px; height:26px; } }
@@ -578,11 +583,12 @@ html[data-theme="light"] .hero-video-control { color:#f3ead8!important; }
 /* Tarifler + Malzemelerim pass: labels in sentence case, data in Onest tabular figures,
    stamps never cover text, selected ingredients wear mint, the shelf is a grid you can scan. */
 /* Recipe cards: stamp sits on the photo's lower-right corner, clear of "Detay" */
-#recipes-ready .cocktail-card::after { top:6.6rem; right:1.5rem; width:52px; height:52px; box-shadow:0 0 0 4px var(--surface),0 0 0 6px var(--mint); }
-#recipes-missing .cocktail-card::after { top:7.4rem; right:1.6rem; width:40px; height:40px; background:color-mix(in srgb,var(--surface) 70%,transparent); }
+#recipes-ready .cocktail-card::after { top:calc(14px + 75cqi - 56px); right:1.5rem; width:50px; height:50px; box-shadow:0 0 0 4px var(--surface),0 0 0 6px var(--mint); }
+#recipes-missing .cocktail-card::after { top:calc(14px + 75cqi - 48px); right:1.6rem; width:40px; height:40px; background:color-mix(in srgb,var(--surface) 78%,transparent); }
 .cocktail-card .uppercase.tracking-wider { text-transform:none; letter-spacing:0; font-size:12px; }
 .cocktail-card .font-mono, #count-ready, #count-missing { font-family:var(--font-body)!important; font-variant-numeric:tabular-nums; }
 .cocktail-card .toggle-icon { font-size:13px; }
+.selection-summary { font-size:12px!important; }
 /* Discovery bar */
 .filter-caption { text-transform:none!important; letter-spacing:0!important; font-size:13px!important; font-weight:600; color:var(--muted)!important; }
 #discovery-controls .vibe-label { color:var(--muted); font-size:13px; font-weight:600; }
@@ -594,8 +600,8 @@ html[data-theme="light"] .hero-video-control { color:#f3ead8!important; }
   #discovery-controls .space-y-2 > .flex > button { flex:1 1 0; justify-content:center; }
 }
 /* Smart advice: the same matchbox striker as home — band on the leading edge, label in sentence case */
-#smart-recommendation-banner .acrylic-card { padding-top:16px; padding-left:30px; }
-#smart-recommendation-banner .acrylic-card::before { inset:0 auto 0 0; width:12px; height:auto; background:repeating-linear-gradient(0deg,var(--clay) 0 3px,#12544f 3px 6px); }
+#smart-recommendation-banner .acrylic-card { padding:16px 18px 16px 30px; }
+#smart-recommendation-banner .acrylic-card::before { content:""; display:block; position:absolute; inset:0 auto 0 0; width:12px; height:auto; background:repeating-linear-gradient(0deg,var(--clay) 0 3px,#12544f 3px 6px); }
 #smart-recommendation-banner .uppercase { text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink)!important; }
 /* Malzemelerim: the bar tray is mint (what you own), not citrus */
 #selected-ingredients-tray { background:var(--surface)!important; border:2px solid color-mix(in srgb,var(--mint) 55%,transparent)!important; border-radius:var(--r-lg)!important; box-shadow:none!important; padding:14px 16px!important; }
@@ -611,12 +617,12 @@ html[data-theme="light"] .hero-video-control { color:#f3ead8!important; }
   #ingredients-container { display:grid!important; grid-template-columns:repeat(auto-fill,minmax(124px,1fr)); gap:10px!important; padding:0!important; overflow:visible!important; min-height:0!important; }
   #ingredients-container > div[role="button"] { width:auto!important; min-height:136px!important; }
 }
-#ingredients-container .ingredient-group-tag { background:transparent!important; border:0!important; color:var(--muted)!important; font-weight:500!important; font-size:11px!important; padding:0!important; }
+#ingredients-container .ingredient-group-tag { background:transparent!important; border:0!important; color:var(--muted)!important; font-weight:500!important; font-size:12px!important; padding:0!important; }
 #ingredients-container > div[aria-pressed="true"] .ingredient-group-tag { border:0!important; color:var(--on-mint)!important; opacity:.8; }
-/* Shelf CTA stays in reach on phones, above the tab bar */
+/* Shelf CTA stays in reach on phones, docked cleanly above the tab bar */
 @media (max-width:767px) {
-  .ingredients-cta { position:sticky; bottom:84px; z-index:15; padding:12px 0; pointer-events:none; }
-  .ingredients-cta .primary-action { pointer-events:auto; width:100%; max-width:360px; display:flex; justify-content:center; box-shadow:0 10px 28px rgba(2,14,16,.55); }
+  .ingredients-cta { position:sticky; bottom:66px; z-index:15; margin-top:12px; padding:10px 0 12px; background:var(--bg-main); border-top:2px solid var(--keyline); pointer-events:auto; }
+  .ingredients-cta .primary-action { width:100%; max-width:360px; display:flex; justify-content:center; box-shadow:none; }
 }
 #ingredients-container > div[role="button"][aria-pressed="false"] { border-color:var(--keyline)!important; }
 #ingredients-container > div[role="button"][aria-pressed="false"]:hover { border-color:var(--ink)!important; }
@@ -686,7 +692,7 @@ html[data-theme="light"] #top-ingredients .flex-wrap > span, html[data-theme="li
 
 /* ===== Recipe card: calm reading layout ===== */
 .cocktail-card .rc-meta { display:flex; align-items:center; gap:6px; margin:4px 0 0; font-size:12px; color:var(--muted); }
-.cocktail-card .rc-label { display:block; margin:0 0 6px; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); }
+.cocktail-card .rc-label { display:block; margin:0 0 6px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); }
 .cocktail-card .rc-link { background:none!important; border:0!important; padding:4px 0!important; min-height:0; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0; color:var(--citrus)!important; box-shadow:none!important; }
 .cocktail-card .rc-link:hover { text-decoration:underline; }
 .cocktail-card .rc-missing-box { margin-top:12px; padding-top:10px; border-top:1px solid var(--keyline); }

@@ -55,17 +55,17 @@ h3{font-size:26px;font-weight:700;line-height:1}
 .actions{display:flex;align-items:center;flex-wrap:wrap;gap:16px 28px}
 
 /* Hero: copy + shelf on the left, the counter of coasters on the right */
-.hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:56px;align-items:start;padding-block:64px 96px}
-.lede{max-width:34ch;margin:20px 0 32px;color:var(--muted);font-size:18px}
+.hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:56px;align-items:start;padding-block:36px 72px}
+.lede{max-width:34ch;margin:14px 0 22px;color:var(--muted);font-size:18px}
 
-.shelf{margin:0 0 28px;padding:0;border:0;min-width:0}
-.shelf legend{padding:0;margin-bottom:12px;font-weight:700;font-size:15px}
+.shelf{margin:0 0 20px;padding:0;border:0;min-width:0}
+.shelf legend{padding:0;margin-bottom:10px;font-weight:700;font-size:15px}
 .shelf-chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:8px;background:transparent;color:var(--ink);font:500 15px/1 var(--body);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
 .chip:hover{border-color:var(--ink)}
 .chip[aria-pressed=true]{border-color:var(--mint);background:var(--mint);color:var(--mint-ink);font-weight:700}
 
-.tally{display:flex;align-items:baseline;gap:14px;margin:0 0 32px;padding-top:20px;border-top:2px solid var(--line)}
+.tally{display:flex;align-items:baseline;gap:14px;margin:0 0 22px;padding-top:16px;border-top:2px solid var(--line)}
 .tally strong{font:800 88px/.8 var(--display);font-variant-numeric:tabular-nums;color:var(--mint);min-width:1ch}
 .tally span{max-width:18ch;font-weight:600;font-size:18px;line-height:1.25}
 
