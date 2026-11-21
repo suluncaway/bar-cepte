@@ -137,7 +137,22 @@ function profileOf(drink) {
     const rows = Array.from({ length: 15 }, (_, i) => (drink[`strIngredient${i + 1}`] || '').toLowerCase()).filter(Boolean);
     const spirits = rows.filter(r => SPIRIT.test(r)).length, mixers = rows.filter(r => MIXER.test(r)).length;
     const strength = isAlcoholFree(drink) ? 'alkolsüz' : spirits >= 3 ? 'oldukça sert' : spirits && !mixers ? 'sert, içki ağırlıklı' : mixers >= 2 || /soda|tonic|cola|ginger ale|lemonade/.test(text) ? 'hafif ve uzun içimli' : 'orta sertlikte';
-    return { notes, strength, text };
+    return { notes, strength, text, spirits, mixers };
+}
+function estimateCalories(drink, rows, { notes, spirits, mixers }) {
+    const free = isAlcoholFree(drink);
+    const cat = drink.strCategory || '';
+    let kcal;
+    if (free) {
+        if (cat === 'Shake' || cat === 'Cocoa' || notes.includes('kremamsı')) kcal = 210 + Math.min(rows.length, 5) * 15;
+        else if (cat === 'Coffee / Tea') kcal = 55 + (notes.includes('tatlı') ? 45 : 0);
+        else kcal = 90 + Math.min(rows.length, 5) * 15 + (notes.includes('tatlı') ? 25 : 0);
+    } else if (cat === 'Shot') {
+        kcal = 95 + Math.max(0, spirits - 1) * 20 + (notes.includes('tatlı') ? 20 : 0) + (notes.includes('kremamsı') ? 30 : 0);
+    } else {
+        kcal = 115 + Math.max(0, spirits - 1) * 45 + (notes.includes('tatlı') ? 35 : 0) + (notes.includes('kremamsı') ? 75 : 0) + (notes.includes('meyveli') ? 25 : 0) + Math.min(mixers, 2) * 15;
+    }
+    return Math.round(Math.max(45, Math.min(380, kcal)) / 5) * 5;
 }
 const joinTr = list => list.length < 2 ? list.join('') : `${list.slice(0, -1).join(', ')} ve ${list[list.length - 1]}`;
 
@@ -242,7 +257,7 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
         const slug = slugs.get(drink);
         const related = drinks.filter(other => other !== drink && base(other) && base(other) === base(drink)).slice(0, 6);
         const url = `${SITE}/tarif/${slug}.html`, image = ownImage(safeImage(drink.strDrinkThumb)), rows = ingredients(drink);
-        const displayName = titleCase(drink.strDrink), cats = catsOf.get(drink), technique = techniqueOf(drink), { strength } = profileOf(drink);
+        const displayName = titleCase(drink.strDrink), cats = catsOf.get(drink), technique = techniqueOf(drink), profile = profileOf(drink), { strength } = profile;
         const free = isAlcoholFree(drink);
         const title = free ? `${displayName} Nasıl Yapılır? Alkolsüz Tarif ve Malzemeler | Bar Cepte` : `${displayName} Kokteyli Nasıl Yapılır? Malzemeler ve Tarif | Bar Cepte`;
         const verb = { shake: 'çalkalanarak', stir: 'karıştırılarak', blend: 'blender’da', muddle: 'ezilerek', build: 'bardakta' }[technique];
@@ -264,8 +279,13 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
         const ratingValue = Number((isClassic ? 4.6 + (seed % 4) * 0.1 : 4.2 + (seed % 7) * 0.1).toFixed(1));
         const ratingCount = isClassic ? 42 + (seed % 85) : 14 + (seed % 48);
         const aggregateRating = { '@type': 'AggregateRating', ratingValue, bestRating: 5, worstRating: 1, ratingCount };
+        const calories = estimateCalories(drink, rows, profile);
+        const nutrition = { '@type': 'NutritionInformation', calories: `${calories} calories` };
+        const prepMins = technique === 'build' ? 3 : technique === 'blend' ? 5 : 4;
+        const cookMins = /\b(boil|simmer|heat|warm|brew|steep)\b/i.test(drink.strInstructions || '') ? 5 : 0;
+        const prep = `PT${prepMins}M`, cook = `PT${cookMins}M`, total = `PT${prepMins + cookMins}M`;
         const body = `<nav class="crumbs" aria-label="Sayfa yolu"><a href="/tarif/">Tarifler</a> › ${crumbCat ? `<a href="/tarif/kategori/${crumbCat.slug}.html">${esc(crumbCat.title)}</a> › ` : ''}<span>${esc(displayName)}</span></nav>
-<span class="eyebrow">Tarif</span><h1>${esc(displayName)}</h1><p class="meta">${esc([category, alcohol, glassTr(drink.strGlass), `★ ${ratingValue.toFixed(1)} (${ratingCount})`].filter(Boolean).join(' · '))}</p>
+<span class="eyebrow">Tarif</span><h1>${esc(displayName)}</h1><p class="meta">${esc([category, alcohol, glassTr(drink.strGlass), `~${calories} kcal`, `★ ${ratingValue.toFixed(1)} (${ratingCount})`].filter(Boolean).join(' · '))}</p>
 <a class="cta cta-sm" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç →</a>
 ${imgSrc ? `<img class="hero" src="${esc(imgSrc)}" alt="${esc(displayName)} kokteyli" width="350" height="263" fetchpriority="high">` : ''}
 <section class="card"><h2>Malzemeler <span class="count">${rows.length} malzeme</span></h2><ul class="ing">${rows.map(r => { const [n, a] = ingParts(r); return `<li><span>${esc(n)}</span><b>${esc(a)}</b></li>`; }).join('')}</ul></section>
@@ -275,11 +295,10 @@ ${ads ? AD_UNIT : ''}
 ${gearBox(recipeGear(drink), 'Bu tarif için ekipman')}
 ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h2>${listCards(related, slugs)}` : ''}
 <a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır →</a>`;
-        const prep = technique === 'build' ? 'PT3M' : technique === 'blend' ? 'PT5M' : 'PT4M';
         const jsonLd = [{ '@context': 'https://schema.org', '@type': 'Recipe', name: displayName, image: image ? [image] : undefined, description,
             author: { '@type': 'Organization', name: 'Bar Cepte', url: SITE }, recipeCategory: category || 'Kokteyl', recipeCuisine: 'Uluslararası', recipeYield: '1 porsiyon',
-            prepTime: prep, totalTime: prep, keywords: [displayName, category, free ? 'alkolsüz' : 'kokteyl', ...cats.map(c => c.name), free ? 'alkolsüz kokteyl tarifi' : 'kokteyl tarifi'].filter((k, i, a) => k && a.findIndex(x => x && x.toLocaleLowerCase('tr') === k.toLocaleLowerCase('tr')) === i).join(', '),
-            aggregateRating,
+            prepTime: prep, cookTime: cook, totalTime: total, keywords: [displayName, category, free ? 'alkolsüz' : 'kokteyl', ...cats.map(c => c.name), free ? 'alkolsüz kokteyl tarifi' : 'kokteyl tarifi'].filter((k, i, a) => k && a.findIndex(x => x && x.toLocaleLowerCase('tr') === k.toLocaleLowerCase('tr')) === i).join(', '),
+            nutrition, aggregateRating,
             recipeIngredient: rows.map(rowText), recipeInstructions: steps.map(text => ({ '@type': 'HowToStep', text })), inLanguage: 'tr', url },
         { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Tarifler', item: `${SITE}/tarif/` },

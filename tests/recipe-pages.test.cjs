@@ -38,11 +38,16 @@ test('recipe pages are escaped, uniquely named and listed in the sitemap', () =>
     const parsed = JSON.parse(ldMatch[1]);
     const recipe = Array.isArray(parsed) ? parsed.find(x => x['@type'] === 'Recipe') : parsed;
     assert.ok(recipe, 'Recipe schema object exists');
+    assert.equal(recipe.author?.['@type'], 'Organization');
+    assert.equal(recipe.author?.name, 'Bar Cepte');
     assert.equal(recipe.recipeCuisine, 'Uluslararası');
     assert.ok(typeof recipe.keywords === 'string' && recipe.keywords.trim().length > 0, 'keywords present');
     assert.ok(typeof recipe.description === 'string' && recipe.description.trim().length > 0, 'description present');
     assert.match(recipe.prepTime, /^PT\d+M$/, 'prepTime is valid ISO 8601 duration');
+    assert.match(recipe.cookTime, /^PT\d+M$/, 'cookTime is valid ISO 8601 duration');
     assert.match(recipe.totalTime, /^PT\d+M$/, 'totalTime is valid ISO 8601 duration');
+    assert.equal(recipe.nutrition?.['@type'], 'NutritionInformation');
+    assert.match(recipe.nutrition?.calories, /^\d+ calories$/, 'nutrition calories formatted');
     assert.equal(recipe.aggregateRating?.['@type'], 'AggregateRating');
     assert.ok(typeof recipe.aggregateRating?.ratingValue === 'number' && recipe.aggregateRating.ratingValue >= 1 && recipe.aggregateRating.ratingValue <= 5, 'valid ratingValue');
     assert.ok(Number.isInteger(recipe.aggregateRating?.ratingCount) && recipe.aggregateRating.ratingCount > 0, 'valid ratingCount');
