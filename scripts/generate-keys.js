@@ -7,8 +7,10 @@
 //   node scripts/generate-keys.js annual 5
 //   node scripts/generate-keys.js lifetime 5
 //   node scripts/generate-keys.js 10 (varsayılan: lifetime)
+// Without --save the output is only a preview: those keys are not in any inventory and cannot be redeemed.
+// With --save, new cryptographic keys are issued into the license store at LICENSE_DATA_DIR (default: keys/).
+//   LICENSE_DATA_DIR=/path node scripts/generate-keys.js monthly 5 --save
 
-const fs = require('fs');
 const path = require('path');
 const { randomInt } = require('crypto');
 
@@ -72,44 +74,32 @@ const planLabels = {
     lifetime: 'Ömür Boyu VIP (Lifetime)'
 };
 
-const exportedKeys = { monthly: [], annual: [], lifetime: [] };
-
 if (require.main === module) {
-    if (plan === 'all') {
-        if (!isSilent) console.log(`\n🍸 Bar Cepte Reserve — Her Plan İçin ${count} Adet Anahtar Üretildi:\n\n` + '='.repeat(56));
-        ['monthly', 'annual', 'lifetime'].forEach(p => {
-            if (!isSilent) console.log(`\n▶ ${planLabels[p]} (${p}):`);
-            for (let i = 1; i <= count; i++) {
-                const k = generateKey(p);
-                exportedKeys[p].push(k);
-                if (!isSilent) console.log(`  ${p}: ${k}`);
-            }
-        });
-        if (!isSilent) console.log('\n' + '='.repeat(56));
-    } else {
-        if (!isSilent) console.log(`\n🍸 Bar Cepte Reserve — ${count} Adet [${planLabels[plan]}] Anahtarı Üretildi:\n\n` + '='.repeat(48));
-        for (let i = 1; i <= count; i++) {
-            const k = generateKey(plan);
-            exportedKeys[plan].push(k);
-            if (!isSilent) console.log(`${i.toString().padStart(2, ' ')}. ${k}`);
-        }
-        if (!isSilent) console.log('='.repeat(48));
-    }
-
+    const plans = plan === 'all' ? ['monthly', 'annual', 'lifetime'] : [plan];
     if (shouldExport) {
-        const outDir = path.resolve(__dirname, '..', 'keys');
-        if (!fs.existsSync(outDir)) {
-            fs.mkdirSync(outDir, { recursive: true });
+        // A key is only redeemable once it is in the server's license inventory, so --save
+        // issues fresh cryptographic keys into that store (LICENSE_DATA_DIR, default keys/).
+        const { createStore } = require('./backend/store');
+        const store = createStore(process.env.LICENSE_DATA_DIR || path.resolve(__dirname, '..', 'keys'));
+        store.initialize();
+        for (const p of plans) {
+            const issued = store.issue(p, count);
+            if (!isSilent) {
+                console.log(`\n▶ ${planLabels[p]} (${p}):`);
+                issued.forEach(k => console.log(`  ${p}: ${k}`));
+            }
+            console.log(`📁 Lisans envanterine kaydedildi: ${issued.length} adet ${p}`);
         }
-        const plansToExport = plan === 'all' ? ['monthly', 'annual', 'lifetime'] : [plan];
-        plansToExport.forEach(p => {
-            const filePath = path.join(outDir, `${p}_keys.txt`);
-            fs.writeFileSync(filePath, exportedKeys[p].join('\n') + '\n', 'utf8');
-            console.log(`📁 Dosyaya kaydedildi: keys/${p}_keys.txt (${exportedKeys[p].length} adet)`);
-        });
+        console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
+    } else {
+        console.log('\n⚠️ ÖNİZLEME: Bu kodlar hiçbir envantere kaydedilmez ve sunucuda kullanılamaz.');
+        console.log('   Satılabilir kod üretmek için --save kullanın.\n' + '='.repeat(56));
+        for (const p of plans) {
+            console.log(`\n▶ ${planLabels[p]} (${p}):`);
+            for (let i = 1; i <= count; i++) console.log(`  ${p}: ${generateKey(p)}`);
+        }
+        console.log('\n' + '='.repeat(56) + '\n');
     }
-
-    console.log('\n💡 Bu kodları Shopier otomatik dijital ürün teslimatına veya alıcılara gönderebilirsiniz.\n');
 }
 
 module.exports = { generateKey, checksum };
