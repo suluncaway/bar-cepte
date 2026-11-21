@@ -3,8 +3,8 @@
   "short_name": "BarCepte",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#092328",
+  "theme_color": "#092328",
   "orientation": "portrait",
   "icons": [
     {
