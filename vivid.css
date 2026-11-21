@@ -683,3 +683,36 @@ html[data-theme="light"] #top-ingredients .flex-wrap > span, html[data-theme="li
   .app-footer > div.flex-wrap > a { min-height:40px; font-size:13px; }
   .app-footer { padding-bottom:96px; }
 }
+
+/* ===== Recipe card: calm reading layout ===== */
+.cocktail-card .rc-meta { display:flex; align-items:center; gap:6px; margin:4px 0 0; font-size:12px; color:var(--muted); }
+.cocktail-card .rc-label { display:block; margin:0 0 6px; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); }
+.cocktail-card .rc-link { background:none!important; border:0!important; padding:4px 0!important; min-height:0; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0; color:var(--citrus)!important; box-shadow:none!important; }
+.cocktail-card .rc-link:hover { text-decoration:underline; }
+.cocktail-card .rc-missing-box { margin-top:12px; padding-top:10px; border-top:1px solid var(--keyline); }
+.cocktail-card .rc-missing-box { min-width:0; }
+.cocktail-card .rc-missing-box ul { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:minmax(0,1fr); gap:6px; }
+.cocktail-card .rc-missing-row,.cocktail-card .rc-sub { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; }
+.cocktail-card .rc-missing-row > span { font-size:13px; color:var(--cherry); }
+.cocktail-card .rc-missing-row > span::before { content:""; display:inline-block; width:6px; height:6px; margin-right:8px; border-radius:50%; background:currentColor; vertical-align:middle; }
+.cocktail-card .rc-sub { padding-left:14px; font-size:12px; color:var(--muted); }
+.cocktail-card .rc-sub > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cocktail-card .rc-details { display:flex; flex-direction:column; gap:18px; }
+.cocktail-card .rc-facts { margin:0; font-size:12px; color:var(--muted); }
+.cocktail-card .rc-servings { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.cocktail-card .rc-servings .rc-label { margin:0; }
+.cocktail-card .rc-servings > div { display:flex; gap:4px; }
+.cocktail-card .rc-ings { list-style:none; margin:0; padding:0; }
+.cocktail-card .rc-ing { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--keyline); font-size:14px; color:var(--ink); }
+.cocktail-card .rc-ing:last-child { border-bottom:0; }
+.cocktail-card .rc-ing .measure-span { font-weight:600; color:var(--citrus); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.cocktail-card .rc-ing.is-missing > span { color:var(--cherry); }
+.cocktail-card .rc-stock { margin:6px 0 0; font-size:12px; color:var(--cherry); }
+.cocktail-card .rc-steps { margin:0; padding:0!important; background:none!important; border:0!important; font-size:14px; line-height:1.7; color:var(--ink); }
+.cocktail-card .rc-tip { margin:8px 0 0; font-size:13px; color:var(--muted); }
+.cocktail-card .rc-actions { display:grid; grid-template-columns:1fr auto; gap:8px; }
+.cocktail-card .rc-primary { min-height:46px; border:0; border-radius:var(--r-sm); background:var(--citrus)!important; color:var(--on-citrus)!important; font-weight:700; font-size:14px; }
+.cocktail-card .rc-secondary { min-height:46px; padding:0 16px; border-radius:var(--r-sm); background:transparent; border:1px solid var(--keyline-strong); color:var(--ink); font-weight:600; font-size:14px; }
+.cocktail-card .rc-tools { display:flex; flex-wrap:wrap; gap:6px; }
+.cocktail-card .rc-tool { display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px!important; border-radius:999px; background:transparent!important; border:1px solid var(--keyline)!important; color:var(--muted)!important; font-size:12px; font-weight:500; box-shadow:none!important; }
+.cocktail-card .rc-tool:hover { color:var(--ink)!important; border-color:var(--keyline-strong)!important; }

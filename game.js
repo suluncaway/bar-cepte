@@ -1329,8 +1329,8 @@ function changePortion(cardId, multiplier, btnEl) {
     const stockMessage=card.querySelector('[data-stock-message]');
     if(stockMessage && drink) {
         const missing=window.BarPersonalUI?.missing(drink,multiplier)||[];
-        stockMessage.textContent=missing.length?(currentLang==='en'?'Missing / insufficient stock: ':'Eksik / stok yetersiz: ')+missing.map(name=>currentLang==='en'?name:translateIngredientName(name)).join(', '):
-            (currentLang==='en'?'Known quantities are sufficient. Check unspecified measures manually.':'Bilinen stok miktarları yeterli. Belirtilmeyen ölçüleri elle kontrol et.');
+        stockMessage.textContent=missing.length?(currentLang==='en'?'Insufficient stock: ':'Stok yetersiz: ')+missing.map(name=>currentLang==='en'?name:translateIngredientName(name)).join(', '):'';
+        stockMessage.classList.toggle('hidden', !missing.length || !!card.querySelector('.rc-missing-box'));
     }
 
     card.querySelectorAll('.portion-btn').forEach(b => {
@@ -3368,57 +3368,35 @@ function createCocktailCardElement(item, isMissingList) {
         }
 
         rawIngredientsData.forEach(pair => {
-            const isSel = selectedIngredients.some(s => checkIngredientMatch(pair.name, s));
-            let cls = isSel 
-                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" 
-                : "bg-black/30 text-slate-400 border-white/5";
-
-            if (isMissingList && missingList.some(m => m.toLowerCase() === pair.name.toLowerCase())) {
-                cls = "bg-rose-500/15 text-rose-300 border-rose-500/30";
-            }
-            if (currentTab === 'my-recipes') {
-                cls = "bg-black/30 text-slate-400 border-white/5";
-            }
-
+            const isMissing = isMissingList && missingList.some(m => m.toLowerCase() === pair.name.toLowerCase());
             const trMeasure = translateMeasureText(pair.measure);
             const trName = translateIngredientName(pair.name);
-
-            const measureText = trMeasure 
-                ? `<b class="measure-span text-amber-300 ml-1 font-mono text-[10px]" data-raw="${escapeHTML(trMeasure)}">${escapeHTML(trMeasure)}</b>` 
-                : '';
-
             ingredientsHTML += `
-                <span class="inline-flex items-center ${cls} text-[11px] px-2.5 py-1 rounded-xl border m-0.5 shadow-sm max-w-full overflow-hidden">
-                    <span class="break-words">${escapeHTML(trName)}</span>${measureText}
-                </span>
-            `;
+                <li class="rc-ing${isMissing && currentTab !== 'my-recipes' ? ' is-missing' : ''}">
+                    <span>${escapeHTML(trName)}</span>
+                    ${trMeasure ? `<b class="measure-span" data-raw="${escapeHTML(trMeasure)}">${escapeHTML(trMeasure)}</b>` : ''}
+                </li>`;
         });
 
         let missingTextHTML = isMissingList ? missingList.map(m => {
             const encodedM = encodeURIComponent(m);
             const inShop = shoppingList.includes(m);
-            const missingDisplayName = currentLang === 'en' ? m : translateIngredientName(m);
-            const safeM = escapeHTML(missingDisplayName);
+            const safeM = escapeHTML(currentLang === 'en' ? m : translateIngredientName(m));
             const sub = getIngredientSubstitute(m);
             const subDisplayName = sub ? (currentLang === 'en' ? (sub.subEn || sub.sub) : sub.sub) : '';
-            const subHTML = sub ? `
-            <div class="flex items-center justify-between gap-1 text-[10px] bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-xl text-amber-300 mt-1 min-w-0" data-stop-card>
-                <span class="truncate"><b>${currentLang === 'en' ? 'Substitute:' : 'Muadil:'}</b> ${escapeHTML(subDisplayName)}</span>
-                <button data-action="substitute" data-ing="${escapeHTML(encodedM)}" data-sub="${escapeHTML(encodeURIComponent(subDisplayName))}" class="pill-btn font-bold text-amber-400 hover:text-white shrink-0 ml-1.5 underline">
-                    ${currentLang === 'en' ? 'Add to Bar' : 'Bara Ekle'}
-                </button>
-            </div>` : '';
             return `
-            <div class="flex flex-col gap-1 mt-1 bg-rose-950/20 px-3 py-1.5 rounded-xl border border-rose-500/20 min-w-0">
-                <div class="flex items-center justify-between gap-2 min-w-0">
-                    <p class="text-[11px] text-rose-300 font-medium break-words min-w-0">${currentLang === 'en' ? 'Missing:' : 'Eksik:'} ${safeM}</p>
-                    <button data-action="shopping" data-value="${escapeHTML(encodedM)}" class="pill-btn text-[10px] bg-black/40 border border-white/10 text-slate-300 px-2.5 py-1 rounded-lg hover:border-amber-500/40 shrink-0">
-                        ${inShop ? (currentLang === 'en' ? 'Remove' : 'Çıkar') : (currentLang === 'en' ? 'Add to List' : 'Alışverişe Ekle')}
+            <li class="rc-missing" data-stop-card>
+                <div class="rc-missing-row">
+                    <span>${safeM}</span>
+                    <button data-action="shopping" data-value="${escapeHTML(encodedM)}" class="pill-btn rc-link">
+                        ${inShop ? (currentLang === 'en' ? 'In list ✓' : 'Listede ✓') : (currentLang === 'en' ? '+ List' : '+ Liste')}
                     </button>
                 </div>
-                ${subHTML}
-            </div>
-            `;
+                ${sub ? `<div class="rc-sub">
+                    <span>${currentLang === 'en' ? 'or' : 'yerine'}: ${escapeHTML(subDisplayName)}</span>
+                    <button data-action="substitute" data-ing="${escapeHTML(encodedM)}" data-sub="${escapeHTML(encodeURIComponent(subDisplayName))}" class="pill-btn rc-link">${currentLang === 'en' ? 'Add to bar' : 'Bara ekle'}</button>
+                </div>` : ''}
+            </li>`;
         }).join('') : '';
 
         const card = document.createElement('div');
@@ -3464,64 +3442,50 @@ function createCocktailCardElement(item, isMissingList) {
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap gap-1.5 mb-1.5">
                         <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20 uppercase tracking-wider">${escapeHTML(getTasteLabel(d.computedTaste))}</span>
-                        <span class="text-[10px] font-semibold bg-black/30 text-slate-400 px-2 py-0.5 rounded-lg border border-white/5 font-mono">~${d.computedCalories} kcal</span>
                         ${abvBadge}
-                        <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono recipe-cost-badge">${formatRecipeCost(d)}</span>
                     </div>
                     <h3 class="font-extrabold text-white text-base leading-snug break-words hyphens-auto text-title-responsive">${safeDrinkName}</h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 break-words">${glassBadge}</p>
+                    <p class="rc-meta">${glassBadge}</p>
                 </div>
                 <span class="text-amber-400 text-xs font-bold toggle-icon shrink-0 pl-1 pt-1">${currentLang === 'en' ? 'Details ▼' : 'Detay ▼'}</span>
             </div>
             
-            ${isMissingList ? `<div class="mt-2.5 pt-2 border-t border-white/5 flex flex-col gap-1 min-w-0">${missingTextHTML}</div>` : ''}
+            ${isMissingList ? `<div class="rc-missing-box"><span class="rc-label">${currentLang === 'en' ? 'Missing' : 'Eksik'}</span><ul>${missingTextHTML}</ul></div>` : ''}
             
-            <div class="details-section mt-2.5 space-y-3 min-w-0 overflow-hidden">
-                <!-- Ev Maliyeti ve Bar Tasarrufu -->
-                <div class="flex flex-wrap items-center justify-between gap-2 bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-2xl text-[11px] text-emerald-300">
-                    <span class="flex items-center gap-1 font-medium"><b>${currentLang === 'en' ? 'Home Cost:' : 'Ev Maliyeti:'}</b> ${formatRecipeCost(d)}</span>
-                    <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${currentLang === 'en' ? `Bar Savings: ~${d.computedCost ? d.computedCost.savingsPercent : 90}%` : `Bar Tasarrufu: ~%${d.computedCost ? d.computedCost.savingsPercent : 90}`}</span>
-                </div>
+            <div class="details-section rc-details min-w-0 overflow-hidden">
+                <p class="rc-facts">${escapeHTML(techniqueBadge)} · ~${d.computedCalories} kcal · ${formatRecipeCost(d)}</p>
 
-                <!-- Porsiyon Kontrolü (Taşmayan Esnek Düzen) -->
-                <div class="flex flex-wrap items-center justify-between gap-1.5 bg-black/30 p-2 rounded-2xl border border-white/5" data-stop-card>
-                    <span class="text-[11px] text-slate-400 font-medium shrink-0">${currentLang === 'en' ? 'Servings:' : 'Porsiyon:'}</span>
-                    <div class="flex flex-wrap gap-1 shrink-0">
+                <div class="rc-servings" data-stop-card>
+                    <span class="rc-label">${currentLang === 'en' ? 'Servings' : 'Porsiyon'}</span>
+                    <div>
                         <button data-action="portion" data-card="${cardId}" data-value="1" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold">1x</button>
                         <button data-action="portion" data-card="${cardId}" data-value="2" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">2x</button>
                         <button data-action="portion" data-card="${cardId}" data-value="4" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">4x</button>
-                        <button data-action="portion" data-card="${cardId}" data-value="8" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">${currentLang === 'en' ? '8x Party' : '8x Parti'}</button>
+                        <button data-action="portion" data-card="${cardId}" data-value="8" class="portion-btn pill-btn px-2.5 py-0.5 rounded-lg text-[10px] bg-black/40 text-slate-400 border border-white/5">8x</button>
                     </div>
                 </div>
 
-                <p data-stock-message class="personal-stock-status">${window.BarPersonalUI?.missing(d).length?escapeHTML((currentLang==='en'?'Missing / insufficient stock: ':'Eksik / stok yetersiz: ')+window.BarPersonalUI.missing(d).map(name=>currentLang==='en'?name:translateIngredientName(name)).join(', ')):
-                    (currentLang==='en'?'Check unspecified quantities manually.':'Miktarı belirtilmeyen malzemeleri elle kontrol et.')}</p>
-                <!-- Malzemeler ve Ölçüler -->
-                <div class="space-y-1 min-w-0">
-                    <span class="text-[11px] text-slate-400 font-medium block">${currentLang === 'en' ? 'Ingredients & Measures:' : 'Malzemeler & Ölçüler:'}</span>
-                    <div class="flex flex-wrap">${ingredientsHTML}</div>
+                <div>
+                    <span class="rc-label">${currentLang === 'en' ? 'Ingredients' : 'Malzemeler'}</span>
+                    <ul class="rc-ings">${ingredientsHTML}</ul>
+                    <p data-stock-message class="personal-stock-status rc-stock${!isMissingList && window.BarPersonalUI?.missing(d).length ? '' : ' hidden'}">${window.BarPersonalUI?.missing(d).length ? escapeHTML((currentLang==='en'?'Insufficient stock: ':'Stok yetersiz: ')+window.BarPersonalUI.missing(d).map(name=>currentLang==='en'?name:translateIngredientName(name)).join(', ')) : ''}</p>
                 </div>
 
-                <!-- Bardak & Teknik & Sayaç -->
-                <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${techniqueBadge}</span>
-                    <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm"><i class="bci bci-timer" aria-hidden="true"></i> ${currentLang === 'en' ? 'Timer' : 'Sayaç'}</button>
-                    <button data-action="share-link" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> ${currentLang === 'en' ? 'Share link' : 'Bağlantı'}</button>
-                    <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-amber-500/20 font-semibold shadow-sm" data-stop-card><i class="bci bci-camera" aria-hidden="true"></i> ${currentLang === 'en' ? 'Story Card' : 'Story İndir'}</button>
-                    <span class="text-[10px] bg-white/5 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl flex items-center gap-1">${glassBadge}</span>
+                <div>
+                    <span class="rc-label">${currentLang === 'en' ? 'Instructions' : 'Hazırlanışı'}</span>
+                    <p class="instruction-text rc-steps"><span>${safeInstructions}</span></p>
+                    ${d.strServing ? `<p class="rc-tip"><b>${currentLang === 'en' ? 'Garnish:' : 'Servis:'}</b> ${safeServing}</p>` : ''}
                 </div>
 
-                ${d.strServing ? `<div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-[11px] text-amber-300 italic break-words"><i class="bci bci-bulb" aria-hidden="true"></i> <b>${currentLang === 'en' ? 'Serving/Garnish:' : 'Servis/Garnitür:'}</b> ${safeServing}</div>` : ''}
-                
-                <p class="text-xs text-slate-300 instruction-text bg-black/30 p-3 rounded-2xl border border-white/5 leading-relaxed break-words">
-                    <b class="text-slate-400 text-[11px] block mb-1 uppercase tracking-wider font-semibold">${currentLang === 'en' ? 'Instructions:' : 'Hazırlanışı:'}</b>
-                    <span>${safeInstructions}</span>
-                </p>
-
-                <button type="button" data-personal="prepared" data-id="${escapeHTML(d.idDrink)}" class="personal-prepared">${currentLang === 'en' ? 'I made this' : 'Hazırladım'}</button>
-                <button data-action="open-mix-mode" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs transition-all mt-2" data-stop-card>
-                    <span><i class="bci bci-rocket" aria-hidden="true"></i></span><span>${currentLang === 'en' ? 'Start Step-by-Step Mix' : 'Adım Adım Hazırlamaya Başla'}</span>
-                </button>
+                <div class="rc-actions">
+                    <button data-action="open-mix-mode" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn rc-primary" data-stop-card>${currentLang === 'en' ? 'Step-by-step' : 'Adım adım hazırla'}</button>
+                    <button type="button" data-personal="prepared" data-id="${escapeHTML(d.idDrink)}" class="personal-prepared rc-secondary">${currentLang === 'en' ? 'I made this' : 'Hazırladım'}</button>
+                </div>
+                <div class="rc-tools">
+                    <button data-action="timer" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn rc-tool"><i class="bci bci-timer" aria-hidden="true"></i> ${currentLang === 'en' ? 'Timer' : 'Sayaç'}</button>
+                    <button data-action="share-link" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn rc-tool"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> ${currentLang === 'en' ? 'Link' : 'Bağlantı'}</button>
+                    <button data-action="export-story" data-value="${escapeHTML(drinkIdEncoded)}" class="pill-btn rc-tool" data-stop-card><i class="bci bci-camera" aria-hidden="true"></i> Story</button>
+                </div>
             </div>
         `;
 
