@@ -11,12 +11,12 @@ Turkish matchbox-and-coaster print ephemera on deep ink. Flat two-colour print, 
 
 | Token | Value | Job |
 |---|---|---|
-| `--bg-main` | `#0e131d` | Deep blue-black ink ground |
+| `--bg-main` | `#092328` | Deep teal ink ground (palette: `#092328` · `#12544f` · `#2a835f` · `#8bbb92`) |
 | `--surface` / `--surface-raised` / `--surface-sunk` | `#161d2a` / `#1e2738` / `#0a0e16` | Boards, raised controls, inputs |
 | `--ink` | `#f3ead8` | Cream print ink (text) |
 | `--muted` / `--faint` | `#aeb4c2` / `#7d8496` | Secondary text / placeholders |
 | `--keyline` / `--keyline-strong` | cream @ 26% / 40% | 2px card keylines, 1.5px control outlines |
-| `--citrus` | `#f4c430` | **Action only**: primary buttons, selected filters. Ink text `#1b1503` |
+| `--citrus` | `#8bbb92` | **Action only**: primary buttons, selected filters (sage). Ink text `#092328` |
 | `--mint` | `#52c495` | Makeable / selected ingredient / "ready" counts. Ink `#06241a` |
 | `--cherry` | `#e0505c` | Missing / gaps / favourites |
 | `--night` | `#6f9be8` | AI Barmen, links on secondary |

@@ -1,12 +1,13 @@
 /* Bar Cepte landing — matchbox & coaster print on deep ink (see DESIGN.md).
    One loud thing: the live coaster counter in the hero. Everything else is quiet board + keyline. */
 :root{
-  --bg:#0e131d;--surface:#161d2a;--raised:#1e2738;--sunk:#0a0e16;
-  --ink:#f3ead8;--muted:#aeb4c2;--faint:#7d8496;
-  --line:rgba(243,234,216,.26);--line-strong:rgba(243,234,216,.4);
-  --citrus:#f4c430;--citrus-ink:#1b1503;
-  --mint:#52c495;--mint-ink:#06241a;
-  --cherry:#e0505c;--night:#6f9be8;--clay:#e8834e;
+  /* Palette: #092328 · #12544f · #2a835f · #8bbb92 */
+  --bg:#092328;--surface:#0e2f33;--raised:#12544f;--sunk:#061a1e;
+  --ink:#eef5ef;--muted:#a9c6b4;--faint:#7fa292;
+  --line:rgba(139,187,146,.26);--line-strong:rgba(139,187,146,.45);
+  --citrus:#8bbb92;--citrus-ink:#092328;
+  --mint:#5fb08a;--mint-ink:#092328;
+  --cherry:#e6918a;--night:#5fa6a0;--clay:#b9d8bd;
   --display:"Big Shoulders Display","Onest",sans-serif;
   --body:"Onest",system-ui,sans-serif;
   --ease:cubic-bezier(.16,1,.3,1);
@@ -15,10 +16,10 @@
 }
 html[data-theme=light]{
   color-scheme:light;
-  --bg:#efe6d2;--surface:#f8f2e4;--raised:#fffaf0;--sunk:#e6dbc3;
-  --ink:#16120c;--muted:#5b5446;--faint:#6e6656;
-  --line:rgba(22,18,12,.2);--line-strong:rgba(22,18,12,.36);
-  --citrus:#e8b310;--mint:#2f9e72;--cherry:#c0303d;--clay:#c8612c;--night:#3f6fc4;
+  --bg:#e7f0e8;--surface:#f4f9f4;--raised:#ffffff;--sunk:#d4e5d6;
+  --ink:#092328;--muted:#3d5a55;--faint:#5d7a73;
+  --line:rgba(9,35,40,.2);--line-strong:rgba(9,35,40,.36);
+  --citrus:#2a835f;--citrus-ink:#ffffff;--mint:#2a835f;--mint-ink:#ffffff;--cherry:#b8433d;--clay:#12544f;--night:#12544f;
 }
 
 *,*::before,*::after{box-sizing:border-box}
@@ -47,7 +48,7 @@ h3{font-size:26px;font-weight:700;line-height:1}
 
 /* Actions */
 .button{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px;border:0;border-radius:8px;background:var(--citrus);color:var(--citrus-ink);font:700 16px/1 var(--body);text-decoration:none;cursor:pointer;transition:background .2s}
-.button:hover{background:#ffd54d}
+.button:hover{background:#a8d0ae}
 .button-small{min-height:42px;padding:0 18px;font-size:14px}
 .text-link{font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:var(--citrus)}
 .text-link:hover{text-decoration-color:var(--ink)}
@@ -85,12 +86,12 @@ h3{font-size:26px;font-weight:700;line-height:1}
 
 /* Matchbox striker: the one bottle that unlocks the most */
 .striker{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;padding:16px 16px 16px 30px;border:2px solid var(--line);border-radius:10px;background:var(--surface);position:relative;overflow:hidden}
-.striker::before{content:"";position:absolute;inset:0 auto 0 0;width:12px;background:repeating-linear-gradient(0deg,var(--clay) 0 3px,#7a3b1c 3px 6px)}
+.striker::before{content:"";position:absolute;inset:0 auto 0 0;width:12px;background:repeating-linear-gradient(0deg,var(--clay) 0 3px,#12544f 3px 6px)}
 .striker p{margin:0;font-weight:500}
 .match{display:inline-flex;align-items:center;margin-right:6px;padding:2px 10px 2px 8px;border-radius:3px;background:var(--citrus);color:var(--citrus-ink);font:800 18px/1.2 var(--display);position:relative}
 .match::before{content:"";width:10px;height:10px;margin-right:6px;border-radius:50%;background:var(--cherry)}
 .striker-add{flex:none;min-height:42px;padding:0 14px;border:1.5px solid var(--clay);border-radius:8px;background:transparent;color:var(--ink);font:600 14px/1 var(--body);cursor:pointer}
-.striker-add:hover{background:var(--clay);color:#200d03}
+.striker-add:hover{background:var(--clay);color:#092328}
 .footnote{margin:16px 0 0;color:var(--faint);font-size:13px;max-width:60ch}
 
 /* Quiet sections */
@@ -101,7 +102,7 @@ h3{font-size:26px;font-weight:700;line-height:1}
 .steps li{counter-increment:step}
 .steps li::before{content:counter(step);display:grid;place-items:center;width:44px;height:44px;margin-bottom:20px;border-radius:50%;background:var(--citrus);color:var(--citrus-ink);font:800 24px/1 var(--display)}
 .steps li:nth-child(2)::before{background:var(--mint);color:var(--mint-ink)}
-.steps li:nth-child(3)::before{background:var(--night);color:#08152e}
+.steps li:nth-child(3)::before{background:var(--night);color:#092328}
 .steps p,.features dd,.platforms p,.faq p,.contact p{color:var(--muted)}
 .steps p{margin:10px 0 0;max-width:32ch}
 
