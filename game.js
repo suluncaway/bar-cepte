@@ -3381,7 +3381,8 @@ function createCocktailCardElement(item, isMissingList) {
         let missingTextHTML = isMissingList ? missingList.map(m => {
             const encodedM = encodeURIComponent(m);
             const inShop = shoppingList.includes(m);
-            const safeM = escapeHTML(currentLang === 'en' ? m : translateIngredientName(m));
+            const missingDisplayName = currentLang === 'en' ? m : translateIngredientName(m);
+            const safeM = escapeHTML(missingDisplayName);
             const sub = getIngredientSubstitute(m);
             const subDisplayName = sub ? (currentLang === 'en' ? (sub.subEn || sub.sub) : sub.sub) : '';
             return `
