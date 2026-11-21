@@ -49,6 +49,7 @@ const PRODUCT_PLANS = {
 };
 
 const {createLicenseStore} = require('./license-store');
+const {createLicenseApi} = require('./backend/store');
 const licenseStore = createLicenseStore();
 const {createGoogleVerifier} = require('./google-identity');
 const {createAccountService} = require('./account-service');
@@ -129,6 +130,8 @@ function verifyKeyChecksum(rawKey) {
     if (!rawKey || typeof rawKey !== 'string') return false;
     const cleanKey = rawKey.trim().toUpperCase();
     if (MASTER_KEYS.has(cleanKey)) return false;
+    // Cryptographic keys issued by scripts/backend/store.js (CLI --save).
+    if (/^RESERVE-(MTH1|ANN1|LIFE)-[0-9A-F]{48}$/.test(cleanKey)) return true;
     const parts = cleanKey.split('-');
     if (parts.length !== 4 || parts[0] !== 'RESERVE') return false;
     if (parts[1].length !== 4 || parts[2].length !== 4 || parts[3].length !== 4) return false;
@@ -291,7 +294,7 @@ function authorizeAdmin(req) {
     return separator >= 0 && tokenMatches(credentials.slice(separator + 1), ADMIN_TOKEN);
 }
 
-async function handleRequest(req, res) {
+async function handleRequest(req, res, ctx) {
     const origin=req.headers.origin;
     const allowedOrigins=new Set(['https://barcepte.com.tr','https://www.barcepte.com.tr','https://suluncaway.github.io','https://appassets.androidplatform.net']);
     let localOrigin=false;
@@ -309,8 +312,8 @@ async function handleRequest(req, res) {
     }
 
     const requestPath = new URL(req.url, 'http://localhost').pathname;
-    if(await accounts.handle(req,res,requestPath,readJsonBody)) return;
-    if(await businesses.handle(req,res,requestPath,readJsonBody)) return;
+    if(await ctx.accounts.handle(req,res,requestPath,readJsonBody)) return;
+    if(await ctx.businesses.handle(req,res,requestPath,readJsonBody)) return;
     const adminPaths = ['/licenses', '/dashboard', '/api/resend-license', '/resend', '/api/export-licenses', '/api/metrics/summary'];
     if (adminPaths.includes(requestPath) && !authorizeAdmin(req)) {
         res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Bar Cepte Admin", charset="UTF-8"' });
@@ -328,7 +331,7 @@ async function handleRequest(req, res) {
     }
 
     if (req.method === 'GET' && requestPath === '/api/export-licenses') {
-        const backup = await licenseStore.exportBackup();
+        const backup = await ctx.store.exportBackup();
         res.writeHead(200, {'Content-Type': 'application/json',
             'Content-Disposition': 'attachment; filename=bar-cepte-licenses.json'});
         res.end(JSON.stringify(backup));
@@ -347,15 +350,15 @@ async function handleRequest(req, res) {
             for (const [name, n] of Object.entries(body.events || {}).slice(0, 40)) {
                 if (/^(tab|recipe|action):[a-z0-9_-]{1,40}$/.test(name) && Number.isInteger(n) && n > 0) counts[name] = Math.min(n, 50);
             }
-            if (Object.keys(counts).length) await licenseStore.bumpMetrics(new Date().toISOString().slice(0, 10), counts);
+            if (Object.keys(counts).length) await ctx.store.bumpMetrics(new Date().toISOString().slice(0, 10), counts);
             res.writeHead(204); return res.end();
         } catch {
             res.writeHead(400); return res.end();
         }
     }
     if (req.method === 'GET' && requestPath === '/api/metrics/summary') {
-        const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-        const days = await licenseStore.getMetrics(since);
+        const since = new Date(ctx.now() - 30 * 86400000).toISOString().slice(0, 10);
+        const days = await ctx.store.getMetrics(since);
         const totals = {};
         for (const row of Object.values(days)) for (const [name, n] of Object.entries(row)) totals[name] = (totals[name] || 0) + n;
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -385,7 +388,7 @@ async function handleRequest(req, res) {
 
     // Sağlık Kontrolü
     if (req.method === 'GET' && (requestPath === '/' || requestPath === '/health')) {
-        await licenseStore.ping();
+        await ctx.store.ping();
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
             status: 'ok',
@@ -396,10 +399,10 @@ async function handleRequest(req, res) {
             apiConnected: !!SHOPIER_API_TOKEN,
             shopierStatus: shopier.state.status,
             shopierLastSuccess: shopier.state.lastSuccess,
-            storage: licenseStore.kind,
-            migrationRequired: licenseStore.kind === 'postgres' && process.env.LICENSE_MIGRATION_COMPLETE !== 'true',
+            storage: ctx.store.kind,
+            migrationRequired: ctx.store.kind === 'postgres' && process.env.LICENSE_MIGRATION_COMPLETE !== 'true',
             sender: 'lisans@barcepte.com.tr',
-            autoPolling: licenseStore.kind !== 'postgres' || process.env.LICENSE_MIGRATION_COMPLETE === 'true',
+            autoPolling: ctx.store.kind !== 'postgres' || process.env.LICENSE_MIGRATION_COMPLETE === 'true',
             timestamp: new Date().toISOString()
         }));
         return;
@@ -424,7 +427,7 @@ async function handleRequest(req, res) {
                     return res.end(JSON.stringify({ success: false, reason: 'orderId parametresi zorunludur.' }));
                 }
 
-                const sold = await getSoldLicenses();
+                const sold = await ctx.store.getSold();
                 const record = sold.find(s => String(s.orderId).trim() === orderId);
                 if (!record || !record.email || !record.licenseKey) {
                     res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -437,7 +440,7 @@ async function handleRequest(req, res) {
                     record.emailSent = true;
                     record.emailSentCount = (record.emailSentCount || 1) + 1;
                     record.lastEmailSentAt = new Date().toISOString();
-                    await saveSoldLicense(record);
+                    await ctx.store.saveSold(record);
                     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
                     res.end(JSON.stringify({ success: true, message: `Aktivasyon kodu ${record.email} adresine başarıyla tekrar gönderildi.`, record }));
                 } else {
@@ -452,7 +455,7 @@ async function handleRequest(req, res) {
         return;
     }
 
-    if (licenseStore.kind === 'postgres' && process.env.LICENSE_MIGRATION_COMPLETE !== 'true' &&
+    if (ctx.store.kind === 'postgres' && process.env.LICENSE_MIGRATION_COMPLETE !== 'true' &&
         ['/api/claim-license', '/api/check-license', '/webhook/shopier', '/callback'].includes(requestPath)) {
         res.writeHead(503, {'Content-Type': 'application/json'});
         return res.end(JSON.stringify({success: false, reason: 'Lisans verileri aktarılıyor. Lütfen daha sonra tekrar deneyiniz.'}));
@@ -472,7 +475,7 @@ async function handleRequest(req, res) {
                 }
 
                 const rawKey = typeof params.key === 'string' ? params.key : '';
-                const verifiedUser=await accounts.authenticate(req);
+                const verifiedUser=await ctx.accounts.authenticate(req);
                 if((params.uid || req.headers.authorization) && !verifiedUser) {
                     res.writeHead(401,{'Content-Type':'application/json'});
                     return res.end(JSON.stringify({success:false,reason:'Google ile tekrar giriş yapınız.'}));
@@ -507,9 +510,9 @@ async function handleRequest(req, res) {
                     /-(ANN1|YIL1)-/.test(cleanKey) ? 'annual' : 'lifetime';
                 const proposedDuration = proposedPlan === 'monthly' ? 30 * 86400000 : proposedPlan === 'annual' ? 365 * 86400000 : 0;
                 const proposed = {key: cleanKey, plan: proposedPlan, duration: proposedDuration,
-                    claimedAt: Date.now(), expiresAt: proposedDuration ? Date.now() + proposedDuration : 0,
+                    claimedAt: ctx.now(), expiresAt: proposedDuration ? ctx.now() + proposedDuration : 0,
                     uid, email, deviceId};
-                const result = await licenseStore.claim(cleanKey, proposed);
+                const result = await ctx.store.claim(cleanKey, proposed);
                 if (!result.issued) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     return res.end(JSON.stringify({success: false, reason: 'Bu lisans sunucu tarafından verilmemiş.'}));
@@ -527,7 +530,7 @@ async function handleRequest(req, res) {
                     }
 
                     // Aynı kullanıcı/cihaz: Süre kontrolü
-                    if (existing.expiresAt > 0 && Date.now() > existing.expiresAt) {
+                    if (existing.expiresAt > 0 && ctx.now() > existing.expiresAt) {
                         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
                         res.end(JSON.stringify({
                             success: false,
@@ -578,7 +581,7 @@ async function handleRequest(req, res) {
                 }
 
                 const rawKey = typeof params.key === 'string' ? params.key : '';
-                const verifiedUser=await accounts.authenticate(req);
+                const verifiedUser=await ctx.accounts.authenticate(req);
                 if((params.uid || req.headers.authorization) && !verifiedUser) {
                     res.writeHead(401,{'Content-Type':'application/json'});
                     return res.end(JSON.stringify({valid:false,reason:'Google ile tekrar giriş yapınız.'}));
@@ -595,7 +598,7 @@ async function handleRequest(req, res) {
                 }
 
                 // A checksum detects typos; only keys in the issued sales registry may activate.
-                if (!(await getSoldLicenses()).some(record => record.licenseKey === cleanKey)) {
+                if (!(await ctx.store.getSold()).some(record => record.licenseKey === cleanKey)) {
                     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
                     return res.end(JSON.stringify({ success: false, valid: false, reason: 'Bu lisans sunucu tarafından verilmemiş.' }));
                 }
@@ -603,7 +606,7 @@ async function handleRequest(req, res) {
                     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
                     return res.end(JSON.stringify({ success: false, valid: false, reason: 'Kullanıcı veya cihaz kimliği gerekli.' }));
                 }
-                const claimed = await getClaimedLicenses();
+                const claimed = await ctx.store.getClaimed();
                 const existing = claimed[cleanKey];
                 if (!existing) {
                     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -612,7 +615,7 @@ async function handleRequest(req, res) {
                 }
 
                 const isOwner = !existing.needsReview && (existing.uid ? uid===existing.uid : Boolean(deviceId && existing.deviceId===deviceId));
-                const expired = existing.expiresAt > 0 && Date.now() > existing.expiresAt;
+                const expired = existing.expiresAt > 0 && ctx.now() > existing.expiresAt;
 
                 res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
                 res.end(JSON.stringify({
@@ -633,8 +636,8 @@ async function handleRequest(req, res) {
 
     // Üretilen Lisansları İzleme Tablosu (Dashboard)
     if (req.method === 'GET' && (req.url === '/licenses' || req.url === '/dashboard')) {
-        const sold = await getSoldLicenses();
-        const claimed = await getClaimedLicenses();
+        const sold = await ctx.store.getSold();
+        const claimed = await ctx.store.getClaimed();
         const claimedCount = Object.keys(claimed).length;
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -848,12 +851,27 @@ async function handleRequest(req, res) {
     res.writeHead(404);
     res.end('Bulunamadı');
 }
-const server = http.createServer((req, res) => {
-    handleRequest(req, res).catch(() => {
-        if (!res.headersSent) res.writeHead(503, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({success: false, reason: 'Veritabanına ulaşılamıyor. Tekrar deneyiniz.'}));
+// Builds the HTTP API. Tests and tools can pass their own license store and clock; a store
+// from scripts/backend/store.js (the CLI inventory) is adapted to the license routes.
+function createServer({store = licenseStore, now = Date.now} = {}) {
+    const isBackendStore = store && typeof store.transaction === 'function' && typeof store.claim !== 'function';
+    const routeStore = isBackendStore ? createLicenseApi(store) : store;
+    const ctx = {store: routeStore, now};
+    if (routeStore === licenseStore) {
+        ctx.accounts = accounts;
+        ctx.businesses = businesses;
+    } else {
+        ctx.accounts = createAccountService({store: routeStore, verifyGoogle: createGoogleVerifier({clientId: googleClientId}), clock: now});
+        ctx.businesses = require('./business-service').createBusinessService({store: routeStore, authenticate: ctx.accounts.authenticate});
+    }
+    return http.createServer((req, res) => {
+        handleRequest(req, res, ctx).catch(() => {
+            if (!res.headersSent) res.writeHead(503, {'Content-Type': 'application/json'});
+            res.end(JSON.stringify({success: false, reason: 'Veritabanına ulaşılamıyor. Tekrar deneyiniz.'}));
+        });
     });
-});
+}
+const server = createServer();
 
 
 if (require.main === module) {
@@ -880,6 +898,7 @@ if (require.main === module) {
 
 module.exports = {
     server,
+    createServer,
     licenseStore,
     detectPlanAndCurrency,
     detectPlan,

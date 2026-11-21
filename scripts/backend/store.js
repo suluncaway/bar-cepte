@@ -110,4 +110,35 @@ function fulfillPaidOrder(store, order, products) {
         return records;
     });
 }
-module.exports = { createStore, generateKey, fulfillPaidOrder, PLANS };
+// Exposes this store through the license routes' storage interface (see license-store.js),
+// so the HTTP API can redeem keys issued by the CLI. Accounts, sessions and backups are not kept here.
+function createLicenseApi(store) {
+    return {
+        kind: 'file',
+        ready: async () => {},
+        ping: async () => { store.read(); },
+        close: async () => {},
+        getSold: async () => store.read().inventory,
+        getClaimed: async () => store.read().claims,
+        exportBackup: async () => { const state = store.read(); return { version: 1, sold: state.inventory, claimed: state.claims }; },
+        claim: async (key, proposed) => store.transaction(state => {
+            if (!state.inventory.some(record => record.licenseKey === key)) return { issued: false };
+            const existing = state.claims[key];
+            if (existing) {
+                // A device claim is linked to the account that later signs in on the same device.
+                if (!existing.uid && proposed.uid && existing.deviceId === proposed.deviceId && !existing.needsReview &&
+                    (existing.expiresAt === 0 || existing.expiresAt > proposed.claimedAt)) {
+                    state.claims[key] = { ...existing, uid: proposed.uid, email: proposed.email };
+                }
+                return { issued: true, existing: state.claims[key] };
+            }
+            state.claims[key] = proposed;
+            return { issued: true, created: true, record: proposed };
+        }),
+        getSession: async () => null,
+        getSubscription: async (uid, now) => Object.values(store.read().claims)
+            .filter(claim => claim.uid === uid && !claim.needsReview && (claim.plan === 'lifetime' && claim.expiresAt === 0 || claim.expiresAt > now))
+            .sort((a, b) => (b.claimedAt || 0) - (a.claimedAt || 0))[0] || null
+    };
+}
+module.exports = { createStore, createLicenseApi, generateKey, fulfillPaidOrder, PLANS };

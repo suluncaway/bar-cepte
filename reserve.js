@@ -2,17 +2,19 @@
 (function (root) {
     'use strict';
 
-    const STORAGE_KEY = 'barcepte_reserve_active';
     const KEY_STORAGE = 'barcepte_reserve_license';
-    const PLAN_STORAGE = 'barcepte_reserve_plan';
-    const EXPIRES_STORAGE = 'barcepte_reserve_expires_at';
+    // Flags written by earlier versions. They are ignored and cleared; they never grant Reserve.
+    const LEGACY_STORAGE = ['barcepte_reserve_active', 'barcepte_reserve_plan', 'barcepte_reserve_expires_at'];
 
-    // Sabit kurucu/yönetici anahtarları
-    const MASTER_KEYS = new Set([
+    // Old promotional strings. They pass the format check only so the server can reject them;
+    // no client-side key grants Reserve.
+    const LEGACY_PROMO_KEYS = new Set([
         'RESERVE-SULUNCA-2026',
         'BARCEPTE-RESERVE-VIP',
         'RESERVE-MASTER-KEY-2026'
     ]);
+    // Keys issued into the server inventory: RESERVE-<PLAN>-<48 hex>.
+    const ISSUED_KEY_PATTERN = /^RESERVE-(MTH1|ANN1|LIFE)-[0-9A-F]{48}$/;
 
     const PLANS_CONFIG = {
         monthly: {
@@ -102,7 +104,7 @@
     function validateLicenseKey(rawKey) {
         if (!rawKey || typeof rawKey !== 'string') return false;
         const key = rawKey.trim().toUpperCase();
-        if (MASTER_KEYS.has(key)) return true;
+        if (LEGACY_PROMO_KEYS.has(key) || ISSUED_KEY_PATTERN.test(key)) return true;
         const parts = key.split('-');
         if (parts.length !== 4 || parts[0] !== 'RESERVE') return false;
         if (parts[1].length !== 4 || parts[2].length !== 4 || parts[3].length !== 4) return false;
@@ -112,7 +114,7 @@
     function getPlanFromKey(rawKey) {
         if (!rawKey) return 'lifetime';
         const key = rawKey.trim().toUpperCase();
-        if (MASTER_KEYS.has(key)) return 'lifetime';
+        if (LEGACY_PROMO_KEYS.has(key)) return 'lifetime';
         const parts = key.split('-');
         if (parts.length === 4) {
             const prefix = parts[1];
@@ -120,12 +122,6 @@
             if (prefix.startsWith('A') || prefix.startsWith('Y')) return 'annual';
         }
         return 'lifetime';
-    }
-
-    function getDurationForPlan(plan) {
-        if (plan === 'monthly') return 30 * 24 * 60 * 60 * 1000; // 30 Gün
-        if (plan === 'annual') return 365 * 24 * 60 * 60 * 1000; // 365 Gün
-        return 0; // Lifetime
     }
 
     function getCurrentLang() {
@@ -156,210 +152,254 @@
         }
     }
 
-    function getSubscriptionInfo() {
+    // Reserve is granted only by a license-server response, or by the signed-in account's
+    // server subscription (held by BarAuth). The entitlement lives in memory; storage only
+    // caches the redeemed key so the server can be asked again after a reload.
+    const CLAIM_URL = 'https://bar-cepte-webhook.onrender.com/api/claim-license';
+    const VALID_PLANS = ['monthly', 'annual', 'lifetime'];
+    const DEVICE_ID_KEY = 'barcepte_device_id';
+    let licenseSubscription = null;
+    let entitlementGeneration = 0;
+    let expiryTimer = null;
+
+    function monotonicNow() {
         try {
-            const activeStored = root.localStorage.getItem(STORAGE_KEY) === 'true';
-            const key = root.localStorage.getItem(KEY_STORAGE) || '';
-            const plan = root.localStorage.getItem(PLAN_STORAGE) || 'lifetime';
-            const expiresAt = Number(root.localStorage.getItem(EXPIRES_STORAGE)) || 0;
-
-            if (activeStored && expiresAt > 0 && Date.now() > expiresAt) {
-                // Abonelik süresi doldu
-                root.localStorage.removeItem(STORAGE_KEY);
-                return { active: false, expired: true, plan, key, expiresAt, daysLeft: 0 };
-            }
-
-            let daysLeft = null;
-            if (activeStored && expiresAt > 0) {
-                daysLeft = Math.max(0, Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)));
-            }
-
-            return {
-                active: activeStored,
-                expired: false,
-                plan: activeStored ? plan : null,
-                key: activeStored ? key : null,
-                expiresAt: activeStored ? expiresAt : 0,
-                daysLeft: activeStored ? daysLeft : null
-            };
+            return root.performance && typeof root.performance.now === 'function' ? root.performance.now() : null;
         } catch {
-            return { active: false, expired: false, plan: null, key: null, expiresAt: 0, daysLeft: null };
+            return null;
         }
+    }
+
+    function isValidServerSubscription(plan, expiresAt) {
+        return VALID_PLANS.includes(plan) && typeof expiresAt === 'number' && Number.isFinite(expiresAt) &&
+            (plan === 'lifetime' ? expiresAt === 0 : expiresAt > Date.now());
+    }
+
+    // Remembers when the server answered, so expiry also holds if the wall clock is moved back.
+    function trackSubscription(subscription) {
+        return {
+            ...subscription,
+            monotonicStart: monotonicNow(),
+            remainingMs: subscription.expiresAt ? subscription.expiresAt - Date.now() : Infinity
+        };
+    }
+
+    function isSubscriptionExpired(subscription) {
+        if (!subscription || !subscription.expiresAt) return false;
+        if (Date.now() >= subscription.expiresAt) return true;
+        const now = monotonicNow();
+        return now !== null && typeof subscription.monotonicStart === 'number' &&
+            now - subscription.monotonicStart >= subscription.remainingMs;
+    }
+
+    function getAuth() {
+        return root.BarAuth && typeof root.BarAuth.getCurrentUser === 'function' ? root.BarAuth : null;
+    }
+
+    // Device claims belong to the device; Google claims belong to the signed-in account.
+    function entitlementOwner() {
+        const auth = getAuth();
+        const user = auth ? auth.getCurrentUser() : null;
+        return user && user.provider === 'google' ? user.uid : 'device';
+    }
+
+    function getSessionToken() {
+        const auth = getAuth();
+        return auth && typeof auth.getSessionToken === 'function' ? (auth.getSessionToken() || '') : '';
+    }
+
+    function getLocalDeviceId() {
+        try {
+            const stored = root.localStorage.getItem(DEVICE_ID_KEY);
+            // Earlier device ids are kept: existing server claims are bound to them.
+            if (stored && stored !== 'dev_unknown' && /^[A-Za-z0-9_-]{8,200}$/.test(stored)) return stored;
+            if (!root.crypto || typeof root.crypto.getRandomValues !== 'function') return null;
+            const bytes = root.crypto.getRandomValues(new Uint8Array(32));
+            const id = 'dev_' + Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+            root.localStorage.setItem(DEVICE_ID_KEY, id);
+            return id;
+        } catch {
+            return null;
+        }
+    }
+
+    // The API takes the bare 64-hex secret; legacy ids are sent unchanged so their claims still match.
+    function payloadDeviceId() {
+        const auth = root.BarAuth;
+        const id = auth && typeof auth.getDeviceId === 'function' ? auth.getDeviceId() : getLocalDeviceId();
+        if (!id) return null;
+        return /^dev_[a-f0-9]{64}$/.test(id) ? id.slice(4) : id;
+    }
+
+    function getSubscriptionInfo() {
+        const owner = entitlementOwner();
+        const auth = getAuth();
+        const candidates = [licenseSubscription];
+        if (auth && typeof auth.getAccountSubscription === 'function') {
+            try { candidates.push(auth.getAccountSubscription()); } catch {}
+        }
+        let expired = false;
+        for (const subscription of candidates) {
+            if (!subscription || subscription.owner !== owner) continue;
+            if (isSubscriptionExpired(subscription)) {
+                expired = true;
+                continue;
+            }
+            const daysLeft = subscription.expiresAt
+                ? Math.max(0, Math.ceil((subscription.expiresAt - Date.now()) / 86400000))
+                : null;
+            return {
+                active: true,
+                expired: false,
+                plan: subscription.plan,
+                key: subscription.key || null,
+                expiresAt: subscription.expiresAt,
+                daysLeft
+            };
+        }
+        return { active: false, expired, plan: null, key: null, expiresAt: 0, daysLeft: null };
     }
 
     function isReserveActive() {
         return getSubscriptionInfo().active;
     }
 
-    function getLocalDeviceId() {
+    // Legacy synchronous entry points: they cannot reach the server, so they never grant Reserve.
+    function activateReserve() {
+        return false;
+    }
+
+    function activateFromCloud() {
+        return false;
+    }
+
+    function readCachedKey() {
         try {
-            let id = root.localStorage.getItem('barcepte_device_id');
-            if (!id) {
-                id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-                root.localStorage.setItem('barcepte_device_id', id);
-            }
-            return id;
+            return root.localStorage.getItem(KEY_STORAGE) || '';
         } catch {
-            return 'dev_unknown';
+            return '';
         }
     }
 
-    function activateReserve(key) {
-        if (!validateLicenseKey(key)) return false;
+    function forgetCachedKey(key) {
         try {
-            const cleanKey = key.trim().toUpperCase();
-
-            // Tek kullanımlık lisans koruması (BarAuth kontrolü)
-            let existingExpiresAt = 0;
-            if (root.BarAuth && typeof root.BarAuth.canUseLicenseKey === 'function') {
-                const check = root.BarAuth.canUseLicenseKey(cleanKey);
-                if (!check.allowed) {
-                    const msgEl = typeof document !== 'undefined' ? document.getElementById('reserve-key-msg') : null;
-                    if (msgEl) {
-                        msgEl.textContent = check.reason;
-                        msgEl.className = 'text-xs text-rose-400 font-semibold';
-                    }
-                    return false;
-                }
-                if (check.alreadyClaimed) {
-                    const registry = root.BarAuth.getClaimedLicenses ? root.BarAuth.getClaimedLicenses() : {};
-                    if (registry[cleanKey] && registry[cleanKey].expiresAt) {
-                        existingExpiresAt = registry[cleanKey].expiresAt;
-                    }
-                }
-            }
-
-            const plan = getPlanFromKey(cleanKey);
-            const duration = getDurationForPlan(plan);
-            // Daha önce bu hesaba mühürlenmişse orijinal süresini koru, sıfırdan süre ekleme!
-            const expiresAt = existingExpiresAt > 0 ? existingExpiresAt : (duration > 0 ? (Date.now() + duration) : 0);
-
-            root.localStorage.setItem(STORAGE_KEY, 'true');
-            root.localStorage.setItem(KEY_STORAGE, cleanKey);
-            root.localStorage.setItem(PLAN_STORAGE, plan);
-            root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
-
-            // Lisansı kullanıcı hesabına bağla ve tek kullanımlık olarak kaydet
-            if (root.BarAuth && typeof root.BarAuth.claimLicenseKey === 'function') {
-                root.BarAuth.claimLicenseKey(cleanKey, plan, expiresAt);
-            }
-
-            applyReserveUI();
-            return true;
-        } catch {
-            return false;
-        }
+            if (readCachedKey() === key) root.localStorage.removeItem(KEY_STORAGE);
+        } catch {}
     }
 
     async function verifyAndActivateLicense(key) {
         const isEn = getCurrentLang() === 'en';
+        const fail = reason => ({ success: false, reason });
         if (!key || typeof key !== 'string') {
-            return { success: false, reason: isEn ? 'Please enter an activation key.' : 'Lütfen bir aktivasyon kodu giriniz.' };
+            return fail(isEn ? 'Please enter an activation key.' : 'Lütfen bir aktivasyon kodu giriniz.');
         }
         const cleanKey = key.trim().toUpperCase();
-
-        // 1. Format ve sağlama toplamı kontrolü
         if (!validateLicenseKey(cleanKey)) {
-            return { success: false, reason: isEn ? 'Invalid activation key. Please check again.' : 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.' };
+            return fail(isEn ? 'Invalid activation key. Please check again.' : 'Geçersiz aktivasyon kodu. Lütfen kontrol ediniz.');
         }
 
-        // 4. Merkezi Sunucu (Render Webhook) Doğrulaması
-        const user = root.BarAuth && typeof root.BarAuth.getCurrentUser === 'function' ? root.BarAuth.getCurrentUser() : null;
-        const deviceId = (root.BarAuth && typeof root.BarAuth.getDeviceId === 'function') ? root.BarAuth.getDeviceId() : getLocalDeviceId();
-        const payload = {
-            key: cleanKey,
-            uid: user && root.BarAuth.getSessionToken && root.BarAuth.getSessionToken() ? user.uid : null,
-            email: user ? user.email : '',
-            deviceId: deviceId
-        };
+        const auth = getAuth();
+        const user = auth ? auth.getCurrentUser() : null;
+        const sessionToken = getSessionToken();
+        // A remembered Google profile is not proof of identity; the server needs a live session.
+        if (user && user.provider === 'google' && !sessionToken) {
+            return fail(isEn
+                ? 'Please sign in with Google again to link this key to your account.'
+                : 'Kodu hesabına bağlamak için Google ile yeniden giriş yap.');
+        }
+
+        const payload = { key: cleanKey };
+        const deviceId = payloadDeviceId();
+        if (deviceId) payload.deviceId = deviceId;
+        const generation = entitlementGeneration;
+        const owner = entitlementOwner();
+        const unavailable = isEn
+            ? 'License verification is unavailable. Please connect to the internet and try again.'
+            : 'Lisans doğrulaması yapılamadı. İnternet bağlantınızı kontrol edip tekrar deneyiniz.';
 
         const controller = typeof AbortController === 'function' ? new AbortController() : null;
         const timeout = controller ? setTimeout(() => controller.abort(), 65000) : null;
         try {
-            const resp = await fetch('https://bar-cepte-webhook.onrender.com/api/claim-license', {
+            const resp = await root.fetch(CLAIM_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...(root.BarAuth && root.BarAuth.getSessionToken && root.BarAuth.getSessionToken()?{Authorization:'Bearer '+root.BarAuth.getSessionToken()}: {}) },
+                headers: { 'Content-Type': 'application/json', ...(sessionToken ? { Authorization: 'Bearer ' + sessionToken } : {}) },
                 body: JSON.stringify(payload),
                 signal: controller ? controller.signal : undefined
             });
             // Render can answer a cold start with an HTML error page; never let that surface as a network error.
             let data = {};
-            try { data = await resp.json(); } catch { data = {}; }
-            if (!resp.ok || !data.success) {
+            try { data = (await resp.json()) || {}; } catch { data = {}; }
+
+            // Sign-out, an account switch or a manual removal while waiting voids this answer.
+            if (generation !== entitlementGeneration || owner !== entitlementOwner() || sessionToken !== getSessionToken()) {
+                return fail(isEn ? 'Your session changed; activation was not applied.' : 'Oturum değişti; aktivasyon uygulanmadı.');
+            }
+            if (!resp.ok || data.success !== true) {
                 if (resp.status === 409) {
-                    if (root.BarAuth && typeof root.BarAuth.markLicenseClaimedLocally === 'function') {
-                        root.BarAuth.markLicenseClaimedLocally(cleanKey, data.claimedBy || 'external_user');
-                    }
-                    return { success: false, reason: data.reason || (isEn
+                    forgetCachedKey(cleanKey);
+                    return fail(data.reason || (isEn
                         ? 'This license key was already claimed by another user or device. Licenses are single-use.'
-                        : 'Bu lisans anahtarı başka bir kullanıcı ya da cihazda kullanılmış. Lisanslar tek kullanımlıktır.') };
+                        : 'Bu lisans anahtarı başka bir kullanıcı ya da cihazda kullanılmış. Lisanslar tek kullanımlıktır.'));
                 }
                 // Only a 409 means "already claimed". Anything else is a server problem: the key is still valid, retry.
-                return { success: false, reason: (resp.ok && data.reason) || (isEn
+                return fail((resp.ok && data.reason) || (isEn
                     ? 'The license server could not confirm your key right now. Your key is safe; please try again in a minute.'
-                    : 'Lisans sunucusu şu an kodunu doğrulayamadı. Kodun geçerli kalır; bir dakika sonra tekrar dene.') };
+                    : 'Lisans sunucusu şu an kodunu doğrulayamadı. Kodun geçerli kalır; bir dakika sonra tekrar dene.'));
             }
 
-            // Sunucu onayladı! Lisansı bu cihaza kaydet
-            const plan = data.plan;
-            const expiresAt = data.expiresAt;
-            if (!['monthly', 'annual', 'lifetime'].includes(plan) ||
-                typeof expiresAt !== 'number' || !Number.isFinite(expiresAt) ||
-                (plan === 'lifetime' ? expiresAt !== 0 : expiresAt <= Date.now())) {
-                throw new Error('Invalid subscription response');
-            }
+            const { plan, expiresAt } = data;
+            if (!isValidServerSubscription(plan, expiresAt)) return fail(unavailable);
 
-            root.localStorage.setItem(STORAGE_KEY, 'true');
+            // Cache before granting: if storage fails, report failure and grant nothing.
             root.localStorage.setItem(KEY_STORAGE, cleanKey);
-            root.localStorage.setItem(PLAN_STORAGE, plan);
-            root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
-
-            if (root.BarAuth && typeof root.BarAuth.claimLicenseKey === 'function') {
-                root.BarAuth.claimLicenseKey(cleanKey, plan, expiresAt);
-            }
-
+            licenseSubscription = trackSubscription({ key: cleanKey, plan, expiresAt, owner });
+            scheduleExpiryCheck();
             applyReserveUI();
             return { success: true, plan, expiresAt, message: data.message };
         } catch (err) {
-            console.warn('Merkezi lisans doğrulaması tamamlanamadı:', err);
-            return { success: false, reason: isEn
-                ? 'License verification is unavailable. Please connect to the internet and try again.'
-                : 'Lisans doğrulaması yapılamadı. İnternet bağlantınızı kontrol edip tekrar deneyiniz.' };
+            if (typeof console !== 'undefined' && console.warn) console.warn('Merkezi lisans doğrulaması tamamlanamadı:', err);
+            return fail(unavailable);
         } finally {
             if (timeout !== null) clearTimeout(timeout);
         }
     }
 
-    function activateFromCloud(reserveData) {
-        if (!reserveData || !reserveData.active) return false;
-        try {
-            const expiresAt = Number(reserveData.expiresAt) || 0;
-            if (expiresAt > 0 && Date.now() > expiresAt) return false;
+    // Asks the server again about a key redeemed earlier on this device (e.g. after a reload).
+    function restoreCachedLicense() {
+        const key = readCachedKey();
+        if (!key || !validateLicenseKey(key)) return Promise.resolve({ success: false });
+        return verifyAndActivateLicense(key);
+    }
 
-            root.localStorage.setItem(STORAGE_KEY, 'true');
-            if (reserveData.key) root.localStorage.setItem(KEY_STORAGE, reserveData.key);
-            if (reserveData.plan) root.localStorage.setItem(PLAN_STORAGE, reserveData.plan);
-            root.localStorage.setItem(EXPIRES_STORAGE, String(expiresAt));
+    function scheduleExpiryCheck() {
+        if (expiryTimer !== null) clearTimeout(expiryTimer);
+        expiryTimer = null;
+        if (!licenseSubscription || !licenseSubscription.expiresAt) return;
+        const delay = Math.min(60000, Math.max(1000, licenseSubscription.expiresAt - Date.now()));
+        expiryTimer = setTimeout(() => {
+            expiryTimer = null;
             applyReserveUI();
-            return true;
-        } catch {
-            return false;
-        }
+            if (isReserveActive()) scheduleExpiryCheck();
+        }, delay);
+        if (expiryTimer && typeof expiryTimer.unref === 'function') expiryTimer.unref();
     }
 
     function deactivateReserve(reload = true) {
+        entitlementGeneration++;
+        licenseSubscription = null;
+        if (expiryTimer !== null) clearTimeout(expiryTimer);
+        expiryTimer = null;
         try {
-            root.localStorage.removeItem(STORAGE_KEY);
             root.localStorage.removeItem(KEY_STORAGE);
-            root.localStorage.removeItem(PLAN_STORAGE);
-            root.localStorage.removeItem(EXPIRES_STORAGE);
-            if(reload)root.location.reload();
-            else applyReserveUI();
+            for (const legacy of LEGACY_STORAGE) root.localStorage.removeItem(legacy);
         } catch {}
+        if (reload && root.location && typeof root.location.reload === 'function') root.location.reload();
+        else applyReserveUI();
     }
 
     function selectPlan(planKey) {
         currentSelectedPlan = planKey;
+        if (typeof document === 'undefined') return;
         const isEn = getCurrentLang() === 'en';
         let dict = PLANS_CONFIG;
         if (isEn) {
@@ -405,7 +445,11 @@
         if (typeof document === 'undefined') return;
         const active = isReserveActive();
         const isEn = getCurrentLang() === 'en';
-        
+        // The account badge reads the same server-verified state.
+        if (root.BarAuth && typeof root.BarAuth.updateAuthUI === 'function') {
+            try { root.BarAuth.updateAuthUI(); } catch {}
+        }
+
         // Reklam alanlarını ve sponsor kartlarını gizle / göster
         const adSlots = document.querySelectorAll('.ad-slot-container');
         adSlots.forEach(slot => {
@@ -564,8 +608,13 @@
     }
 
     function init() {
+        try {
+            for (const legacy of LEGACY_STORAGE) root.localStorage.removeItem(legacy);
+        } catch {}
         applyReserveUI();
         selectPlan(currentSelectedPlan);
+        // A key redeemed earlier is only a reference: the server decides again on every load.
+        restoreCachedLicense();
 
         // Para birimi butonları tıklamaları (USD / EUR)
         document.querySelectorAll('.reserve-currency-btn').forEach(btn => {
@@ -728,6 +777,7 @@
         isReserveActive,
         activateReserve,
         verifyAndActivateLicense,
+        restoreCachedLicense,
         activateFromCloud,
         deactivateReserve,
         validateLicenseKey,
