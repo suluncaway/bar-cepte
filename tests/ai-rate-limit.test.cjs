@@ -6,8 +6,9 @@ const path = require('path');
 
 test('AI rate limit cannot be bypassed by spoofing the first X-Forwarded-For entry', async t => {
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bar-cepte-ai-'));
-    const previous = { dir: process.env.LICENSE_DATA_DIR, key: process.env.OPENAI_API_KEY };
+    const previous = { dir: process.env.LICENSE_DATA_DIR, key: process.env.OPENAI_API_KEY, proxy: process.env.TRUST_PROXY };
     process.env.LICENSE_DATA_DIR = dataDir;
+    process.env.TRUST_PROXY = '1'; // deployed behind a proxy, as on Render
     delete process.env.OPENAI_API_KEY; // requests fail fast with 503 instead of calling OpenAI
     const { server } = require('../scripts/shopier-webhook');
     t.after(async () => {
@@ -15,6 +16,7 @@ test('AI rate limit cannot be bypassed by spoofing the first X-Forwarded-For ent
         fs.rmSync(dataDir, { recursive: true, force: true });
         if (previous.dir === undefined) delete process.env.LICENSE_DATA_DIR; else process.env.LICENSE_DATA_DIR = previous.dir;
         if (previous.key !== undefined) process.env.OPENAI_API_KEY = previous.key;
+        if (previous.proxy === undefined) delete process.env.TRUST_PROXY; else process.env.TRUST_PROXY = previous.proxy;
     });
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
     const url = `http://127.0.0.1:${server.address().port}/api/ai-assistant`;

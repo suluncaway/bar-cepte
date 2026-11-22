@@ -549,8 +549,8 @@
             if (authBtnIcon) {
                 if (isMember) {
                     authBtnIcon.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></svg>';
-                } else if (user.picture) {
-                    authBtnIcon.innerHTML = `<img src="${user.picture}" alt="" class="w-4 h-4 rounded-full object-cover">`;
+                } else if (safeAvatar(user.picture)) {
+                    authBtnIcon.replaceChildren(avatarImage(user.picture, 'w-4 h-4 rounded-full object-cover'));
                 } else {
                     authBtnIcon.innerHTML = '<i class="bci bci-martini" aria-hidden="true"></i>';
                 }
@@ -565,6 +565,16 @@
         }
 
         renderAuthModalState();
+    }
+
+    // Built with DOM APIs, never innerHTML: a picture URL can't break out of the attribute.
+    function avatarImage(url, className) {
+        const img = document.createElement('img');
+        img.src = safeAvatar(url);
+        img.alt = '';
+        img.className = className;
+        img.referrerPolicy = 'no-referrer';
+        return img;
     }
 
     function renderAuthModalState() {
@@ -588,10 +598,13 @@
             if (nameEl) nameEl.textContent = user.name;
             if (emailEl) emailEl.textContent = user.email || (getCurrentLang() === 'en' ? 'Connected Local Account' : 'Bağlı Yerel Hesap');
             if (avatarEl) {
-                if (user.picture) {
-                    avatarEl.innerHTML = `<img src="${user.picture}" alt="" class="w-14 h-14 rounded-2xl object-cover border border-amber-400/40 shadow-md">`;
+                if (safeAvatar(user.picture)) {
+                    avatarEl.replaceChildren(avatarImage(user.picture, 'w-14 h-14 rounded-2xl object-cover border border-amber-400/40 shadow-md'));
                 } else {
-                    avatarEl.innerHTML = `<div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl font-black text-amber-300">${user.name.charAt(0).toUpperCase()}</div>`;
+                    const initial = document.createElement('div');
+                    initial.className = 'w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl font-black text-amber-300';
+                    initial.textContent = user.name.charAt(0).toUpperCase();
+                    avatarEl.replaceChildren(initial);
                 }
             }
 

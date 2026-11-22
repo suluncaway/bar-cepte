@@ -53,7 +53,7 @@ test('public legacy master strings cannot bypass central verification', async ()
         return {ok: false, status: 400, json: async () => ({success: false})};
     });
     assert.equal((await reserve.verifyAndActivateLicense('RESERVE-SULUNCA-2026')).success, false);
-    assert.equal(calls, 1);
+    assert.equal(calls, 0, 'old promo strings are rejected locally without contacting the server');
     assert.equal(reserve.isReserveActive(), false);
 });
 

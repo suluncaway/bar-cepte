@@ -6,13 +6,6 @@
     // Flags written by earlier versions. They are ignored and cleared; they never grant Reserve.
     const LEGACY_STORAGE = ['barcepte_reserve_active', 'barcepte_reserve_plan', 'barcepte_reserve_expires_at'];
 
-    // Old promotional strings. They pass the format check only so the server can reject them;
-    // no client-side key grants Reserve.
-    const LEGACY_PROMO_KEYS = new Set([
-        'RESERVE-SULUNCA-2026',
-        'BARCEPTE-RESERVE-VIP',
-        'RESERVE-MASTER-KEY-2026'
-    ]);
     // Keys issued into the server inventory: RESERVE-<PLAN>-<48 hex>.
     const ISSUED_KEY_PATTERN = /^RESERVE-(MTH1|ANN1|LIFE)-[0-9A-F]{48}$/;
 
@@ -104,7 +97,7 @@
     function validateLicenseKey(rawKey) {
         if (!rawKey || typeof rawKey !== 'string') return false;
         const key = rawKey.trim().toUpperCase();
-        if (LEGACY_PROMO_KEYS.has(key) || ISSUED_KEY_PATTERN.test(key)) return true;
+        if (ISSUED_KEY_PATTERN.test(key)) return true;
         const parts = key.split('-');
         if (parts.length !== 4 || parts[0] !== 'RESERVE') return false;
         if (parts[1].length !== 4 || parts[2].length !== 4 || parts[3].length !== 4) return false;
@@ -114,7 +107,6 @@
     function getPlanFromKey(rawKey) {
         if (!rawKey) return 'lifetime';
         const key = rawKey.trim().toUpperCase();
-        if (LEGACY_PROMO_KEYS.has(key)) return 'lifetime';
         const parts = key.split('-');
         if (parts.length === 4) {
             const prefix = parts[1];
