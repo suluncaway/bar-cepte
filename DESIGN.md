@@ -79,3 +79,7 @@ The header shares the 1320px content column. Timer, wake lock, theme and support
 On desktop (≥1024px) the home hero puts the headline across, copy and actions on the left, and `#home-bar` on the right.
 
 Recipe lists only say "no match / clear filters" when a search or filter is active. Otherwise an empty list explains that the bar is too small and offers "Malzeme ekle" (`data-action="go-ingredients"`) or the starter bar.
+
+## Mix mode
+
+Steps come from each recipe's own instructions (`mixPlan` / `buildMixSteps` in game.js): Prep (glass and the barware the method needs) → measured ingredients → up to three instruction steps titled by what they ask for (Ez, Çalkala, Karıştır, Blender'da çek, Katmanla, Üzerini tamamla, Süz, Süsle ve servis et). The method is read from the English instructions because Turkish "karıştırın" means both stir and combine; only the step that performs the method gets a timer, and built drinks get none.

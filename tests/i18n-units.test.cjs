@@ -99,7 +99,7 @@ test('All opening modals, panels, and reserve plans have comprehensive English l
     assert.ok(gameJs.includes('POCKET BAR'), 'Pocket Bar in reserve heading for English');
     assert.ok(gameJs.includes('No cocktails found matching these criteria.'), 'Empty search state localized');
     assert.ok(gameJs.includes('Show More'), 'Load more button localized in game.js');
-    assert.ok(gameJs.includes('1. Glassware & Prep'), 'Step-by-step mix mode steps localized in game.js');
+    assert.ok(gameJs.includes("prep: 'Prep'") && gameJs.includes("prep: 'Hazırlık'"), 'Step-by-step mix mode steps localized in game.js');
 });
 
 test('Timer preset labels and modal bindings strictly preserve active language without reverting', () => {

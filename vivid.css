@@ -752,3 +752,11 @@ html[data-theme="light"] #top-ingredients .flex-wrap > span, html[data-theme="li
 @media (max-width:374px) {
   .topbar-brand > div:not(.brand-mark) { display:none; }
 }
+
+/* Mix mode: recipe-specific steps */
+#mix-step-body p + p { margin-top:8px; }
+#mix-step-body .mix-list-label { margin:0 0 8px; font-weight:600; color:var(--mint); }
+#mix-step-body .mix-ingredients { display:grid; gap:6px; margin:0; padding:0; list-style:none; }
+#mix-step-body .mix-ingredients li { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:var(--r-sm); background:var(--surface-sunk); border:1px solid var(--keyline); font-variant-numeric:tabular-nums; }
+#mix-step-body .mix-ingredients .bci { color:var(--mint); }
+#mix-step-body .mix-done { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:16px; padding-top:12px; border-top:2px solid var(--keyline); color:var(--mint); font-weight:700; }
