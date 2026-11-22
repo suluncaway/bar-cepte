@@ -25,8 +25,6 @@ const { generateKey } = require('./backend/store');
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 
-// Master geliştirici anahtarları
-const MASTER_KEYS = new Set(['RESERVE-SULUNCA-2026', 'BARCEPTE-RESERVE-VIP']);
 
 // Shopier Kişisel Erişim Anahtarı (Personal Access Token - PAT)
 const SHOPIER_API_TOKEN = process.env.SHOPIER_API_TOKEN || '';
@@ -78,8 +76,14 @@ function allowRequest(limits, ip, max) {
 }
 const allowAIRequest = ip => allowRequest(aiRateLimits, ip, 12);
 const licenseRateLimits = new Map();
-// Render appends the real client address last; earlier entries are client-controlled and spoofable.
-const clientAddress = req => String(req.headers['x-forwarded-for'] || '').split(',').pop().trim() || req.socket?.remoteAddress || 'unknown';
+// X-Forwarded-For is trusted only behind a known proxy (Render sets RENDER; elsewhere set TRUST_PROXY=1).
+// The proxy appends the real client address last; earlier entries are client-controlled and spoofable.
+// Without a proxy the header is fully client-controlled, so rate limits use the socket address.
+const trustProxy = () => process.env.TRUST_PROXY === '1' || Boolean(process.env.RENDER);
+function clientAddress(req) {
+    const forwarded = trustProxy() ? String(req.headers['x-forwarded-for'] || '').split(',').pop().trim() : '';
+    return forwarded || req.socket?.remoteAddress || 'unknown';
+}
 const inFlightOrders = new Set();
 const getSoldLicenses = () => licenseStore.getSold();
 const getClaimedLicenses = () => licenseStore.getClaimed();
@@ -134,7 +138,6 @@ function readJsonBody(req, maxBytes = 64 * 1024) {
 function verifyKeyChecksum(rawKey) {
     if (!rawKey || typeof rawKey !== 'string') return false;
     const cleanKey = rawKey.trim().toUpperCase();
-    if (MASTER_KEYS.has(cleanKey)) return false;
     // Cryptographic keys issued by scripts/backend/store.js (CLI --save).
     if (/^RESERVE-(MTH1|ANN1|LIFE)-[0-9A-F]{48}$/.test(cleanKey)) return true;
     const parts = cleanKey.split('-');
@@ -349,8 +352,7 @@ async function handleRequest(req, res, ctx) {
 
     // Anonymous usage counters: only allow-listed event names and counts, nothing that identifies a person.
     if (req.method === 'POST' && requestPath === '/api/metrics') {
-        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
-        if (!allowRequest(metricsRateLimits, forwarded || req.socket?.remoteAddress || 'unknown', 60)) {
+        if (!allowRequest(metricsRateLimits, clientAddress(req), 60)) {
             res.writeHead(429); return res.end();
         }
         try {
@@ -376,10 +378,7 @@ async function handleRequest(req, res, ctx) {
 
     // AI kokteyl asistanı: anahtar yalnızca sunucuda tutulur; istekler IP başına sınırlandırılır.
     if (req.method === 'POST' && requestPath === '/api/ai-assistant') {
-        // Render appends the real client address last; earlier entries are client-controlled and spoofable.
-        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
-        const clientIp = forwarded || req.socket?.remoteAddress || 'unknown';
-        if (!allowAIRequest(clientIp)) {
+        if (!allowAIRequest(clientAddress(req))) {
             res.writeHead(429, {'Content-Type':'application/json; charset=utf-8'});
             return res.end(JSON.stringify({success:false,reason:'Saatlik AI kullanım sınırına ulaştın. Bir saat sonra tekrar dene.'}));
         }
@@ -389,9 +388,11 @@ async function handleRequest(req, res, ctx) {
             res.writeHead(200, {'Content-Type':'application/json; charset=utf-8'});
             return res.end(JSON.stringify({success:true,...result}));
         } catch (error) {
+            // Only errors raised deliberately (with a status) carry a user-facing message; anything else may leak internals.
             const status = Number(error.status) || 502;
+            if (!error.status) console.error('AI request failed:', error);
             res.writeHead(status, {'Content-Type':'application/json; charset=utf-8'});
-            return res.end(JSON.stringify({success:false,reason:error.message || 'AI isteği tamamlanamadı.'}));
+            return res.end(JSON.stringify({success:false,reason:(error.status && error.message) || 'AI isteği tamamlanamadı.'}));
         }
     }
 
@@ -922,5 +923,6 @@ module.exports = {
     verifyKeyChecksum,
     escapeHtml,
     licenseEmailHtml,
+    clientAddress,
     readJsonBody
 };

@@ -81,6 +81,25 @@ test('Production API protects issued licenses, admin data and webhook requests',
     assert.ok(statuses.includes(429), 'license endpoints must rate limit repeated guesses');
     assert.equal(await check(), 429);
     assert.equal((await claim({key: testKey, deviceId: 'alice-phone'})).status, 429);
+    // Unexpected AI endpoint errors return a generic message instead of internal details.
+    const ai = await fetch(origin + '/api/ai-assistant', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{broken'});
+    assert.equal((await ai.json()).reason, 'AI isteği tamamlanamadı.');
+});
+
+test('Rate-limit address ignores X-Forwarded-For unless a proxy is trusted', () => {
+    const { clientAddress } = require('../scripts/shopier-webhook');
+    const req = {headers: {'x-forwarded-for': 'spoofed, 203.0.113.9'}, socket: {remoteAddress: '198.51.100.7'}};
+    const saved = {TRUST_PROXY: process.env.TRUST_PROXY, RENDER: process.env.RENDER};
+    try {
+        delete process.env.TRUST_PROXY; delete process.env.RENDER;
+        assert.equal(clientAddress(req), '198.51.100.7');
+        process.env.TRUST_PROXY = '1';
+        assert.equal(clientAddress(req), '203.0.113.9');
+        delete process.env.TRUST_PROXY; process.env.RENDER = 'true';
+        assert.equal(clientAddress(req), '203.0.113.9');
+    } finally {
+        for (const [k, v] of Object.entries(saved)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+    }
 });
 
 test('Shopier orders receive unguessable 192-bit keys', () => {

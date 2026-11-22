@@ -101,8 +101,11 @@ test('editorial layout keeps all original UI bindings', () => {
 });
 test('Bar Cepte Reserve membership module validates keys and updates state', () => {
     const reserve = require('../reserve.js');
-    assert.ok(reserve.validateLicenseKey('RESERVE-SULUNCA-2026'));
-    assert.ok(reserve.validateLicenseKey('BARCEPTE-RESERVE-VIP'));
+    // Old promotional strings are no longer special-cased anywhere; they fail the format check.
+    for (const promo of ['RESERVE-SULUNCA-2026', 'BARCEPTE-RESERVE-VIP', 'RESERVE-MASTER-KEY-2026']) {
+        assert.equal(reserve.validateLicenseKey(promo), false);
+    }
+    assert.ok(reserve.validateLicenseKey('RESERVE-LIFE-' + 'A'.repeat(48)));
     assert.equal(reserve.validateLicenseKey('INVALID-KEY'), false);
     assert.equal(reserve.validateLicenseKey('RESERVE-1111-2222-3333'), false);
     assert.ok(fs.existsSync('reserve.js'));
@@ -302,4 +305,10 @@ test('Expired license keys cannot be reactivated to gain free extra days', () =>
 
     const activateResult = reserve.activateReserve(expiredKey);
     assert.equal(activateResult, false);
+});
+
+test('Profile pictures are rendered with DOM APIs, never interpolated into innerHTML', () => {
+    const source = fs.readFileSync('auth.js', 'utf8');
+    assert.doesNotMatch(source, /innerHTML\s*=\s*`[^`]*\$\{user\.(picture|name)/);
+    assert.match(source, /img\.src = safeAvatar\(url\)/);
 });
