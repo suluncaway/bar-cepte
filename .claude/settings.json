@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/protect-files.sh" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-js.sh", "timeout": 90 }]
+      }
+    ]
+  },
+  "permissions": {
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./keys/**)"],
+    "allow": ["Bash(npm test)", "Bash(node --test:*)", "Bash(node scripts/check-assets.cjs:*)", "Bash(npm run build:css)", "Bash(npm run build:recipes)"]
+  },
+  "enabledMcpjsonServers": ["playwright", "context7"]
+}
