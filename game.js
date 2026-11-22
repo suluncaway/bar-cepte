@@ -45,7 +45,7 @@ const I18N = {
         brand: 'Bar Cepte',
         title: 'Bar Cepte — Akıllı Bar & Kokteyl Asistanı',
         statusReady: 'Tarifler hazır',
-        statusCount: 'Tarif Hazır',
+        statusCount: 'tarif',
         statusLoading: 'Paketlenmiş veritabanı yükleniyor...',
         timer: 'Sayaç',
         keepScreenOn: 'Ekran Koru',
@@ -189,8 +189,8 @@ const I18N = {
         timerPause: "Duraklat",
         timerReset: "Sıfırla",
         mixEyebrow: "BARMEN MODU",
-        mixPrev: "← Önceki",
-        mixNext: "Sonraki Adım →",
+        mixPrev: "Önceki",
+        mixNext: "Sonraki adım",
         mixFinish: "Tamamla & Kapat",
         reserveExclusiveClub: "ÖZEL SEÇKİ KULÜBÜ",
         reserveBullet1: "<strong>%100 Reklamsız Deneyim:</strong> Sıfır reklam, kesintisiz hız.",
@@ -226,7 +226,7 @@ const I18N = {
         brand: 'Pocket Bar',
         title: 'Pocket Bar — Smart Home Bar & Cocktail Assistant',
         statusReady: 'Recipes ready',
-        statusCount: 'Recipes Ready',
+        statusCount: 'recipes',
         statusLoading: 'Loading cocktail database...',
         timer: 'Timer',
         keepScreenOn: 'Keep Awake',
@@ -370,8 +370,8 @@ const I18N = {
         timerPause: "Pause",
         timerReset: "Reset",
         mixEyebrow: "BARTENDER MODE",
-        mixPrev: "← Previous",
-        mixNext: "Next Step →",
+        mixPrev: "Previous",
+        mixNext: "Next step",
         mixFinish: "Finish",
         reserveExclusiveClub: "EXCLUSIVE CURATION CLUB",
         reserveBullet1: "<strong>100% Ad-Free Experience:</strong> Zero ads, pure speed.",
@@ -2759,14 +2759,14 @@ function renderMixStep() {
     const prevBtn = document.getElementById('btn-mix-prev');
     const nextBtn = document.getElementById('btn-mix-next');
     if (prevBtn) {
-        prevBtn.textContent = currentLang === 'en' ? '← Previous' : '← Önceki';
+        prevBtn.textContent = currentLang === 'en' ? 'Previous' : 'Önceki';
         prevBtn.disabled = currentMixStep === 0;
     }
     if (nextBtn) {
         const isLast = currentMixStep === mixSteps.length - 1;
         nextBtn.innerHTML = isLast 
             ? `<span>${currentLang === 'en' ? 'Finish' : 'Tamamla & Kapat'}</span>`
-            : `<span>${currentLang === 'en' ? 'Next Step →' : 'Sonraki Adım →'}</span>`;
+            : `<span>${currentLang === 'en' ? 'Next step' : 'Sonraki adım'}</span>`;
     }
 
     if (dotsContainer) {
@@ -3268,8 +3268,10 @@ function filterCocktails() {
         }
     }
 
-    renderLists(readyMatches, readyContainer, false);
-    renderLists(missingMatches, missingContainer, true);
+    // With no search or filter active, an empty list means the bar is too small, not that filters hid everything.
+    const filtersActive = Boolean(cocktailSearch) || onlyFavoritesFilter || currentVibeFilter !== 'all' || tasteFilter !== 'all' || alcoholFilter !== 'all';
+    renderLists(readyMatches, readyContainer, false, filtersActive ? '' : emptyBarHtml('ready', missingMatches.length));
+    renderLists(missingMatches, missingContainer, true, filtersActive ? '' : emptyBarHtml('missing', 0));
     
     updateSmartAdvice(missingMatches);
     if (!cocktailSearch && !onlyFavoritesFilter) renderHomeBar(readyMatches, missingMatches);
@@ -3550,11 +3552,28 @@ function createCocktailCardElement(item, isMissingList) {
 
 const COCKTAIL_PAGE_SIZE = 24;
 
-function renderLists(items, container, isMissingList) {
+function emptyBarHtml(list, missingCount) {
+    const en = currentLang === 'en';
+    const emptyBar = selectedIngredients.length === 0;
+    const action = emptyBar ? starterBarButton()
+        : `<button type="button" data-action="go-ingredients" class="text-action">${en ? 'Add ingredients' : 'Malzeme ekle'}</button>`;
+    let text;
+    if (list === 'ready') {
+        text = emptyBar ? (en ? 'Your bar is empty. Pick the bottles you have to see what you can make.' : 'Barın boş. Elindeki şişeleri seç, neler yapabileceğini gör.')
+            : missingCount ? (en ? 'Nothing is ready with your bar yet. Below are drinks you are only a few ingredients away from.' : 'Barınla henüz hazır tarif yok. Aşağıda birkaç malzemeyle yapabileceklerin var.')
+            : (en ? 'Nothing is ready with your bar yet. Add a few more ingredients.' : 'Barınla henüz hazır tarif yok. Birkaç malzeme daha ekle.');
+    } else {
+        text = en ? 'Add a few ingredients to see which drinks are close.' : 'Birkaç malzeme ekle; hangi tariflere yaklaştığını burada gör.';
+    }
+    return `<div class="empty-state col-span-full">${text}${list === 'ready' && missingCount && !emptyBar ? '' : action}</div>`;
+}
+
+function renderLists(items, container, isMissingList, emptyHtml = '') {
     container.innerHTML = "";
     // Recipes still loading: leave the list empty so the CSS skeleton shows instead of "nothing found".
     if (!allCocktails.length && !customRecipes.length) return;
     if (!items || items.length === 0) {
+        if (emptyHtml) { container.innerHTML = emptyHtml; return; }
         container.innerHTML = `<div class="empty-state col-span-full">${currentLang === 'en' ? 'No cocktails found matching these criteria.' : 'Bu kriterlere uygun kokteyl bulunamadı.'}<button type="button" data-action="reset-filters" class="text-action">${currentLang === 'en' ? 'Clear filters' : 'Filtreleri temizle'}</button></div>`;
         return;
     }
