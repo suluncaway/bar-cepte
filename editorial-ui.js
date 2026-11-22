@@ -90,11 +90,21 @@ document.getElementById('home-daily-open')?.addEventListener('click', () => {
     if (drink) openCocktail(drink);
 });
 
-// Phones: the tool ribbon is folded behind one button (CSS hides it until opened).
+// The tool ribbon is folded behind one button (CSS hides it until opened); on desktop it opens as a popover.
 const toolsToggle = document.getElementById('btn-tools-toggle');
-toolsToggle?.addEventListener('click', () => {
-    const open = document.querySelector('.app-header').classList.toggle('tools-open');
-    toolsToggle.setAttribute('aria-expanded', String(open));
+function setToolsOpen(open) {
+    document.querySelector('.app-header')?.classList.toggle('tools-open', open);
+    toolsToggle?.setAttribute('aria-expanded', String(open));
+}
+toolsToggle?.addEventListener('click', event => {
+    event.stopPropagation();
+    setToolsOpen(toolsToggle.getAttribute('aria-expanded') !== 'true');
+});
+document.addEventListener('click', event => {
+    if (toolsToggle?.getAttribute('aria-expanded') === 'true' && !event.target.closest('.topbar-tools-ribbon')) setToolsOpen(false);
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && toolsToggle?.getAttribute('aria-expanded') === 'true') { setToolsOpen(false); toolsToggle.focus(); }
 });
 
 // Light/dark switch; theme.js applies the saved choice on the next load before paint.

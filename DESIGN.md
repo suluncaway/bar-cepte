@@ -71,3 +71,11 @@ Barım, Tarif ekle, Tariflerim, Alışveriş, Yedekleme and AI Barmen share one 
 ## Landing (landing.html / landing.css)
 
 One loud thing: the hero is a live mini-bar. Bottle chips (`aria-pressed`, mint when owned) drive 11 real coasters from cocktails.json (ice, sugar, garnish ignored): makeable = mint disc + cream check stamp, missing = cherry dashed ring naming what's missing. A tabular mint numeral counts what's ready; a matchbox striker names the one bottle that unlocks the most and can add it. Everything below is quiet: 2px keyline rows, no cards, no eyebrows, no stats strip, no testimonials, no arrows in link text. Section headings are Big Shoulders in sentence case; only the hero headline is uppercase.
+
+## Header & empty states
+
+The header shares the 1320px content column. Timer, wake lock, theme and support live behind one tools button (sliders icon) on every width; on desktop it opens a popover that closes on Escape or an outside click. On phones ≤374px the coaster mark carries the brand alone. The brand reads "Bar Cepte" without a trailing period everywhere, and every surface uses the same filled citrus coaster mark. The status line counts recipes ("441 tarif"), never "ready".
+
+On desktop (≥1024px) the home hero puts the headline across, copy and actions on the left, and `#home-bar` on the right.
+
+Recipe lists only say "no match / clear filters" when a search or filter is active. Otherwise an empty list explains that the bar is too small and offers "Malzeme ekle" (`data-action="go-ingredients"`) or the starter bar.

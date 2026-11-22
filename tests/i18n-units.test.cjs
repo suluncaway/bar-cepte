@@ -362,3 +362,13 @@ test('Cocktail search allows searching by both cocktail name and kitchen/alcohol
 
 
 
+
+test('Turkish "juice of" measures read naturally next to the ingredient', () => {
+    const body = /function localizeJuiceOf\(text\) \{([\s\S]*?)\n\}/.exec(gameJs);
+    assert.ok(body, 'localizeJuiceOf must be extractable');
+    const localizeJuiceOf = new Function('text', body[1]);
+    assert.strictEqual(localizeJuiceOf('Juice of 1/2 '), '1/2 tanesinin suyu');
+    assert.strictEqual(localizeJuiceOf('Juice of 1'), '1 tanesinin suyu');
+    assert.strictEqual(localizeJuiceOf('Juice of 1 wedge '), '1 diliminin suyu');
+    assert.strictEqual(localizeJuiceOf('2 oz'), '2 oz');
+});

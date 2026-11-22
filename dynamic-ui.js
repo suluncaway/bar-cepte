@@ -59,6 +59,9 @@ document.addEventListener('click', event => {
             case 'share-link':
                 shareRecipeLink(value);
                 break;
+            case 'go-ingredients':
+                switchTab('ingredients');
+                break;
             case 'reset-filters':
                 resetCocktailFilters();
                 break;

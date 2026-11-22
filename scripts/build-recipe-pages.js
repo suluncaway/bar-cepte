@@ -62,7 +62,7 @@ img{width:100%;max-width:400px;aspect-ratio:1;object-fit:cover;border-radius:50%
 .list{display:flex;flex-wrap:wrap;gap:8px}.list a{padding:7px 13px;border:1.5px solid var(--line-strong)!important;border-radius:999px;color:var(--ink);font-size:14px}.list a:hover{border-color:var(--accent)!important;color:var(--accent)}
 .site{max-width:1080px;margin:0 auto;padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;justify-content:space-between}
 header.site-wrap{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:2px solid var(--line)}
-.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:24px;text-transform:uppercase;color:var(--ink)}.brand svg{width:38px;height:38px;padding:5px;border:2px solid var(--accent);border-radius:50%;background:var(--sunk);color:#8bbb92}.brand span{color:var(--accent);margin-left:-10px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:24px;text-transform:uppercase;color:var(--ink)}.brand svg{width:38px;height:38px;padding:6px;border-radius:50%;background:var(--accent);color:var(--on-accent)}.brand span{color:var(--accent);margin-left:-10px}
 header nav{display:flex;flex-wrap:wrap;gap:6px}header nav a{padding:8px 12px;border-radius:8px;color:var(--muted);font-size:14px;font-weight:600}header nav a:hover{color:var(--ink);background:var(--raised)}header nav a.app{background:var(--accent);color:var(--on-accent)}
 footer.site-wrap{border-top:2px solid var(--line);margin-top:20px;background:var(--sunk)}footer .site{display:block;color:var(--muted);font-size:13px;padding:28px 20px 44px}footer p{color:var(--muted);margin:8px 0}footer a{color:#d3e6d8}
 .about,.gear,.card{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:6px 22px 14px;margin:28px 0}.gear li{margin:10px 0}.small{font-size:13px;color:var(--muted)}
@@ -90,7 +90,7 @@ const AD_UNIT = `<ins class="adsbygoogle" style="display:block;margin:24px 0" da
 const CSP = "default-src 'self'; img-src 'self' https://www.thecocktaildb.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'none'; base-uri 'none'; form-action 'none'";
 const AD_CSP = "default-src 'self'; img-src 'self' data: https:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.adtrafficquality.google https://*.google.com https://*.gstatic.com; frame-src https:; connect-src https:; base-uri 'none'; form-action 'none'";
 const LOGO = '<svg viewBox="10 -2 100 134" fill="none" aria-hidden="true"><line x1="66" y1="26" x2="80" y2="4" stroke="#a5c6b3" stroke-width="5" stroke-linecap="round"/><circle cx="66" cy="27" r="7" fill="#a5c6b3"/><g stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M55 44 L30 14 H90 L65 44"/><path d="M18 44 H102 V86 Q102 112 60 124 Q18 112 18 86 Z"/></g></svg>';
-const NAV = `<header class="site-wrap"><div class="site"><a class="brand" href="/">${LOGO}Bar Cepte<span>.</span></a><nav><a href="/tarif/">Tarifler</a><a href="/rehber/">Rehberler</a><a class="about-link" href="/hakkimizda.html">Hakkımızda</a><a class="app" href="/">Uygulamayı aç</a></nav></div></header>`;
+const NAV = `<header class="site-wrap"><div class="site"><a class="brand" href="/">${LOGO}Bar Cepte</a><nav><a href="/tarif/">Tarifler</a><a href="/rehber/">Rehberler</a><a class="about-link" href="/hakkimizda.html">Hakkımızda</a><a class="app" href="/">Uygulamayı aç</a></nav></div></header>`;
 const FOOTER = `<footer class="site-wrap"><div class="site"><p>Bu sitedeki alkollü içecek tarifleri yalnızca 18 yaş ve üzeri yetişkinler içindir. Bar Cepte alkollü içki satışı yapmaz. Alkolü ölçülü tüketin; alkol aldıysanız araç kullanmayın.</p>
 <p>Ekipman önerilerindeki bazı bağlantılar ortaklık bağlantısıdır; bu bağlantılardan yapılan alışverişlerden Bar Cepte komisyon kazanabilir.</p>
 <p><a href="/hakkimizda.html">Hakkımızda</a> · <a href="/iletisim.html">İletişim</a> · <a href="/privacy.html">Gizlilik Politikası</a> · <a href="/kullanim-kosullari.html">Kullanım Koşulları</a> · <a href="/rehber/sorumlu-tuketim.html">Sorumlu Tüketim</a></p><p>© 2026 Bar Cepte</p></div></footer>`;
@@ -286,7 +286,7 @@ function build({ root = path.join(__dirname, '..'), drinks } = {}) {
         const prep = `PT${prepMins}M`, cook = `PT${cookMins}M`, total = `PT${prepMins + cookMins}M`;
         const body = `<nav class="crumbs" aria-label="Sayfa yolu"><a href="/tarif/">Tarifler</a> › ${crumbCat ? `<a href="/tarif/kategori/${crumbCat.slug}.html">${esc(crumbCat.title)}</a> › ` : ''}<span>${esc(displayName)}</span></nav>
 <span class="eyebrow">Tarif</span><h1>${esc(displayName)}</h1><p class="meta">${esc([category, alcohol, glassTr(drink.strGlass), `~${calories} kcal`, `★ ${ratingValue.toFixed(1)} (${ratingCount})`].filter(Boolean).join(' · '))}</p>
-<a class="cta cta-sm" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç →</a>
+<a class="cta cta-sm" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç</a>
 ${imgSrc ? `<img class="hero" src="${esc(imgSrc)}" alt="${esc(displayName)} kokteyli" width="350" height="263" fetchpriority="high">` : ''}
 <section class="card"><h2>Malzemeler <span class="count">${rows.length} malzeme</span></h2><ul class="ing">${rows.map(r => { const [n, a] = ingParts(r); return `<li><span>${esc(n)}</span><b>${esc(a)}</b></li>`; }).join('')}</ul></section>
 <h2>Yapılışı</h2><ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
@@ -294,7 +294,7 @@ ${about}
 ${ads ? AD_UNIT : ''}
 ${gearBox(recipeGear(drink), 'Bu tarif için ekipman')}
 ${related.length ? `<h2>${esc(rows[0]?.name || 'Benzer')} ile diğer tarifler</h2>${listCards(related, slugs)}` : ''}
-<a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır →</a>`;
+<a class="cta" href="/#tarif=${encodeURIComponent(drink.idDrink)}">Uygulamada aç, elindekilerle karşılaştır</a>`;
         const jsonLd = [{ '@context': 'https://schema.org', '@type': 'Recipe', name: displayName, image: image ? [image] : undefined, description,
             author: { '@type': 'Organization', name: 'Bar Cepte', url: SITE }, recipeCategory: category || 'Kokteyl', recipeCuisine: 'Uluslararası', recipeYield: '1 porsiyon',
             prepTime: prep, cookTime: cook, totalTime: total, keywords: [displayName, category, free ? 'alkolsüz' : 'kokteyl', ...cats.map(c => c.name), free ? 'alkolsüz kokteyl tarifi' : 'kokteyl tarifi'].filter((k, i, a) => k && a.findIndex(x => x && x.toLocaleLowerCase('tr') === k.toLocaleLowerCase('tr')) === i).join(', '),
