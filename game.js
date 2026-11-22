@@ -2652,6 +2652,85 @@ function applySubstituteToBar(ingEncoded, subEncoded, event) {
 
 // --- ADIM ADIM BARMEN MODU SİSTEMİ ---
 let currentMixDrink = null;
+// Mix mode steps come from the recipe's own instructions: the method decides the barware and the timer,
+// and each instruction chunk becomes a step titled by what it asks for (muddle, shake, stir, blend, layer, top, garnish).
+const MIX_KINDS = [
+    {kind: 'blend', re: /(?<!spice )\bblend\b|blender|mikser/i, seconds: 20},
+    // Steps need the verb ("çalkalayıcıya dökün" only fills the shaker); the method also counts the shaker itself.
+    {kind: 'shake', re: /\bshake\b|\bshaken\b|çalkala(?!yıcı)/i, methodRe: /shake|çalkala/i, seconds: 15},
+    {kind: 'muddle', re: /muddle|tokmak|ezin|ezerek|ezip/i},
+    {kind: 'layer', re: /(?<!not )layer(?!\s+of\s+(?:kosher\s+)?salt)|float|katman|katla/i},
+    {kind: 'stir', re: /\bstir(?!rer)|karıştır(?!ıcı)/i, seconds: 30},
+    {kind: 'top', re: /\btop\b|top (?:up|with)|üzerine .*(?:ekle|tamamla)|üstüne .*(?:ekle|dök)|tamamlayın/i},
+    {kind: 'strain', re: /strain|(?<![a-zçğıöşü])süz/i},
+    {kind: 'garnish', re: /garnish|süsle|serve|servis/i},
+    {kind: 'pour', re: /\bpour|\badd\b|dök|ekle/i}
+];
+// methodText: the English instructions, whose vocabulary separates stir from build ("karıştırın" means both).
+function mixPlan(instructions, lang, methodText = instructions) {
+    const text = String(instructions || '').replace(/\s+/g, ' ').trim();
+    const sentences = text ? text.split(/(?<=[.!?])\s+/).filter(Boolean) : [];
+    const kindsOf = (part, forMethod = false) => MIX_KINDS.filter(k => (forMethod && k.methodRe ? k.methodRe : k.re).test(part)).map(k => k.kind);
+    const all = kindsOf(text);
+    const methodKinds = kindsOf(String(methodText || text), true);
+    // Shake wins over blend: "shake well; a blender also works" is still a shaken drink.
+    const method = ['shake', 'blend', 'layer', 'stir'].find(k => methodKinds.includes(k)) || 'build';
+    // At most three instruction steps, so the flow stays short enough to follow with wet hands.
+    const size = Math.ceil(sentences.length / 3) || 1;
+    const chunks = [];
+    for (let i = 0; i < sentences.length; i += size) chunks.push(sentences.slice(i, i + size));
+    const steps = chunks.map(chunk => {
+        // Turkish "karıştırın" also means "combine"; it only names a stirring step in a stirred drink.
+        let kinds = kindsOf(chunk.join(' ')).filter(k => k !== 'stir' || method === 'stir' || method === 'build');
+        if (kinds.length > 1) kinds = kinds.filter(k => k !== 'pour'); // "pour" only names a step that does nothing else
+        // Only the recipe's own method gets a timer; a built drink is never timed.
+        const timed = MIX_KINDS.find(k => k.seconds && k.kind === method && kinds.includes(k.kind));
+        return {kinds, sentences: chunk, timerSeconds: timed ? timed.seconds : 0, timerKind: timed ? timed.kind : ''};
+    });
+    return {method, muddle: all.includes('muddle') || methodKinds.includes('muddle'), steps, lang: lang === 'en' ? 'en' : 'tr'};
+}
+const MIX_COPY = {
+    tr: {
+        kind: {blend: "Blender'da çek", shake: 'Çalkala', muddle: 'Ez', layer: 'Katmanla', stir: 'Karıştır', top: 'Üzerini tamamla', strain: 'Süz', garnish: 'Süsle ve servis et', pour: 'Dök'},
+        tools: {blend: 'Blender ve kırık buz', shake: 'Shaker ve süzgeç', layer: 'Bar kaşığı (sırtından yavaşça dökmek için)', stir: 'Karıştırma bardağı ve bar kaşığı', build: 'Bar kaşığı ve buz'},
+        muddler: 'tokmak (muddler)', prep: 'Hazırlık', ingredients: 'Malzemeleri ölç', method: 'Hazırla', glass: 'Kadeh', barware: 'Ekipman',
+        chill: g => `${g} hazırla; servis edene kadar buzla soğut.`, list: 'Ölçülü malzeme listesi:', done: 'Kokteylin hazır, afiyet olsun!',
+        timer: {blend: 'Pürüzsüz olana kadar blender', shake: 'Buzla kuvvetlice çalkala', stir: 'Bar kaşığıyla nazikçe karıştır'},
+        fallback: {build: 'Malzemeleri buzlu bardağa sırayla dök ve bar kaşığıyla bir kez karıştır.', serve: g => `${g} içinde servis et.`}
+    },
+    en: {
+        kind: {blend: 'Blend', shake: 'Shake', muddle: 'Muddle', layer: 'Layer', stir: 'Stir', top: 'Top up', strain: 'Strain', garnish: 'Garnish & serve', pour: 'Pour'},
+        tools: {blend: 'Blender and crushed ice', shake: 'Shaker and strainer', layer: 'Bar spoon (pour slowly over its back)', stir: 'Mixing glass and bar spoon', build: 'Bar spoon and ice'},
+        muddler: 'muddler', prep: 'Prep', ingredients: 'Measure ingredients', method: 'Make it', glass: 'Glass', barware: 'Barware',
+        chill: g => `Get the ${g} ready and keep it chilled with ice until serving.`, list: 'Measured ingredients:', done: 'Your cocktail is ready, cheers!',
+        timer: {blend: 'Blend until smooth', shake: 'Shake hard with ice', stir: 'Stir gently with a bar spoon'},
+        fallback: {build: 'Pour the ingredients over ice in order and give one stir with a bar spoon.', serve: g => `Serve in the ${g}.`}
+    }
+};
+function buildMixSteps(plan, {glass, ingList}) {
+    const c = MIX_COPY[plan.lang];
+    const tools = c.tools[plan.method] + (plan.muddle ? `, ${c.muddler}` : '');
+    const steps = [
+        {heading: c.prep, body: `<p>• <b>${c.glass}:</b> ${escapeHTML(c.chill(glass))}</p><p class="mt-2">• <b>${c.barware}:</b> ${escapeHTML(tools)}</p>`, hasTimer: false},
+        {heading: c.ingredients, body: `<p class="mix-list-label">${c.list}</p><ul class="mix-ingredients">${ingList.map(item => `<li><i class="bci bci-tumbler" aria-hidden="true"></i><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`, hasTimer: false}
+    ];
+    const instructionSteps = plan.steps.length ? plan.steps
+        : [{kinds: [plan.method === 'build' ? 'stir' : plan.method], sentences: [plan.method === 'build' ? c.fallback.build : c.timer[plan.method] + '.'], timerSeconds: plan.method === 'build' ? 0 : MIX_KINDS.find(k => k.kind === plan.method).seconds, timerKind: plan.method},
+           {kinds: ['garnish'], sentences: [c.fallback.serve(glass)], timerSeconds: 0}];
+    instructionSteps.forEach((step, i) => {
+        const last = i === instructionSteps.length - 1;
+        const title = step.kinds.slice(0, 2).map(k => c.kind[k]).join(' · ') || (last ? c.kind.garnish : c.method);
+        steps.push({
+            heading: title,
+            body: step.sentences.map(t => `<p>${escapeHTML(t)}</p>`).join('') + (last ? `<p class="mix-done"><i class="bci bci-party" aria-hidden="true"></i> ${c.done}</p>` : ''),
+            hasTimer: step.timerSeconds > 0,
+            timerSeconds: step.timerSeconds,
+            timerLabel: step.timerSeconds ? c.timer[step.timerKind] : ''
+        });
+    });
+    return steps.map((step, i) => ({...step, heading: `${i + 1}. ${step.heading}`}));
+}
+
 let personalMixEventId = '', personalMixCompleted = false, personalMixServings = 1;
 let currentMixStep = 0;
 let mixSteps = [];
@@ -2672,68 +2751,16 @@ function openMixMode(drinkId, servings = 1) {
     const ingList = BarInventory.ingredients(d).map(row => {
         const name = currentLang === 'en' ? row.name : translateIngredientName(row.name);
         const measure = scaleMeasure(translateMeasureText(row.measure), servings);
+        // "1 tanesinin suyu" reads after the name in the recipe card; in a list it becomes "1 Misket Limonu suyu".
+        const juice = /^(.+?) (tanesinin|diliminin) suyu$/.exec(measure);
+        if (juice) return `${juice[1]}${juice[2] === 'diliminin' ? ' dilim' : ''} ${name} suyu`;
         return measure ? `${measure} ${name}` : name;
     });
 
-    const isShaken = /shak|çalkala/i.test(d.strInstructions || '') || /shak|çalkala/i.test(d.strInstructionsTR || '');
     const rawGlass = d.strGlass || (currentLang === 'en' ? 'Cocktail glass' : 'Kokteyl bardağı');
     const glass = currentLang === 'en' ? rawGlass : (glassTranslations[rawGlass.trim().toLowerCase()] || rawGlass);
-
-    if (currentLang === 'en') {
-        mixSteps = [
-            {
-                heading: '1. Glassware & Prep',
-                body: `<p>• <b>Glass:</b> Prepare ${escapeHTML(glass)} and chill with ice cubes.</p><p class="mt-2">• <b>Barware:</b> Get ${isShaken ? 'cocktail shaker and strainer' : 'mixing glass and bar spoon'} ready.</p>`,
-                hasTimer: false
-            },
-            {
-                heading: '2. Measure & Add Ingredients',
-                body: `<p class="font-semibold text-amber-300 mb-2">Measured Ingredients:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span><i class="bci bci-tumbler" aria-hidden="true"></i></span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
-                hasTimer: false
-            },
-            {
-                heading: isShaken ? '3. Shake (Shaker)' : '3. Stir with Ice',
-                body: isShaken
-                    ? `<p>Fill shaker generously with ice, seal tightly, and shake vigorously until frosty on the outside.</p>`
-                    : `<p>Stir gently and rhythmically with a bar spoon over ice to chill and dilute properly.</p>`,
-                hasTimer: true,
-                timerSeconds: isShaken ? 15 : 30,
-                timerLabel: isShaken ? 'Shake vigorously with ice' : 'Stir gently with bar spoon'
-            },
-            {
-                heading: '4. Strain & Serve',
-                body: `<p>• Strain the chilled cocktail into the ${escapeHTML(glass)}.</p><p class="mt-2">• ${d.strServing ? `<b>Garnish:</b> ${escapeHTML(d.strServing)}` : 'Add garnish and serve fresh.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm"><i class="bci bci-party" aria-hidden="true"></i> Your cocktail is ready, cheers!</div>`,
-                hasTimer: false
-            }
-        ];
-    } else {
-        mixSteps = [
-            {
-                heading: '1. Hazırlık & Kadeh',
-                body: `<p>• <b>Kadeh:</b> ${escapeHTML(glass)} hazırla ve içerisine birkaç küp buz ekleyerek soğut.</p><p class="mt-2">• <b>Ekipman:</b> ${isShaken ? 'Shaker (çalkalayıcı) ve süzgeç' : 'Karıştırma bardağı ve bar kaşığı'} hazırla.</p>`,
-                hasTimer: false
-            },
-            {
-                heading: '2. Malzemeleri Ekle',
-                body: `<p class="font-semibold text-amber-300 mb-2">Ölçülü Malzeme Listesi:</p><ul class="space-y-1.5">${ingList.map(item => `<li class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5"><span><i class="bci bci-tumbler" aria-hidden="true"></i></span><span>${escapeHTML(item)}</span></li>`).join('')}</ul>`,
-                hasTimer: false
-            },
-            {
-                heading: isShaken ? '3. Çalkalama (Shaker)' : '3. Karıştırma (Stir)',
-                body: isShaken
-                    ? `<p>Shaker'ın içine bol buz doldur, kapağını sıkıca kapat ve buzlar kırağı tutana kadar kuvvetlice salla.</p>`
-                    : `<p>Buz dolu karıştırma bardağında bar kaşığı ile kokteyli nazikçe ve ritmik şekilde döndürerek soğut.</p>`,
-                hasTimer: true,
-                timerSeconds: isShaken ? 15 : 30,
-                timerLabel: isShaken ? 'Buzla kuvvetlice çalkala' : 'Bar kaşığıyla nazikçe karıştır'
-            },
-            {
-                heading: '4. Süzme & Servis',
-                body: `<p>• Soğuyan kokteyli süzerek ${escapeHTML(glass)} içine aktar.</p><p class="mt-2">• ${d.strServing ? `<b>Garnitür:</b> ${escapeHTML(d.strServing)}` : 'Garnitürünü ekle ve taze servis et.'}</p><div class="text-center pt-3 text-amber-400 font-bold text-sm"><i class="bci bci-party" aria-hidden="true"></i> Kokteylin hazır, afiyet olsun!</div>`,
-                hasTimer: false
-            }
-        ];
-    }
+    const instructions = currentLang === 'en' ? (d.strInstructions || '') : (d.strInstructionsTR || d.strInstructions || '');
+    mixSteps = buildMixSteps(mixPlan(instructions, currentLang, d.strInstructions || instructions), {glass, ingList, lang: currentLang});
 
     const titleEl = document.getElementById('mix-modal-title');
     const subtitleEl = document.getElementById('mix-modal-subtitle');
@@ -2762,8 +2789,8 @@ function renderMixStep() {
 
     if (counter) counter.textContent = currentLang === 'en' ? `Step ${currentMixStep + 1} / ${mixSteps.length}` : `Adım ${currentMixStep + 1} / ${mixSteps.length}`;
     if (heading) heading.textContent = step.heading;
-    // step.body yalnızca openMixMode() içinde escapeHTML() uygulanmış sabit
-    // şablonlardan üretilir; harici kullanıcı girdisi veya API verisi içermez.
+    // step.body buildMixSteps() içinde üretilir: sabit şablonlar ve escapeHTML() uygulanmış
+    // tarif metinleri (talimat cümleleri, kadeh, malzemeler); ham kullanıcı girdisi içermez.
     if (body) body.innerHTML = step.body;
 
     const prevBtn = document.getElementById('btn-mix-prev');
