@@ -1137,9 +1137,17 @@ function convertClToOz(text) {
     return res;
 }
 
+// "Juice of 1/2" sits next to the ingredient name, so Turkish needs "1/2 tanesinin suyu", not "suyu: 1/2".
+function localizeJuiceOf(text) {
+    return String(text).replace(/^\s*juice of\s+(.+?)\s*$/i, (_, amount) => {
+        const wedge = /^(.+?)\s+wedges?$/i.exec(amount);
+        return wedge ? `${wedge[1]} diliminin suyu` : `${amount} tanesinin suyu`;
+    });
+}
+
 function translateMeasureText(measureStr) {
     if (!measureStr) return '';
-    let res = measureStr;
+    let res = currentLang === 'tr' ? localizeJuiceOf(measureStr) : measureStr;
     if (currentUnit === 'oz') {
         res = convertClToOz(res);
         if (currentLang === 'tr') {

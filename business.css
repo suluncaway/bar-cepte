@@ -92,4 +92,5 @@ html[data-theme=light] .badge{background:var(--sunk);color:var(--ink)}
 html[data-theme=light] .operation-preview,html[data-theme=light] .editing-context{background:var(--sunk);color:var(--ink)}
 html[data-theme=light] .report-table tr{background:var(--surface)}
 html[data-theme=light] #business-dialog{background:var(--surface);color:var(--ink);border-color:var(--line-strong)}
-html[data-theme=light] .overview-metrics .panel:nth-child(3n+3) .metric{color:#12544f}
+html[data-theme=light] .overview-metrics .panel:nth-child(3n+3) .metric{color:#12544f}/* Same filled citrus coaster mark as the app, the recipe pages and the landing page. */
+.brand .brand-logo{box-sizing:border-box;width:40px;height:40px;padding:7px;border-radius:50%;background:#8bbb92;color:#092328}
