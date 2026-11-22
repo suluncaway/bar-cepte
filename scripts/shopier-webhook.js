@@ -18,7 +18,9 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { timingSafeEqual } = require('crypto');
-const { generateKey, checksum } = require('./generate-keys');
+const { checksum } = require('./generate-keys');
+// Sold keys must be unguessable: 192-bit random (RESERVE-<PLAN>-<48 hex>). The legacy 4-char format is only verified.
+const { generateKey } = require('./backend/store');
 
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
@@ -75,6 +77,9 @@ function allowRequest(limits, ip, max) {
     return true;
 }
 const allowAIRequest = ip => allowRequest(aiRateLimits, ip, 12);
+const licenseRateLimits = new Map();
+// Render appends the real client address last; earlier entries are client-controlled and spoofable.
+const clientAddress = req => String(req.headers['x-forwarded-for'] || '').split(',').pop().trim() || req.socket?.remoteAddress || 'unknown';
 const inFlightOrders = new Set();
 const getSoldLicenses = () => licenseStore.getSold();
 const getClaimedLicenses = () => licenseStore.getClaimed();
@@ -180,6 +185,50 @@ async function processNewOrders() {
     finally {polling = false;}
 }
 
+function licenseEmailHtml({isIntl, customerName, licenseKey, planName}) {
+    return isIntl ? `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #101b19; color: #ffffff; padding: 32px 24px; border-radius: 16px;">
+                <h1 style="color: #d5b47b; font-size: 22px; margin-top: 0;">👑 Welcome to Pocket Bar Reserve Club!</h1>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${escapeHtml(customerName || 'Valued Customer')}</strong>,</p>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Your single-use activation key for <strong>${escapeHtml(planName)}</strong> purchased via Shopier has been generated:</p>
+                
+                <div style="background: #172922; border: 1px solid rgba(213,180,123,0.4); border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0;">
+                    <span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Your Activation Key:</span>
+                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${escapeHtml(licenseKey)}</strong>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6;">
+                    <strong>How to Activate:</strong><br>
+                    1. Open <a href="https://barcepte.com.tr" style="color: #d5b47b; text-decoration: underline;">Pocket Bar</a> on your device.<br>
+                    2. Tap the <b>Reserve 👑</b> button in the top bar.<br>
+                    3. Paste your code above and tap <b>Activate</b>.
+                </div>
+
+                <p style="color: #64748b; font-size: 11px; margin-top: 24px; text-align: center;">This key is single-use and permanently bound to your account. Enjoy your cocktails! 🍸</p>
+            </div>
+    ` : `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #101b19; color: #ffffff; padding: 32px 24px; border-radius: 16px;">
+                <h1 style="color: #d5b47b; font-size: 22px; margin-top: 0;">👑 Bar Cepte Reserve Kulübüne Hoş Geldiniz!</h1>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Merhaba <strong>${escapeHtml(customerName || 'Değerli Müşterimiz')}</strong>,</p>
+                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Shopier üzerinden satın aldığınız <strong>${escapeHtml(planName)}</strong> üyeliğiniz için tek kullanımlık aktivasyon kodunuz üretildi:</p>
+                
+                <div style="background: #172922; border: 1px solid rgba(213,180,123,0.4); border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0;">
+                    <span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Aktivasyon Kodunuz:</span>
+                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${escapeHtml(licenseKey)}</strong>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6;">
+                    <strong>Nasıl Kullanılır?</strong><br>
+                    1. <a href="https://barcepte.com.tr" style="color: #d5b47b; text-decoration: underline;">barcepte.com.tr</a> adresini açın.<br>
+                    2. Profil veya VIP simgesine tıklayın.<br>
+                    3. Yukarıdaki kodu yapıştırıp <b>Aktive Et</b> butonuna basın.
+                </div>
+
+                <p style="color: #64748b; font-size: 11px; margin-top: 24px; text-align: center;">Bu kod hesabınıza özeldir ve tek kullanımlıktır. Keyifli akşamlar dileriz! 🍸</p>
+            </div>
+    `;
+}
+
 async function sendEmail(toEmail, customerName, licenseKey, planName, currency = 'TRY', options = {}) {
     if (!RESEND_API_KEY) {
         console.warn('RESEND_API_KEY is not configured; delivery remains pending.');
@@ -195,47 +244,7 @@ async function sendEmail(toEmail, customerName, licenseKey, planName, currency =
         ? '🍸 Pocket Bar VIP — Your Single-Use Activation Key is Ready!'
         : '🍸 Bar Cepte VIP Aktivasyon Kodunuz Hazır!';
 
-    const html = isIntl ? `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #101b19; color: #ffffff; padding: 32px 24px; border-radius: 16px;">
-                <h1 style="color: #d5b47b; font-size: 22px; margin-top: 0;">👑 Welcome to Pocket Bar Reserve Club!</h1>
-                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${customerName || 'Valued Customer'}</strong>,</p>
-                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Your single-use activation key for <strong>${planName}</strong> purchased via Shopier has been generated:</p>
-                
-                <div style="background: #172922; border: 1px solid rgba(213,180,123,0.4); border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0;">
-                    <span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Your Activation Key:</span>
-                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${licenseKey}</strong>
-                </div>
-
-                <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6;">
-                    <strong>How to Activate:</strong><br>
-                    1. Open <a href="https://barcepte.com.tr" style="color: #d5b47b; text-decoration: underline;">Pocket Bar</a> on your device.<br>
-                    2. Tap the <b>Reserve 👑</b> button in the top bar.<br>
-                    3. Paste your code above and tap <b>Activate</b>.
-                </div>
-
-                <p style="color: #64748b; font-size: 11px; margin-top: 24px; text-align: center;">This key is single-use and permanently bound to your account. Enjoy your cocktails! 🍸</p>
-            </div>
-    ` : `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #101b19; color: #ffffff; padding: 32px 24px; border-radius: 16px;">
-                <h1 style="color: #d5b47b; font-size: 22px; margin-top: 0;">👑 Bar Cepte Reserve Kulübüne Hoş Geldiniz!</h1>
-                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Merhaba <strong>${customerName || 'Değerli Müşterimiz'}</strong>,</p>
-                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Shopier üzerinden satın aldığınız <strong>${planName}</strong> üyeliğiniz için tek kullanımlık aktivasyon kodunuz üretildi:</p>
-                
-                <div style="background: #172922; border: 1px solid rgba(213,180,123,0.4); border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0;">
-                    <span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Aktivasyon Kodunuz:</span>
-                    <strong style="font-size: 20px; font-family: monospace; color: #d5b47b; letter-spacing: 2px;">${licenseKey}</strong>
-                </div>
-
-                <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6;">
-                    <strong>Nasıl Kullanılır?</strong><br>
-                    1. <a href="https://barcepte.com.tr" style="color: #d5b47b; text-decoration: underline;">barcepte.com.tr</a> adresini açın.<br>
-                    2. Profil veya VIP simgesine tıklayın.<br>
-                    3. Yukarıdaki kodu yapıştırıp <b>Aktive Et</b> butonuna basın.
-                </div>
-
-                <p style="color: #64748b; font-size: 11px; margin-top: 24px; text-align: center;">Bu kod hesabınıza özeldir ve tek kullanımlıktır. Keyifli akşamlar dileriz! 🍸</p>
-            </div>
-    `;
+    const html = licenseEmailHtml({isIntl, customerName, licenseKey, planName});
 
     const payload = JSON.stringify({
         from: fromAddress,
@@ -459,6 +468,13 @@ async function handleRequest(req, res, ctx) {
         ['/api/claim-license', '/api/check-license', '/webhook/shopier', '/callback'].includes(requestPath)) {
         res.writeHead(503, {'Content-Type': 'application/json'});
         return res.end(JSON.stringify({success: false, reason: 'Lisans verileri aktarılıyor. Lütfen daha sonra tekrar deneyiniz.'}));
+    }
+
+    // Lisans uç noktaları IP başına saatlik sınırlı: anahtar deneme (brute-force) saldırılarını yavaşlatır.
+    if (req.method === 'POST' && (req.url === '/api/claim-license' || req.url === '/api/check-license') &&
+        !allowRequest(licenseRateLimits, clientAddress(req), 60)) {
+        res.writeHead(429, {'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '3600'});
+        return res.end(JSON.stringify({success: false, valid: false, reason: 'Çok fazla deneme. Lütfen daha sonra tekrar deneyiniz.'}));
     }
 
     // Merkezi Lisans Kullanma / Mühürleme Endpoint'i (Single-Use Anti-Reuse Enforcement)
@@ -905,5 +921,6 @@ module.exports = {
     generateKey,
     verifyKeyChecksum,
     escapeHtml,
+    licenseEmailHtml,
     readJsonBody
 };

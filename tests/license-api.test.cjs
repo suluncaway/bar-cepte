@@ -73,6 +73,39 @@ test('Production API protects issued licenses, admin data and webhook requests',
     const headers = {Authorization: 'Basic ' + Buffer.from('admin:test-admin-token').toString('base64')};
     assert.equal((await fetch(origin + '/licenses', {headers})).status, 200);
     assert.equal((await fetch(origin + '/resend?orderId=test-order', {headers})).status, 405);
+    // Key guessing is throttled per client address on both license endpoints.
+    const check = () => fetch(origin + '/api/check-license', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({key: generateKey('annual'), deviceId: 'attacker-01'})}).then(r => r.status);
+    const statuses = [];
+    for (let i = 0; i < 60; i++) statuses.push(await check());
+    assert.ok(statuses.includes(429), 'license endpoints must rate limit repeated guesses');
+    assert.equal(await check(), 429);
+    assert.equal((await claim({key: testKey, deviceId: 'alice-phone'})).status, 429);
+});
+
+test('Shopier orders receive unguessable 192-bit keys', () => {
+    const { generateKey: issueKey, verifyKeyChecksum } = require('../scripts/shopier-webhook');
+    const keys = new Set();
+    for (const plan of ['monthly', 'annual', 'lifetime']) {
+        const key = issueKey(plan);
+        assert.match(key, /^RESERVE-(MTH1|ANN1|LIFE)-[0-9A-F]{48}$/);
+        assert.equal(verifyKeyChecksum(key), true);
+        keys.add(key);
+    }
+    assert.equal(keys.size, 3);
+    assert.equal(verifyKeyChecksum(generateKey('monthly')), true, 'legacy sold keys stay valid');
+});
+
+test('License email escapes buyer-controlled fields', () => {
+    const { licenseEmailHtml } = require('../scripts/shopier-webhook');
+    for (const isIntl of [true, false]) {
+        const html = licenseEmailHtml({isIntl, customerName: '<a href="https://evil.example">Yenile</a>',
+            planName: '<b>x</b>', licenseKey: 'RESERVE-MTH1-ABC'});
+        assert.doesNotMatch(html, /<a href="https:\/\/evil/);
+        assert.doesNotMatch(html, /<b>x<\/b>/);
+        assert.match(html, /&lt;a href=&quot;https:\/\/evil\.example&quot;&gt;Yenile&lt;\/a&gt;/);
+        assert.match(html, /RESERVE-MTH1-ABC/);
+    }
 });
 
 test('Backend shopier-webhook sanitization prevents XSS and parses JSON safely', () => {
