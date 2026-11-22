@@ -84,6 +84,7 @@ const I18N = {
         clear: 'Temizle',
         searchIngPlaceholder: 'Malzeme ara: cin, nane, limon…',
         searchCocktailPlaceholder: 'Kokteyl veya malzeme yaz: \'rom nane\', \'Margarita\'…',
+        searchCocktailPlaceholderShort: 'Kokteyl veya malzeme ara',
         random: 'Rastgele',
         filterByProfile: 'Zevkine göre daralt',
         all: 'Hepsi',
@@ -265,6 +266,7 @@ const I18N = {
         clear: 'Clear',
         searchIngPlaceholder: 'Search ingredients: gin, mint, lime…',
         searchCocktailPlaceholder: 'Search cocktail or ingredient: \'rum mint\', \'Margarita\'…',
+        searchCocktailPlaceholderShort: 'Search cocktails or ingredients',
         random: 'Random',
         filterByProfile: 'Filter by taste profile',
         all: 'All',
@@ -4140,11 +4142,15 @@ function applyLanguage() {
     const ingSearch = document.getElementById('ing-search');
     if (ingSearch) ingSearch.placeholder = t.searchIngPlaceholder;
     const cocktailSearch = document.getElementById('cocktail-search');
-    if (cocktailSearch) cocktailSearch.placeholder = t.searchCocktailPlaceholder;
+    // Phones get a placeholder that fits the narrower field instead of a truncated example.
+    if (cocktailSearch) cocktailSearch.placeholder = window.matchMedia?.('(max-width:767px)').matches ? t.searchCocktailPlaceholderShort : t.searchCocktailPlaceholder;
     const clearBtn13 = document.querySelector('[data-ui="ui-13"]');
     if (clearBtn13) clearBtn13.innerHTML = t.clear;
     const randBtn15 = document.querySelector('[data-ui="ui-15"]');
-    if (randBtn15) randBtn15.innerHTML = t.random;
+    if (randBtn15) {
+        randBtn15.innerHTML = `<i class="bci bci-dice" aria-hidden="true"></i> <span class="random-label">${t.random}</span>`;
+        randBtn15.setAttribute('aria-label', t.random);
+    }
     const filterCap = document.querySelector('.filter-caption');
     if (filterCap) filterCap.innerText = t.filterByProfile;
 
